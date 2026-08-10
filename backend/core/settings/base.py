@@ -116,6 +116,19 @@ ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_USERNAME_REQUIRED = False
 
+# Email Configuration (SMTP)
+EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
+EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
+EMAIL_PORT = config('EMAIL_PORT', cast=int, default=587)
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', cast=bool, default=True)
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='Winnie Gym <noreply@winniegym.com>')
+
+# Dynamic QR Token Settings
+QR_SECRET_KEY = config('QR_SECRET_KEY', default=SECRET_KEY)
+QR_TOKEN_EXPIRATION_SECONDS = config('QR_TOKEN_EXPIRATION_SECONDS', cast=int, default=30)
+
 MONGODB = {
     'URI': config('MONGO_URI', default='mongodb://admin:admin@localhost:27017/'),
     'DB_NAME': config('MONGO_DB_NAME', default='winnie_gym_logs'),
@@ -131,3 +144,4 @@ CHANNEL_LAYERS = {
 }
 
 ASGI_APPLICATION = 'core.asgi.application'
+
