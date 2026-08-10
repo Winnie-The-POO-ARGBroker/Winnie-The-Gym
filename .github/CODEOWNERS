@@ -1,0 +1,4 @@
+# CODEOWNERS - Winnie the Gym
+# Define quién debe aprobar obligatoriamente los Pull Requests para que puedan ser mergeados.
+
+* @MrForii
