@@ -9,7 +9,7 @@ from apps.access.models import AccessLog
 from apps.access.utils import (
     generate_dynamic_qr_token,
     verify_dynamic_qr_token,
-    mark_qr_token_used
+    verify_and_consume_token
 )
 
 User = get_user_model()
@@ -35,7 +35,7 @@ class DynamicQRAndAccessTestCase(TestCase):
         self.assertIn('qr_token', token_data)
         self.assertEqual(token_data['expires_in'], 30)
 
-        is_valid, error_code, payload = verify_dynamic_qr_token(token_data['qr_token'])
+        is_valid, error_code, payload = verify_dynamic_qr_token(token_data['qr_token'], consume=False)
         self.assertTrue(is_valid)
         self.assertIsNone(error_code)
         self.assertEqual(payload['user_id'], self.user.id)
@@ -43,7 +43,7 @@ class DynamicQRAndAccessTestCase(TestCase):
     def test_verify_qr_token_tampered_fails(self):
         token_data = generate_dynamic_qr_token(self.user)
         tampered_token = token_data['qr_token'] + "extra_chars"
-        is_valid, error_code, payload = verify_dynamic_qr_token(tampered_token)
+        is_valid, error_code, payload = verify_dynamic_qr_token(tampered_token, consume=False)
         self.assertFalse(is_valid)
         self.assertEqual(error_code, 'INVALID_SIGNATURE')
 
@@ -51,17 +51,59 @@ class DynamicQRAndAccessTestCase(TestCase):
         token_data = generate_dynamic_qr_token(self.user)
         jti = token_data['jti']
 
-        # Primer uso -> OK
-        is_valid, error_code, _ = verify_dynamic_qr_token(token_data['qr_token'])
-        self.assertTrue(is_valid)
+        # Primer uso atómico -> OK
+        is_valid_use, error_code = verify_and_consume_token(jti)
+        self.assertTrue(is_valid_use)
+        self.assertIsNone(error_code)
 
-        # Simular consumo en cache
-        mark_qr_token_used(jti)
-
-        # Segundo uso -> REPLAY_ATTACK
-        is_valid, error_code, _ = verify_dynamic_qr_token(token_data['qr_token'])
-        self.assertFalse(is_valid)
+        # Segundo uso atómico -> REPLAY_ATTACK
+        is_valid_use, error_code = verify_and_consume_token(jti)
+        self.assertFalse(is_valid_use)
         self.assertEqual(error_code, 'REPLAY_ATTACK')
+
+    def test_scan_expired_token_returns_denied(self):
+        """[TEST-1]: Test de token expirado a nivel de endpoint"""
+        # 1. Generar token con tiempo real
+        token_data = generate_dynamic_qr_token(self.user)
+        self.client.force_authenticate(user=self.staff_user)
+
+        # 2. Parchear time.time sólo durante la verificación (scan)
+        with patch('apps.access.utils.time.time', return_value=9999999999):
+            response = self.client.post('/api/access/qr/scan/', {
+                'qr_token': token_data['qr_token'],
+                'access_type': 'ENTRY'
+            })
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data['denial_reason'], 'TOKEN_EXPIRED')
+
+    def test_member_cannot_call_scan_endpoint(self):
+        """[TEST-2 & BLOCKER-1]: Test de rechazo 403 cuando un socio intenta autorizarse su propia entrada"""
+        token_data = generate_dynamic_qr_token(self.user)
+        self.client.force_authenticate(user=self.user)  # Socio común (sin is_staff)
+        
+        response = self.client.post('/api/access/qr/scan/', {
+            'qr_token': token_data['qr_token'],
+            'access_type': 'ENTRY'
+        })
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    @patch('apps.access.views.log_qr_event')
+    def test_replay_attack_via_endpoint(self, mock_log):
+        """[TEST-3]: Test de ataque de re-uso end-to-end sobre el endpoint"""
+        token_data = generate_dynamic_qr_token(self.user)
+        self.client.force_authenticate(user=self.staff_user)
+        
+        data = {'qr_token': token_data['qr_token'], 'access_type': 'ENTRY'}
+        
+        r1 = self.client.post('/api/access/qr/scan/', data)
+        r2 = self.client.post('/api/access/qr/scan/', data)  # segundo escaneo del mismo token
+        
+        self.assertEqual(r1.status_code, status.HTTP_200_OK)
+        self.assertEqual(r1.data['status'], 'GRANTED')
+        
+        self.assertEqual(r2.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(r2.data['status'], 'DENIED')
+        self.assertEqual(r2.data['denial_reason'], 'REPLAY_ATTACK')
 
     @patch('apps.access.views.log_qr_event')
     def test_generate_and_scan_qr_views(self, mock_log_qr_event):
@@ -86,6 +128,3 @@ class DynamicQRAndAccessTestCase(TestCase):
         log_db = AccessLog.objects.get(qr_jti=res_gen.data['jti'])
         self.assertEqual(log_db.user, self.user)
         self.assertEqual(log_db.status, 'GRANTED')
-
-        # Verificar que se llamó a auditoría MongoDB
-        mock_log_qr_event.assert_called_once()

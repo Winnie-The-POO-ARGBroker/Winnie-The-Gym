@@ -23,6 +23,7 @@ def _base64url_decode(data_str: str) -> bytes:
 def generate_dynamic_qr_token(user) -> dict:
     """
     Genera un token QR dinámico firmado con HMAC-SHA256 con tiempo de expiración (defecto 30 segundos).
+    Elimina PII (email) del payload expuesto en el código QR.
     """
     secret = getattr(settings, 'QR_SECRET_KEY', settings.SECRET_KEY).encode('utf-8')
     ttl = getattr(settings, 'QR_TOKEN_EXPIRATION_SECONDS', 30)
@@ -30,9 +31,9 @@ def generate_dynamic_qr_token(user) -> dict:
     now = int(time.time())
     jti = str(uuid.uuid4())
 
+    # CRITICAL-2 Fix: PII (user_email) omitida del payload del token QR público
     payload = {
         'user_id': user.id,
-        'user_email': user.email,
         'jti': jti,
         'iat': now,
         'exp': now + ttl
@@ -54,7 +55,35 @@ def generate_dynamic_qr_token(user) -> dict:
     }
 
 
-def verify_dynamic_qr_token(qr_token_str: str) -> tuple[bool, str | None, dict | None]:
+def verify_and_consume_token(jti: str, ttl: int = None) -> tuple[bool, str | None]:
+    """
+    [BLOCKER-4 & BLOCKER-6 & W-1 Fix]: Usa cache.add() (SET NX en Redis) para verificar
+    y consumir el token de forma atómica evitando la condición de carrera TOCTOU.
+    Maneja caídas de Redis con fallback degradado controlado (fail open con warning).
+    """
+    if not jti:
+        return True, None
+
+    if ttl is None:
+        token_ttl = getattr(settings, 'QR_TOKEN_EXPIRATION_SECONDS', 30)
+        ttl = token_ttl + 60  # Buffer razonable sobre el tiempo de expiración
+
+    cache_key = f"qr_used:{jti}"
+
+    try:
+        # cache.add retorna True si la clave NO existía y fue agregada (primer uso).
+        # Retorna False si la clave ya existía en Redis (REPLAY ATTACK).
+        is_first_use = cache.add(cache_key, True, ttl)
+        if not is_first_use:
+            return False, 'REPLAY_ATTACK'
+        return True, None
+    except Exception as e:
+        logger.error(f"Redis indisponible durante verificación anti-replay de QR (jti={jti}): {e}")
+        # Política Fail Open degradada: permitir el paso sin tirar excepción si Redis cae
+        return True, "REDIS_UNAVAILABLE"
+
+
+def verify_dynamic_qr_token(qr_token_str: str, consume: bool = True) -> tuple[bool, str | None, dict | None]:
     """
     Verifica la firma, caducidad y reutilización del token QR dinámico.
     Retorna: (is_valid, error_code, payload)
@@ -66,30 +95,30 @@ def verify_dynamic_qr_token(qr_token_str: str) -> tuple[bool, str | None, dict |
         payload_b64, signature_b64 = qr_token_str.rsplit('.', 1)
         secret = getattr(settings, 'QR_SECRET_KEY', settings.SECRET_KEY).encode('utf-8')
 
-        # Verificar firma HMAC
+        # 1. Verificar firma HMAC
         expected_sig = hmac.new(secret, payload_b64.encode('utf-8'), hashlib.sha256).digest()
         actual_sig = _base64url_decode(signature_b64)
 
         if not hmac.compare_digest(expected_sig, actual_sig):
             return False, 'INVALID_SIGNATURE', None
 
-        # Decodificar payload
+        # 2. Decodificar payload
         payload_bytes = _base64url_decode(payload_b64)
         payload = json.loads(payload_bytes.decode('utf-8'))
 
         now = int(time.time())
         exp = payload.get('exp', 0)
 
-        # Validar expiración (30s)
+        # 3. Validar expiración (30s)
         if now > exp:
             return False, 'TOKEN_EXPIRED', payload
 
-        # Validar anti-replay (que no haya sido consumido)
+        # 4. Validar y consumir anti-replay atómicamente si consume=True
         jti = payload.get('jti')
-        if jti:
-            cache_key = f"qr_used:{jti}"
-            if cache.get(cache_key):
-                return False, 'REPLAY_ATTACK', payload
+        if jti and consume:
+            is_valid_use, replay_error = verify_and_consume_token(jti)
+            if not is_valid_use:
+                return False, replay_error, payload
 
         return True, None, payload
 
@@ -98,10 +127,8 @@ def verify_dynamic_qr_token(qr_token_str: str) -> tuple[bool, str | None, dict |
         return False, 'INVALID_SIGNATURE', None
 
 
-def mark_qr_token_used(jti: str, ttl: int = 300):
+def mark_qr_token_used(jti: str, ttl: int = None):
     """
-    Marca un token QR como consumido en el cache/Redis para prevenir ataques de reutilización.
+    Wrapper de compatibilidad para marcar un token QR como consumido.
     """
-    if jti:
-        cache_key = f"qr_used:{jti}"
-        cache.set(cache_key, True, timeout=ttl)
+    verify_and_consume_token(jti, ttl)

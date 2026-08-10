@@ -124,10 +124,27 @@ EMAIL_USE_TLS = config('EMAIL_USE_TLS', cast=bool, default=True)
 EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='Winnie Gym <noreply@winniegym.com>')
+EMAIL_TIMEOUT = 5
+
+# Frontend URL
+FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:5173')
 
 # Dynamic QR Token Settings
-QR_SECRET_KEY = config('QR_SECRET_KEY', default=SECRET_KEY)
+_raw_qr_secret = config('QR_SECRET_KEY', default=None)
+if not _raw_qr_secret:
+    _raw_qr_secret = SECRET_KEY
+if len(_raw_qr_secret) < 32:
+    _raw_qr_secret = _raw_qr_secret.ljust(32, '0')
+QR_SECRET_KEY = _raw_qr_secret
 QR_TOKEN_EXPIRATION_SECONDS = config('QR_TOKEN_EXPIRATION_SECONDS', cast=int, default=30)
+
+# Redis Cache Settings
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": f"redis://{config('REDIS_HOST', default='redis')}:{config('REDIS_PORT', default=6379, cast=int)}/1",
+    }
+}
 
 MONGODB = {
     'URI': config('MONGO_URI', default='mongodb://admin:admin@localhost:27017/'),
@@ -144,4 +161,5 @@ CHANNEL_LAYERS = {
 }
 
 ASGI_APPLICATION = 'core.asgi.application'
+
 
