@@ -61,6 +61,16 @@ class DynamicQRAndAccessTestCase(TestCase):
         self.assertFalse(is_valid_use)
         self.assertEqual(error_code, 'REPLAY_ATTACK')
 
+    def test_verify_and_consume_token_empty_jti_fails(self):
+        """[NUEVO]: Test que verifica que un jti nulo o vacío es rechazado con INVALID_TOKEN"""
+        is_valid_use, error_code = verify_and_consume_token(None)
+        self.assertFalse(is_valid_use)
+        self.assertEqual(error_code, 'INVALID_TOKEN')
+
+        is_valid_use, error_code = verify_and_consume_token("")
+        self.assertFalse(is_valid_use)
+        self.assertEqual(error_code, 'INVALID_TOKEN')
+
     def test_scan_expired_token_returns_denied(self):
         """[TEST-1]: Test de token expirado a nivel de endpoint"""
         # 1. Generar token con tiempo real
@@ -75,6 +85,11 @@ class DynamicQRAndAccessTestCase(TestCase):
             })
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(response.data['denial_reason'], 'TOKEN_EXPIRED')
+
+        log = AccessLog.objects.last()
+        self.assertIsNotNone(log)
+        self.assertEqual(log.status, 'DENIED')
+        self.assertEqual(log.denial_reason, 'TOKEN_EXPIRED')
 
     def test_member_cannot_call_scan_endpoint(self):
         """[TEST-2 & BLOCKER-1]: Test de rechazo 403 cuando un socio intenta autorizarse su propia entrada"""
@@ -104,6 +119,12 @@ class DynamicQRAndAccessTestCase(TestCase):
         self.assertEqual(r2.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(r2.data['status'], 'DENIED')
         self.assertEqual(r2.data['denial_reason'], 'REPLAY_ATTACK')
+
+        self.assertEqual(AccessLog.objects.count(), 2)
+        logs = AccessLog.objects.order_by('timestamp')
+        self.assertEqual(logs[0].status, 'GRANTED')
+        self.assertEqual(logs[1].status, 'DENIED')
+        self.assertEqual(logs[1].denial_reason, 'REPLAY_ATTACK')
 
     @patch('apps.access.views.log_qr_event')
     def test_generate_and_scan_qr_views(self, mock_log_qr_event):

@@ -25,7 +25,7 @@ def generate_dynamic_qr_token(user) -> dict:
     Genera un token QR dinámico firmado con HMAC-SHA256 con tiempo de expiración (defecto 30 segundos).
     Elimina PII (email) del payload expuesto en el código QR.
     """
-    secret = getattr(settings, 'QR_SECRET_KEY', settings.SECRET_KEY).encode('utf-8')
+    secret = settings.QR_SECRET_KEY.encode('utf-8')
     ttl = getattr(settings, 'QR_TOKEN_EXPIRATION_SECONDS', 30)
 
     now = int(time.time())
@@ -62,7 +62,7 @@ def verify_and_consume_token(jti: str, ttl: int = None) -> tuple[bool, str | Non
     Maneja caídas de Redis con fallback degradado controlado (fail open con warning).
     """
     if not jti:
-        return True, None
+        return False, 'INVALID_TOKEN'
 
     if ttl is None:
         token_ttl = getattr(settings, 'QR_TOKEN_EXPIRATION_SECONDS', 30)
@@ -93,7 +93,7 @@ def verify_dynamic_qr_token(qr_token_str: str, consume: bool = True) -> tuple[bo
 
     try:
         payload_b64, signature_b64 = qr_token_str.rsplit('.', 1)
-        secret = getattr(settings, 'QR_SECRET_KEY', settings.SECRET_KEY).encode('utf-8')
+        secret = settings.QR_SECRET_KEY.encode('utf-8')
 
         # 1. Verificar firma HMAC
         expected_sig = hmac.new(secret, payload_b64.encode('utf-8'), hashlib.sha256).digest()
@@ -115,7 +115,7 @@ def verify_dynamic_qr_token(qr_token_str: str, consume: bool = True) -> tuple[bo
 
         # 4. Validar y consumir anti-replay atómicamente si consume=True
         jti = payload.get('jti')
-        if jti and consume:
+        if consume:
             is_valid_use, replay_error = verify_and_consume_token(jti)
             if not is_valid_use:
                 return False, replay_error, payload

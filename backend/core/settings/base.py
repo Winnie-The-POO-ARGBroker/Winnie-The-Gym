@@ -129,13 +129,19 @@ EMAIL_TIMEOUT = 5
 # Frontend URL
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:5173')
 
+from django.core.exceptions import ImproperlyConfigured
+
 # Dynamic QR Token Settings
-_raw_qr_secret = config('QR_SECRET_KEY', default=None)
-if not _raw_qr_secret:
-    _raw_qr_secret = SECRET_KEY
-if len(_raw_qr_secret) < 32:
-    _raw_qr_secret = _raw_qr_secret.ljust(32, '0')
-QR_SECRET_KEY = _raw_qr_secret
+QR_SECRET_KEY = config('QR_SECRET_KEY', default=None)
+if not QR_SECRET_KEY:
+    raise ImproperlyConfigured(
+        "QR_SECRET_KEY is required. Set it in your .env file. "
+        "Generate one with: python -c \"import secrets; print(secrets.token_hex(32))\""
+    )
+if len(QR_SECRET_KEY) < 32:
+    raise ImproperlyConfigured(
+        f"QR_SECRET_KEY must be at least 32 characters. Got {len(QR_SECRET_KEY)}."
+    )
 QR_TOKEN_EXPIRATION_SECONDS = config('QR_TOKEN_EXPIRATION_SECONDS', cast=int, default=30)
 
 # Redis Cache Settings

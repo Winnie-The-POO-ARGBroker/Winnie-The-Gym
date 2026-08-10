@@ -16,6 +16,7 @@ class AccessLog(models.Model):
     DENIAL_REASON_CHOICES = [
         ('TOKEN_EXPIRED', 'Token QR expirado'),
         ('INVALID_SIGNATURE', 'Firma de token inválida'),
+        ('INVALID_TOKEN', 'Token QR malformado o sin identificador'),
         ('REPLAY_ATTACK', 'Token QR ya utilizado'),
         ('MEMBERSHIP_INACTIVE', 'Membresía inactiva o cuota vencida'),
         ('NO_MEMBERSHIP', 'Socio sin membresía registrada'),

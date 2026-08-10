@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from core.mongodb import log_qr_event
 from .models import AccessLog
 from .permissions import IsReceptionistOrAdmin
+from .services import has_active_membership
 from .serializers import (
     GenerateQRResponseSerializer,
     ScanQRSerializer,
@@ -83,6 +84,9 @@ class ScanQRView(APIView):
             if not user_obj.is_active:
                 is_valid = False
                 error_code = 'USER_SUSPENDED'
+            elif not has_active_membership(user_obj):
+                is_valid = False
+                error_code = 'MEMBERSHIP_INACTIVE'
 
         # 3. Determinar estado final
         access_status = 'GRANTED' if is_valid else 'DENIED'
