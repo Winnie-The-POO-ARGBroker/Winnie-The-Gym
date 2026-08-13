@@ -14,6 +14,6 @@ class IsReceptionistOrAdmin(BasePermission):
         if request.user.is_staff or request.user.is_superuser:
             return True
             
-        # Permitir si tiene el atributo o campo role en 'admin' o 'receptionist'
-        user_role = getattr(request.user, 'role', None)
-        return user_role in ('admin', 'receptionist')
+        # Permitir si tiene el atributo o campo rol en 'administrador' o 'recepcionista'
+        user_role = getattr(request.user, 'rol', None)
+        return user_role in ('administrador', 'recepcionista')

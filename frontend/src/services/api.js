@@ -1,11 +1,21 @@
 import axios from 'axios'
+import { toast } from 'sonner'
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
 })
 
+function getAccessToken() {
+  try {
+    const raw = localStorage.getItem('auth-storage')
+    return raw ? JSON.parse(raw)?.state?.accessToken ?? null : null
+  } catch {
+    return null
+  }
+}
+
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('access_token')
+  const token = getAccessToken()
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
@@ -14,9 +24,10 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
   (response) => response,
-  async (error) => {
+  (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('access_token')
+      localStorage.removeItem('auth-storage')
+      toast.error('Your session has expired. Please log in again.')
       window.location.href = '/login'
     }
     return Promise.reject(error)

@@ -1,3 +1,89 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;600&display=swap');
+
+:root {
+  --color-bg-base:        #F5F5F4;
+  --color-bg-surface:     #FFFFFF;
+  --color-bg-raised:      #F0EFEC;
+  --color-border-subtle:  rgba(18, 18, 18, 0.10);
+  --color-border-strong:  rgba(18, 18, 18, 0.16);
+  --color-text-primary:   rgba(18, 18, 18, 0.92);
+  --color-text-secondary: rgba(18, 18, 18, 0.60);
+  --color-text-tertiary:  rgba(18, 18, 18, 0.40);
+  --color-error:          #F44336;
+  --color-warning:        #FFC107;
+  --color-success:        #4CAF50;
+}
+
+.dark {
+  --color-bg-base:        #121212;
+  --color-bg-surface:     #1E1E1E;
+  --color-bg-raised:      #262626;
+  --color-border-subtle:  #404040;
+  --color-border-strong:  #525252;
+  --color-text-primary:   rgba(255, 255, 255, 0.92);
+  --color-text-secondary: rgba(255, 255, 255, 0.62);
+  --color-text-tertiary:  rgba(255, 255, 255, 0.38);
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  html, body, #root {
+    height: 100%;
+  }
+
+  body {
+    background-color: var(--color-bg-base);
+    color: var(--color-text-primary);
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-bg-surface);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-border-strong);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-border-strong);
+    opacity: 0.7;
+  }
+
+  /* Override Chrome/Safari autofill background — the only reliable technique is
+     a large inset box-shadow; !important is required here and intentional. */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px var(--color-bg-raised) inset !important;
+    -webkit-text-fill-color: var(--color-text-primary) !important;
+    caret-color: var(--color-text-primary);
+    transition: background-color 5000s ease-in-out 0s;
+  }
+}
+
+@layer utilities {
+  .bg-bg-base    { background-color: var(--color-bg-base);    }
+  .bg-bg-surface { background-color: var(--color-bg-surface); }
+  .bg-bg-raised  { background-color: var(--color-bg-raised);  }
+
+  .text-text-primary   { color: var(--color-text-primary);   }
+  .text-text-secondary { color: var(--color-text-secondary); }
+  .text-text-tertiary  { color: var(--color-text-tertiary);  }
+
+  .border-subtle { border-color: var(--color-border-subtle); }
+  .border-strong { border-color: var(--color-border-strong); }
+}
