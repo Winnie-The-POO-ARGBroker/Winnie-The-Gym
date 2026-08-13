@@ -141,8 +141,8 @@ class AccessLogListView(generics.ListAPIView):
         # Si es staff o admin/recepcionista, ver todos
         is_staff_or_receptionist = (
             user.is_authenticated and (
-                user.is_staff or 
-                getattr(user, 'role', None) in ('admin', 'receptionist')
+                user.is_staff or
+                user.rol in ('administrador', 'recepcionista')
             )
         )
         

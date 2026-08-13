@@ -126,9 +126,3 @@ def verify_dynamic_qr_token(qr_token_str: str, consume: bool = True) -> tuple[bo
         logger.error(f"Error al decodificar token QR: {e}")
         return False, 'INVALID_SIGNATURE', None
 
-
-def mark_qr_token_used(jti: str, ttl: int = None):
-    """
-    Wrapper de compatibilidad para marcar un token QR como consumido.
-    """
-    verify_and_consume_token(jti, ttl)

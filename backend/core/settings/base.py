@@ -108,6 +108,22 @@ REST_FRAMEWORK = {
 REST_AUTH = {
     'USE_JWT': True,
     'JWT_AUTH_HTTPONLY': False,
+    'USER_DETAILS_SERIALIZER': 'apps.users.serializers.UserDetailsSerializer',
+    'JWT_SERIALIZER': 'apps.users.serializers.CustomJWTSerializer',
+}
+
+AUTH_USER_MODEL = 'users.User'
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': ['profile', 'email'],
+        'AUTH_PARAMS': {'access_type': 'online'},
+        'APP': {
+            'client_id': config('GOOGLE_CLIENT_ID'),
+            'secret': config('GOOGLE_CLIENT_SECRET'),
+            'key': '',
+        },
+    }
 }
 
 ACCOUNT_EMAIL_VERIFICATION = 'none'
@@ -116,7 +132,6 @@ ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_USERNAME_REQUIRED = False
 
-# Email Configuration (SMTP)
 EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
 EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
 EMAIL_PORT = config('EMAIL_PORT', cast=int, default=587)
@@ -126,12 +141,10 @@ EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='Winnie Gym <noreply@winniegym.com>')
 EMAIL_TIMEOUT = 5
 
-# Frontend URL
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:5173')
 
 from django.core.exceptions import ImproperlyConfigured
 
-# Dynamic QR Token Settings
 QR_SECRET_KEY = config('QR_SECRET_KEY', default=None)
 if not QR_SECRET_KEY:
     raise ImproperlyConfigured(
@@ -144,16 +157,15 @@ if len(QR_SECRET_KEY) < 32:
     )
 QR_TOKEN_EXPIRATION_SECONDS = config('QR_TOKEN_EXPIRATION_SECONDS', cast=int, default=30)
 
-# Redis Cache Settings
 CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": f"redis://{config('REDIS_HOST', default='redis')}:{config('REDIS_PORT', default=6379, cast=int)}/1",
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': f"redis://{config('REDIS_HOST', default='redis')}:{config('REDIS_PORT', default=6379, cast=int)}/1",
     }
 }
 
 MONGODB = {
-    'URI': config('MONGO_URI', default='mongodb://admin:admin@localhost:27017/'),
+    'URI': config('MONGO_URI', default='mongodb://localhost:27017/'),
     'DB_NAME': config('MONGO_DB_NAME', default='winnie_gym_logs'),
 }
 

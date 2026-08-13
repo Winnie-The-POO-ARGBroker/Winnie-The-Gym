@@ -16,7 +16,7 @@ def get_mongo_client():
     if _mongo_client is None:
         try:
             mongo_uri = getattr(settings, 'MONGODB', {}).get(
-                'URI', 'mongodb://admin:admin@localhost:27017/'
+                'URI', 'mongodb://localhost:27017/'
             )
             _mongo_client = MongoClient(mongo_uri, serverSelectionTimeoutMS=3000)
             # Ping para verificar conexión
