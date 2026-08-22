@@ -64,44 +64,46 @@ export default function DashboardPage() {
       <div className="flex-1 p-6 overflow-auto flex flex-col gap-6">
 
         {/* 1. Selector de Rol para pruebas */}
-        <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-bg-surface border border-subtle">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
-              Vista activa:
-            </span>
-            <Badge variant="live">{currentRole.toUpperCase()}</Badge>
-          </div>
+        {import.meta.env.DEV && (
+          <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-bg-surface border border-subtle">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
+                Vista activa:
+              </span>
+              <Badge variant="live">{currentRole.toUpperCase()}</Badge>
+            </div>
 
-          <div className="flex gap-2">
-            <button
-              onClick={() => setCurrentRole('administrador')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${currentRole === 'administrador'
-                ? 'bg-orange-500 text-white shadow-sm'
-                : 'bg-bg-raised text-text-secondary hover:text-text-primary'
-                }`}
-            >
-              Administrador
-            </button>
-            <button
-              onClick={() => setCurrentRole('recepcionista')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${currentRole === 'recepcionista'
-                ? 'bg-orange-500 text-white shadow-sm'
-                : 'bg-bg-raised text-text-secondary hover:text-text-primary'
-                }`}
-            >
-              Recepcionista
-            </button>
-            <button
-              onClick={() => setCurrentRole('socio')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${currentRole === 'socio'
-                ? 'bg-orange-500 text-white shadow-sm'
-                : 'bg-bg-raised text-text-secondary hover:text-text-primary'
-                }`}
-            >
-              Socio
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCurrentRole('administrador')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${currentRole === 'administrador'
+                  ? 'bg-orange-500 text-white shadow-sm'
+                  : 'bg-bg-raised text-text-secondary hover:text-text-primary'
+                  }`}
+              >
+                Administrador
+              </button>
+              <button
+                onClick={() => setCurrentRole('recepcionista')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${currentRole === 'recepcionista'
+                  ? 'bg-orange-500 text-white shadow-sm'
+                  : 'bg-bg-raised text-text-secondary hover:text-text-primary'
+                  }`}
+              >
+                Recepcionista
+              </button>
+              <button
+                onClick={() => setCurrentRole('socio')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${currentRole === 'socio'
+                  ? 'bg-orange-500 text-white shadow-sm'
+                  : 'bg-bg-raised text-text-secondary hover:text-text-primary'
+                  }`}
+              >
+                Socio
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* 2. VISTA ADMINISTRADOR */}
         {currentRole === 'administrador' && (
