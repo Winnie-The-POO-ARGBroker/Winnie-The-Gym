@@ -69,6 +69,18 @@ export default function Sidebar() {
     : user?.email ?? 'Usuario'
   const rol = user?.rol ?? 'Administrador'
 
+  const currentNavItems = (() => {
+    if (rol === 'Recepcionista') {
+      return NAV_ITEMS.map(item => {
+        if (item.label === 'Dashboard') return { ...item, path: '/recepcion/aforo' }
+        if (item.label === 'Socios') return { ...item, path: '/recepcion/socios' }
+        if (item.label === 'Reportes') return { ...item, path: '/recepcion/reportes' }
+        return item
+      })
+    }
+    return NAV_ITEMS
+  })()
+
   function handleLogout() {
     clearAuth()
     navigate('/login', { replace: true })
@@ -83,7 +95,7 @@ export default function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 flex flex-col gap-1 px-3">
-        {NAV_ITEMS.map(({ label, path, icon }) => {
+        {currentNavItems.map(({ label, path, icon }) => {
           const isActive = location.pathname === path
           return (
             <NavLink
