@@ -6,25 +6,33 @@ import { useThemeStore } from '../../stores/themeStore'
 import WinnieLogo from '../ui/WinnieLogo'
 import Avatar from '../ui/Avatar'
 
+// Each entry is either a nav item { label, path, icon }
+// or a section divider { divider: true, label }
 const NAV_BY_ROLE = {
   administrador: [
-    { label: 'Dashboard',      path: '/dashboard',     icon: 'chart' },
-    { label: 'Socios',         path: '/socios',         icon: 'people' },
-    { label: 'Membresias',     path: '/membresias',     icon: 'card' },
-    { label: 'Clases',         path: '/clases',         icon: 'monitor' },
-    { label: 'Reportes',       path: '/reportes',       icon: 'chart-line' },
-    { label: 'Configuracion',  path: '/configuracion',  icon: 'gear' },
+    { label: 'Dashboard',         path: '/dashboard',          icon: 'chart' },
+    { divider: true, label: 'Recepción' },
+    { label: 'Acceso',            path: '/recepcion/acceso',   icon: 'scan' },
+    { label: 'Aforo',             path: '/recepcion/aforo',    icon: 'activity' },
+    { label: 'Gestión Socios',    path: '/recepcion/socios',   icon: 'people' },
+    { label: 'Reportes',          path: '/recepcion/reportes', icon: 'chart-line' },
+    { divider: true, label: 'Socio' },
+    { label: 'Credencial',        path: '/socio/credencial',   icon: 'card' },
+    { label: 'Clases',            path: '/socio/clases',       icon: 'monitor' },
+    { divider: true, label: 'General' },
+    { label: 'Membresias',        path: '/membresias',         icon: 'card' },
+    { label: 'Configuracion',     path: '/configuracion',      icon: 'gear' },
   ],
   recepcionista: [
-    { label: 'Dashboard',      path: '/dashboard',          icon: 'chart' },
-    { label: 'Acceso',         path: '/recepcion/acceso',   icon: 'scan' },
-    { label: 'Aforo',          path: '/recepcion/aforo',    icon: 'activity' },
-    { label: 'Socios',         path: '/recepcion/socios',   icon: 'people' },
-    { label: 'Reportes',       path: '/recepcion/reportes', icon: 'chart-line' },
+    { label: 'Dashboard',         path: '/dashboard',          icon: 'chart' },
+    { label: 'Acceso',            path: '/recepcion/acceso',   icon: 'scan' },
+    { label: 'Aforo',             path: '/recepcion/aforo',    icon: 'activity' },
+    { label: 'Socios',            path: '/recepcion/socios',   icon: 'people' },
+    { label: 'Reportes',          path: '/recepcion/reportes', icon: 'chart-line' },
   ],
   socio: [
-    { label: 'Mi Credencial',  path: '/socio/credencial',  icon: 'card' },
-    { label: 'Clases',         path: '/socio/clases',       icon: 'monitor' },
+    { label: 'Mi Credencial',     path: '/socio/credencial',   icon: 'card' },
+    { label: 'Clases',            path: '/socio/clases',       icon: 'monitor' },
   ],
 }
 
@@ -55,37 +63,48 @@ export default function Sidebar() {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 flex flex-col gap-1 px-3">
-        {currentNavItems.map(({ label, path, icon }) => {
+      <nav className="flex-1 flex flex-col gap-1 px-3 overflow-y-auto">
+        {currentNavItems.map((item, idx) => {
+          if (item.divider) {
+            return (
+              <div key={`divider-${idx}`} className="px-3 pt-4 pb-1">
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
+                  {item.label}
+                </span>
+              </div>
+            )
+          }
+
+          const { label, path, icon } = item
           const isActive = location.pathname === path
+
+          const iconProps = {
+            className: `w-5 h-5 flex-shrink-0 transition-colors ${isActive ? 'text-white' : 'text-text-secondary group-hover:text-text-primary'}`,
+            strokeWidth: isActive ? 2.5 : 2,
+          }
+
+          const Icon = {
+            chart:       LayoutDashboard,
+            people:      Users,
+            card:        CreditCard,
+            monitor:     MonitorPlay,
+            'chart-line': LineChart,
+            gear:        Settings,
+            scan:        ScanLine,
+            activity:    Activity,
+          }[icon] ?? LayoutDashboard
+
           return (
             <NavLink
               key={path}
               to={path}
               className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                isActive 
-                  ? 'bg-primary text-white shadow-md' 
+                isActive
+                  ? 'bg-primary text-white shadow-md'
                   : 'text-text-secondary hover:bg-bg-raised hover:text-text-primary'
               }`}
             >
-              {(() => {
-                // Inline getIcon replacement to force white color on active
-                const props = {
-                  className: `w-5 h-5 transition-colors ${isActive ? 'text-white' : 'text-text-secondary group-hover:text-text-primary'}`,
-                  strokeWidth: isActive ? 2.5 : 2
-                }
-                switch(icon) {
-                  case 'chart':      return <LayoutDashboard {...props} />
-                  case 'people':     return <Users {...props} />
-                  case 'card':       return <CreditCard {...props} />
-                  case 'monitor':    return <MonitorPlay {...props} />
-                  case 'chart-line': return <LineChart {...props} />
-                  case 'gear':       return <Settings {...props} />
-                  case 'scan':       return <ScanLine {...props} />
-                  case 'activity':   return <Activity {...props} />
-                  default:           return <LayoutDashboard {...props} />
-                }
-              })()}
+              <Icon {...iconProps} />
               {label}
             </NavLink>
           )
