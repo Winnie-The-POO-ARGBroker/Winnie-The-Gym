@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
+import Badge from '../../components/ui/Badge';
 import AppLayout from '../../components/layout/AppLayout';
 import { QrCode, CreditCard, Camera, CheckCircle2, XCircle, AlertCircle, LogOut, Check, User } from 'lucide-react';
 
@@ -24,10 +25,7 @@ export default function AccesoTerminal() {
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-3 text-text-primary">
               Control de accesos
-              <span className="bg-success-500/20 text-success-500 text-xs px-2 py-1 rounded-full flex items-center gap-1.5 font-medium border border-success-500/20">
-                <span className="w-1.5 h-1.5 rounded-full bg-success-500 animate-pulse"></span>
-                EN VIVO
-              </span>
+              <Badge variant="live">En Vivo</Badge>
             </h1>
             <p className="text-text-secondary text-sm mt-1">Estación de recepción - sin molinetes</p>
           </div>

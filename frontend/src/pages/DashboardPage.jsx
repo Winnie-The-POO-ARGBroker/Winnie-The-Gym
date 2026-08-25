@@ -9,6 +9,7 @@ import AlertList from '../components/dashboard/AlertList'
 import ClassCapacityList from '../components/dashboard/ClassCapacityList'
 import Badge from '../components/ui/Badge'
 import Button from '../components/ui/Button'
+import FilterButton from '../components/ui/FilterButton'
 
 const MOCK_MOVEMENTS = [
   { id: 1, name: 'Carlos Pérez', membership: 'Mensual', time: '09:24', type: 'entry' },
@@ -74,33 +75,24 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex gap-2">
-              <button
+              <FilterButton
                 onClick={() => setCurrentRole('administrador')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${currentRole === 'administrador'
-                  ? 'bg-primary text-white shadow-sm'
-                  : 'bg-bg-raised text-text-secondary hover:text-text-primary'
-                  }`}
+                active={currentRole === 'administrador'}
               >
                 Administrador
-              </button>
-              <button
+              </FilterButton>
+              <FilterButton
                 onClick={() => setCurrentRole('recepcionista')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${currentRole === 'recepcionista'
-                  ? 'bg-primary text-white shadow-sm'
-                  : 'bg-bg-raised text-text-secondary hover:text-text-primary'
-                  }`}
+                active={currentRole === 'recepcionista'}
               >
                 Recepcionista
-              </button>
-              <button
+              </FilterButton>
+              <FilterButton
                 onClick={() => setCurrentRole('socio')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${currentRole === 'socio'
-                  ? 'bg-primary text-white shadow-sm'
-                  : 'bg-bg-raised text-text-secondary hover:text-text-primary'
-                  }`}
+                active={currentRole === 'socio'}
               >
                 Socio
-              </button>
+              </FilterButton>
             </div>
           </div>
         )}

@@ -181,12 +181,11 @@ export default function CredencialDigitalPage() {
                 </span>
               </div>
 
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => refreshQR(true)}
                 disabled={isRefreshing}
-                className="p-1.5 rounded bg-bg-raised text-text-secondary hover:text-text-primary transition-all disabled:opacity-50"
-                title="Refrescar QR ahora"
-                aria-label="Refrescar QR"
               >
                 <svg
                   width="14"
@@ -200,7 +199,7 @@ export default function CredencialDigitalPage() {
                   <path d="M23 4v6h-6M1 20v-6h6" />
                   <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
                 </svg>
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -262,16 +261,17 @@ export default function CredencialDigitalPage() {
         >
           {/* scrim — no overlay token yet */}
           {/* Botón cerrar flotante */}
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => setIsFullscreen(false)}
-            className="absolute top-6 right-6 w-10 h-10 rounded-full bg-bg-raised text-white flex items-center justify-center hover:bg-bg-surface transition-colors shadow-lg"
-            aria-label="Cerrar pantalla completa"
+            className="absolute top-6 right-6"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
-          </button>
+          </Button>
 
           {/* Tarjeta Blanca de Alto Contraste */}
           <div
@@ -312,12 +312,14 @@ export default function CredencialDigitalPage() {
               Presentá este código frente al lector óptico del molinete para ingresar. Fondo optimizado al máximo contraste visual.
             </p>
 
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setIsFullscreen(false)}
-              className="mt-4 w-full py-2.5 rounded-lg bg-bg-raised text-white font-semibold text-xs hover:bg-bg-surface transition-colors"
+              className="mt-4 w-full"
             >
               Cerrar
-            </button>
+            </Button>
           </div>
         </div>
       )}
