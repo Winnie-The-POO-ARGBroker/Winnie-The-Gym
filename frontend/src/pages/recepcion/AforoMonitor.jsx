@@ -55,7 +55,7 @@ export default function AforoMonitor() {
         }
       />
       <div className="flex-1 p-6 overflow-auto flex flex-col gap-6">
-        <div className="grid grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <OccupancyCard aforo={aforo} maxAforo={maxAforo} />
           <RecentEventsPanel events={recentEvents} />
         </div>

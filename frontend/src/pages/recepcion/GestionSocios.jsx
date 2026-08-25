@@ -37,16 +37,16 @@ export default function GestionSocios() {
       />
       <div className="flex-1 p-6 overflow-auto flex flex-col gap-6">
 
-        <div className="grid grid-cols-3 gap-8 flex-1">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 flex-1">
           {/* Form Column */}
-          <div className="col-span-2 space-y-6 overflow-y-auto pr-4 custom-scrollbar">
+          <div className="lg:col-span-2 space-y-6 overflow-y-auto pr-4 custom-scrollbar">
             <DatosPersonalesCard formData={formData} onChange={onChange} />
             <PlanPagoCard formData={formData} onChange={onChange} />
             <SaludCard onFileChange={() => {}} onChange={onChange} />
           </div>
 
           {/* Resumen Sidebar */}
-          <div className="col-span-1">
+          <div className="lg:col-span-1">
             <SocioResumenSidebar
               nombre={formData.nombre}
               apellido={formData.apellido}

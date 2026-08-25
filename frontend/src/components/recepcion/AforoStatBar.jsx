@@ -8,7 +8,7 @@ export default function AforoStatBar({
   egresoUltimaHora,
 }) {
   return (
-    <div className="grid grid-cols-4 gap-6">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
       <Card className="p-4">
         <p className="text-xs text-text-secondary font-semibold mb-1 uppercase">Promedio Hoy</p>
         <p className="text-2xl font-bold text-text-primary">{promedioHoy}</p>

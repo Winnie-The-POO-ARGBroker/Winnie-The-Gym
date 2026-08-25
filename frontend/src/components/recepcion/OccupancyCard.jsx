@@ -6,7 +6,7 @@ export default function OccupancyCard({ aforo, maxAforo }) {
   const isHighCapacity = aforoPercentage > 85;
 
   return (
-    <Card className="col-span-2 relative overflow-hidden flex flex-col justify-center min-h-[300px]">
+    <Card className="md:col-span-2 relative overflow-hidden flex flex-col justify-center min-h-[300px]">
       <div className="absolute top-6 left-6 flex items-center gap-2 text-text-secondary">
         <Activity className="w-5 h-5" />
         <span className="font-semibold uppercase tracking-wider text-sm">Ocupación Actual</span>

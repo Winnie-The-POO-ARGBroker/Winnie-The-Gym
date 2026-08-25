@@ -94,7 +94,7 @@ export default function ProfilePage() {
             <div className="rounded-2xl p-6 flex flex-col gap-5 bg-bg-surface border border-subtle">
               <Skeleton className="h-4 w-32" />
               <Skeleton className="h-9 w-full" />
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Skeleton className="h-9" />
                 <Skeleton className="h-9" />
               </div>
@@ -161,7 +161,7 @@ export default function ProfilePage() {
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[
                   { name: 'nombre', label: 'Nombre' },
                   { name: 'apellido', label: 'Apellido' },

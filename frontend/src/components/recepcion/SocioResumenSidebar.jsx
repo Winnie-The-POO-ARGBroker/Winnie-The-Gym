@@ -13,7 +13,7 @@ export default function SocioResumenSidebar({
   onSubmit,
 }) {
   return (
-    <Card className="sticky top-0 border-l-2 border-l-success-500 p-6">
+    <Card className="lg:sticky lg:top-0 border-l-2 border-l-success-500 p-6">
       <h3 className="font-semibold text-text-primary mb-6">Resumen</h3>
 
       <div className="flex items-center gap-4 mb-8">

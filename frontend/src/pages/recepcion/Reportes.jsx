@@ -32,7 +32,7 @@ export default function Reportes() {
           ))}
         </div>
 
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <EvolucionIngresosCard
             chartPoints="M 0,60 L 50,70 L 100,50 L 150,60 L 200,40 L 250,55 L 300,30 L 350,45 L 400,20"
             estesMes="$ 4.8M"

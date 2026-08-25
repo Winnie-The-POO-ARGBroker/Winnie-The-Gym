@@ -100,7 +100,7 @@ export default function DashboardPage() {
 
         {/* 2. VISTA ADMINISTRADOR */}
         {currentRole === 'administrador' && (
-          <div className="grid gap-6" style={{ gridTemplateColumns: '1fr minmax(0, 360px)' }}>
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
             <div className="flex flex-col gap-6">
               <AforoCard current={150} max={200} entries={232} exits={76} />
               <MovementList movements={MOCK_MOVEMENTS} />
@@ -116,7 +116,7 @@ export default function DashboardPage() {
         {/* 3. VISTA RECEPCIONISTA */}
         {currentRole === 'recepcionista' && (
           <div className="flex flex-col gap-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <div className="p-5 rounded-2xl bg-bg-surface border border-subtle flex flex-col justify-between gap-4 shadow-sm">
                 <div>
                   <h3 className="font-bold text-lg text-text-primary">Escanear Ingreso</h3>
@@ -154,7 +154,7 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="grid gap-6" style={{ gridTemplateColumns: '1fr minmax(0, 360px)' }}>
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
               <AforoCard current={150} max={200} entries={232} exits={76} />
               <MovementList movements={MOCK_MOVEMENTS} />
             </div>
@@ -163,7 +163,7 @@ export default function DashboardPage() {
 
         {/* 4. VISTA SOCIO */}
         {currentRole === 'socio' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl">
             <div className="p-6 rounded-2xl bg-bg-surface border border-subtle flex flex-col justify-between gap-6 shadow-sm">
               <div className="flex items-start justify-between">
                 <div>

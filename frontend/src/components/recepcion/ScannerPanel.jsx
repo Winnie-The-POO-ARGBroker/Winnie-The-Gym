@@ -14,7 +14,7 @@ export default function ScannerPanel({
     <Card className="flex flex-col p-6">
       <div className="flex-1 bg-bg-base rounded-lg border border-subtle flex items-center justify-center relative overflow-hidden mb-6">
         {isManualMode ? (
-          <div className="w-full max-w-xs space-y-4 px-4 z-10">
+          <div className="w-full space-y-4 px-4 z-10">
             <h3 className="text-text-primary font-medium text-center">Ingreso Manual de DNI</h3>
             <input
               type="text"

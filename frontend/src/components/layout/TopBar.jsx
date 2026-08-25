@@ -36,7 +36,7 @@ export default function TopBar({ title, subtitle, showLive = false, showSearch =
               type="search"
               aria-label="Buscar socio"
               placeholder="Buscar socio"
-              className="bg-transparent text-sm text-text-primary outline-none w-48 appearance-none placeholder:text-text-tertiary"
+              className="bg-transparent text-sm text-text-primary outline-none w-32 lg:w-48 appearance-none placeholder:text-text-tertiary"
             />
           </div>
           {onScan && (
