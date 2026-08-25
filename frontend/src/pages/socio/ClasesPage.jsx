@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import MemberLayout from '../../layouts/MemberLayout'
 import Badge from '../../components/ui/Badge'
 import Button from '../../components/ui/Button'
+import FilterButton from '../../components/ui/FilterButton'
 import {
   DIAS_AGENDA,
   CATEGORIAS_CLASES,
@@ -155,14 +156,11 @@ export default function ClasesPage() {
                 {DIAS_AGENDA.map((dia) => {
                   const isSelected = dia.id === selectedDay
                   return (
-                    <button
+                    <FilterButton
                       key={dia.id}
+                      active={isSelected}
                       onClick={() => setSelectedDay(dia.id)}
-                      className={`flex flex-col items-center justify-center min-w-[50px] py-1.5 px-1 rounded-lg border transition-all ${
-                        isSelected
-                          ? 'bg-primary text-white border-primary shadow-sm'
-                          : 'bg-bg-surface text-text-secondary border-subtle hover:text-text-primary hover:bg-bg-raised'
-                      }`}
+                      className="flex flex-col items-center justify-center min-w-[50px] py-1.5 px-1"
                     >
                       <span className="text-[10px] font-medium uppercase tracking-tight">
                         {dia.diaNombre}
@@ -179,7 +177,7 @@ export default function ClasesPage() {
                           Hoy
                         </span>
                       )}
-                    </button>
+                    </FilterButton>
                   )
                 })}
               </div>
@@ -226,17 +224,14 @@ export default function ClasesPage() {
                   { id: 'manana', label: 'Mañana' },
                   { id: 'tarde', label: 'Tarde / Noche' },
                 ].map((t) => (
-                  <button
+                  <FilterButton
                     key={t.id}
+                    active={selectedTurno === t.id}
                     onClick={() => setSelectedTurno(t.id)}
-                    className={`px-2 py-1 rounded-md transition-all text-xs ${
-                      selectedTurno === t.id
-                        ? 'bg-bg-raised text-primary font-semibold border border-primary/30'
-                        : 'bg-bg-surface text-text-secondary border border-subtle hover:text-text-primary'
-                    }`}
+                    className="px-2 py-1 text-xs"
                   >
                     {t.label}
-                  </button>
+                  </FilterButton>
                 ))}
               </div>
             </div>
@@ -246,18 +241,15 @@ export default function ClasesPage() {
               {CATEGORIAS_CLASES.map((cat) => {
                 const isSelected = selectedCategory === cat.id
                 return (
-                  <button
+                  <FilterButton
                     key={cat.id}
+                    active={isSelected}
                     onClick={() => setSelectedCategory(cat.id)}
-                    className={`whitespace-nowrap px-2.5 py-1 rounded-full text-xs font-medium border flex items-center gap-1 transition-all ${
-                      isSelected
-                        ? 'bg-primary/15 border-primary text-primary font-semibold'
-                        : 'bg-bg-surface border-subtle text-text-secondary hover:text-text-primary'
-                    }`}
+                    className="whitespace-nowrap px-2.5 py-1 rounded-full text-xs font-medium flex items-center gap-1"
                   >
                     <span>{cat.icon}</span>
                     <span>{cat.label}</span>
-                  </button>
+                  </FilterButton>
                 )
               })}
             </div>

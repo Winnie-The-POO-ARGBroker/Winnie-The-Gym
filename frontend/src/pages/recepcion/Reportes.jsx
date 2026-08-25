@@ -1,5 +1,6 @@
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
+import FilterButton from '../../components/ui/FilterButton';
 import AppLayout from '../../components/layout/AppLayout';
 import { Download } from 'lucide-react';
 
@@ -21,16 +22,9 @@ export default function Reportes() {
 
         <div className="flex gap-2 mb-8">
           {tabs.map((tab, idx) => (
-            <button
-              key={tab}
-              className={`px-6 py-2 rounded-lg text-sm font-medium transition-colors ${
-                idx === 0
-                  ? 'bg-primary text-white'
-                  : 'bg-bg-surface text-text-secondary border border-subtle hover:bg-bg-raised'
-              }`}
-            >
+            <FilterButton key={tab} active={idx === 0} size="md">
               {tab}
-            </button>
+            </FilterButton>
           ))}
         </div>
 

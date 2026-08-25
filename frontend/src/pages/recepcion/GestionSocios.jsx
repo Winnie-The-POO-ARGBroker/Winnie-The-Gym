@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
+import Select from '../../components/ui/Select';
 import AppLayout from '../../components/layout/AppLayout';
 import { User, Mail, Phone, Calendar, CreditCard, FileText, Check } from 'lucide-react';
 
@@ -46,14 +47,11 @@ export default function GestionSocios() {
               <div className="grid grid-cols-3 gap-5 mb-5">
                 <Input label="DNI" placeholder="Ej. 30.111.222" icon={FileText} value={formData.dni} onChange={e => setFormData({...formData, dni: e.target.value})} />
                 <Input label="FECHA NACIMIENTO" placeholder="dd/mm/aaaa" icon={Calendar} />
-                <div className="w-full">
-                  <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">GÉNERO</label>
-                  <select className="w-full bg-bg-base border border-subtle rounded-lg text-text-primary focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary py-2.5 px-3 appearance-none">
-                    <option>Femenino</option>
-                    <option>Masculino</option>
-                    <option>Otro</option>
-                  </select>
-                </div>
+                <Select label="GÉNERO">
+                  <option>Femenino</option>
+                  <option>Masculino</option>
+                  <option>Otro</option>
+                </Select>
               </div>
               
               <div className="grid grid-cols-2 gap-5">
@@ -67,32 +65,23 @@ export default function GestionSocios() {
               <h2 className="text-lg font-semibold text-text-primary mb-6">Plan y pago</h2>
               
               <div className="grid grid-cols-2 gap-5 mb-5">
-                <div className="w-full">
-                  <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">PLAN</label>
-                  <select className="w-full bg-bg-base border border-subtle rounded-lg text-text-primary focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary py-2.5 px-3 appearance-none">
-                    <option>Premium · $ 12.000/mes</option>
-                    <option>Básico · $ 8.000/mes</option>
-                  </select>
-                </div>
-                <div className="w-full">
-                  <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">FORMA DE PAGO</label>
-                  <select className="w-full bg-bg-base border border-subtle rounded-lg text-text-primary focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary py-2.5 px-3 appearance-none">
-                    <option>Tarjeta de crédito</option>
-                    <option>Efectivo</option>
-                    <option>Transferencia</option>
-                  </select>
-                </div>
+                <Select label="PLAN">
+                  <option>Premium · $ 12.000/mes</option>
+                  <option>Básico · $ 8.000/mes</option>
+                </Select>
+                <Select label="FORMA DE PAGO">
+                  <option>Tarjeta de crédito</option>
+                  <option>Efectivo</option>
+                  <option>Transferencia</option>
+                </Select>
               </div>
               
               <div className="grid grid-cols-2 gap-5">
                 <Input label="FECHA DE INICIO" placeholder="01/06/2026" icon={Calendar} defaultValue="01/06/2026" />
-                <div className="w-full">
-                  <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">RENOVACIÓN</label>
-                  <select className="w-full bg-bg-base border border-subtle rounded-lg text-text-primary focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary py-2.5 px-3 appearance-none">
-                    <option>Automática mensual</option>
-                    <option>Manual</option>
-                  </select>
-                </div>
+                <Select label="RENOVACIÓN">
+                  <option>Automática mensual</option>
+                  <option>Manual</option>
+                </Select>
               </div>
             </Card>
 
