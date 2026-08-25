@@ -24,20 +24,31 @@ Versionado según [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
-## [0.5.0] — 2026-08-23
-**PR #25** · `feature/compat-recepcion-socio` → `develop` · @MagaBechis · @MrForii
+## [0.5.0] — 2026-08-25
+**Trabajo original:** PR #16 `feature/recepcion` · @Jimenna | PR #17 `feature/socio-credencial-qr` · @giannagiava
+**Unificación y revisión:** PR #25 `feature/compat-recepcion-socio` → `develop` · @MagaBechis · @MrForii
 
 ### Agregado
-- **Módulo socio:** `CredencialDigitalPage` con QR dinámico (refresh automático) y estado de membresía; `ClasesPage` con agenda, reservas, búsqueda y filtrado
-- **`MemberLayout`:** layout responsive con sidebar desktop (`md:`) y bottom tab nav mobile centrado (5 ítems, frame `sm:max-w-sm`)
-- **`AppBottomNav`:** bottom tab navigation por rol para administrador/recepcionista (mobile only, `md:hidden`)
-- **`ProtectedRoute`** con prop `roles` para guardia de rutas por rol
-- Mock de PII anonimizado en `socioMockData.js`
-- Integración unificada del módulo recepción y socio en una sola rama (reemplaza PRs #16 y #17)
 
-### Modificado
-- **Sidebar simplificado:** sin drawer, `hidden md:flex`, `NAV_ICON_MAP` compartido entre layouts
-- **Breakpoints corregidos** en todas las páginas y componentes: grids migrados a `lg:` donde el sidebar ocupa 240px en `md:`
+**Módulo Recepcionista** (PR #16 — @Jimenna)
+- Terminal de Acceso (`/recepcion/acceso`): escaneo QR y validación manual por DNI, estados visuales reactivos (verde/rojo/amarillo)
+- Monitor de Aforo (`/recepcion/aforo`): dashboard de ocupación con simulación de WebSocket y métricas en tiempo real
+- Gestión de Socios (`/recepcion/socios`): búsqueda, detalle y formulario de alta de socios
+- Reportes (`/recepcion/reportes`): métricas de ingresos, membresías activas, morosidad y asistencia
+- Fidelidad visual del 100% respecto a los mockups de Figma
+
+**Módulo Socio** (PR #17 — @giannagiava)
+- `CredencialDigitalPage` (`/socio/credencial`): QR dinámico firmado con SVG, auto-refresh cada 30 segundos, temporizador circular y vista fullscreen de alto contraste
+- `ClasesPage` (`/socio/clases`): agenda de clases con búsqueda, filtrado por categoría, reserva y cancelación
+- Layout mobile-first con tema oscuro alineado a design tokens
+
+**Unificación y correcciones** (PR #25 — @MagaBechis · @MrForii)
+- `MemberLayout`: sidebar desktop (`md:`) + bottom tab nav mobile centrado (frame `sm:max-w-sm`)
+- `AppBottomNav`: bottom tab navigation por rol para administrador/recepcionista (mobile only, `md:hidden`)
+- `ProtectedRoute` con prop `roles` para guardia de rutas por rol
+- Breakpoints corregidos en todas las páginas y componentes: grids migrados a `lg:` donde el sidebar ocupa 240px en `md:`
+- Mock de PII anonimizado en `socioMockData.js`
+- Sidebar sin drawer: `hidden md:flex`, `NAV_ICON_MAP` compartido entre layouts
 
 ### Eliminado
 - `utils.js` — sin uso
