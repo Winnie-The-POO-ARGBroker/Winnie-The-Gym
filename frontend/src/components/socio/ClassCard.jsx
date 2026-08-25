@@ -72,7 +72,7 @@ export default function ClassCard({ clase, variant, onBook, onCancel }) {
               : 'success'
           }
         >
-          {clase.categoria.toUpperCase()}
+          {clase.categoria?.toUpperCase() ?? '—'}
         </Badge>
       </div>
 
@@ -90,7 +90,7 @@ export default function ClassCard({ clase, variant, onBook, onCancel }) {
       <div className="pt-2 border-t border-subtle flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 rounded-full bg-bg-raised border border-strong flex items-center justify-center text-[10px] font-bold text-text-primary">
-            {clase.instructor.charAt(0)}
+            {clase.instructor?.charAt(0) ?? '?'}
           </div>
           <span className="text-xs font-medium text-text-primary">
             {clase.instructor}

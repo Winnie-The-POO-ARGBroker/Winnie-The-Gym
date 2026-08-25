@@ -48,15 +48,15 @@ export default function App() {
         <Route path="/perfil" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
 
         {/* Recepcion routes */}
-        <Route path="/recepcion/acceso" element={<ProtectedRoute><AccesoTerminal /></ProtectedRoute>} />
-        <Route path="/recepcion/aforo" element={<ProtectedRoute><AforoMonitor /></ProtectedRoute>} />
-        <Route path="/recepcion/socios" element={<ProtectedRoute><GestionSocios /></ProtectedRoute>} />
-        <Route path="/recepcion/reportes" element={<ProtectedRoute><Reportes /></ProtectedRoute>} />
+        <Route path="/recepcion/acceso" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><AccesoTerminal /></ProtectedRoute>} />
+        <Route path="/recepcion/aforo" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><AforoMonitor /></ProtectedRoute>} />
+        <Route path="/recepcion/socios" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><GestionSocios /></ProtectedRoute>} />
+        <Route path="/recepcion/reportes" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><Reportes /></ProtectedRoute>} />
 
         {/* Socio routes — mobile first */}
-        <Route path="/socio/credencial" element={<ProtectedRoute><CredencialDigitalPage /></ProtectedRoute>} />
-        <Route path="/socio/clases" element={<ProtectedRoute><ClasesPage /></ProtectedRoute>} />
-        <Route path="/socio" element={<ProtectedRoute><Navigate to="/socio/credencial" replace /></ProtectedRoute>} />
+        <Route path="/socio/credencial" element={<ProtectedRoute roles={['administrador', 'socio']}><CredencialDigitalPage /></ProtectedRoute>} />
+        <Route path="/socio/clases" element={<ProtectedRoute roles={['administrador', 'socio']}><ClasesPage /></ProtectedRoute>} />
+        <Route path="/socio" element={<ProtectedRoute roles={['administrador', 'socio']}><Navigate to="/socio/credencial" replace /></ProtectedRoute>} />
 
         {/* Sidebar routes — protected, coming soon */}
         {COMING_SOON_PATHS.map((path) => (
