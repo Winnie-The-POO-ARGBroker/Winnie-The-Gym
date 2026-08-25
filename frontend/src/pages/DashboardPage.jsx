@@ -9,6 +9,7 @@ import AlertList from '../components/dashboard/AlertList'
 import ClassCapacityList from '../components/dashboard/ClassCapacityList'
 import Badge from '../components/ui/Badge'
 import Button from '../components/ui/Button'
+import FilterButton from '../components/ui/FilterButton'
 
 const MOCK_MOVEMENTS = [
   { id: 1, name: 'Carlos Pérez', membership: 'Mensual', time: '09:24', type: 'entry' },
@@ -58,6 +59,7 @@ export default function DashboardPage() {
         title="Dashboard"
         subtitle={`Resumen del día · ${displayName}`}
         showLive
+        showSearch={true}
         onScan={() => navigate('/recepcion/acceso')}
       />
 
@@ -74,40 +76,31 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex gap-2">
-              <button
+              <FilterButton
                 onClick={() => setCurrentRole('administrador')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${currentRole === 'administrador'
-                  ? 'bg-orange-500 text-white shadow-sm'
-                  : 'bg-bg-raised text-text-secondary hover:text-text-primary'
-                  }`}
+                active={currentRole === 'administrador'}
               >
                 Administrador
-              </button>
-              <button
+              </FilterButton>
+              <FilterButton
                 onClick={() => setCurrentRole('recepcionista')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${currentRole === 'recepcionista'
-                  ? 'bg-orange-500 text-white shadow-sm'
-                  : 'bg-bg-raised text-text-secondary hover:text-text-primary'
-                  }`}
+                active={currentRole === 'recepcionista'}
               >
                 Recepcionista
-              </button>
-              <button
+              </FilterButton>
+              <FilterButton
                 onClick={() => setCurrentRole('socio')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${currentRole === 'socio'
-                  ? 'bg-orange-500 text-white shadow-sm'
-                  : 'bg-bg-raised text-text-secondary hover:text-text-primary'
-                  }`}
+                active={currentRole === 'socio'}
               >
                 Socio
-              </button>
+              </FilterButton>
             </div>
           </div>
         )}
 
         {/* 2. VISTA ADMINISTRADOR */}
         {currentRole === 'administrador' && (
-          <div className="grid gap-6" style={{ gridTemplateColumns: '1fr minmax(0, 360px)' }}>
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
             <div className="flex flex-col gap-6">
               <AforoCard current={150} max={200} entries={232} exits={76} />
               <MovementList movements={MOCK_MOVEMENTS} />
@@ -123,7 +116,7 @@ export default function DashboardPage() {
         {/* 3. VISTA RECEPCIONISTA */}
         {currentRole === 'recepcionista' && (
           <div className="flex flex-col gap-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <div className="p-5 rounded-2xl bg-bg-surface border border-subtle flex flex-col justify-between gap-4 shadow-sm">
                 <div>
                   <h3 className="font-bold text-lg text-text-primary">Escanear Ingreso</h3>
@@ -161,7 +154,7 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="grid gap-6" style={{ gridTemplateColumns: '1fr minmax(0, 360px)' }}>
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
               <AforoCard current={150} max={200} entries={232} exits={76} />
               <MovementList movements={MOCK_MOVEMENTS} />
             </div>
@@ -170,7 +163,7 @@ export default function DashboardPage() {
 
         {/* 4. VISTA SOCIO */}
         {currentRole === 'socio' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl">
             <div className="p-6 rounded-2xl bg-bg-surface border border-subtle flex flex-col justify-between gap-6 shadow-sm">
               <div className="flex items-start justify-between">
                 <div>
@@ -196,7 +189,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="text-right">
                   <p className="text-xs text-text-secondary">Asistencias este mes</p>
-                  <p className="text-sm font-bold text-orange-500">
+                  <p className="text-sm font-bold text-primary">
                     {MOCK_SOCIO_DATA.monthlyAttendance} días
                   </p>
                 </div>
@@ -232,7 +225,7 @@ export default function DashboardPage() {
                         <p className="text-sm font-bold text-text-primary">{clase.name}</p>
                         <p className="text-xs text-text-secondary">{clase.instructor}</p>
                       </div>
-                      <span className="text-xs font-semibold text-orange-500 bg-orange-500/10 px-2 py-1 rounded-md">
+                      <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-1 rounded-md">
                         {clase.time}
                       </span>
                     </div>

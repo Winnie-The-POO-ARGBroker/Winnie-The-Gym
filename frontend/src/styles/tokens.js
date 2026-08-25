@@ -14,7 +14,7 @@ export const colors = {
     200: '#FFBC9F',
     300: '#FF9871',
     400: '#FF7349',
-    500: '#FF5722', // primary — CTAs, active nav, logo bg
+    500: '#ff5a36', // primary — CTAs, active nav, logo bg
     600: '#E63E0F',
     700: '#B82E08',
     800: '#8A2106',

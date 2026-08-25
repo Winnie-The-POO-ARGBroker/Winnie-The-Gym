@@ -4,7 +4,7 @@ export default function WinnieLogo({ size = 'md' }) {
   return (
     <div className="flex items-center gap-2">
       <div
-        className="flex items-center justify-center rounded-xl bg-orange-500"
+        className="flex items-center justify-center rounded-xl bg-primary"
         style={{ width: iconSize, height: iconSize }}
       >
         <svg width={iconSize * 0.6} height={iconSize * 0.6} viewBox="0 0 24 24" fill="white">
