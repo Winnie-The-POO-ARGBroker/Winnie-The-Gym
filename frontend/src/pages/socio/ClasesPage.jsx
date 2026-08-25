@@ -3,7 +3,9 @@ import { toast } from 'sonner'
 import MemberLayout from '../../layouts/MemberLayout'
 import Badge from '../../components/ui/Badge'
 import Button from '../../components/ui/Button'
+import Card from '../../components/ui/Card'
 import FilterButton from '../../components/ui/FilterButton'
+import ClassCard from '../../components/socio/ClassCard'
 import {
   DIAS_AGENDA,
   CATEGORIAS_CLASES,
@@ -111,23 +113,17 @@ export default function ClasesPage() {
 
         {/* SELECTOR DE PESTAÑAS */}
         <div className="w-full bg-bg-surface rounded-lg p-1 flex items-center justify-between gap-1 select-none border border-subtle">
-          <button
+          <FilterButton
+            active={activeTab === 'catalogo'}
             onClick={() => setActiveTab('catalogo')}
-            className={`flex-1 py-1.5 rounded-md flex items-center justify-center text-xs transition-all ${
-              activeTab === 'catalogo'
-                ? 'bg-primary text-white font-semibold shadow-sm'
-                : 'text-text-secondary font-medium hover:text-text-primary'
-            }`}
+            className="flex-1 py-1.5 rounded-md flex items-center justify-center text-xs"
           >
             Todas las Clases
-          </button>
-          <button
+          </FilterButton>
+          <FilterButton
+            active={activeTab === 'mis_reservas'}
             onClick={() => setActiveTab('mis_reservas')}
-            className={`flex-1 py-1.5 rounded-md flex items-center justify-center gap-1.5 text-xs transition-all ${
-              activeTab === 'mis_reservas'
-                ? 'bg-primary text-white font-semibold shadow-sm'
-                : 'text-text-secondary font-medium hover:text-text-primary'
-            }`}
+            className="flex-1 py-1.5 rounded-md flex items-center justify-center gap-1.5 text-xs"
           >
             <span>Mis Reservas</span>
             {myBookings.length > 0 && (
@@ -141,7 +137,7 @@ export default function ClasesPage() {
                 {myBookings.length}
               </span>
             )}
-          </button>
+          </FilterButton>
         </div>
 
         {/* VISTA 1: CATÁLOGO CON FILTROS */}
@@ -267,7 +263,7 @@ export default function ClasesPage() {
             {/* LISTA DE CLASES */}
             <div className="flex flex-col gap-2.5">
               {filteredClasses.length === 0 ? (
-                <div className="p-6 rounded-lg bg-bg-surface border border-subtle text-center flex flex-col items-center justify-center gap-2">
+                <Card className="p-6 text-center flex flex-col items-center justify-center gap-2">
                   <span className="text-2xl">🗓️</span>
                   <h4 className="text-xs font-bold text-text-primary">
                     No hay clases con estos filtros
@@ -275,125 +271,17 @@ export default function ClasesPage() {
                   <p className="text-[11px] text-text-secondary">
                     Probá cambiando de disciplina o seleccionando otro día.
                   </p>
-                </div>
+                </Card>
               ) : (
-                filteredClasses.map((clase) => {
-                  const spotsLeft = clase.cuposTotales - clase.cuposReservados
-                  const isFull = spotsLeft <= 0
-                  const occupancyRatio = clase.cuposReservados / clase.cuposTotales
-
-                  return (
-                    <div
-                      key={clase.id}
-                      className={`rounded-lg bg-bg-surface border p-3.5 flex flex-col gap-2.5 shadow-sm transition-all ${
-                        clase.isBooked
-                          ? 'border-primary/60 ring-1 ring-primary/20'
-                          : 'border-subtle hover:border-strong'
-                      }`}
-                    >
-                      {/* Fila Horario y Categoría */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-sm font-bold text-text-primary font-mono">
-                            {clase.horaInicio} - {clase.horaFin}
-                          </span>
-                          <span className="text-[11px] text-text-tertiary font-mono">
-                            ({clase.duracionMin}m)
-                          </span>
-                        </div>
-
-                        <Badge
-                          variant={
-                            clase.categoria === 'crossfit' || clase.categoria === 'boxeo'
-                              ? 'danger'
-                              : clase.categoria === 'spinning' || clase.categoria === 'hiit'
-                              ? 'warning'
-                              : 'success'
-                          }
-                        >
-                          {clase.categoria.toUpperCase()}
-                        </Badge>
-                      </div>
-
-                      {/* Título de Clase y Sala */}
-                      <div>
-                        <h3 className="text-sm font-bold text-text-primary leading-snug">
-                          {clase.nombre}
-                        </h3>
-                        <p className="text-xs text-text-secondary mt-0.5">
-                          {clase.sala} • Intensidad {clase.intensidad}
-                        </p>
-                      </div>
-
-                      {/* Instructor y Cupos */}
-                      <div className="pt-2 border-t border-subtle flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-bg-raised border border-strong flex items-center justify-center text-[10px] font-bold text-text-primary">
-                            {clase.instructor.charAt(0)}
-                          </div>
-                          <span className="text-xs font-medium text-text-primary">
-                            {clase.instructor}
-                          </span>
-                        </div>
-
-                        {/* Aforo / Cupos */}
-                        <div className="flex flex-col items-end">
-                          <span className="text-xs font-medium text-text-secondary">
-                            {isFull ? (
-                              <strong className="text-error-500">Cupo Completo</strong>
-                            ) : (
-                              <span>
-                                <strong className="text-text-primary">{spotsLeft}</strong> libres
-                              </span>
-                            )}
-                          </span>
-                          <div className="w-16 h-1 bg-bg-raised rounded-full overflow-hidden mt-1">
-                            <div
-                              className={`h-full rounded-full ${
-                                isFull
-                                  ? 'bg-error-500'
-                                  : occupancyRatio > 0.75
-                                  ? 'bg-warning-500'
-                                  : 'bg-success-500'
-                              }`}
-                              style={{ width: `${occupancyRatio * 100}%` }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Acción de Reserva */}
-                      <div className="pt-2 border-t border-subtle flex items-center justify-between">
-                        {clase.isBooked ? (
-                          <>
-                            <div className="flex items-center gap-1 text-xs text-success-500 font-semibold">
-                              <span>✓ Reservada</span>
-                            </div>
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => handleCancelBooking(clase.id)}
-                              className="text-xs text-error-500 hover:text-error-600 hover:bg-error-500/10 border-error-500/30 py-1"
-                            >
-                              Cancelar
-                            </Button>
-                          </>
-                        ) : (
-                          <Button
-                            variant="primary"
-                            size="sm"
-                            disabled={isFull}
-                            onClick={() => handleBookClass(clase.id)}
-                            className="w-full py-1.5 text-xs font-bold shadow-sm"
-                          >
-                            {isFull ? 'Sin cupos disponibles' : 'Reservar mi cupo'}
-                          </Button>
-                        )}
-                      </div>
-
-                    </div>
-                  )
-                })
+                filteredClasses.map((clase) => (
+                  <ClassCard
+                    key={clase.id}
+                    clase={clase}
+                    variant="catalog"
+                    onBook={handleBookClass}
+                    onCancel={handleCancelBooking}
+                  />
+                ))
               )}
             </div>
           </>
@@ -407,7 +295,7 @@ export default function ClasesPage() {
             </span>
 
             {myBookings.length === 0 ? (
-              <div className="p-6 rounded-lg bg-bg-surface border border-subtle text-center flex flex-col items-center justify-center gap-2">
+              <Card className="p-6 text-center flex flex-col items-center justify-center gap-2">
                 <span className="text-3xl">🎫</span>
                 <h4 className="text-xs font-bold text-text-primary">
                   No tenés reservas activas
@@ -423,43 +311,16 @@ export default function ClasesPage() {
                 >
                   Ver Catálogo
                 </Button>
-              </div>
+              </Card>
             ) : (
               myBookings.map((clase) => (
-                <div
+                <ClassCard
                   key={clase.id}
-                  className="rounded-lg bg-bg-surface border border-primary/40 p-3.5 flex flex-col gap-2 shadow-sm"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-primary uppercase">
-                      {clase.fecha} • {clase.horaInicio}h
-                    </span>
-                    <Badge variant="live">Confirmada</Badge>
-                  </div>
-
-                  <div>
-                    <h3 className="text-sm font-bold text-text-primary">
-                      {clase.nombre}
-                    </h3>
-                    <p className="text-xs text-text-secondary mt-0.5">
-                      {clase.sala} • {clase.instructor}
-                    </p>
-                  </div>
-
-                  <div className="pt-2 border-t border-subtle flex items-center justify-between">
-                    <span className="text-[10px] text-text-tertiary">
-                      Cancelación permitida hasta 2h antes
-                    </span>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => handleCancelBooking(clase.id)}
-                      className="text-xs text-error-500 hover:text-error-600 hover:bg-error-500/10 border-error-500/30 py-1"
-                    >
-                      Cancelar
-                    </Button>
-                  </div>
-                </div>
+                  clase={clase}
+                  variant="booked"
+                  onBook={handleBookClass}
+                  onCancel={handleCancelBooking}
+                />
               ))
             )}
           </div>

@@ -56,7 +56,7 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="flex flex-col h-full flex-shrink-0 bg-bg-surface border-r border-subtle" style={{ width: 240 }}>
+    <aside className="hidden md:flex flex-col h-full w-60 flex-shrink-0 bg-bg-surface border-r border-subtle">
       {/* Logo */}
       <div className="px-5 py-6">
         <WinnieLogo size="sm" />
