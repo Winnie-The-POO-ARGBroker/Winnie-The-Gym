@@ -1,5 +1,6 @@
 import datetime
 
+from django.db import transaction
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
@@ -73,18 +74,18 @@ class MeRenewView(APIView):
 
         socio = request.user.socio
 
-        # Expire any existing active memberships
-        Membresia.objects.filter(socio=socio, estado='activa').update(estado='vencida')
+        with transaction.atomic():
+            Membresia.objects.filter(socio=socio, estado='activa').update(estado='vencida')
 
-        today = datetime.date.today()
-        fecha_fin = today + datetime.timedelta(days=plan.duracion_dias)
-        membresia = Membresia.objects.create(
-            socio=socio,
-            plan=plan,
-            fecha_inicio=today,
-            fecha_fin=fecha_fin,
-            estado='activa',
-        )
+            today = datetime.date.today()
+            fecha_fin = today + datetime.timedelta(days=plan.duracion_dias)
+            membresia = Membresia.objects.create(
+                socio=socio,
+                plan=plan,
+                fecha_inicio=today,
+                fecha_fin=fecha_fin,
+                estado='activa',
+            )
 
         serializer = MembresiaDetailSerializer(membresia)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
