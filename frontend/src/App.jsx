@@ -8,6 +8,8 @@ import DashboardPage from './pages/DashboardPage'
 import ProfilePage from './pages/ProfilePage'
 import NotFoundPage from './pages/NotFoundPage'
 import ComingSoonPage from './pages/ComingSoonPage'
+import CredencialDigitalPage from './pages/socio/CredencialDigitalPage'
+import ClasesPage from './pages/socio/ClasesPage'
 import ProtectedRoute from './components/ProtectedRoute'
 import PublicRoute from './components/PublicRoute'
 import useAuthStore from './stores/authStore'
@@ -35,33 +37,38 @@ export default function App() {
 
   return (
     <>
-    <Toaster theme={theme} position="top-right" richColors />
-    <Routes>
-      {/* Public only — redirect to /dashboard if already logged in */}
-      <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
-      <Route path="/completar-perfil" element={<CompleteProfileRoute />} />
+      <Toaster theme={theme} position="top-right" richColors />
+      <Routes>
+        {/* Public only — redirect to /dashboard if already logged in */}
+        <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+        <Route path="/completar-perfil" element={<CompleteProfileRoute />} />
 
-      {/* Protected */}
-      <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-      <Route path="/perfil" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+        {/* Protected */}
+        <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+        <Route path="/perfil" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
 
-      {/* Recepcion routes */}
-      <Route path="/recepcion/acceso" element={<ProtectedRoute><AccesoTerminal /></ProtectedRoute>} />
-      <Route path="/recepcion/aforo" element={<ProtectedRoute><AforoMonitor /></ProtectedRoute>} />
-      <Route path="/recepcion/socios" element={<ProtectedRoute><GestionSocios /></ProtectedRoute>} />
-      <Route path="/recepcion/reportes" element={<ProtectedRoute><Reportes /></ProtectedRoute>} />
+        {/* Recepcion routes */}
+        <Route path="/recepcion/acceso" element={<ProtectedRoute><AccesoTerminal /></ProtectedRoute>} />
+        <Route path="/recepcion/aforo" element={<ProtectedRoute><AforoMonitor /></ProtectedRoute>} />
+        <Route path="/recepcion/socios" element={<ProtectedRoute><GestionSocios /></ProtectedRoute>} />
+        <Route path="/recepcion/reportes" element={<ProtectedRoute><Reportes /></ProtectedRoute>} />
 
-      {/* Sidebar routes — protected, coming soon */}
-      {COMING_SOON_PATHS.map((path) => (
-        <Route key={path} path={path} element={<ProtectedRoute><ComingSoonPage /></ProtectedRoute>} />
-      ))}
+        {/* Socio routes — mobile first */}
+        <Route path="/socio/credencial" element={<ProtectedRoute><CredencialDigitalPage /></ProtectedRoute>} />
+        <Route path="/socio/clases" element={<ProtectedRoute><ClasesPage /></ProtectedRoute>} />
+        <Route path="/socio" element={<ProtectedRoute><Navigate to="/socio/credencial" replace /></ProtectedRoute>} />
 
-      {/* Root → dashboard if logged in, login if not */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        {/* Sidebar routes — protected, coming soon */}
+        {COMING_SOON_PATHS.map((path) => (
+          <Route key={path} path={path} element={<ProtectedRoute><ComingSoonPage /></ProtectedRoute>} />
+        ))}
 
-      {/* 404 */}
-      <Route path="*" element={<NotFoundPage />} />
-    </Routes>
+        {/* Root → dashboard if logged in, login if not */}
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+        {/* 404 */}
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
     </>
   )
 }
