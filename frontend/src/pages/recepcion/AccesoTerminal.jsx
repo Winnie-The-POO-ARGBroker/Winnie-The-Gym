@@ -48,7 +48,7 @@ export default function AccesoTerminal() {
                     value={manualDni}
                     onChange={(e) => setManualDni(e.target.value)}
                     placeholder="Ej. 30111222 (termina en 2 da error)" 
-                    className="w-full bg-bg-raised border border-orange-500 rounded-lg text-text-primary placeholder:text-text-tertiary px-4 py-3 text-center text-xl font-bold tracking-widest focus:outline-none focus:ring-1 focus:ring-orange-500" 
+                    className="w-full bg-bg-raised border border-primary rounded-lg text-text-primary placeholder:text-text-tertiary px-4 py-3 text-center text-xl font-bold tracking-widest focus:outline-none focus:ring-1 focus:ring-primary" 
                   />
                   <Button variant="primary" className="w-full" onClick={() => {
                     if (!manualDni) return;
@@ -66,11 +66,11 @@ export default function AccesoTerminal() {
                 <>
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="relative w-64 h-64">
-                      <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-orange-500"></div>
-                      <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-orange-500"></div>
-                      <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-orange-500"></div>
-                      <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-orange-500"></div>
-                      <div className="absolute inset-0 flex items-center justify-center text-orange-500 opacity-50">
+                      <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-primary"></div>
+                      <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-primary"></div>
+                      <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-primary"></div>
+                      <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-primary"></div>
+                      <div className="absolute inset-0 flex items-center justify-center text-primary opacity-50">
                         <QrCode className="w-24 h-24" />
                       </div>
                     </div>
@@ -89,12 +89,6 @@ export default function AccesoTerminal() {
               </Button>
             </div>
             
-            {/* Debug controls for demo */}
-            <div className="mt-4 flex gap-2 justify-center">
-               <button onClick={() => simulateScan('success')} className="w-3 h-3 rounded-full bg-success-500"></button>
-               <button onClick={() => simulateScan('error')} className="w-3 h-3 rounded-full bg-error-500"></button>
-               <button onClick={() => simulateScan('warning')} className="w-3 h-3 rounded-full bg-warning-500"></button>
-            </div>
           </Card>
 
           {/* Right Side - Validation Result */}

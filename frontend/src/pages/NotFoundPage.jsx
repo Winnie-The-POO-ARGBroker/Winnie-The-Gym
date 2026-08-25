@@ -10,7 +10,7 @@ export default function NotFoundPage() {
       <WinnieLogo size="md" />
 
       <div className="flex flex-col gap-3">
-        <p className="text-8xl font-black text-orange-500" style={{ letterSpacing: '-4px' }}>
+        <p className="text-8xl font-black text-primary" style={{ letterSpacing: '-4px' }}>
           404
         </p>
         <h1 className="text-2xl font-bold text-text-primary">Página no encontrada</h1>

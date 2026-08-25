@@ -77,7 +77,7 @@ export default function DashboardPage() {
               <button
                 onClick={() => setCurrentRole('administrador')}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${currentRole === 'administrador'
-                  ? 'bg-orange-500 text-white shadow-sm'
+                  ? 'bg-primary text-white shadow-sm'
                   : 'bg-bg-raised text-text-secondary hover:text-text-primary'
                   }`}
               >
@@ -86,7 +86,7 @@ export default function DashboardPage() {
               <button
                 onClick={() => setCurrentRole('recepcionista')}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${currentRole === 'recepcionista'
-                  ? 'bg-orange-500 text-white shadow-sm'
+                  ? 'bg-primary text-white shadow-sm'
                   : 'bg-bg-raised text-text-secondary hover:text-text-primary'
                   }`}
               >
@@ -95,7 +95,7 @@ export default function DashboardPage() {
               <button
                 onClick={() => setCurrentRole('socio')}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${currentRole === 'socio'
-                  ? 'bg-orange-500 text-white shadow-sm'
+                  ? 'bg-primary text-white shadow-sm'
                   : 'bg-bg-raised text-text-secondary hover:text-text-primary'
                   }`}
               >
@@ -196,7 +196,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="text-right">
                   <p className="text-xs text-text-secondary">Asistencias este mes</p>
-                  <p className="text-sm font-bold text-orange-500">
+                  <p className="text-sm font-bold text-primary">
                     {MOCK_SOCIO_DATA.monthlyAttendance} días
                   </p>
                 </div>
@@ -232,7 +232,7 @@ export default function DashboardPage() {
                         <p className="text-sm font-bold text-text-primary">{clase.name}</p>
                         <p className="text-xs text-text-secondary">{clase.instructor}</p>
                       </div>
-                      <span className="text-xs font-semibold text-orange-500 bg-orange-500/10 px-2 py-1 rounded-md">
+                      <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-1 rounded-md">
                         {clase.time}
                       </span>
                     </div>

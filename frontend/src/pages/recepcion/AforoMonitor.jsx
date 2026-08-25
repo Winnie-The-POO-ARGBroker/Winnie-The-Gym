@@ -64,7 +64,7 @@ export default function AforoMonitor() {
           
           <div className="text-center z-10">
             <div className="flex items-baseline justify-center gap-2">
-              <span className={`text-8xl font-black tracking-tighter ${isHighCapacity ? 'text-orange-500' : 'text-text-primary'}`}>
+              <span className={`text-8xl font-black tracking-tighter ${isHighCapacity ? 'text-primary' : 'text-text-primary'}`}>
                 {aforo}
               </span>
               <span className="text-3xl text-text-tertiary font-bold">/ {maxAforo}</span>
@@ -77,7 +77,7 @@ export default function AforoMonitor() {
           {/* Progress bar background */}
           <div className="absolute bottom-0 left-0 right-0 h-2 bg-bg-raised">
             <div 
-              className={`h-full transition-all duration-1000 ${isHighCapacity ? 'bg-orange-500' : 'bg-success-500'}`}
+              className={`h-full transition-all duration-1000 ${isHighCapacity ? 'bg-primary' : 'bg-success-500'}`}
               style={{ width: `${aforoPercentage}%` }}
             />
           </div>
@@ -121,7 +121,7 @@ export default function AforoMonitor() {
         </Card>
         <Card className="p-4">
           <p className="text-xs text-text-secondary font-semibold mb-1 uppercase">Egresos (Última hora)</p>
-          <p className="text-2xl font-bold text-orange-500">-23</p>
+          <p className="text-2xl font-bold text-primary">-23</p>
         </Card>
       </div>
       </div>

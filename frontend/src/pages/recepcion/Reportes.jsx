@@ -25,7 +25,7 @@ export default function Reportes() {
               key={tab}
               className={`px-6 py-2 rounded-lg text-sm font-medium transition-colors ${
                 idx === 0
-                  ? 'bg-orange-500 text-white'
+                  ? 'bg-primary text-white'
                   : 'bg-bg-surface text-text-secondary border border-subtle hover:bg-bg-raised'
               }`}
             >

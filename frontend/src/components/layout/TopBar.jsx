@@ -37,7 +37,7 @@ export default function TopBar({ title, subtitle, showLive = false, onScan }) {
         {onScan && (
           <button
             onClick={onScan}
-            className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90 bg-orange-500"
+            className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90 bg-primary"
           >
             Escanear QR
           </button>

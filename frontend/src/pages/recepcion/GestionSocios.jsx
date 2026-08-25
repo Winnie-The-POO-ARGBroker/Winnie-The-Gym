@@ -35,7 +35,7 @@ export default function GestionSocios() {
           <div className="col-span-2 space-y-6 overflow-y-auto pr-4 custom-scrollbar">
             
             {/* Datos Personales */}
-            <Card className="p-6 border-l-2 border-l-orange-500">
+            <Card className="p-6 border-l-2 border-l-primary">
               <h2 className="text-lg font-semibold text-text-primary mb-6">Datos personales</h2>
               
               <div className="grid grid-cols-2 gap-5 mb-5">
@@ -48,7 +48,7 @@ export default function GestionSocios() {
                 <Input label="FECHA NACIMIENTO" placeholder="dd/mm/aaaa" icon={Calendar} />
                 <div className="w-full">
                   <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">GÉNERO</label>
-                  <select className="w-full bg-bg-base border border-subtle rounded-lg text-text-primary focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500 py-2.5 px-3 appearance-none">
+                  <select className="w-full bg-bg-base border border-subtle rounded-lg text-text-primary focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary py-2.5 px-3 appearance-none">
                     <option>Femenino</option>
                     <option>Masculino</option>
                     <option>Otro</option>
@@ -69,14 +69,14 @@ export default function GestionSocios() {
               <div className="grid grid-cols-2 gap-5 mb-5">
                 <div className="w-full">
                   <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">PLAN</label>
-                  <select className="w-full bg-bg-base border border-subtle rounded-lg text-text-primary focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500 py-2.5 px-3 appearance-none">
+                  <select className="w-full bg-bg-base border border-subtle rounded-lg text-text-primary focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary py-2.5 px-3 appearance-none">
                     <option>Premium · $ 12.000/mes</option>
                     <option>Básico · $ 8.000/mes</option>
                   </select>
                 </div>
                 <div className="w-full">
                   <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">FORMA DE PAGO</label>
-                  <select className="w-full bg-bg-base border border-subtle rounded-lg text-text-primary focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500 py-2.5 px-3 appearance-none">
+                  <select className="w-full bg-bg-base border border-subtle rounded-lg text-text-primary focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary py-2.5 px-3 appearance-none">
                     <option>Tarjeta de crédito</option>
                     <option>Efectivo</option>
                     <option>Transferencia</option>
@@ -88,7 +88,7 @@ export default function GestionSocios() {
                 <Input label="FECHA DE INICIO" placeholder="01/06/2026" icon={Calendar} defaultValue="01/06/2026" />
                 <div className="w-full">
                   <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">RENOVACIÓN</label>
-                  <select className="w-full bg-bg-base border border-subtle rounded-lg text-text-primary focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500 py-2.5 px-3 appearance-none">
+                  <select className="w-full bg-bg-base border border-subtle rounded-lg text-text-primary focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary py-2.5 px-3 appearance-none">
                     <option>Automática mensual</option>
                     <option>Manual</option>
                   </select>
@@ -113,7 +113,7 @@ export default function GestionSocios() {
                     <input
                       type="file"
                       accept=".pdf,image/*"
-                      className="w-full bg-bg-base border border-subtle rounded-lg text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500 transition-colors py-2 pl-10 pr-3 file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-bg-surface file:text-text-primary hover:file:bg-bg-raised cursor-pointer"
+                      className="w-full bg-bg-base border border-subtle rounded-lg text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-colors py-2 pl-10 pr-3 file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-bg-surface file:text-text-primary hover:file:bg-bg-raised cursor-pointer"
                     />
                   </div>
                 </div>
@@ -166,7 +166,7 @@ export default function GestionSocios() {
               </Button>
               
               <p className="text-xs text-text-secondary text-center flex items-start gap-1">
-                <span className="text-orange-500 font-bold mt-0.5">*</span>
+                <span className="text-primary font-bold mt-0.5">*</span>
                 Al crear se genera el QR de acceso y se envía al email del socio.
               </p>
             </Card>
