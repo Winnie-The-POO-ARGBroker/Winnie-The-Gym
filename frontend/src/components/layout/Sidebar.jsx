@@ -1,19 +1,32 @@
 import { useState } from 'react'
 import { useLocation, useNavigate, NavLink } from 'react-router-dom'
-import { LayoutDashboard, Users, CreditCard, MonitorPlay, LineChart, Settings, LogOut } from 'lucide-react'
+import { LayoutDashboard, Users, CreditCard, MonitorPlay, LineChart, Settings, LogOut, ScanLine, Activity } from 'lucide-react'
 import useAuthStore from '../../stores/authStore'
 import { useThemeStore } from '../../stores/themeStore'
 import WinnieLogo from '../ui/WinnieLogo'
 import Avatar from '../ui/Avatar'
 
-const NAV_ITEMS = [
-  { label: 'Dashboard', path: '/dashboard', icon: 'chart' },
-  { label: 'Socios', path: '/socios', icon: 'people' },
-  { label: 'Membresias', path: '/membresias', icon: 'card' },
-  { label: 'Clases', path: '/clases', icon: 'monitor' },
-  { label: 'Reportes', path: '/reportes', icon: 'chart-line' },
-  { label: 'Configuracion', path: '/configuracion', icon: 'gear' },
-]
+const NAV_BY_ROLE = {
+  administrador: [
+    { label: 'Dashboard',      path: '/dashboard',     icon: 'chart' },
+    { label: 'Socios',         path: '/socios',         icon: 'people' },
+    { label: 'Membresias',     path: '/membresias',     icon: 'card' },
+    { label: 'Clases',         path: '/clases',         icon: 'monitor' },
+    { label: 'Reportes',       path: '/reportes',       icon: 'chart-line' },
+    { label: 'Configuracion',  path: '/configuracion',  icon: 'gear' },
+  ],
+  recepcionista: [
+    { label: 'Dashboard',      path: '/dashboard',          icon: 'chart' },
+    { label: 'Acceso',         path: '/recepcion/acceso',   icon: 'scan' },
+    { label: 'Aforo',          path: '/recepcion/aforo',    icon: 'activity' },
+    { label: 'Socios',         path: '/recepcion/socios',   icon: 'people' },
+    { label: 'Reportes',       path: '/recepcion/reportes', icon: 'chart-line' },
+  ],
+  socio: [
+    { label: 'Mi Credencial',  path: '/socio/credencial',  icon: 'card' },
+    { label: 'Clases',         path: '/socio/clases',       icon: 'monitor' },
+  ],
+}
 
 export default function Sidebar() {
   const location = useLocation()
@@ -27,14 +40,7 @@ export default function Sidebar() {
     : user?.email ?? 'Usuario'
   const rol = user?.rol ?? 'administrador'
 
-  const currentNavItems = NAV_ITEMS.map(item => {
-    // Si es Recepcionista, redirigimos los links a sus módulos específicos
-    if (rol === 'recepcionista') {
-      if (item.label === 'Socios') return { ...item, path: '/recepcion/socios' }
-      if (item.label === 'Reportes') return { ...item, path: '/recepcion/reportes' }
-    }
-    return item
-  })
+  const currentNavItems = NAV_BY_ROLE[rol] ?? NAV_BY_ROLE.administrador
 
   function handleLogout() {
     clearAuth()
@@ -69,13 +75,15 @@ export default function Sidebar() {
                   strokeWidth: isActive ? 2.5 : 2
                 }
                 switch(icon) {
-                  case 'chart': return <LayoutDashboard {...props} />
-                  case 'people': return <Users {...props} />
-                  case 'card': return <CreditCard {...props} />
-                  case 'monitor': return <MonitorPlay {...props} />
+                  case 'chart':      return <LayoutDashboard {...props} />
+                  case 'people':     return <Users {...props} />
+                  case 'card':       return <CreditCard {...props} />
+                  case 'monitor':    return <MonitorPlay {...props} />
                   case 'chart-line': return <LineChart {...props} />
-                  case 'gear': return <Settings {...props} />
-                  default: return <LayoutDashboard {...props} />
+                  case 'gear':       return <Settings {...props} />
+                  case 'scan':       return <ScanLine {...props} />
+                  case 'activity':   return <Activity {...props} />
+                  default:           return <LayoutDashboard {...props} />
                 }
               })()}
               {label}
