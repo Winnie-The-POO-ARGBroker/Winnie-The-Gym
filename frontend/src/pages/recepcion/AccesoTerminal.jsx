@@ -20,19 +20,18 @@ export default function AccesoTerminal() {
 
   return (
     <AppLayout>
-      <div className="p-6 max-w-7xl mx-auto h-full flex flex-col w-full">
-        <TopBar
-          title="Control de Accesos"
-          subtitle="Estación de recepción"
-          showLive={true}
-          rightContent={
-            <div className="bg-bg-surface border border-subtle px-4 py-2 rounded-lg flex items-center gap-2 text-sm">
-              <span className="font-semibold text-text-primary">Aforo</span>
-              <span className="text-text-secondary">136/200</span>
-            </div>
-          }
-        />
-
+      <TopBar
+        title="Control de Accesos"
+        subtitle="Estación de recepción"
+        showLive={true}
+        rightContent={
+          <div className="bg-bg-surface border border-subtle px-4 py-2 rounded-lg flex items-center gap-2 text-sm">
+            <span className="font-semibold text-text-primary">Aforo</span>
+            <span className="text-text-secondary">136/200</span>
+          </div>
+        }
+      />
+      <div className="flex-1 p-6 overflow-auto flex flex-col gap-6">
         <div className="grid grid-cols-2 gap-6 flex-1 min-h-0">
           {/* Left Side - Scanner */}
           <Card className="flex flex-col p-6">

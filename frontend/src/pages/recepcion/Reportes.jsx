@@ -10,16 +10,16 @@ export default function Reportes() {
 
   return (
     <AppLayout>
-      <div className="p-6 max-w-7xl mx-auto h-full flex flex-col w-full">
-        <TopBar
-          title="Reportes"
-          subtitle="Resumen ejecutivo"
-          rightContent={
-            <Button variant="primary" className="flex items-center gap-2">
-              <Download className="w-4 h-4" /> Exportar PDF
-            </Button>
-          }
-        />
+      <TopBar
+        title="Reportes"
+        subtitle="Resumen ejecutivo"
+        rightContent={
+          <Button variant="primary" className="flex items-center gap-2">
+            <Download className="w-4 h-4" /> Exportar PDF
+          </Button>
+        }
+      />
+      <div className="flex-1 p-6 overflow-auto flex flex-col gap-6">
 
         <div className="flex gap-2 mb-8">
           {tabs.map((tab, idx) => (

@@ -44,20 +44,19 @@ export default function AforoMonitor() {
 
   return (
     <AppLayout>
-      <div className="p-6 max-w-7xl mx-auto h-full flex flex-col w-full">
-        <TopBar
-          title="Monitor de Aforo"
-          subtitle="Tiempo real"
-          showLive={true}
-          rightContent={
-            <div className={`px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium ${isConnected ? 'bg-success-500/10 text-success-500 border border-success-500/20' : 'bg-error-500/10 text-error-500 border border-error-500/20'}`}>
-              <Wifi className="w-4 h-4" />
-              {isConnected ? 'WebSocket Conectado' : 'Desconectado'}
-            </div>
-          }
-        />
-
-      <div className="grid grid-cols-3 gap-6 mb-6">
+      <TopBar
+        title="Monitor de Aforo"
+        subtitle="Tiempo real"
+        showLive={true}
+        rightContent={
+          <div className={`px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium ${isConnected ? 'bg-success-500/10 text-success-500 border border-success-500/20' : 'bg-error-500/10 text-error-500 border border-error-500/20'}`}>
+            <Wifi className="w-4 h-4" />
+            {isConnected ? 'WebSocket Conectado' : 'Desconectado'}
+          </div>
+        }
+      />
+      <div className="flex-1 p-6 overflow-auto flex flex-col gap-6">
+      <div className="grid grid-cols-3 gap-6">
         <Card className="col-span-2 relative overflow-hidden flex flex-col justify-center min-h-[300px]">
           <div className="absolute top-6 left-6 flex items-center gap-2 text-text-secondary">
             <Activity className="w-5 h-5" />

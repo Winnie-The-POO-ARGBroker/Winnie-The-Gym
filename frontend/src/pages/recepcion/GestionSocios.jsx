@@ -21,18 +21,18 @@ export default function GestionSocios() {
 
   return (
     <AppLayout>
-      <div className="max-w-6xl mx-auto h-full flex flex-col pb-8 w-full">
-        <TopBar
-          title="Gestión de Socios"
-          rightContent={
-            <div className="flex gap-3">
-              <Button variant="secondary">Cancelar</Button>
-              <Button variant="primary" className="gap-2">
-                <Check className="w-4 h-4" /> Crear socio
-              </Button>
-            </div>
-          }
-        />
+      <TopBar
+        title="Gestión de Socios"
+        rightContent={
+          <div className="flex gap-3">
+            <Button variant="secondary">Cancelar</Button>
+            <Button variant="primary" className="gap-2">
+              <Check className="w-4 h-4" /> Crear socio
+            </Button>
+          </div>
+        }
+      />
+      <div className="flex-1 p-6 overflow-auto flex flex-col gap-6">
 
         <div className="grid grid-cols-3 gap-8 flex-1">
           {/* Form Column */}
