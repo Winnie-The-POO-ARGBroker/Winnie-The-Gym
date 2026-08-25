@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import useAuthStore from '../stores/authStore'
 import AppLayout from '../components/layout/AppLayout'
 import TopBar from '../components/layout/TopBar'
@@ -5,6 +7,9 @@ import AforoCard from '../components/dashboard/AforoCard'
 import MovementList from '../components/dashboard/MovementList'
 import AlertList from '../components/dashboard/AlertList'
 import ClassCapacityList from '../components/dashboard/ClassCapacityList'
+import Badge from '../components/ui/Badge'
+import Button from '../components/ui/Button'
+import FilterButton from '../components/ui/FilterButton'
 
 const MOCK_MOVEMENTS = [
   { id: 1, name: 'Carlos Pérez', membership: 'Mensual', time: '09:24', type: 'entry' },
@@ -26,8 +31,23 @@ const MOCK_CLASSES = [
   { id: 2, name: 'Yoga Tarde', current: 17, max: 20 },
 ]
 
+
+const MOCK_SOCIO_DATA = {
+  plan: 'Pase Libre Full',
+  expirationDate: '30 de septiembre, 2026',
+  medicalCertificate: 'Al día (Vence Dic 2026)',
+  monthlyAttendance: 14,
+  upcomingClasses: [
+    { id: 1, name: 'Spinning Intensivo', time: 'Hoy · 18:30 hs', instructor: 'Prof. Lucas' },
+    { id: 2, name: 'Funcional Training', time: 'Mañana · 10:00 hs', instructor: 'Prof. Camila' },
+  ],
+}
+
 export default function DashboardPage() {
   const { user } = useAuthStore()
+  const navigate = useNavigate()
+
+  const [currentRole, setCurrentRole] = useState(user?.rol || 'administrador')
 
   const displayName = user?.nombre
     ? `${user.nombre} ${user.apellido ?? ''}`.trim()
@@ -39,24 +59,194 @@ export default function DashboardPage() {
         title="Dashboard"
         subtitle={`Resumen del día · ${displayName}`}
         showLive
-        onScan={() => {}}
+        showSearch={true}
+        onScan={() => navigate('/recepcion/acceso')}
       />
 
-      <div className="flex-1 p-4 overflow-auto">
-        <div className="grid gap-4" style={{ gridTemplateColumns: '1fr minmax(0, 360px)' }}>
-          {/* Left column */}
-          <div className="flex flex-col gap-4">
-            <AforoCard current={150} max={200} entries={232} exits={76} />
-            <MovementList movements={MOCK_MOVEMENTS} />
-          </div>
+      <div className="flex-1 p-6 overflow-auto flex flex-col gap-6">
 
-          {/* Right column */}
-          <div className="flex flex-col gap-4">
-            <AlertList alerts={MOCK_ALERTS} />
-            <ClassCapacityList classes={MOCK_CLASSES} />
+        {/* 1. Selector de Rol para pruebas */}
+        {import.meta.env.DEV && (
+          <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-bg-surface border border-subtle">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
+                Vista activa:
+              </span>
+              <Badge variant="live">{currentRole.toUpperCase()}</Badge>
+            </div>
+
+            <div className="flex gap-2">
+              <FilterButton
+                onClick={() => setCurrentRole('administrador')}
+                active={currentRole === 'administrador'}
+              >
+                Administrador
+              </FilterButton>
+              <FilterButton
+                onClick={() => setCurrentRole('recepcionista')}
+                active={currentRole === 'recepcionista'}
+              >
+                Recepcionista
+              </FilterButton>
+              <FilterButton
+                onClick={() => setCurrentRole('socio')}
+                active={currentRole === 'socio'}
+              >
+                Socio
+              </FilterButton>
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* 2. VISTA ADMINISTRADOR */}
+        {currentRole === 'administrador' && (
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
+            <div className="flex flex-col gap-6">
+              <AforoCard current={150} max={200} entries={232} exits={76} />
+              <MovementList movements={MOCK_MOVEMENTS} />
+            </div>
+
+            <div className="flex flex-col gap-6">
+              <AlertList alerts={MOCK_ALERTS} />
+              <ClassCapacityList classes={MOCK_CLASSES} />
+            </div>
+          </div>
+        )}
+
+        {/* 3. VISTA RECEPCIONISTA */}
+        {currentRole === 'recepcionista' && (
+          <div className="flex flex-col gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className="p-5 rounded-2xl bg-bg-surface border border-subtle flex flex-col justify-between gap-4 shadow-sm">
+                <div>
+                  <h3 className="font-bold text-lg text-text-primary">Escanear Ingreso</h3>
+                  <p className="text-xs text-text-secondary mt-1">
+                    Validar QR digital de socio en menos de 2 segundos.
+                  </p>
+                </div>
+                <Button variant="primary" onClick={() => navigate('/recepcion/acceso')}>
+                  Abrir Terminal QR
+                </Button>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-bg-surface border border-subtle flex flex-col justify-between gap-4 shadow-sm">
+                <div>
+                  <h3 className="font-bold text-lg text-text-primary">Registrar Nuevo Socio</h3>
+                  <p className="text-xs text-text-secondary mt-1">
+                    Dar de alta cliente y adjuntar certificado médico.
+                  </p>
+                </div>
+                <Button variant="secondary" onClick={() => navigate('/recepcion/socios')}>
+                  Registrar Socio
+                </Button>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-bg-surface border border-subtle flex flex-col justify-between gap-4 shadow-sm">
+                <div>
+                  <h3 className="font-bold text-lg text-text-primary">Monitor de Aforo</h3>
+                  <p className="text-xs text-text-secondary mt-1">
+                    Control de ocupación y capacidad en vivo.
+                  </p>
+                </div>
+                <Button variant="secondary" onClick={() => navigate('/recepcion/aforo')}>
+                  Ver Monitor Completo
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
+              <AforoCard current={150} max={200} entries={232} exits={76} />
+              <MovementList movements={MOCK_MOVEMENTS} />
+            </div>
+          </div>
+        )}
+
+        {/* 4. VISTA SOCIO */}
+        {currentRole === 'socio' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl">
+            <div className="p-6 rounded-2xl bg-bg-surface border border-subtle flex flex-col justify-between gap-6 shadow-sm">
+              <div className="flex items-start justify-between">
+                <div>
+                  <span className="text-xs font-semibold text-text-secondary uppercase">
+                    Mi Membresía
+                  </span>
+                  <h2 className="text-2xl font-bold text-text-primary mt-1">
+                    {MOCK_SOCIO_DATA.plan}
+                  </h2>
+                  <p className="text-sm text-text-secondary mt-1">
+                    Vence el {MOCK_SOCIO_DATA.expirationDate}
+                  </p>
+                </div>
+                <Badge variant="success">Al día</Badge>
+              </div>
+
+              <div className="p-4 rounded-xl bg-bg-raised border border-subtle flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-text-secondary">Apto Médico</p>
+                  <p className="text-sm font-semibold text-text-primary">
+                    {MOCK_SOCIO_DATA.medicalCertificate}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-text-secondary">Asistencias este mes</p>
+                  <p className="text-sm font-bold text-primary">
+                    {MOCK_SOCIO_DATA.monthlyAttendance} días
+                  </p>
+                </div>
+              </div>
+
+              <Button
+                variant="primary"
+                size="lg"
+                onClick={() => navigate('/socio/credencial')}
+                className="w-full"
+              >
+                Ver Mi Credencial QR
+              </Button>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-bg-surface border border-subtle flex flex-col justify-between gap-6 shadow-sm">
+              <div>
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-lg text-text-primary">Mis Próximas Clases</h3>
+                  <Badge variant="live">2 Reservadas</Badge>
+                </div>
+                <p className="text-xs text-text-secondary mt-1">
+                  Tu agenda confirmada de actividades.
+                </p>
+
+                <div className="flex flex-col gap-3 mt-4">
+                  {MOCK_SOCIO_DATA.upcomingClasses.map((clase) => (
+                    <div
+                      key={clase.id}
+                      className="p-3 rounded-xl bg-bg-raised border border-subtle flex items-center justify-between"
+                    >
+                      <div>
+                        <p className="text-sm font-bold text-text-primary">{clase.name}</p>
+                        <p className="text-xs text-text-secondary">{clase.instructor}</p>
+                      </div>
+                      <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-1 rounded-md">
+                        {clase.time}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Button
+                variant="secondary"
+                size="lg"
+                onClick={() => navigate('/socio/clases')}
+                className="w-full"
+              >
+                Reservar Nueva Clase
+              </Button>
+            </div>
+          </div>
+        )}
+
       </div>
+
     </AppLayout>
   )
 }

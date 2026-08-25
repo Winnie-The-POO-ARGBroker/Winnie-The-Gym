@@ -94,7 +94,7 @@ export default function ProfilePage() {
             <div className="rounded-2xl p-6 flex flex-col gap-5 bg-bg-surface border border-subtle">
               <Skeleton className="h-4 w-32" />
               <Skeleton className="h-9 w-full" />
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Skeleton className="h-9" />
                 <Skeleton className="h-9" />
               </div>
@@ -161,7 +161,7 @@ export default function ProfilePage() {
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[
                   { name: 'nombre', label: 'Nombre' },
                   { name: 'apellido', label: 'Apellido' },
@@ -173,7 +173,7 @@ export default function ProfilePage() {
                     <input
                       {...register(name)}
                       className="w-full px-3 py-2 rounded-lg text-sm outline-none appearance-none transition-colors bg-bg-raised border border-subtle text-text-primary placeholder:text-text-tertiary"
-                      onFocus={(e) => (e.target.style.borderColor = '#FF5722'/* brand orange — matches orange-500 in tailwind.config.js */)}
+                      onFocus={(e) => (e.target.style.borderColor = '#ff5a36'/* brand primary — matches primary in tailwind.config.js */)}
                       onBlur={(e) => (e.target.style.borderColor = 'var(--color-border-subtle)')}
                     />
                     {errors[name] && (
@@ -192,7 +192,7 @@ export default function ProfilePage() {
                 <input
                   {...register('telefono')}
                   className="w-full px-3 py-2 rounded-lg text-sm outline-none appearance-none transition-colors bg-bg-raised border border-subtle text-text-primary placeholder:text-text-tertiary"
-                  onFocus={(e) => (e.target.style.borderColor = '#FF5722')}
+                  onFocus={(e) => (e.target.style.borderColor = '#ff5a36')}
                   onBlur={(e) => (e.target.style.borderColor = 'var(--color-border-subtle)')}
                 />
                 {errors.telefono && (
