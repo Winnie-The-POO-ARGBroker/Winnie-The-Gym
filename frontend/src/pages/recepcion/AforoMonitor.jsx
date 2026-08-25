@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import Card from '../../components/ui/Card';
 import AppLayout from '../../components/layout/AppLayout';
 import TopBar from '../../components/layout/TopBar';
-import { Users, Activity, TrendingUp, UserPlus, UserMinus, Wifi } from 'lucide-react';
+import OccupancyCard from '../../components/recepcion/OccupancyCard';
+import RecentEventsPanel from '../../components/recepcion/RecentEventsPanel';
+import AforoStatBar from '../../components/recepcion/AforoStatBar';
+import { Wifi } from 'lucide-react';
 
 export default function AforoMonitor() {
   const [aforo, setAforo] = useState(136);
@@ -24,7 +26,7 @@ export default function AforoMonitor() {
         if (!isEntry && prev > 0) return prev - 1;
         return prev;
       });
-      
+
       setRecentEvents(prev => [
         {
           id: Date.now(),
@@ -38,9 +40,6 @@ export default function AforoMonitor() {
 
     return () => clearInterval(interval);
   }, []);
-
-  const aforoPercentage = (aforo / maxAforo) * 100;
-  const isHighCapacity = aforoPercentage > 85;
 
   return (
     <AppLayout>
@@ -56,75 +55,17 @@ export default function AforoMonitor() {
         }
       />
       <div className="flex-1 p-6 overflow-auto flex flex-col gap-6">
-      <div className="grid grid-cols-3 gap-6">
-        <Card className="col-span-2 relative overflow-hidden flex flex-col justify-center min-h-[300px]">
-          <div className="absolute top-6 left-6 flex items-center gap-2 text-text-secondary">
-            <Activity className="w-5 h-5" />
-            <span className="font-semibold uppercase tracking-wider text-sm">Ocupación Actual</span>
-          </div>
-          
-          <div className="text-center z-10">
-            <div className="flex items-baseline justify-center gap-2">
-              <span className={`text-8xl font-black tracking-tighter ${isHighCapacity ? 'text-primary' : 'text-text-primary'}`}>
-                {aforo}
-              </span>
-              <span className="text-3xl text-text-tertiary font-bold">/ {maxAforo}</span>
-            </div>
-            <p className="text-text-secondary mt-4 text-lg">
-              {aforoPercentage.toFixed(1)}% de capacidad
-            </p>
-          </div>
-
-          {/* Progress bar background */}
-          <div className="absolute bottom-0 left-0 right-0 h-2 bg-bg-raised">
-            <div 
-              className={`h-full transition-all duration-1000 ${isHighCapacity ? 'bg-primary' : 'bg-success-500'}`}
-              style={{ width: `${aforoPercentage}%` }}
-            />
-          </div>
-        </Card>
-
-        <Card className="flex flex-col p-6">
-          <h3 className="font-semibold text-text-primary mb-4 flex items-center gap-2">
-            <TrendingUp className="w-4 h-4" /> Actividad Reciente
-          </h3>
-          <div className="flex-1 overflow-y-auto space-y-4">
-            {recentEvents.map(event => (
-              <div key={event.id} className="flex items-center justify-between p-3 rounded-lg bg-bg-raised border border-subtle">
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-md ${event.type === 'in' ? 'bg-success-500/20 text-success-500' : 'bg-error-500/20 text-error-500'}`}>
-                    {event.type === 'in' ? <UserPlus className="w-4 h-4" /> : <UserMinus className="w-4 h-4" />}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-text-primary">{event.name}</p>
-                    <p className="text-xs text-text-secondary">{event.type === 'in' ? 'Entrada' : 'Salida'}</p>
-                  </div>
-                </div>
-                <span className="text-xs text-text-tertiary">{event.time}</span>
-              </div>
-            ))}
-          </div>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-4 gap-6">
-        <Card className="p-4">
-          <p className="text-xs text-text-secondary font-semibold mb-1 uppercase">Promedio Hoy</p>
-          <p className="text-2xl font-bold text-text-primary">112</p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-xs text-text-secondary font-semibold mb-1 uppercase">Pico Máximo</p>
-          <p className="text-2xl font-bold text-text-primary">189 <span className="text-xs text-text-tertiary font-normal">a las 18:30</span></p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-xs text-text-secondary font-semibold mb-1 uppercase">Ingresos (Última hora)</p>
-          <p className="text-2xl font-bold text-success-500">+45</p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-xs text-text-secondary font-semibold mb-1 uppercase">Egresos (Última hora)</p>
-          <p className="text-2xl font-bold text-error-500">-23</p>
-        </Card>
-      </div>
+        <div className="grid grid-cols-3 gap-6">
+          <OccupancyCard aforo={aforo} maxAforo={maxAforo} />
+          <RecentEventsPanel events={recentEvents} />
+        </div>
+        <AforoStatBar
+          promedioHoy={112}
+          picoMaximo={189}
+          picoHora="18:30"
+          ingresoUltimaHora={45}
+          egresoUltimaHora={23}
+        />
       </div>
     </AppLayout>
   );
