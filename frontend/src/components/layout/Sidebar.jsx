@@ -1,6 +1,7 @@
 import { useLocation, useNavigate, NavLink } from 'react-router-dom'
 import { LayoutDashboard, Users, CreditCard, MonitorPlay, LineChart, Settings, LogOut } from 'lucide-react'
 import useAuthStore from '../../stores/authStore'
+import WinnieLogo from '../ui/WinnieLogo'
 
 const NAV_ITEMS = [
   { label: 'Dashboard', path: '/dashboard', icon: 'chart' },
@@ -28,16 +29,6 @@ function getIcon(name, isActive) {
   }
 }
 
-function WinnieLogo({ size = 'md' }) {
-  const isSm = size === 'sm'
-  return (
-    <div className={`flex items-center gap-2 font-black tracking-tighter ${isSm ? 'text-xl' : 'text-2xl'}`}>
-      <span className="text-orange-500">Winnie</span>
-      <span className="text-text-primary">Gym</span>
-    </div>
-  )
-}
-
 export default function Sidebar() {
   const location = useLocation()
   const navigate = useNavigate()
@@ -48,15 +39,15 @@ export default function Sidebar() {
     : user?.email ?? 'Usuario'
   const rol = user?.rol ?? 'Administrador'
 
-  const currentNavItems = (() => {
-    // FORCE SHOW for debugging:
-    return NAV_ITEMS.map(item => {
-      if (item.label === 'Dashboard') return { ...item, path: '/recepcion/aforo' }
+  const currentNavItems = NAV_ITEMS.map(item => {
+    // Si es Recepcionista, redirigimos los links a sus módulos específicos
+    if (rol === 'Recepcionista') {
       if (item.label === 'Socios') return { ...item, path: '/recepcion/socios' }
       if (item.label === 'Reportes') return { ...item, path: '/recepcion/reportes' }
-      return item
-    })
-  })()
+      // Los demas links por ahora los dejamos igual, pero NO agregamos Monitor de Aforo al sidebar
+    }
+    return item
+  })
 
   function handleLogout() {
     clearAuth()
@@ -80,11 +71,26 @@ export default function Sidebar() {
               to={path}
               className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                 isActive 
-                  ? 'bg-orange-500/10 text-orange-500' 
+                  ? 'bg-orange-500 text-white shadow-md' 
                   : 'text-text-secondary hover:bg-bg-raised hover:text-text-primary'
               }`}
             >
-              {getIcon(icon, isActive)}
+              {(() => {
+                // Inline getIcon replacement to force white color on active
+                const props = {
+                  className: `w-5 h-5 transition-colors ${isActive ? 'text-white' : 'text-text-secondary group-hover:text-text-primary'}`,
+                  strokeWidth: isActive ? 2.5 : 2
+                }
+                switch(icon) {
+                  case 'chart': return <LayoutDashboard {...props} />
+                  case 'people': return <Users {...props} />
+                  case 'card': return <CreditCard {...props} />
+                  case 'monitor': return <MonitorPlay {...props} />
+                  case 'chart-line': return <LineChart {...props} />
+                  case 'gear': return <Settings {...props} />
+                  default: return <LayoutDashboard {...props} />
+                }
+              })()}
               {label}
             </NavLink>
           )

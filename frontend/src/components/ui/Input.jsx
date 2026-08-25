@@ -13,7 +13,7 @@ export default function Input({ label, icon: Icon, className = '', ...props }) {
           </div>
         )}
         <input
-          className={`w-full bg-bg-raised border border-subtle rounded-lg text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500 transition-colors py-2 ${Icon ? 'pl-10' : 'pl-3'} pr-3`}
+          className={`w-full bg-bg-base border border-subtle rounded-lg text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500 transition-colors py-2 ${Icon ? 'pl-10' : 'pl-3'} pr-3`}
           {...props}
         />
       </div>
