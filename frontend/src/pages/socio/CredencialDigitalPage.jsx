@@ -88,7 +88,7 @@ export default function CredencialDigitalPage() {
           <div className="flex items-center justify-between pb-3 border-b border-subtle">
             <div className="flex items-center gap-2.5">
               {/* Avatar circular */}
-              <div className="w-10 h-10 rounded-full bg-bg-raised border border-border-strong flex items-center justify-center text-text-tertiary shrink-0">
+              <div className="w-10 h-10 rounded-full bg-bg-raised border border-strong flex items-center justify-center text-text-tertiary shrink-0">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
                 </svg>
@@ -120,7 +120,7 @@ export default function CredencialDigitalPage() {
             <div
               className={`p-3.5 rounded-xl transition-all relative ${
                 isExpired
-                  ? 'bg-neutral-900 border border-error-500/40 opacity-70'
+                  ? 'bg-bg-raised border border-error-500/40 opacity-70'
                   : 'bg-white shadow-lg ring-4 ring-primary/20'
               }`}
             >
@@ -134,7 +134,7 @@ export default function CredencialDigitalPage() {
 
               {/* Watermark si está vencida */}
               {isExpired && (
-                <div className="absolute inset-0 bg-neutral-950/80 backdrop-blur-[1px] rounded-xl flex flex-col items-center justify-center p-2 text-center">
+                <div className="absolute inset-0 bg-neutral-950/80 backdrop-blur-[1px] rounded-xl flex flex-col items-center justify-center p-2 text-center">{/* overlay — no token yet */}
                   <span className="text-xs font-bold text-error-500 uppercase tracking-wide">
                     Acceso Bloqueado
                   </span>
@@ -150,7 +150,7 @@ export default function CredencialDigitalPage() {
               <div className="relative w-6 h-6 flex items-center justify-center">
                 <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
                   <path
-                    className="text-neutral-800"
+                    className="text-text-secondary"
                     strokeWidth="3.5"
                     stroke="currentColor"
                     fill="none"
@@ -260,10 +260,11 @@ export default function CredencialDigitalPage() {
           className="fixed inset-0 z-50 bg-neutral-950/90 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-fadeIn"
           onClick={() => setIsFullscreen(false)}
         >
+          {/* scrim — no overlay token yet */}
           {/* Botón cerrar flotante */}
           <button
             onClick={() => setIsFullscreen(false)}
-            className="absolute top-6 right-6 w-10 h-10 rounded-full bg-neutral-800 text-white flex items-center justify-center hover:bg-neutral-700 transition-colors shadow-lg"
+            className="absolute top-6 right-6 w-10 h-10 rounded-full bg-bg-raised text-white flex items-center justify-center hover:bg-bg-surface transition-colors shadow-lg"
             aria-label="Cerrar pantalla completa"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -279,7 +280,7 @@ export default function CredencialDigitalPage() {
           >
             <div className="flex items-center gap-1.5 mb-2">
               <div className="w-2.5 h-2.5 rounded-full bg-primary" />
-              <span className="text-[10px] font-bold tracking-wider uppercase text-neutral-700">
+              <span className="text-[10px] font-bold tracking-wider uppercase text-text-secondary">
                 Winnie The Gym • Molinete
               </span>
             </div>
@@ -287,7 +288,7 @@ export default function CredencialDigitalPage() {
             <h3 className="text-base font-bold text-neutral-950">
               {member.nombre} {member.apellido}
             </h3>
-            <p className="text-[11px] text-neutral-500 font-mono mt-0.5">
+            <p className="text-[11px] text-text-tertiary font-mono mt-0.5">
               {member.socioNumero} • DNI {member.dni}
             </p>
 
@@ -302,18 +303,18 @@ export default function CredencialDigitalPage() {
               />
             </div>
 
-            <div className="flex items-center justify-center gap-2 px-3 py-1 rounded-full bg-neutral-100 text-neutral-700 text-xs font-medium mb-2.5">
+            <div className="flex items-center justify-center gap-2 px-3 py-1 rounded-full bg-bg-raised text-text-secondary text-xs font-medium mb-2.5">
               <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
               Válido por: <strong className="font-mono text-neutral-900">{timeLeft}s</strong>
             </div>
 
-            <p className="text-[10.5px] text-neutral-500 leading-tight">
+            <p className="text-[10.5px] text-text-tertiary leading-tight">
               Presentá este código frente al lector óptico del molinete para ingresar. Fondo optimizado al máximo contraste visual.
             </p>
 
             <button
               onClick={() => setIsFullscreen(false)}
-              className="mt-4 w-full py-2.5 rounded-lg bg-neutral-900 text-white font-semibold text-xs hover:bg-neutral-800 transition-colors"
+              className="mt-4 w-full py-2.5 rounded-lg bg-bg-raised text-white font-semibold text-xs hover:bg-bg-surface transition-colors"
             >
               Cerrar
             </button>

@@ -22,7 +22,7 @@ export default function TopBar({ title, subtitle, showLive = false, onScan }) {
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
-            className="text-neutral-400"
+            className="text-text-tertiary"
           >
             <circle cx="11" cy="11" r="8" />
             <path d="m21 21-4.35-4.35" />

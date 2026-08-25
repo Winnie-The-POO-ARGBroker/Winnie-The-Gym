@@ -121,7 +121,7 @@ export default function AforoMonitor() {
         </Card>
         <Card className="p-4">
           <p className="text-xs text-text-secondary font-semibold mb-1 uppercase">Egresos (Última hora)</p>
-          <p className="text-2xl font-bold text-primary">-23</p>
+          <p className="text-2xl font-bold text-error-500">-23</p>
         </Card>
       </div>
       </div>

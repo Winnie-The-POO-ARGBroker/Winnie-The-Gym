@@ -296,7 +296,7 @@ export default function ClasesPage() {
                       className={`rounded-lg bg-bg-surface border p-3.5 flex flex-col gap-2.5 shadow-sm transition-all ${
                         clase.isBooked
                           ? 'border-primary/60 ring-1 ring-primary/20'
-                          : 'border-subtle hover:border-border-strong'
+                          : 'border-subtle hover:border-strong'
                       }`}
                     >
                       {/* Fila Horario y Categoría */}
@@ -336,7 +336,7 @@ export default function ClasesPage() {
                       {/* Instructor y Cupos */}
                       <div className="pt-2 border-t border-subtle flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-bg-raised border border-border-strong flex items-center justify-center text-[10px] font-bold text-text-primary">
+                          <div className="w-6 h-6 rounded-full bg-bg-raised border border-strong flex items-center justify-center text-[10px] font-bold text-text-primary">
                             {clase.instructor.charAt(0)}
                           </div>
                           <span className="text-xs font-medium text-text-primary">

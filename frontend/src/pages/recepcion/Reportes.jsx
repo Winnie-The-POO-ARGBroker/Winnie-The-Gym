@@ -42,13 +42,14 @@ export default function Reportes() {
             
             <div className="flex-1 flex items-center justify-center relative mb-8">
               <svg viewBox="0 0 400 100" className="w-full h-full overflow-visible">
-                <path 
-                  d="M 0,60 L 50,70 L 100,50 L 150,60 L 200,40 L 250,55 L 300,30 L 350,45 L 400,20" 
-                  fill="none" 
-                  stroke="#4caf50" 
+                <path
+                  d="M 0,60 L 50,70 L 100,50 L 150,60 L 200,40 L 250,55 L 300,30 L 350,45 L 400,20"
+                  fill="none"
+                  stroke="currentColor"
                   strokeWidth="4"
                   strokeLinecap="round"
                   strokeLinejoin="round"
+                  className="text-success-500"
                 />
               </svg>
             </div>

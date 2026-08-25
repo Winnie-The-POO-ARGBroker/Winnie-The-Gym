@@ -14,7 +14,7 @@ export default function MemberLayout({
   const { user } = useAuthStore()
 
   return (
-    <div className="min-h-screen bg-neutral-950 flex justify-center selection:bg-primary selection:text-white">
+    <div className="min-h-screen bg-bg-base flex justify-center selection:bg-primary selection:text-white">
       {/* Mobile-First Frame Container */}
       <div className="w-full max-w-sm min-h-screen bg-bg-base text-text-primary flex flex-col relative shadow-2xl border-x border-subtle">
         
