@@ -2,10 +2,10 @@
 
 /**
  * Mock data y servicios simulados para el módulo de Socio.
- * Basado en las especificaciones extraídas de Figma (Pantalla 2 - Mi Cuenta y Credencial).
+ * Basado en las especificaciones extraídas de Figma.
  */
 
-// Datos simulados del socio activo (alineados a Figma: Ana M. González)
+// Datos simulados del socio activo (Ana M. González)
 // TODO: reemplazar por API real -> GET /api/members/me/
 export const MOCK_MEMBER = {
   id: 'usr_30111222',
@@ -22,7 +22,7 @@ export const MOCK_MEMBER = {
   sedeHabitual: 'Sede Palermo',
   sedesHabilitadas: ['Sede Palermo', 'Sede Belgrano', 'Sede Cañitas'],
   
-  // Apto Médico (extraído de Figma)
+  // Apto Médico
   aptoMedico: {
     archivo: 'apto-2025.pdf',
     fechaVencimiento: '02/07/2026',
@@ -47,18 +47,16 @@ export const MOCK_MEMBER = {
   // Historial de visitas al molinete
   // TODO: reemplazar por API real -> GET /api/access/logs/
   visitas: [
-    { id: 'vis_1', fecha: 'Hoy, 24 Ago', hora: '18:42', tipo: 'Entrada', sede: 'Sede Palermo', molinete: 'Molinete 1 (Entrada)' },
-    { id: 'vis_2', fecha: 'Vie, 22 Ago', hora: '08:15', tipo: 'Entrada', sede: 'Sede Palermo', molinete: 'Molinete 2 (Entrada)' },
-    { id: 'vis_3', fecha: 'Mié, 20 Ago', hora: '19:05', tipo: 'Entrada', sede: 'Sede Belgrano', molinete: 'Molinete Central' },
-    { id: 'vis_4', fecha: 'Lun, 18 Ago', hora: '07:55', tipo: 'Entrada', sede: 'Sede Palermo', molinete: 'Molinete 1 (Entrada)' },
+    { id: 'vis_1', fecha: 'Hoy', hora: '18:42', tipo: 'Entrada', sede: 'Sede Palermo', molinete: 'Molinete 1 (Entrada)' },
+    { id: 'vis_2', fecha: 'Ayer', hora: '08:15', tipo: 'Entrada', sede: 'Sede Palermo', molinete: 'Molinete 2 (Entrada)' },
+    { id: 'vis_3', fecha: 'Hace 3 días', hora: '19:05', tipo: 'Entrada', sede: 'Sede Belgrano', molinete: 'Molinete Central' },
   ],
 
   // Historial de pagos
   // TODO: reemplazar por API real -> GET /api/members/me/payments/
   pagos: [
-    { id: 'pay_1', mes: 'Agosto 2026', monto: '$45.000', fecha: '01/08/2026', metodo: 'Visa Débito **** 4920', estado: 'Aprobado' },
-    { id: 'pay_2', mes: 'Julio 2026', monto: '$42.000', fecha: '01/07/2026', metodo: 'Visa Débito **** 4920', estado: 'Aprobado' },
-    { id: 'pay_3', mes: 'Junio 2026', monto: '$42.000', fecha: '01/06/2026', metodo: 'Visa Débito **** 4920', estado: 'Aprobado' },
+    { id: 'pay_1', mes: 'Agosto', monto: '$45.000', fecha: '01/08/2026', metodo: 'Visa Débito **** 4920', estado: 'Aprobado' },
+    { id: 'pay_2', mes: 'Julio', monto: '$42.000', fecha: '01/07/2026', metodo: 'Visa Débito **** 4920', estado: 'Aprobado' },
   ],
 }
 
@@ -96,23 +94,49 @@ export const CATEGORIAS_CLASES = [
   { id: 'musculacion', label: 'Musculación Guiada', icon: '💪' },
 ]
 
-// Días de la semana para el selector de agenda
-export const DIAS_AGENDA = [
-  { id: '2026-08-24', diaNombre: 'Lun', diaNumero: '24', fechaCompleta: 'Lunes 24 de Agosto', esHoy: true },
-  { id: '2026-08-25', diaNombre: 'Mar', diaNumero: '25', fechaCompleta: 'Martes 25 de Agosto', esHoy: false },
-  { id: '2026-08-26', diaNombre: 'Mié', diaNumero: '26', fechaCompleta: 'Miércoles 26 de Agosto', esHoy: false },
-  { id: '2026-08-27', diaNombre: 'Jue', diaNumero: '27', fechaCompleta: 'Jueves 27 de Agosto', esHoy: false },
-  { id: '2026-08-28', diaNombre: 'Vie', diaNumero: '28', fechaCompleta: 'Viernes 28 de Agosto', esHoy: false },
-  { id: '2026-08-29', diaNombre: 'Sáb', diaNumero: '29', fechaCompleta: 'Sábado 29 de Agosto', esHoy: false },
-  { id: '2026-08-30', diaNombre: 'Dom', diaNumero: '30', fechaCompleta: 'Domingo 30 de Agosto', esHoy: false },
-]
+// Generador de fechas dinámicas a partir de hoy
+export function getFormattedDayId(offsetDays = 0) {
+  const d = new Date()
+  d.setDate(d.getDate() + offsetDays)
+  return d.toISOString().split('T')[0]
+}
+
+export function generateDaysAgenda() {
+  const hoy = new Date()
+  const dias = []
+  const nombresDias = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
+  const nombresMeses = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  ]
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date()
+    d.setDate(hoy.getDate() + i)
+    const id = d.toISOString().split('T')[0]
+    const diaSemana = nombresDias[d.getDay()]
+    const diaNum = String(d.getDate()).padStart(2, '0')
+    const mesNombre = nombresMeses[d.getMonth()]
+    dias.push({
+      id,
+      diaNombre: diaSemana,
+      diaNumero: diaNum,
+      fechaCompleta: `${diaSemana} ${diaNum} de ${mesNombre}`,
+      esHoy: i === 0,
+    })
+  }
+  return dias
+}
+
+// Días de la semana para el selector de agenda (dinámico)
+export const DIAS_AGENDA = generateDaysAgenda()
 
 // Catálogo semanal de clases
 // TODO: reemplazar por API real -> GET /api/classes/
 export const INITIAL_MOCK_CLASSES = [
   {
     id: 'cls_1',
-    fecha: '2026-08-24',
+    fecha: getFormattedDayId(0), // Hoy
     nombre: 'CrossFit WOD Pro',
     categoria: 'crossfit',
     instructor: 'Marcos Gómez',
@@ -131,7 +155,7 @@ export const INITIAL_MOCK_CLASSES = [
   },
   {
     id: 'cls_2',
-    fecha: '2026-08-24',
+    fecha: getFormattedDayId(0), // Hoy
     nombre: 'Spinning Endurance Ride',
     categoria: 'spinning',
     instructor: 'Sofía Chen',
@@ -150,7 +174,7 @@ export const INITIAL_MOCK_CLASSES = [
   },
   {
     id: 'cls_3',
-    fecha: '2026-08-24',
+    fecha: getFormattedDayId(0), // Hoy
     nombre: 'Power Yoga & Movilidad',
     categoria: 'yoga',
     instructor: 'Lucas Silva',
@@ -169,7 +193,7 @@ export const INITIAL_MOCK_CLASSES = [
   },
   {
     id: 'cls_4',
-    fecha: '2026-08-24',
+    fecha: getFormattedDayId(0), // Hoy
     nombre: 'Pilates Reformer Core',
     categoria: 'pilates',
     instructor: 'Camila Torres',
@@ -188,7 +212,7 @@ export const INITIAL_MOCK_CLASSES = [
   },
   {
     id: 'cls_5',
-    fecha: '2026-08-24',
+    fecha: getFormattedDayId(0), // Hoy
     nombre: 'Boxeo & Funcional Strike',
     categoria: 'boxeo',
     instructor: 'Gonzalo Arce',
@@ -207,7 +231,7 @@ export const INITIAL_MOCK_CLASSES = [
   },
   {
     id: 'cls_6',
-    fecha: '2026-08-24',
+    fecha: getFormattedDayId(0), // Hoy
     nombre: 'HIIT Tabata Extreme',
     categoria: 'hiit',
     instructor: 'Florencia Benítez',
@@ -225,10 +249,10 @@ export const INITIAL_MOCK_CLASSES = [
     descripcion: 'Rondas ultra intensas de 20s trabajo y 10s pausa para máxima quema calórica post-ejercicio.',
   },
 
-  // Martes 25
+  // Día siguiente (+1)
   {
     id: 'cls_7',
-    fecha: '2026-08-25',
+    fecha: getFormattedDayId(1),
     nombre: 'CrossFit Skills & Gymnastics',
     categoria: 'crossfit',
     instructor: 'Marcos Gómez',
@@ -247,7 +271,7 @@ export const INITIAL_MOCK_CLASSES = [
   },
   {
     id: 'cls_8',
-    fecha: '2026-08-25',
+    fecha: getFormattedDayId(1),
     nombre: 'Spinning Power Beats',
     categoria: 'spinning',
     instructor: 'Sofía Chen',
@@ -266,7 +290,7 @@ export const INITIAL_MOCK_CLASSES = [
   },
   {
     id: 'cls_9',
-    fecha: '2026-08-25',
+    fecha: getFormattedDayId(1),
     nombre: 'Vinyasa Flow Sunset',
     categoria: 'yoga',
     instructor: 'Lucas Silva',

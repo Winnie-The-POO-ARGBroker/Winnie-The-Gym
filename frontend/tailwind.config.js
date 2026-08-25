@@ -9,6 +9,19 @@ export default {
         mono: ['Roboto Mono', 'monospace'],
       },
       colors: {
+        primary: {
+          DEFAULT: '#FF5722',
+          50:  '#FFF3EE',
+          100: '#FFDFcc',
+          200: '#FFBC9F',
+          300: '#FF9871',
+          400: '#FF7349',
+          500: '#FF5722',
+          600: '#E63E0F',
+          700: '#B82E08',
+          800: '#8A2106',
+          900: '#5C1605',
+        },
         orange: {
           50:  '#FFF3EE',
           100: '#FFDFcc',

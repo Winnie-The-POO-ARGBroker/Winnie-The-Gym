@@ -42,10 +42,10 @@ export default function App() {
         <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
         <Route path="/perfil" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
 
-        {/* Módulo Socio (Mobile First) */}
-        <Route path="/socio/credencial" element={<CredencialDigitalPage />} />
-        <Route path="/socio/clases" element={<ClasesPage />} />
-        <Route path="/socio" element={<Navigate to="/socio/credencial" replace />} />
+        {/* Módulo Socio (Mobile First) - Protected */}
+        <Route path="/socio/credencial" element={<ProtectedRoute><CredencialDigitalPage /></ProtectedRoute>} />
+        <Route path="/socio/clases" element={<ProtectedRoute><ClasesPage /></ProtectedRoute>} />
+        <Route path="/socio" element={<ProtectedRoute><Navigate to="/socio/credencial" replace /></ProtectedRoute>} />
 
         {/* Sidebar routes — protected, coming soon */}
         {COMING_SOON_PATHS.map((path) => (

@@ -14,7 +14,7 @@ export default function MemberLayout({
   const { user } = useAuthStore()
 
   return (
-    <div className="min-h-screen bg-neutral-950 flex justify-center selection:bg-orange-500 selection:text-white">
+    <div className="min-h-screen bg-neutral-950 flex justify-center selection:bg-primary selection:text-white">
       {/* Mobile-First Frame Container */}
       <div className="w-full max-w-sm min-h-screen bg-bg-base text-text-primary flex flex-col relative shadow-2xl border-x border-subtle">
         
@@ -72,7 +72,7 @@ export default function MemberLayout({
               to="/socio/credencial"
               className={({ isActive }) =>
                 `flex flex-col items-center justify-center gap-0.5 transition-colors ${
-                  isActive ? 'text-orange-500 font-semibold' : 'text-text-tertiary hover:text-text-secondary'
+                  isActive ? 'text-primary font-semibold' : 'text-text-tertiary hover:text-text-secondary'
                 }`
               }
             >
@@ -92,7 +92,7 @@ export default function MemberLayout({
               to="/socio/clases"
               className={({ isActive }) =>
                 `flex flex-col items-center justify-center gap-0.5 transition-colors relative ${
-                  isActive ? 'text-orange-500 font-semibold' : 'text-text-tertiary hover:text-text-secondary'
+                  isActive ? 'text-primary font-semibold' : 'text-text-tertiary hover:text-text-secondary'
                 }`
               }
             >
@@ -118,8 +118,8 @@ export default function MemberLayout({
               {({ isActive }) => (
                 <>
                   <div
-                    className={`w-11 h-11 rounded-full bg-orange-500 border-4 border-bg-base flex items-center justify-center shadow-lg transition-transform active:scale-95 ${
-                      isActive ? 'ring-2 ring-orange-500/40 shadow-orange-500/30' : ''
+                    className={`w-11 h-11 rounded-full bg-primary border-4 border-bg-base flex items-center justify-center shadow-lg transition-transform active:scale-95 ${
+                      isActive ? 'ring-2 ring-primary/40 shadow-primary/30' : ''
                     }`}
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
@@ -128,7 +128,7 @@ export default function MemberLayout({
                   </div>
                   <span
                     className={`text-[10px] font-medium leading-none mt-1 transition-colors ${
-                      isActive ? 'text-orange-500 font-semibold' : 'text-text-tertiary'
+                      isActive ? 'text-primary font-semibold' : 'text-text-tertiary'
                     }`}
                   >
                     QR

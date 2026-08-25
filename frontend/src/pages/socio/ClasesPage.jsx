@@ -15,8 +15,10 @@ export default function ClasesPage() {
   // TODO: reemplazar por API real -> GET /api/classes/
   const [classesList, setClassesList] = useState(getStoredClasses)
   
-  // Filtros interactivos
-  const [selectedDay, setSelectedDay] = useState('2026-08-24')
+  // Filtros interactivos con fecha de hoy por defecto
+  const [selectedDay, setSelectedDay] = useState(
+    () => new Date().toISOString().split('T')[0]
+  )
   const [selectedCategory, setSelectedCategory] = useState('todas')
   const [selectedTurno, setSelectedTurno] = useState('todos') // 'todos' | 'manana' | 'tarde'
   const [searchQuery, setSearchQuery] = useState('')
@@ -112,7 +114,7 @@ export default function ClasesPage() {
             onClick={() => setActiveTab('catalogo')}
             className={`flex-1 py-1.5 rounded-md flex items-center justify-center text-xs transition-all ${
               activeTab === 'catalogo'
-                ? 'bg-orange-500 text-white font-semibold shadow-sm'
+                ? 'bg-primary text-white font-semibold shadow-sm'
                 : 'text-text-secondary font-medium hover:text-text-primary'
             }`}
           >
@@ -122,17 +124,17 @@ export default function ClasesPage() {
             onClick={() => setActiveTab('mis_reservas')}
             className={`flex-1 py-1.5 rounded-md flex items-center justify-center gap-1.5 text-xs transition-all ${
               activeTab === 'mis_reservas'
-                ? 'bg-orange-500 text-white font-semibold shadow-sm'
+                ? 'bg-primary text-white font-semibold shadow-sm'
                 : 'text-text-secondary font-medium hover:text-text-primary'
             }`}
           >
             <span>Mis Reservas</span>
             {myBookings.length > 0 && (
               <span
-                className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
                   activeTab === 'mis_reservas'
-                    ? 'bg-white text-orange-500'
-                    : 'bg-orange-500 text-white'
+                    ? 'bg-white text-primary'
+                    : 'bg-primary text-white'
                 }`}
               >
                 {myBookings.length}
@@ -158,7 +160,7 @@ export default function ClasesPage() {
                       onClick={() => setSelectedDay(dia.id)}
                       className={`flex flex-col items-center justify-center min-w-[50px] py-1.5 px-1 rounded-lg border transition-all ${
                         isSelected
-                          ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
+                          ? 'bg-primary text-white border-primary shadow-sm'
                           : 'bg-bg-surface text-text-secondary border-subtle hover:text-text-primary hover:bg-bg-raised'
                       }`}
                     >
@@ -171,7 +173,7 @@ export default function ClasesPage() {
                       {dia.esHoy && (
                         <span
                           className={`text-[9px] mt-0.5 font-semibold px-1 rounded ${
-                            isSelected ? 'bg-white/25 text-white' : 'text-orange-500'
+                            isSelected ? 'bg-white/25 text-white' : 'text-primary'
                           }`}
                         >
                           Hoy
@@ -192,7 +194,7 @@ export default function ClasesPage() {
                   placeholder="Buscar clase o profesor..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-bg-surface border border-subtle rounded-lg pl-8 pr-7 py-2 text-xs text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-orange-500 transition-colors"
+                  className="w-full bg-bg-surface border border-subtle rounded-lg pl-8 pr-7 py-2 text-xs text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-primary transition-colors"
                 />
                 <svg
                   className="absolute left-2.5 top-2.5 text-text-tertiary"
@@ -229,7 +231,7 @@ export default function ClasesPage() {
                     onClick={() => setSelectedTurno(t.id)}
                     className={`px-2 py-1 rounded-md transition-all text-xs ${
                       selectedTurno === t.id
-                        ? 'bg-bg-raised text-orange-500 font-semibold border border-orange-500/30'
+                        ? 'bg-bg-raised text-primary font-semibold border border-primary/30'
                         : 'bg-bg-surface text-text-secondary border border-subtle hover:text-text-primary'
                     }`}
                   >
@@ -249,7 +251,7 @@ export default function ClasesPage() {
                     onClick={() => setSelectedCategory(cat.id)}
                     className={`whitespace-nowrap px-2.5 py-1 rounded-full text-xs font-medium border flex items-center gap-1 transition-all ${
                       isSelected
-                        ? 'bg-orange-500/15 border-orange-500 text-orange-500 font-semibold'
+                        ? 'bg-primary/15 border-primary text-primary font-semibold'
                         : 'bg-bg-surface border-subtle text-text-secondary hover:text-text-primary'
                     }`}
                   >
@@ -263,7 +265,7 @@ export default function ClasesPage() {
             {/* ENCABEZADO DE RESULTADOS */}
             <div className="flex items-center justify-between text-xs pt-0.5">
               <span className="font-semibold text-text-primary text-xs">
-                {currentDayInfo?.fechaCompleta}
+                {currentDayInfo?.fechaCompleta || 'Agenda de Clases'}
               </span>
               <span className="text-text-tertiary text-[11px]">
                 {filteredClasses.length} {filteredClasses.length === 1 ? 'clase' : 'clases'}
@@ -293,7 +295,7 @@ export default function ClasesPage() {
                       key={clase.id}
                       className={`rounded-lg bg-bg-surface border p-3.5 flex flex-col gap-2.5 shadow-sm transition-all ${
                         clase.isBooked
-                          ? 'border-orange-500/60 ring-1 ring-orange-500/20'
+                          ? 'border-primary/60 ring-1 ring-primary/20'
                           : 'border-subtle hover:border-border-strong'
                       }`}
                     >
@@ -434,11 +436,11 @@ export default function ClasesPage() {
               myBookings.map((clase) => (
                 <div
                   key={clase.id}
-                  className="rounded-lg bg-bg-surface border border-orange-500/40 p-3.5 flex flex-col gap-2 shadow-sm"
+                  className="rounded-lg bg-bg-surface border border-primary/40 p-3.5 flex flex-col gap-2 shadow-sm"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-orange-500 uppercase">
-                      {clase.fecha === '2026-08-24' ? 'Hoy' : clase.fecha} • {clase.horaInicio}h
+                    <span className="text-xs font-bold text-primary uppercase">
+                      {clase.fecha} • {clase.horaInicio}h
                     </span>
                     <Badge variant="live">Confirmada</Badge>
                   </div>

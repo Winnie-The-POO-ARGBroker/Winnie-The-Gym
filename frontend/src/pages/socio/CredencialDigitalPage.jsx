@@ -103,7 +103,7 @@ export default function CredencialDigitalPage() {
                     DNI {member.dni}
                   </span>
                   <span className="text-text-tertiary text-xs">•</span>
-                  <span className="font-mono text-[11px] text-orange-500 font-semibold">
+                  <span className="font-mono text-[11px] text-primary font-semibold">
                     {member.socioNumero}
                   </span>
                 </div>
@@ -121,7 +121,7 @@ export default function CredencialDigitalPage() {
               className={`p-3.5 rounded-xl transition-all relative ${
                 isExpired
                   ? 'bg-neutral-900 border border-error-500/40 opacity-70'
-                  : 'bg-white shadow-lg ring-4 ring-orange-500/20'
+                  : 'bg-white shadow-lg ring-4 ring-primary/20'
               }`}
             >
               <QRCode
@@ -157,7 +157,7 @@ export default function CredencialDigitalPage() {
                     d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                   />
                   <path
-                    className={isExpired ? 'text-neutral-600' : 'text-orange-500'}
+                    className={isExpired ? 'text-neutral-600' : 'text-primary'}
                     strokeDasharray="100, 100"
                     strokeDashoffset={strokeDashoffset}
                     strokeWidth="3.5"
@@ -195,7 +195,7 @@ export default function CredencialDigitalPage() {
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2"
-                  className={isRefreshing ? 'animate-spin text-orange-500' : ''}
+                  className={isRefreshing ? 'animate-spin text-primary' : ''}
                 >
                   <path d="M23 4v6h-6M1 20v-6h6" />
                   <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
@@ -246,7 +246,7 @@ export default function CredencialDigitalPage() {
           </span>
           <div className="flex items-center justify-between text-text-primary font-medium pt-1">
             <span>{member.sedeHabitual}</span>
-            <span className="text-orange-500 text-[11px]">Pase Libre</span>
+            <span className="text-primary text-[11px] font-semibold">Pase Libre</span>
           </div>
         </div>
 
@@ -278,7 +278,7 @@ export default function CredencialDigitalPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-1.5 mb-2">
-              <div className="w-2.5 h-2.5 rounded-full bg-orange-500" />
+              <div className="w-2.5 h-2.5 rounded-full bg-primary" />
               <span className="text-[10px] font-bold tracking-wider uppercase text-neutral-700">
                 Winnie The Gym • Molinete
               </span>
@@ -303,7 +303,7 @@ export default function CredencialDigitalPage() {
             </div>
 
             <div className="flex items-center justify-center gap-2 px-3 py-1 rounded-full bg-neutral-100 text-neutral-700 text-xs font-medium mb-2.5">
-              <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
               Válido por: <strong className="font-mono text-neutral-900">{timeLeft}s</strong>
             </div>
 
