@@ -1,6 +1,6 @@
 import Badge from '../ui/Badge'
 
-export default function TopBar({ title, subtitle, showLive = false, onScan }) {
+export default function TopBar({ title, subtitle, showLive = false, showSearch = false, onScan, rightContent }) {
   return (
     <header className="flex items-center justify-between px-6 py-4 border-b border-strong flex-shrink-0 bg-bg-surface">
       <div>
@@ -13,36 +13,42 @@ export default function TopBar({ title, subtitle, showLive = false, onScan }) {
         )}
       </div>
 
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-bg-raised border border-strong">
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            className="text-text-tertiary"
-          >
-            <circle cx="11" cy="11" r="8" />
-            <path d="m21 21-4.35-4.35" />
-          </svg>
-          <input
-            type="search"
-            aria-label="Buscar socio"
-            placeholder="Buscar socio"
-            className="bg-transparent text-sm text-text-primary outline-none w-48 appearance-none placeholder:text-text-tertiary"
-          />
+      {rightContent ? (
+        <div className="flex items-center gap-3">
+          {rightContent}
         </div>
-        {onScan && (
-          <button
-            onClick={onScan}
-            className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90 bg-primary"
-          >
-            Escanear QR
-          </button>
-        )}
-      </div>
+      ) : showSearch ? (
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-bg-raised border border-strong">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className="text-text-tertiary"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35" />
+            </svg>
+            <input
+              type="search"
+              aria-label="Buscar socio"
+              placeholder="Buscar socio"
+              className="bg-transparent text-sm text-text-primary outline-none w-48 appearance-none placeholder:text-text-tertiary"
+            />
+          </div>
+          {onScan && (
+            <button
+              onClick={onScan}
+              className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90 bg-primary"
+            >
+              Escanear QR
+            </button>
+          )}
+        </div>
+      ) : null}
     </header>
   )
 }

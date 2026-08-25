@@ -4,6 +4,7 @@ import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
 import AppLayout from '../../components/layout/AppLayout';
+import TopBar from '../../components/layout/TopBar';
 import { User, Mail, Phone, Calendar, CreditCard, FileText, Check } from 'lucide-react';
 
 export default function GestionSocios() {
@@ -21,15 +22,17 @@ export default function GestionSocios() {
   return (
     <AppLayout>
       <div className="max-w-6xl mx-auto h-full flex flex-col pb-8 w-full">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-bold text-text-primary">Nuevo socio</h1>
-          <div className="flex gap-3">
-            <Button variant="secondary">Cancelar</Button>
-            <Button variant="primary" className="gap-2">
-              <Check className="w-4 h-4" /> Crear socio
-            </Button>
-          </div>
-        </div>
+        <TopBar
+          title="Gestión de Socios"
+          rightContent={
+            <div className="flex gap-3">
+              <Button variant="secondary">Cancelar</Button>
+              <Button variant="primary" className="gap-2">
+                <Check className="w-4 h-4" /> Crear socio
+              </Button>
+            </div>
+          }
+        />
 
         <div className="grid grid-cols-3 gap-8 flex-1">
           {/* Form Column */}

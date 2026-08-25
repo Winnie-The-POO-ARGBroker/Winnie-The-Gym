@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Card from '../../components/ui/Card';
 import AppLayout from '../../components/layout/AppLayout';
+import TopBar from '../../components/layout/TopBar';
 import { Users, Activity, TrendingUp, UserPlus, UserMinus, Wifi } from 'lucide-react';
 
 export default function AforoMonitor() {
@@ -44,16 +45,17 @@ export default function AforoMonitor() {
   return (
     <AppLayout>
       <div className="p-6 max-w-7xl mx-auto h-full flex flex-col w-full">
-        <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-text-primary">Monitor de Aforo</h1>
-          <p className="text-text-secondary text-sm mt-1">Tiempo real</p>
-        </div>
-        <div className={`px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium ${isConnected ? 'bg-success-500/10 text-success-500 border border-success-500/20' : 'bg-error-500/10 text-error-500 border border-error-500/20'}`}>
-          <Wifi className="w-4 h-4" />
-          {isConnected ? 'WebSocket Conectado' : 'Desconectado'}
-        </div>
-      </div>
+        <TopBar
+          title="Monitor de Aforo"
+          subtitle="Tiempo real"
+          showLive={true}
+          rightContent={
+            <div className={`px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium ${isConnected ? 'bg-success-500/10 text-success-500 border border-success-500/20' : 'bg-error-500/10 text-error-500 border border-error-500/20'}`}>
+              <Wifi className="w-4 h-4" />
+              {isConnected ? 'WebSocket Conectado' : 'Desconectado'}
+            </div>
+          }
+        />
 
       <div className="grid grid-cols-3 gap-6 mb-6">
         <Card className="col-span-2 relative overflow-hidden flex flex-col justify-center min-h-[300px]">

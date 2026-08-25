@@ -59,6 +59,7 @@ export default function DashboardPage() {
         title="Dashboard"
         subtitle={`Resumen del día · ${displayName}`}
         showLive
+        showSearch={true}
         onScan={() => navigate('/recepcion/acceso')}
       />
 

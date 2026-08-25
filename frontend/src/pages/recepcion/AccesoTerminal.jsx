@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
-import Badge from '../../components/ui/Badge';
 import AppLayout from '../../components/layout/AppLayout';
+import TopBar from '../../components/layout/TopBar';
 import { QrCode, CreditCard, Camera, CheckCircle2, XCircle, AlertCircle, LogOut, Check, User } from 'lucide-react';
 
 export default function AccesoTerminal() {
@@ -21,18 +21,17 @@ export default function AccesoTerminal() {
   return (
     <AppLayout>
       <div className="p-6 max-w-7xl mx-auto h-full flex flex-col w-full">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-3 text-text-primary">
-              Control de accesos
-              <Badge variant="live">En Vivo</Badge>
-            </h1>
-            <p className="text-text-secondary text-sm mt-1">Estación de recepción - sin molinetes</p>
-          </div>
-          <div className="bg-bg-surface border border-subtle px-4 py-2 rounded-lg flex items-center gap-2 text-sm text-blue-500">
-            <span className="font-semibold text-text-primary">Aforo</span> 136/200
-          </div>
-        </div>
+        <TopBar
+          title="Control de Accesos"
+          subtitle="Estación de recepción"
+          showLive={true}
+          rightContent={
+            <div className="bg-bg-surface border border-subtle px-4 py-2 rounded-lg flex items-center gap-2 text-sm">
+              <span className="font-semibold text-text-primary">Aforo</span>
+              <span className="text-text-secondary">136/200</span>
+            </div>
+          }
+        />
 
         <div className="grid grid-cols-2 gap-6 flex-1 min-h-0">
           {/* Left Side - Scanner */}

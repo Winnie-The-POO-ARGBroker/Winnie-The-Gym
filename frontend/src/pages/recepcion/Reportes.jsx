@@ -2,6 +2,7 @@ import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import FilterButton from '../../components/ui/FilterButton';
 import AppLayout from '../../components/layout/AppLayout';
+import TopBar from '../../components/layout/TopBar';
 import { Download } from 'lucide-react';
 
 export default function Reportes() {
@@ -10,15 +11,15 @@ export default function Reportes() {
   return (
     <AppLayout>
       <div className="p-6 max-w-7xl mx-auto h-full flex flex-col w-full">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-text-primary">Reportes</h1>
-            <p className="text-text-secondary text-sm mt-1">Resumen ejecutivo</p>
-          </div>
-          <Button variant="primary" className="flex items-center gap-2">
-            <Download className="w-4 h-4" /> Exportar PDF
-          </Button>
-        </div>
+        <TopBar
+          title="Reportes"
+          subtitle="Resumen ejecutivo"
+          rightContent={
+            <Button variant="primary" className="flex items-center gap-2">
+              <Download className="w-4 h-4" /> Exportar PDF
+            </Button>
+          }
+        />
 
         <div className="flex gap-2 mb-8">
           {tabs.map((tab, idx) => (
