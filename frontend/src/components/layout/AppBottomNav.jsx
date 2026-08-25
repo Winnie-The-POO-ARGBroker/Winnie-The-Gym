@@ -1,15 +1,6 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, ScanLine, Users, LineChart, Settings, Activity } from 'lucide-react'
+import { NAV_ICON_MAP } from '../../constants/navIcons'
 import useAuthStore from '../../stores/authStore'
-
-const ICON_MAP = {
-  chart:        LayoutDashboard,
-  scan:         ScanLine,
-  people:       Users,
-  'chart-line': LineChart,
-  gear:         Settings,
-  activity:     Activity,
-}
 
 const MOBILE_NAV = {
   administrador: [
@@ -42,7 +33,7 @@ export default function AppBottomNav() {
     >
       <div className="grid grid-cols-5 items-center justify-items-center h-full">
         {items.map(({ label, path, icon }) => {
-          const Icon = ICON_MAP[icon] ?? LayoutDashboard
+          const Icon = NAV_ICON_MAP[icon] ?? NAV_ICON_MAP.chart
 
           return (
             <NavLink

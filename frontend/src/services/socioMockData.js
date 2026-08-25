@@ -10,12 +10,12 @@
 export const MOCK_MEMBER = {
   id: 'usr_30111222',
   socioNumero: 'SOC-2026-0842',
-  nombre: 'Ana M.',
-  apellido: 'González',
-  dni: '30.111.222',
-  email: 'ana@mail.com',
-  telefono: '+54 11 5555-5555',
-  fechaNacimiento: '12/03/1992',
+  nombre: 'Demo',
+  apellido: 'Usuario',
+  dni: 'XX.XXX.XXX',
+  email: 'demo@winniethegym.com',
+  telefono: '+54 11 0000-0000',
+  fechaNacimiento: '01/01/1990',
   direccion: 'CABA · Palermo',
   avatarUrl: '', // Usa avatar generado con iniciales o icono gris
   fechaIngreso: '12/03/2023',
@@ -55,8 +55,8 @@ export const MOCK_MEMBER = {
   // Historial de pagos
   // TODO: reemplazar por API real -> GET /api/members/me/payments/
   pagos: [
-    { id: 'pay_1', mes: 'Agosto', monto: '$45.000', fecha: '01/08/2026', metodo: 'Visa Débito **** 4920', estado: 'Aprobado' },
-    { id: 'pay_2', mes: 'Julio', monto: '$42.000', fecha: '01/07/2026', metodo: 'Visa Débito **** 4920', estado: 'Aprobado' },
+    { id: 'pay_1', mes: 'Agosto', monto: '$45.000', fecha: '01/08/2026', metodo: '**** ****', estado: 'Aprobado' },
+    { id: 'pay_2', mes: 'Julio', monto: '$42.000', fecha: '01/07/2026', metodo: '**** ****', estado: 'Aprobado' },
   ],
 }
 

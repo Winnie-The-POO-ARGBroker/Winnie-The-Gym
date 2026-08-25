@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useLocation, useNavigate, NavLink } from 'react-router-dom'
-import { LayoutDashboard, Users, CreditCard, MonitorPlay, LineChart, Settings, LogOut, ScanLine, Activity } from 'lucide-react'
+import { LogOut } from 'lucide-react'
+import { NAV_ICON_MAP } from '../../constants/navIcons'
 import useAuthStore from '../../stores/authStore'
 import { useThemeStore } from '../../stores/themeStore'
 import WinnieLogo from '../ui/WinnieLogo'
@@ -50,6 +51,8 @@ export default function Sidebar() {
 
   const currentNavItems = NAV_BY_ROLE[rol] ?? NAV_BY_ROLE.administrador
 
+  if (!user) return null
+
   function handleLogout() {
     clearAuth()
     navigate('/login', { replace: true })
@@ -83,16 +86,7 @@ export default function Sidebar() {
             strokeWidth: isActive ? 2.5 : 2,
           }
 
-          const Icon = {
-            chart:       LayoutDashboard,
-            people:      Users,
-            card:        CreditCard,
-            monitor:     MonitorPlay,
-            'chart-line': LineChart,
-            gear:        Settings,
-            scan:        ScanLine,
-            activity:    Activity,
-          }[icon] ?? LayoutDashboard
+          const Icon = NAV_ICON_MAP[icon] ?? NAV_ICON_MAP.chart
 
           return (
             <NavLink

@@ -84,6 +84,9 @@ export default function ClasesPage() {
   // Acción de cancelar reserva
   // TODO: reemplazar por API real -> POST /api/classes/:id/cancel/
   const handleCancelBooking = (classId) => {
+    const clase = classesList.find((c) => c.id === classId)
+    if (!clase?.isBooked) return
+
     setClassesList((prev) => {
       const updated = prev.map((c) => {
         if (c.id === classId) {
@@ -205,6 +208,7 @@ export default function ClasesPage() {
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery('')}
+                    aria-label="Limpiar búsqueda"
                     className="absolute right-2.5 top-2 text-text-tertiary hover:text-text-primary text-xs"
                   >
                     ✕

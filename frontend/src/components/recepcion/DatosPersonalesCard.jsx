@@ -15,8 +15,8 @@ export default function DatosPersonalesCard({ formData, onChange }) {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-5">
         <Input label="DNI" placeholder="Ej. 30.111.222" icon={FileText} value={formData.dni} onChange={e => onChange('dni', e.target.value)} />
-        <Input label="FECHA NACIMIENTO" placeholder="dd/mm/aaaa" icon={Calendar} />
-        <Select label="GÉNERO">
+        <Input label="FECHA NACIMIENTO" placeholder="dd/mm/aaaa" icon={Calendar} value={formData.fechaNacimiento ?? ''} onChange={e => onChange('fechaNacimiento', e.target.value)} />
+        <Select label="GÉNERO" value={formData.genero ?? ''} onChange={e => onChange('genero', e.target.value)}>
           <option>Femenino</option>
           <option>Masculino</option>
           <option>Otro</option>
@@ -25,7 +25,7 @@ export default function DatosPersonalesCard({ formData, onChange }) {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <Input label="EMAIL" type="email" placeholder="ana@mail.com" icon={Mail} value={formData.email} onChange={e => onChange('email', e.target.value)} />
-        <Input label="TELÉFONO" type="tel" placeholder="+54 11..." icon={Phone} />
+        <Input label="TELÉFONO" type="tel" placeholder="+54 11..." icon={Phone} value={formData.telefono ?? ''} onChange={e => onChange('telefono', e.target.value)} />
       </div>
     </Card>
   );
