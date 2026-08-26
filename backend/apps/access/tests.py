@@ -101,8 +101,10 @@ class DynamicQRAndAccessTestCase(TestCase):
         })
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+    @patch('apps.access.views.has_active_membership')
     @patch('apps.access.views.log_qr_event')
-    def test_replay_attack_via_endpoint(self, mock_log):
+    def test_replay_attack_via_endpoint(self, mock_log, mock_has_active):
+        mock_has_active.return_value = True
         """[TEST-3]: Test de ataque de re-uso end-to-end sobre el endpoint"""
         token_data = generate_dynamic_qr_token(self.user)
         self.client.force_authenticate(user=self.staff_user)
@@ -125,9 +127,11 @@ class DynamicQRAndAccessTestCase(TestCase):
         self.assertEqual(logs[1].status, 'DENIED')
         self.assertEqual(logs[1].denial_reason, 'REPLAY_ATTACK')
 
+    @patch('apps.access.views.has_active_membership')
     @patch('apps.access.views.log_qr_event')
-    def test_generate_and_scan_qr_views(self, mock_log_qr_event):
+    def test_generate_and_scan_qr_views(self, mock_log_qr_event, mock_has_active):
         mock_log_qr_event.return_value = True
+        mock_has_active.return_value = True
 
         # 1. Socio solicita QR
         self.client.force_authenticate(user=self.user)
