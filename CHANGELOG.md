@@ -6,21 +6,28 @@ Versionado según [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
-## [Sin publicar] — v0.6.0-rc
-**PR #26** · `feature/socios-membresias` → `develop` · @MrForii · _Pendiente de revisión_
+## [0.6.0] — 2026-08-25
+**PR #26** · `feature/socios-membresias` → `develop` · @MrForii
 
 ### Corregido
 - Fix crítico: `has_active_membership()` dejó de devolver `False` hardcodeado y ahora consulta la base de datos real
+- `MeRenewView`: envuelto en `transaction.atomic()` para evitar estado parcial si el `create` falla tras el `update` (fix post-review @Franco-Arce)
+- `IsReceptionistOrAdmin`: corregida para verificar los nombres de rol reales del proyecto (`administrador`, `recepcionista`)
 
 ### Agregado
 - Modelo `Socio` extendido: `numero_socio` (secuencia automática S-00001), `estado` (activo/suspendido/baja), `fecha_baja`, `updated_at`, `observaciones`
 - App `memberships`: modelos `PlanMembresia` y `Membresia` con lógica de expiración lazy
-- 15 endpoints REST con permisos por rol
+- 15 endpoints REST con permisos por rol (ver [API Reference](API-Reference))
 - Renovación self-service: `POST /api/memberships/me/renew/`
 - Clases de permiso nuevas: `IsSocio`, `IsAdminOnly` (en `apps/access/permissions.py`)
-- Clase `IsReceptionistOrAdmin` corregida: ahora verifica los nombres de rol reales (`administrador`, `recepcionista`)
 - 78 tests pytest — TDD estricto, cobertura de todos los endpoints y modelos nuevos
 - 4 migraciones seguras (solo additive) compatibles con datos de producción existentes
+
+### Infraestructura
+- `CHANGELOG.md` incorporado al repositorio
+- Templates de GitHub: PR template, issue templates (bug, feature, task)
+- `pytest` y `pytest-django` agregados a `requirements/development.txt`
+- `.github/CODEOWNERS`: agregado `@Franco-Arce` como co-owner
 
 ---
 
