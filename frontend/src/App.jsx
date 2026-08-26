@@ -11,8 +11,9 @@ import ComingSoonPage from './pages/ComingSoonPage'
 import ProtectedRoute from './components/ProtectedRoute'
 import PublicRoute from './components/PublicRoute'
 import useAuthStore from './stores/authStore'
+import AttendanceScreen from './pages/AttendanceScreen'
 
-const COMING_SOON_PATHS = ['/socios', '/membresias', '/clases', '/reportes', '/configuracion']
+const COMING_SOON_PATHS = ['/socios', '/membresias', '/reportes', '/configuracion']
 
 function CompleteProfileRoute() {
   const { accessToken, user } = useAuthStore()
@@ -39,6 +40,9 @@ export default function App() {
       {/* Protected */}
       <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
       <Route path="/perfil" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+
+      <Route path="/clases" element={<Navigate to="/clases/asistencia" replace />} />
+      <Route path="/clases/asistencia" element={<ProtectedRoute><AttendanceScreen /></ProtectedRoute>} />
 
       {/* Sidebar routes — protected, coming soon */}
       {COMING_SOON_PATHS.map((path) => (
