@@ -3,30 +3,28 @@ import AppLayout from '../components/layout/AppLayout';
 
 export default function AttendanceScreen() {
   const attendees = [
-    { name: 'Ana M.', dni: '30.111.222', plan: 'Premium', planColor: 'bg-[#ffe8dc] text-orange-600', status: 'presente' },
-    { name: 'Bruno P.', dni: '32.444.555', plan: 'Básico', planColor: 'bg-[#2a2a2a] text-text-secondary', status: 'presente' },
-    { name: 'Carla S.', dni: '28.777.888', plan: 'Gold', planColor: 'bg-[#fff4ce] text-yellow-600', status: 'ausente' },
-    { name: 'Diego R.', dni: '35.666.999', plan: 'Premium', planColor: 'bg-[#ffe8dc] text-orange-600', status: 'presente' },
-    { name: 'Elena V.', dni: '29.222.333', plan: 'Premium', planColor: 'bg-[#ffe8dc] text-orange-600', status: 'sin_marcar' },
-    { name: 'Fede G.', dni: '31.888.777', plan: 'Gold', planColor: 'bg-[#fff4ce] text-yellow-600', status: 'sin_marcar' },
-    { name: 'Gaby T.', dni: '26.555.444', plan: 'Básico', planColor: 'bg-[#2a2a2a] text-text-secondary', status: 'sin_marcar' },
-    { name: 'Héctor M.', dni: '33.999.111', plan: 'Premium', planColor: 'bg-[#ffe8dc] text-orange-600', status: 'presente' },
+    { name: 'Ana M.', dni: '30.111.222', plan: 'Premium', planColor: 'bg-orange-500/10 text-orange-600 dark:text-orange-400', status: 'presente' },
+    { name: 'Bruno P.', dni: '32.444.555', plan: 'Básico', planColor: 'bg-bg-raised text-text-secondary border border-subtle', status: 'presente' },
+    { name: 'Carla S.', dni: '28.777.888', plan: 'Gold', planColor: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400', status: 'ausente' },
+    { name: 'Diego R.', dni: '35.666.999', plan: 'Premium', planColor: 'bg-orange-500/10 text-orange-600 dark:text-orange-400', status: 'presente' },
+    { name: 'Elena V.', dni: '29.222.333', plan: 'Premium', planColor: 'bg-orange-500/10 text-orange-600 dark:text-orange-400', status: 'sin_marcar' },
+    { name: 'Fede G.', dni: '31.888.777', plan: 'Gold', planColor: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400', status: 'sin_marcar' },
+    { name: 'Gaby T.', dni: '26.555.444', plan: 'Básico', planColor: 'bg-bg-raised text-text-secondary border border-subtle', status: 'sin_marcar' },
+    { name: 'Héctor M.', dni: '33.999.111', plan: 'Premium', planColor: 'bg-orange-500/10 text-orange-600 dark:text-orange-400', status: 'presente' },
   ];
 
   const getRowBg = (status) => {
-    if (status === 'presente') return 'bg-[#c5f0d3] hover:bg-[#b2eac4]';
-    if (status === 'ausente') return 'bg-[#ffd5d5] hover:bg-[#ffc6c6]';
+    if (status === 'presente') return 'bg-green-500/10 hover:bg-green-500/20';
+    if (status === 'ausente') return 'bg-red-500/10 hover:bg-red-500/20';
     return 'bg-bg-surface hover:bg-bg-raised';
   };
 
   const getTextColor = (status) => {
-    if (status === 'presente' || status === 'ausente') return 'text-gray-900';
     return 'text-text-primary';
   };
 
   const getDniColor = (status) => {
-    if (status === 'presente' || status === 'ausente') return 'text-gray-600';
-    return 'text-text-tertiary';
+    return 'text-text-secondary';
   };
 
   return (
@@ -58,15 +56,15 @@ export default function AttendanceScreen() {
           {/* Table Header Controls */}
           <div className="flex items-center gap-4 p-5 border-b border-subtle">
             <span className="text-text-primary font-semibold">Inscriptos</span>
-            <span className="bg-[#2c3e50] text-[#60a5fa] px-3 py-1.5 rounded-full text-xs font-bold border border-[#3b82f6]/30 flex items-center gap-1.5">
+            <span className="bg-blue-500/10 text-blue-600 dark:text-blue-400 px-3 py-1.5 rounded-full text-xs font-bold border border-blue-500/30 flex items-center gap-1.5">
                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
                8/20
             </span>
             <div className="flex-1"></div>
-            <span className="bg-[#14532d]/40 text-green-400 px-3 py-1 rounded-full text-xs font-bold border border-green-500/30 flex items-center gap-1">
+            <span className="bg-green-500/10 text-green-600 dark:text-green-400 px-3 py-1 rounded-full text-xs font-bold border border-green-500/30 flex items-center gap-1">
               ✓ 4 presentes
             </span>
-            <span className="bg-[#7f1d1d]/40 text-red-400 px-3 py-1 rounded-full text-xs font-bold border border-red-500/30 flex items-center gap-1">
+            <span className="bg-red-500/10 text-red-600 dark:text-red-400 px-3 py-1 rounded-full text-xs font-bold border border-red-500/30 flex items-center gap-1">
               ✕ 1 ausentes
             </span>
             <span className="text-text-secondary text-sm ml-2">3 sin marcar</span>
@@ -149,7 +147,7 @@ export default function AttendanceScreen() {
           <div className="bg-bg-surface rounded-xl p-6 border border-subtle">
             <div className="flex justify-between items-center mb-1">
               <h3 className="text-text-primary font-bold">Lista de espera</h3>
-              <span className="bg-[#fff4ce] text-yellow-700 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">3</span>
+              <span className="bg-yellow-500/10 text-yellow-600 dark:text-yellow-500 border border-yellow-500/30 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">3</span>
             </div>
             <p className="text-text-tertiary text-xs mb-6">3 esperando</p>
             
