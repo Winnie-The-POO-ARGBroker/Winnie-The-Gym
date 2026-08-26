@@ -19,7 +19,7 @@ export default function ComingSoonPage() {
       <TopBar title={meta.title} subtitle={meta.subtitle} />
       <div className="flex-1 flex flex-col items-center justify-center gap-6 px-6 text-center">
         <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-bg-raised">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FF5722" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ff5a36" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10" />
             <polyline points="12 6 12 12 16 14" />
           </svg>

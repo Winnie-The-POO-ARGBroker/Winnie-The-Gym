@@ -271,6 +271,31 @@ Una Historia de Usuario se considera **Terminada** cuando cumple:
 - QA/Tester validó el flujo sin defectos críticos o bloqueantes.
 - Sistema ejecutable localmente con un único comando: `docker compose up`.
 
+<h2 align='center'>📝 Changelog</h2>
+
+| Versión | Fecha | Descripción | Autor |
+|:---:|:---:|:---|:---:|
+| [v0.4.0](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/CHANGELOG#040--2026-08-21) | 2026-08-21 | Dashboard con vistas por rol, design system, componentes UI | @MagaBechis |
+| [v0.3.0](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/CHANGELOG#030--2026-08-13) | 2026-08-13 | Google OAuth, JWT, perfil de usuario, frontend SPA | @MrForii |
+| [v0.2.0](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/CHANGELOG#020--2026-08-10) | 2026-08-10 | Motor QR dinámico, anti-replay Redis, logs MongoDB | @Franco-Arce |
+| [v0.1.0](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/CHANGELOG#010--2026-08-08) | 2026-08-08 | Scaffold inicial, Docker Compose, estructura base | @MrForii |
+
+> 📋 Historial completo en la [Wiki — CHANGELOG](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/CHANGELOG)
+
+<h2 align='center'>🤝 Contribuir al proyecto</h2>
+
+Antes de abrir un PR o una Issue, revisá los templates y convenciones del equipo:
+
+| Recurso | Descripción |
+|:---|:---|
+| [📋 Template de PR](.github/pull_request_template.md) | Checklist y estructura para Pull Requests |
+| [✨ Template Feature](.github/ISSUE_TEMPLATE/feature.md) | Para proponer nuevas funcionalidades |
+| [🐛 Template Bug](.github/ISSUE_TEMPLATE/bug_report.md) | Para reportar comportamientos incorrectos |
+| [📌 Template Tarea](.github/ISSUE_TEMPLATE/task.md) | Para tareas técnicas y chores |
+| [🌿 Estrategia de Branching](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/Estrategia-de-Branching) | Naming de ramas y convenciones de commits |
+
+> Todos los PRs deben apuntar a `develop` y pasar revisión de **@MrForii** antes del merge.
+
 <h2 align='center'>🎯 Nuestra Wiki</h2>
 
 <h3 align='center'>🏋️ <a href="https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki" align='center'>Link a Wiki</a></h3>
