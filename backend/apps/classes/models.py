@@ -18,10 +18,20 @@ class Clase(models.Model):
         ('finalizada', 'Finalizada'),
     ]
 
+    DIA_CHOICES = [
+        ('Lunes', 'Lunes'),
+        ('Martes', 'Martes'),
+        ('Miércoles', 'Miércoles'),
+        ('Jueves', 'Jueves'),
+        ('Viernes', 'Viernes'),
+        ('Sábado', 'Sábado'),
+        ('Domingo', 'Domingo'),
+    ]
+
     nombre = models.CharField(max_length=120)
     categoria = models.CharField(max_length=50, choices=CATEGORIA_CHOICES, default='funcional')
     descripcion = models.TextField(blank=True, default='')
-    dia = models.CharField(max_length=20, default='Lunes')
+    dia = models.CharField(max_length=20, choices=DIA_CHOICES, default='Lunes')
     hora = models.CharField(max_length=10, default='08:00')
     duracion_min = models.PositiveIntegerField(default=45)
     sala = models.CharField(max_length=80, default='Sala A')
