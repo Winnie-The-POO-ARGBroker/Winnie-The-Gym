@@ -83,7 +83,7 @@ class ClaseInscribirFlowTests(APITestCase):
         )
 
     def test_inscribir_cupo_lleno_en_espera_201(self):
-        clase = _make_clase(cupo_maximo=1)
+        clase = _make_clase(cupo_maximo=1, lista_espera_max=2)
 
         # First socio takes the only spot
         user1 = _make_user(rol='socio')
@@ -104,6 +104,31 @@ class ClaseInscribirFlowTests(APITestCase):
         self.assertTrue(
             InscripcionClase.objects.filter(clase=clase, socio=socio2, en_espera=True).exists()
         )
+
+    def test_inscribir_cupo_y_espera_llenos_400(self):
+        clase = _make_clase(cupo_maximo=1, lista_espera_max=1)
+
+        # Spot 1 (Cupo principal)
+        user1 = _make_user(rol='socio')
+        socio1 = _make_socio(user1)
+        InscripcionClase.objects.create(clase=clase, socio=socio1, en_espera=False)
+
+        # Spot 2 (Lista de espera 1/1)
+        user2 = _make_user(rol='socio')
+        socio2 = _make_socio(user2)
+        InscripcionClase.objects.create(clase=clase, socio=socio2, en_espera=True)
+
+        # Spot 3 (Lista de espera desbordada)
+        user3 = _make_user(rol='socio')
+        _make_socio(user3)
+        _auth_client(self.client, user3)
+
+        response = self.client.post(_inscribir_url(clase.pk))
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('detail', response.data)
+        self.assertIn('completas', response.data['detail'])
+
 
     def test_inscribir_ya_inscripto_400(self):
         user = _make_user(rol='socio')
