@@ -28,6 +28,8 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
+pyrightconfig.json
+backend/pyrightconfig.json
 
 # Agent
 .atl/
