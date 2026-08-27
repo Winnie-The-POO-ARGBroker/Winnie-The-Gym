@@ -12,14 +12,16 @@ import Avatar from '../ui/Avatar'
 const NAV_BY_ROLE = {
   administrador: [
     { label: 'Dashboard',         path: '/dashboard',          icon: 'chart' },
+    { divider: true, label: 'Gestión' },
+    { label: 'Gestión Clases',    path: '/clases',             icon: 'monitor' },
     { divider: true, label: 'Recepción' },
     { label: 'Acceso',            path: '/recepcion/acceso',   icon: 'scan' },
     { label: 'Aforo',             path: '/recepcion/aforo',    icon: 'activity' },
     { label: 'Gestión Socios',    path: '/recepcion/socios',   icon: 'people' },
     { label: 'Reportes',          path: '/recepcion/reportes', icon: 'chart-line' },
-    { divider: true, label: 'Socio' },
+    { divider: true, label: 'Socio (Vista)' },
     { label: 'Credencial',        path: '/socio/credencial',   icon: 'card' },
-    { label: 'Clases',            path: '/socio/clases',       icon: 'monitor' },
+    { label: 'Reserva Clases',    path: '/socio/clases',       icon: 'monitor' },
     { divider: true, label: 'General' },
     { label: 'Membresias',        path: '/membresias',         icon: 'card' },
     { label: 'Configuracion',     path: '/configuracion',      icon: 'gear' },

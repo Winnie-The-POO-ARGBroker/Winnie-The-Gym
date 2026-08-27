@@ -13,13 +13,16 @@ import ClasesPage from './pages/socio/ClasesPage'
 import ProtectedRoute from './components/ProtectedRoute'
 import PublicRoute from './components/PublicRoute'
 import useAuthStore from './stores/authStore'
+import AttendanceScreen from './pages/AttendanceScreen'
+import CreateClassScreen from './pages/CreateClassScreen'
+import ClassesScreen from './pages/ClassesScreen'
 
 import AccesoTerminal from './pages/recepcion/AccesoTerminal'
 import AforoMonitor from './pages/recepcion/AforoMonitor'
 import GestionSocios from './pages/recepcion/GestionSocios'
 import Reportes from './pages/recepcion/Reportes'
 
-const COMING_SOON_PATHS = ['/socios', '/membresias', '/clases', '/reportes', '/configuracion']
+const COMING_SOON_PATHS = ['/socios', '/membresias', '/reportes', '/configuracion']
 
 function CompleteProfileRoute() {
   const { accessToken, user } = useAuthStore()
@@ -46,6 +49,9 @@ export default function App() {
         {/* Protected */}
         <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
         <Route path="/perfil" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+        <Route path="/clases" element={<ProtectedRoute><ClassesScreen /></ProtectedRoute>} />
+        <Route path="/clases/crear" element={<ProtectedRoute><CreateClassScreen /></ProtectedRoute>} />
+        <Route path="/clases/asistencia" element={<ProtectedRoute><AttendanceScreen /></ProtectedRoute>} />
 
         {/* Recepcion routes */}
         <Route path="/recepcion/acceso" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><AccesoTerminal /></ProtectedRoute>} />
