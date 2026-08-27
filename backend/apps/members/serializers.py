@@ -22,7 +22,3 @@ class SocioSerializer(serializers.ModelSerializer):
         read_only_fields = ('numero_socio', 'created_at')
 
 
-class SocioBajaSerializer(serializers.Serializer):
-    """Output-only serializer for the dar-baja action response."""
-    estado = serializers.CharField()
-    fecha_baja = serializers.DateField()

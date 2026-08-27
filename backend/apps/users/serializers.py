@@ -22,13 +22,7 @@ class CustomJWTSerializer(JWTSerializer):
 
     def get_user(self, obj):
         user = obj.get('user') or self.context['request'].user
-        data = {
-            'id': user.id,
-            'email': user.email,
-            'rol': user.rol,
-            'foto': user.foto,
-            'is_profile_complete': user.is_profile_complete,
-        }
+        data = dict(UserDetailsSerializer(user).data)
         if user.is_profile_complete:
             data['nombre'] = user.socio.nombre
             data['apellido'] = user.socio.apellido

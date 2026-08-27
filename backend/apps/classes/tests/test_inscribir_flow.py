@@ -143,16 +143,14 @@ class ClaseInscribirFlowTests(APITestCase):
         self.assertIn('detail', response.data)
         self.assertIn('Ya estás inscripto', response.data['detail'])
 
-    def test_inscribir_usuario_sin_perfil_socio_400(self):
+    def test_inscribir_usuario_sin_perfil_socio_403(self):
         admin_user = _make_user(rol='administrador')
         clase = _make_clase(cupo_maximo=10)
         _auth_client(self.client, admin_user)
 
         response = self.client.post(_inscribir_url(clase.pk))
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('detail', response.data)
-        self.assertIn('perfil de socio', response.data['detail'])
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_inscribir_unauthenticated_401(self):
         clase = _make_clase()

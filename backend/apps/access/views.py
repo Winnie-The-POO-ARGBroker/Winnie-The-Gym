@@ -113,6 +113,7 @@ class ScanQRView(APIView):
             "scanned_by_id": scanned_by_user.id if scanned_by_user else None,
             "qr_jti": jti,
         }
+        # TODO: move to Django Channels worker for non-blocking Mongo writes (channels + channels_redis already installed)
         Thread(target=_async_mongo_log, args=(mongo_payload,), daemon=True).start()
 
         # 6. Responder
@@ -137,27 +138,21 @@ class AccessLogListView(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        
-        # Si es staff o admin/recepcionista, ver todos
-        is_staff_or_receptionist = (
-            user.is_authenticated and (
-                user.is_staff or
-                user.rol in ('administrador', 'recepcionista')
-            )
-        )
-        
-        if is_staff_or_receptionist:
+
+        # IsAuthenticated permission guarantees user is authenticated at this point.
+        # Branch on rol: admins and receptionists see all logs; socios see only their own.
+        is_privileged = user.rol in ('administrador', 'recepcionista') or user.is_staff
+
+        if is_privileged:
             qs = AccessLog.objects.all().order_by('-timestamp')
-        elif user.is_authenticated:
-            qs = AccessLog.objects.filter(user=user).order_by('-timestamp')
         else:
-            qs = AccessLog.objects.none()
+            qs = AccessLog.objects.filter(user=user).order_by('-timestamp')
 
         user_id = self.request.query_params.get('user_id')
         status_param = self.request.query_params.get('status')
         access_type = self.request.query_params.get('access_type')
 
-        if user_id and is_staff_or_receptionist:
+        if user_id and is_privileged:
             qs = qs.filter(user_id=user_id)
         if status_param:
             qs = qs.filter(status=status_param)

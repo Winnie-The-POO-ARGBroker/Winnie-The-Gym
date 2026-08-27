@@ -30,7 +30,6 @@ INSTALLED_APPS = [
     'apps.memberships',
     'apps.classes',
     'apps.access',
-    'apps.reports',
 ]
 
 MIDDLEWARE = [

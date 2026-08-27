@@ -211,6 +211,42 @@ def _make_membresia(socio, plan, estado='activa', fecha_fin=None):
         estado=estado,
     )
 
+class AccessLogListViewTests(TestCase):
+    """Tests for AccessLogListView permission and queryset filtering."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.url = '/api/access/logs/'
+
+    def test_unauthenticated_returns_401(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_socio_sees_only_own_logs(self):
+        user = _make_user(rol='socio')
+        other_user = _make_user(rol='socio')
+        AccessLog.objects.create(user=user, access_type='ENTRY', status='GRANTED')
+        AccessLog.objects.create(user=other_user, access_type='ENTRY', status='GRANTED')
+        self.client.force_authenticate(user=user)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['user'], user.id)
+
+    def test_admin_sees_all_logs(self):
+        user = _make_user(rol='socio')
+        admin = _make_user(rol='administrador')
+        AccessLog.objects.create(user=user, access_type='ENTRY', status='GRANTED')
+        self.client.force_authenticate(user=admin)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+
+
 class HasActiveMembershipTests(TestCase):
 
     def _call(self, user):

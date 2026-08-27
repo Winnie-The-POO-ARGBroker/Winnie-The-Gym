@@ -8,8 +8,9 @@ from apps.members.models import Socio
 
 User = get_user_model()
 
-COMPLETE_PROFILE_URL = reverse('complete-profile')
-PROFILE_URL = reverse('profile')
+COMPLETE_PROFILE_URL = reverse('users:complete-profile')
+PROFILE_URL = reverse('users:profile')
+LOGIN_URL = '/api/auth/login/'
 
 
 def _auth_client(client, user):
@@ -148,3 +149,37 @@ class ProfileViewTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['dni'], '12345678')
+
+
+class CustomJWTSerializerTests(APITestCase):
+    """Verify that CustomJWTSerializer.get_user returns the expected fields."""
+
+    def test_jwt_login_response_contains_base_fields(self):
+        user = _make_user(email='jwt_base@test.com')
+        response = self.client.post(LOGIN_URL, {
+            'email': 'jwt_base@test.com',
+            'password': 'pass',
+        }, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        user_data = response.data.get('user')
+        self.assertIsNotNone(user_data, "Response should contain 'user' key")
+        for field in ('id', 'email', 'rol', 'is_profile_complete'):
+            self.assertIn(field, user_data, f"user dict should contain '{field}'")
+        self.assertNotIn('nombre', user_data, "nombre should not appear when profile is incomplete")
+        self.assertNotIn('apellido', user_data, "apellido should not appear when profile is incomplete")
+
+    def test_jwt_login_response_includes_nombre_apellido_when_profile_complete(self):
+        user = _make_user(email='jwt_complete@test.com')
+        _make_socio(user, dni='44332211')
+        response = self.client.post(LOGIN_URL, {
+            'email': 'jwt_complete@test.com',
+            'password': 'pass',
+        }, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        user_data = response.data.get('user')
+        self.assertIsNotNone(user_data)
+        self.assertTrue(user_data.get('is_profile_complete'))
+        self.assertIn('nombre', user_data)
+        self.assertIn('apellido', user_data)

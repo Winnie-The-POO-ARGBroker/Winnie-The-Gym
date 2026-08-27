@@ -1,5 +1,7 @@
 from django.urls import path
 
+app_name = 'memberships'
+
 from .views import (
     MeRenewView,
     MeView,

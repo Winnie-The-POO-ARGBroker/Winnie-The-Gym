@@ -141,10 +141,10 @@ class UrlSmokeTests(APITestCase):
     def test_named_urls_resolve(self):
         from django.urls import reverse, NoReverseMatch
         names = [
-            'socio-list-create',
-            'plan-list-create',
-            'me',
-            'me-renew',
+            'members:socio-list-create',
+            'memberships:plan-list-create',
+            'memberships:me',
+            'memberships:me-renew',
         ]
         for name in names:
             try:

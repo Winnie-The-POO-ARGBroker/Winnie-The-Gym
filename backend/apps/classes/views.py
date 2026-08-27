@@ -2,7 +2,7 @@ from rest_framework import generics, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from apps.access.permissions import IsAdminOnly, IsReceptionistOrAdmin
+from apps.access.permissions import IsAdminOnly, IsReceptionistOrAdmin, IsSocio
 from .models import Clase, InscripcionClase
 from .serializers import (
     ClaseDetailSerializer,
@@ -18,6 +18,8 @@ class ClaseViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ('create', 'update', 'partial_update', 'destroy'):
             return [IsAdminOnly()]
+        if self.action == 'inscribir':
+            return [IsSocio()]
         return [permissions.IsAuthenticated()]
 
     def get_serializer_class(self):
@@ -25,17 +27,10 @@ class ClaseViewSet(viewsets.ModelViewSet):
             return ClaseDetailSerializer
         return ClaseSerializer
 
-    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    @action(detail=True, methods=['post'], permission_classes=[IsSocio])
     def inscribir(self, request, pk=None):
         clase = self.get_object()
         user = request.user
-
-        if not hasattr(user, 'socio'):
-            return Response(
-                {'detail': 'El usuario no tiene perfil de socio.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
         socio = user.socio
 
         if InscripcionClase.objects.filter(clase=clase, socio=socio).exists():

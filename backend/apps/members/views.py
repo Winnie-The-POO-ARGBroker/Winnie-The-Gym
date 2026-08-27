@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 from apps.access.permissions import IsReceptionistOrAdmin
 
 from .models import Socio
-from .serializers import SocioBajaSerializer, SocioSerializer
+from .serializers import SocioSerializer
 
 
 class SocioListCreateView(generics.ListCreateAPIView):
@@ -41,5 +41,5 @@ class SocioDarBajaView(APIView):
         socio.fecha_baja = datetime.date.today()
         socio.save(update_fields=['estado', 'fecha_baja', 'updated_at'])
 
-        serializer = SocioBajaSerializer(socio)
+        serializer = SocioSerializer(socio)
         return Response(serializer.data, status=status.HTTP_200_OK)

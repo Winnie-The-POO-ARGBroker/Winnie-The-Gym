@@ -243,3 +243,16 @@ class SocioDarBajaTests(APITestCase):
         response = self.client.post(_baja_url(socio.pk))
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_dar_baja_response_uses_full_socio_serializer_shape(self):
+        admin = _make_user(rol='administrador')
+        user = _make_user()
+        socio = _make_socio(user)
+        _auth_client(self.client, admin)
+
+        response = self.client.post(_baja_url(socio.pk))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # SocioSerializer exposes all these fields; SocioBajaSerializer only had estado + fecha_baja
+        for field in ('id', 'numero_socio', 'nombre', 'apellido', 'dni', 'telefono', 'observaciones'):
+            self.assertIn(field, response.data, f"Expected field '{field}' in dar-baja response")
