@@ -48,10 +48,10 @@ class ClaseViewSet(viewsets.ModelViewSet):
         en_espera = cupos_ocupados >= clase.cupo_maximo
 
         if en_espera:
-            espera_actual = clase.inscripciones.filter(en_espera=True).count()
-            if espera_actual >= clase.lista_espera_max:
+            en_lista = clase.inscripciones.filter(en_espera=True).count()
+            if en_lista >= clase.lista_espera_max:
                 return Response(
-                    {'detail': 'La clase y la lista de espera se encuentran completas.'},
+                    {'detail': 'La clase y su lista de espera están completas.'},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 

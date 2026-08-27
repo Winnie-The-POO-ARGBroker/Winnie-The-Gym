@@ -1,3 +1,6 @@
+# IDE config
+pyrightconfig.json
+
 # Python / Django
 __pycache__/
 *.py[cod]
