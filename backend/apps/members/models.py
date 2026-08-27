@@ -4,11 +4,10 @@ from django.db import connection, models
 
 class Socio(models.Model):
 
-    ESTADO_CHOICES = [
-        ('activo', 'Activo'),
-        ('suspendido', 'Suspendido'),
-        ('baja', 'Baja'),
-    ]
+    class Estado(models.TextChoices):
+        ACTIVO = 'activo', 'Activo'
+        SUSPENDIDO = 'suspendido', 'Suspendido'
+        BAJA = 'baja', 'Baja'
 
     usuario = models.OneToOneField(
         settings.AUTH_USER_MODEL,
@@ -21,7 +20,7 @@ class Socio(models.Model):
     telefono = models.CharField(max_length=30)
     certificado_medico_url = models.URLField(blank=True)
     numero_socio = models.CharField(max_length=10, unique=True)
-    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='activo')
+    estado = models.CharField(max_length=20, choices=Estado.choices, default=Estado.ACTIVO)
     fecha_baja = models.DateField(blank=True, null=True)
     updated_at = models.DateTimeField(auto_now=True)
     observaciones = models.TextField(blank=True, default='')
@@ -41,3 +40,4 @@ class Socio(models.Model):
     class Meta:
         verbose_name = 'Socio'
         verbose_name_plural = 'Socios'
+        ordering = ['numero_socio']

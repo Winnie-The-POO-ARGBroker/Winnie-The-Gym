@@ -38,6 +38,25 @@ def _make_socio(user, dni=None):
     )
 
 
+class SocioTextChoicesTest(TestCase):
+
+    def test_estado_textchoices_activo_value(self):
+        from apps.members.models import Socio
+        self.assertEqual(Socio.Estado.ACTIVO, 'activo')
+
+    def test_estado_textchoices_suspendido_value(self):
+        from apps.members.models import Socio
+        self.assertEqual(Socio.Estado.SUSPENDIDO, 'suspendido')
+
+    def test_estado_textchoices_baja_value(self):
+        from apps.members.models import Socio
+        self.assertEqual(Socio.Estado.BAJA, 'baja')
+
+    def test_meta_ordering_is_numero_socio(self):
+        from apps.members.models import Socio
+        self.assertEqual(Socio._meta.ordering, ['numero_socio'])
+
+
 class SocioLifecycleFieldsTest(TestCase):
 
     def test_numero_socio_auto_assigned_on_save(self):

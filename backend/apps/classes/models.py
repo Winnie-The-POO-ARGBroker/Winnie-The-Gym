@@ -1,38 +1,38 @@
+import datetime
+
 from django.db import models
 
 
 class Clase(models.Model):
-    CATEGORIA_CHOICES = [
-        ('funcional', 'Funcional'),
-        ('spinning', 'Spinning'),
-        ('crossfit', 'Crossfit'),
-        ('pilates', 'Pilates'),
-        ('yoga', 'Yoga'),
-        ('boxeo', 'Boxeo'),
-        ('hiit', 'HIIT'),
-    ]
 
-    ESTADO_CHOICES = [
-        ('activa', 'Activa'),
-        ('cancelada', 'Cancelada'),
-        ('finalizada', 'Finalizada'),
-    ]
+    class Categoria(models.TextChoices):
+        FUNCIONAL = 'funcional', 'Funcional'
+        SPINNING = 'spinning', 'Spinning'
+        CROSSFIT = 'crossfit', 'Crossfit'
+        PILATES = 'pilates', 'Pilates'
+        YOGA = 'yoga', 'Yoga'
+        BOXEO = 'boxeo', 'Boxeo'
+        HIIT = 'hiit', 'HIIT'
 
-    DIA_CHOICES = [
-        ('Lunes', 'Lunes'),
-        ('Martes', 'Martes'),
-        ('Miércoles', 'Miércoles'),
-        ('Jueves', 'Jueves'),
-        ('Viernes', 'Viernes'),
-        ('Sábado', 'Sábado'),
-        ('Domingo', 'Domingo'),
-    ]
+    class Estado(models.TextChoices):
+        ACTIVA = 'activa', 'Activa'
+        CANCELADA = 'cancelada', 'Cancelada'
+        FINALIZADA = 'finalizada', 'Finalizada'
+
+    class Dia(models.TextChoices):
+        LUNES = 'lunes', 'Lunes'
+        MARTES = 'martes', 'Martes'
+        MIERCOLES = 'miercoles', 'Miercoles'
+        JUEVES = 'jueves', 'Jueves'
+        VIERNES = 'viernes', 'Viernes'
+        SABADO = 'sabado', 'Sabado'
+        DOMINGO = 'domingo', 'Domingo'
 
     nombre = models.CharField(max_length=120)
-    categoria = models.CharField(max_length=50, choices=CATEGORIA_CHOICES, default='funcional')
+    categoria = models.CharField(max_length=50, choices=Categoria.choices, default=Categoria.FUNCIONAL)
     descripcion = models.TextField(blank=True, default='')
-    dia = models.CharField(max_length=20, choices=DIA_CHOICES, default='Lunes')
-    hora = models.CharField(max_length=10, default='08:00')
+    dia = models.CharField(max_length=20, choices=Dia.choices, default=Dia.LUNES)
+    hora = models.TimeField(default=datetime.time(8, 0))
     duracion_min = models.PositiveIntegerField(default=45)
     sala = models.CharField(max_length=80, default='Sala A')
     instructor = models.CharField(max_length=120, default='')
@@ -42,7 +42,7 @@ class Clase(models.Model):
     planes_habilitados = models.JSONField(default=list, blank=True)
     recurrencia = models.CharField(max_length=100, default='Semanal - L/M/V')
     dias_recurrencia = models.JSONField(default=list, blank=True)
-    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='activa')
+    estado = models.CharField(max_length=20, choices=Estado.choices, default=Estado.ACTIVA)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

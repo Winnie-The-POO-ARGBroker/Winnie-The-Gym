@@ -1,3 +1,5 @@
+import datetime
+
 from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -98,7 +100,7 @@ class ClaseCreateTests(APITestCase):
             'nombre': 'Funcional Intensivo',
             'categoria': 'funcional',
             'descripcion': 'Clase funcional de alta intensidad',
-            'dia': 'Lunes',
+            'dia': 'lunes',
             'hora': '08:00',
             'duracion_min': 45,
             'sala': 'Sala A',
