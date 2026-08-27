@@ -28,13 +28,13 @@ class PlanListCreateView(generics.ListCreateAPIView):
         return [IsAuthenticated()]
 
 
-class PlanRetrieveUpdateView(generics.RetrieveUpdateAPIView):
+class PlanRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = PlanMembresia.objects.all()
     serializer_class = PlanMembresiaSerializer
-    http_method_names = ['get', 'patch', 'head', 'options']
+    http_method_names = ['get', 'patch', 'delete', 'head', 'options']
 
     def get_permissions(self):
-        if self.request.method in ('PATCH', 'PUT'):
+        if self.request.method in ('PATCH', 'PUT', 'DELETE'):
             return [IsAdminOnly()]
         return [IsAuthenticated()]
 

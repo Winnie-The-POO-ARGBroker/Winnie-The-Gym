@@ -23,6 +23,7 @@ urlpatterns = [
     path('api/access/', include('apps.access.urls')),
     path('api/members/', include('apps.members.urls')),
     path('api/memberships/', include('apps.memberships.urls')),
+    path('api/classes/', include('apps.classes.urls')),
 ]
 
 if settings.DEBUG:

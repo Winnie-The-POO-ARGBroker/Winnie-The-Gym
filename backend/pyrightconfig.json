@@ -1,0 +1,11 @@
+{
+  "venvPath": ".",
+  "venv": "venv",
+  "extraPaths": [
+    ".",
+    "apps",
+    "venv/Lib/site-packages"
+  ],
+  "pythonVersion": "3.12",
+  "pythonPlatform": "Windows"
+}

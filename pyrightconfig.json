@@ -1,0 +1,25 @@
+{
+  "executionEnvironments": [
+    {
+      "root": "backend",
+      "extraPaths": [
+        "backend",
+        "backend/apps",
+        "backend/venv/Lib/site-packages"
+      ]
+    }
+  ],
+  "venvPath": "backend",
+  "venv": "venv",
+  "extraPaths": [
+    "backend",
+    "backend/apps",
+    "backend/venv/Lib/site-packages",
+    "d:/stefa/Winnie-The-Gym/backend/venv/Lib/site-packages"
+  ],
+  "include": [
+    "backend"
+  ],
+  "pythonVersion": "3.12",
+  "pythonPlatform": "Windows"
+}
