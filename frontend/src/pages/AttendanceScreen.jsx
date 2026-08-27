@@ -20,10 +20,14 @@ export default function AttendanceScreen() {
   };
 
   const getTextColor = (status) => {
+    if (status === 'presente') return 'text-green-500';
+    if (status === 'ausente') return 'text-red-500';
     return 'text-text-primary';
   };
 
   const getDniColor = (status) => {
+    if (status === 'presente') return 'text-green-400';
+    if (status === 'ausente') return 'text-red-400';
     return 'text-text-secondary';
   };
 
