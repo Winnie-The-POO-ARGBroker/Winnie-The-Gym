@@ -117,21 +117,24 @@ frontend/
 ├── index.html
 └── src/
     ├── components/          # Componentes reutilizables sin lógica de negocio
-    │   ├── ui/              # Atómicos: Button, Input, Modal, Badge, Card
-    │   └── shared/          # Compuestos: MemberCard, ClassCard, QRDisplay
-    ├── pages/               # Un componente por ruta de la aplicación
-    │   ├── auth/            # Login, callback de Google OAuth
-    │   ├── admin/           # Dashboard, gestión de socios, clases, reportes
-    │   ├── receptionist/    # Terminal de validación de acceso por QR
-    │   └── member/          # Portal del socio: credencial, QR, reservas
-    ├── layouts/             # Wrappers de ruta por rol (AdminLayout, MemberLayout)
-    ├── hooks/               # Custom hooks: useAuth, useWebSocket, useQR
-    ├── stores/              # Zustand: authStore (sesión y rol), uiStore (UI global)
-    ├── services/            # Llamadas a la API por dominio: members.js, classes.js
+    │   ├── ui/              # Atómicos: Button, Badge, Skeleton, EmptyState, WinnieLogo
+    │   ├── layout/           # AppLayout, TopBar, Sidebar, MemberLayout, AppBottomNav
+    │   ├── routing/          # Guards de ruta: ProtectedRoute, PublicRoute, CompleteProfileRoute
+    │   └── <dominio>/        # Compuestos por dominio: admin/, classes/, dashboard/, recepcion/, socio/
+    ├── pages/               # Un componente por ruta — sufijo `Page` obligatorio (ver Lineamientos Frontend)
+    │   ├── admin/           # Gestión de socios, planes de membresía
+    │   ├── recepcion/       # Terminal de acceso QR, gestión de socios en mostrador
+    │   └── socio/           # Portal del socio: credencial digital, clases
+    ├── constants/           # Config compartida sin estado: disciplinas.js, navIcons.js
+    ├── hooks/               # Custom hooks: useAuth, useClassAttendees
+    │   └── queries/         # Hooks de TanStack Query: useProfile, useUpdateProfile
+    ├── stores/              # Zustand: authStore (sesión y rol), themeStore (tema claro/oscuro)
+    ├── services/            # Llamadas a la API por dominio + api.js (instancia Axios + interceptores)
     └── lib/                 # Utilidades: cn() para Tailwind, formatters, validators
 ```
 
 > **Regla:** `components/` nunca importa de `stores/` ni `services/`. La lógica va en `hooks/` y el estado global en `stores/`. Las `pages/` orquestan todo.
+> **Regla:** los guards de ruta viven en `components/routing/`, nunca sueltos en `components/`. Los layouts de página viven en `components/layout/`, nunca en un directorio `layouts/` separado.
 
 <h3>Backend <code>backend/</code></h3>
 
@@ -226,7 +229,7 @@ El proyecto usa una convención **bilingüe documentada**:
 
 <h2 align='center'>🎨 Lineamientos Frontend</h2>
 
-> Esta sección documenta las convenciones establecidas. Algunas vistas aún están en proceso de migración.
+> Convenciones consolidadas tras la auditoría de calidad de frontend (`frontend-quality-audit`, cambio SDD archivado). Aplican a toda vista nueva.
 
 ### Layout pattern
 
@@ -237,6 +240,7 @@ Toda vista de la aplicación sigue esta estructura:
   <TopBar
     title="Título de la vista"
     subtitle="Información contextual"
+    backAction={{ to: '/admin/clases' }}
     rightContent={<>/* botones y controles */</> }
   />
   <div className="flex-1 p-6 overflow-auto ...">
@@ -245,7 +249,58 @@ Toda vista de la aplicación sigue esta estructura:
 </AppLayout>
 ```
 
-**Regla:** `<TopBar>` es **siempre el primer hijo de `<AppLayout>`**, nunca dentro del content div. Los controles de acción (botones, filtros, navegadores de semana) van en `rightContent`.
+**Reglas:**
+- `<TopBar>` es **siempre el primer hijo de `<AppLayout>`**, nunca dentro del content div. Los controles de acción (botones, filtros, navegadores de semana) van en `rightContent`.
+- Cuando la vista necesita volver a una ruta padre, usar la prop `backAction={{ to, onClick?, label? }}` de `TopBar` en lugar de armar un header custom con `ArrowLeft` inline.
+- Nunca duplicar un `<header>` propio dentro de una página — si existe, migrarlo a `TopBar`.
+
+### Convención de nombres de archivo
+
+Toda página bajo `pages/` usa el sufijo **`Page`** (`AttendancePage.jsx`, `ClassSchedulePage.jsx`), nunca `Screen`. El nombre del archivo y el de la función exportada deben coincidir.
+
+### Estado de datos remotos: TanStack Query
+
+Ninguna página hace fetch de datos con `useEffect` + `useState` manual. Los datos remotos se leen con hooks de `hooks/queries/`:
+
+```js
+// hooks/queries/useProfile.js
+export function useProfile() { return useQuery({ queryKey: PROFILE_KEY, queryFn: fetchProfile }) }
+export function useUpdateProfile() { return useMutation({ mutationFn, onSuccess: (data) => qc.setQueryData(PROFILE_KEY, data) }) }
+```
+
+La página consume `{ data, isPending, isError }` de `useQuery` o `.mutate()`/`.mutateAsync()` de `useMutation` — nunca `axios`/`api` directo dentro del componente de página (excepción: `mutationFn` la sigue llamando).
+
+### Estado de sesión: `useAuth()`, no `useAuthStore` directo
+
+Todo consumidor de sesión usa el hook `hooks/useAuth.js`, que envuelve `authStore` con selectores individuales:
+
+```js
+const { user, accessToken, refreshToken, setAuth, clearAuth } = useAuth()
+```
+
+**Excepción documentada:** `services/api.js` sigue importando `useAuthStore` directo (`useAuthStore.getState()`) porque los interceptores de Axios corren fuera del árbol de React y no pueden usar hooks. Está señalado con un comentario inline en el archivo.
+
+### Formularios: React Hook Form + Zod
+
+Todo formulario con validación no trivial usa `useForm({ resolver: zodResolver(schema) })` con un schema Zod dedicado (co-ubicado como `<Page>.schema.js` cuando crece, o inline si es simple). No se mantienen 5+ `useState` individuales por campo.
+
+### Guards de ruta
+
+Los guards viven en `components/routing/` (nunca sueltos en `components/`):
+
+| Guard | Responsabilidad |
+|:---|:---|
+| `ProtectedRoute` | Requiere sesión activa (`accessToken` + `user`) |
+| `PublicRoute` | Redirige usuarios ya autenticados a su home por rol (`socio` → `/socio/credencial`, resto → `/dashboard`) |
+| `CompleteProfileRoute` | Redirige a `/completar-perfil` si `user.is_profile_complete` es falso |
+
+### Rutas: una sola fuente de verdad
+
+No se registran rutas duplicadas para la misma pantalla. Las rutas legacy se resuelven con `<Navigate replace />`, nunca re-renderizando el componente viejo:
+
+```jsx
+<Route path="/membresias" element={<Navigate to="/admin/planes" replace />} />
+```
 
 ### Design tokens
 
@@ -261,12 +316,26 @@ Nunca usar colores hardcoded — usar los tokens semánticos del design system:
 | `bg-bg-raised` | Elementos elevados, dropdowns |
 | `border-subtle` | Bordes suaves entre secciones |
 | `border-strong` | Bordes de separación prominentes |
+| `bg-success-500` / `text-success-500` | Estados positivos (antes `green-500`) |
+| `bg-error-500` / `text-error-500` | Estados negativos, errores, danger (antes `red-500`) |
+| `bg-warning-500` / `text-warning-500` | Estados de alerta / pendiente (antes `yellow-500`) |
 
-**Excepción documentada:** el botón de Google OAuth usa `bg-white` hardcoded — es el estilo canónico de Google y no debe cambiarse.
+**Excepciones documentadas:**
+- El botón de Google OAuth usa `bg-white` hardcoded — es el estilo canónico de Google y no debe cambiarse.
+- `Button` variant `primary` (naranja de marca) no usa tokens de estado — es el color de marca, no un semáforo de estado.
 
-### Guards de desarrollo
+### Guards de desarrollo (mock data)
 
-UI exclusiva de desarrollo (botones demo, accesos rápidos) envuelta siempre en:
+Ninguna pantalla envía datos mock a producción. Todo dato de demo está guardado detrás de `import.meta.env.DEV`, y la ausencia de datos en producción se cubre con `EmptyState`:
+
+```jsx
+const IS_DEV = import.meta.env.DEV
+const items = IS_DEV ? mockData : []
+// ...
+{items.length === 0 && <EmptyState icon={Calendar} title="..." message="..." />}
+```
+
+UI exclusiva de desarrollo (botones demo, selector de rol, simulador de escaneo QR) va envuelta en:
 
 ```jsx
 {import.meta.env.DEV && (
@@ -276,6 +345,10 @@ UI exclusiva de desarrollo (botones demo, accesos rápidos) envuelta siempre en:
 )}
 ```
 
+### Navegación en errores de sesión (401)
+
+`services/api.js` no usa `window.location` ni `localStorage` para manejar sesión expirada. El interceptor de respuesta llama a `useAuthStore.getState().clearAuth()` y navega vía SPA usando un navigator inyectado desde `App.jsx` (`setApiNavigator(navigate)`), evitando un full page reload.
+
 ### Componentes compartidos
 
 | Componente | Path | Uso |
@@ -283,7 +356,8 @@ UI exclusiva de desarrollo (botones demo, accesos rápidos) envuelta siempre en:
 | `Button` | `components/ui/Button` | variants: primary / secondary / ghost / danger; sizes: sm / md / lg |
 | `Skeleton` | `components/ui/Skeleton` | Loading states con animate-pulse |
 | `Badge` | `components/ui/Badge` | Labels de estado (live, activo, suspendido) |
-| `TopBar` | `components/layout/TopBar` | Header de cada vista — siempre como primer hijo de AppLayout |
+| `TopBar` | `components/layout/TopBar` | Header de cada vista — siempre como primer hijo de AppLayout; soporta `backAction` |
+| `EmptyState` | `components/ui/EmptyState` | Placeholder para listas vacías / datos ausentes en producción |
 | `WinnieLogo` | `components/ui/WinnieLogo` | Logo con variantes de tamaño |
 
 <br>
@@ -397,6 +471,7 @@ Una Historia de Usuario se considera **Terminada** cuando cumple:
 
 | Versión | Fecha | Descripción | Autor |
 |:---:|:---:|:---|:---:|
+| [v0.5.0](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/CHANGELOG#050--2026-08-27) | 2026-08-27 | Auditoría de calidad frontend: production safety, TopBar+backAction, TanStack Query, useAuth, tokens semánticos | @MrForii |
 | [v0.4.0](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/CHANGELOG#040--2026-08-21) | 2026-08-21 | Dashboard con vistas por rol, design system, componentes UI | @MagaBechis |
 | [v0.3.0](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/CHANGELOG#030--2026-08-13) | 2026-08-13 | Google OAuth, JWT, perfil de usuario, frontend SPA | @MrForii |
 | [v0.2.0](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/CHANGELOG#020--2026-08-10) | 2026-08-10 | Motor QR dinámico, anti-replay Redis, logs MongoDB | @Franco-Arce |
