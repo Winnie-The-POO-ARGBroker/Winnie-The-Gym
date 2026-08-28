@@ -471,7 +471,7 @@ Una Historia de Usuario se considera **Terminada** cuando cumple:
 
 | Versión | Fecha | Descripción | Autor |
 |:---:|:---:|:---|:---:|
-| Unreleased | — | Auditoría de calidad backend y frontend (`feature/code-quality-audit`, sin PR aún) | @MrForii |
+| [v0.9.0](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/CHANGELOG#090--2026-08-28) | 2026-08-28 | Auditoría de calidad backend (5 slices) y frontend (naming, hooks, guards de producción) | @MrForii |
 | [v0.8.0](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/CHANGELOG#080--2026-08-28) | 2026-08-28 | Gestión de membresías, planes y clases (admin) — parcial, ver #41 #42 | @gigilvsarg |
 | [v0.7.0](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/CHANGELOG#070--2026-08-27) | 2026-08-27 | Hub de clases, creación y toma de asistencias | @MagaBechis |
 | [v0.6.0](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/CHANGELOG#060--2026-08-25) | 2026-08-25 | Gestión de socios, membresías y planes — 15 endpoints, 78 tests | @MrForii |
