@@ -8,12 +8,23 @@ Versionado según [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### En revisión — `feature/membresias` (PR #40, open)
-- Módulos de gestión de membresías, planes y clases según Figma
-
 ### Pendiente de PR — `feature/code-quality-audit`
 - Auditoría de calidad backend: permisos, namespacing, service layer, convenciones de modelos, consolidación de tests (5 slices)
 - Auditoría de calidad frontend: guards de producción para mock data, `TopBar` con `backAction`, migración a TanStack Query, hook `useAuth()`, formularios RHF+Zod, tokens semánticos de color, limpieza de archivos duplicados/huérfanos, renombre `Screen` → `Page`
+
+---
+
+## [0.8.0] — 2026-08-28
+**PR #40** · `feature/membresias` → `develop` · @gigilvsarg
+
+### Agregado
+- **Módulo de Membresías y Planes** (`/membresias`, `/admin/planes`): tarjetas de plan, gráfico de distribución de socios, tabla comparativa de características, modal CRUD (crear/editar/archivar/duplicar). UI completa contra `adminMockData.js` — integración con API real pendiente (#41)
+- **Módulo de Clases y Actividades** (`/clases`, `/admin/clases`, `/clases/crear`, `/clases/asistencia`): calendario semanal navegable, vista de lista y detalle con filtros, modal de asistentes con búsqueda, formulario de alta/edición con live preview, terminal de asistencia con exportación CSV
+- Backend `apps/classes`: modelos `Clase` e `InscripcionClase`, acción `inscribir` con control de cupo, tests TDD — nota: modelo distinto al originalmente especificado en #32, sin acción de cancelar (seguimiento en #42)
+- `apps/memberships`: habilitada eliminación/archivado de planes con permiso `IsAdminOnly`
+
+### Notas
+- Cubre parcialmente los issues #31 y #32 (ver comentarios en cada issue) — se abrieron #41 y #42 como seguimiento del alcance restante
 
 ---
 
