@@ -1,9 +1,9 @@
 import { NavLink } from 'react-router-dom'
 import { Home, CalendarDays, Dumbbell, User } from 'lucide-react'
-import { useThemeStore } from '../stores/themeStore'
-import useAuthStore from '../stores/authStore'
-import WinnieLogo from '../components/ui/WinnieLogo'
-import Avatar from '../components/ui/Avatar'
+import { useThemeStore } from '../../stores/themeStore'
+import useAuthStore from '../../stores/authStore'
+import WinnieLogo from '../ui/WinnieLogo'
+import Avatar from '../ui/Avatar'
 
 const SIDEBAR_NAV = [
   { label: 'Inicio',  path: '/socio/credencial', Icon: Home },

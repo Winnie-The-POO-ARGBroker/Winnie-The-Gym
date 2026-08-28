@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { IdCard } from 'lucide-react'
-import MemberLayout from '../../layouts/MemberLayout'
+import MemberLayout from '../../components/layout/MemberLayout'
 import Card from '../../components/ui/Card'
 import MembershipExpiredAlert from '../../components/socio/MembershipExpiredAlert'
 import MemberCardHeader from '../../components/socio/MemberCardHeader'

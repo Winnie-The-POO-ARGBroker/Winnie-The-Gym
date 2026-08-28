@@ -17,8 +17,8 @@ import {
 const IS_DEV = import.meta.env.DEV
 import { toast } from 'sonner'
 import AppLayout from '../components/layout/AppLayout'
+import { DISCIPLINAS_CONFIG } from '../constants/disciplinas'
 import {
-  DISCIPLINAS_CONFIG,
   getClassById,
   saveOrUpdateClass,
   getStoredClasses,

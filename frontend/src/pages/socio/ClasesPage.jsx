@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { toast } from 'sonner'
 import { Calendar } from 'lucide-react'
-import MemberLayout from '../../layouts/MemberLayout'
+import MemberLayout from '../../components/layout/MemberLayout'
 import Badge from '../../components/ui/Badge'
 import Button from '../../components/ui/Button'
 import Card from '../../components/ui/Card'
