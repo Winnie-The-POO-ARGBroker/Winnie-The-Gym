@@ -36,7 +36,7 @@ const RECURRENCIA_DIAS = [
   { key: 'D', label: 'D' },
 ]
 
-export default function CreateClassScreen() {
+export default function CreateClassPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const editId = searchParams.get('id')

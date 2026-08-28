@@ -24,7 +24,7 @@ import { useClassAttendees } from '../hooks/useClassAttendees'
 
 const IS_DEV = import.meta.env.DEV
 
-export default function AttendanceScreen() {
+export default function AttendancePage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const classId = searchParams.get('id') || 'cls_funcional_1'

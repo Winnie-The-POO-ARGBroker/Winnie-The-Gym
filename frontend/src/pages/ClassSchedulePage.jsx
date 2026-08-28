@@ -24,7 +24,7 @@ import {
 
 const IS_DEV = import.meta.env.DEV
 
-export default function ClassesScreen() {
+export default function ClassSchedulePage() {
   const navigate = useNavigate()
   const [classes, setClasses] = useState(() => IS_DEV ? getStoredClasses() : [])
   const [activeTab, setActiveTab] = useState('calendario') // 'calendario' | 'lista'
