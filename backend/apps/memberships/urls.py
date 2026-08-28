@@ -1,21 +1,15 @@
-from django.urls import path
+from django.urls import include, path
+from rest_framework.routers import DefaultRouter
+
+from .views import MeRenewView, MeView, MembresiaViewSet, PlanMembresiaViewSet
 
 app_name = 'memberships'
 
-from .views import (
-    MeRenewView,
-    MeView,
-    MembresiaListCreateView,
-    MembresiaRetrieveUpdateView,
-    PlanListCreateView,
-    PlanRetrieveUpdateDestroyView,
-)
+router = DefaultRouter()
+router.register(r'planes', PlanMembresiaViewSet, basename='plan')
+router.register(r'membresias', MembresiaViewSet, basename='membresia')
 
-urlpatterns = [
-    path('planes/', PlanListCreateView.as_view(), name='plan-list-create'),
-    path('planes/<int:pk>/', PlanRetrieveUpdateDestroyView.as_view(), name='plan-detail'),
-    path('membresias/', MembresiaListCreateView.as_view(), name='membresia-list-create'),
-    path('membresias/<int:pk>/', MembresiaRetrieveUpdateView.as_view(), name='membresia-detail'),
+urlpatterns = router.urls + [
     path('me/', MeView.as_view(), name='me'),
     path('me/renew/', MeRenewView.as_view(), name='me-renew'),
 ]

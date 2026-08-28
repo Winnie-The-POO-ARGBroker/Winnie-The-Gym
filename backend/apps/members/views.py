@@ -1,34 +1,26 @@
-from django.shortcuts import get_object_or_404
-from rest_framework import generics, status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
-from apps.access.permissions import IsReceptionistOrAdmin
+from apps.access.permissions import IsAdminOnly, IsReceptionistOrAdmin
 
 from .models import Socio
 from .serializers import SocioSerializer
 from .services import dar_baja
 
 
-class SocioListCreateView(generics.ListCreateAPIView):
+class SocioViewSet(viewsets.ModelViewSet):
     queryset = Socio.objects.all().order_by('id')
     serializer_class = SocioSerializer
-    permission_classes = [IsReceptionistOrAdmin]
 
+    def get_permissions(self):
+        if self.action in ('create', 'update', 'partial_update', 'destroy', 'dar_baja'):
+            return [IsAdminOnly()]
+        return [IsReceptionistOrAdmin()]
 
-class SocioRetrieveUpdateView(generics.RetrieveUpdateAPIView):
-    queryset = Socio.objects.all()
-    serializer_class = SocioSerializer
-    permission_classes = [IsReceptionistOrAdmin]
-    http_method_names = ['get', 'patch', 'head', 'options']
-
-
-class SocioDarBajaView(APIView):
-    permission_classes = [IsReceptionistOrAdmin]
-
-    def post(self, request, pk):
-        socio = get_object_or_404(Socio, pk=pk)
+    @action(detail=True, methods=['post'], url_path='dar-baja', url_name='dar-baja')
+    def dar_baja(self, request, pk=None):
+        socio = self.get_object()
 
         if socio.estado == Socio.Estado.BAJA:
             return Response(
