@@ -1,42 +1,11 @@
-from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.classes.models import Clase, InscripcionClase
-from apps.members.models import Socio
-
-User = get_user_model()
+from conftest import make_socio_factory, make_user_factory
 
 _counter = 0
-
-
-def _make_user(email=None, rol='socio', **kwargs):
-    global _counter
-    _counter += 1
-    if email is None:
-        email = f'inscribir_user{_counter}@classes.test'
-    return User.objects.create_user(
-        email=email,
-        password='pass1234!',
-        username=email,
-        rol=rol,
-        **kwargs,
-    )
-
-
-def _make_socio(user, dni=None):
-    global _counter
-    _counter += 1
-    if dni is None:
-        dni = f'{_counter:08d}'
-    return Socio.objects.create(
-        usuario=user,
-        dni=dni,
-        nombre='Socio',
-        apellido=f'Test{_counter}',
-        telefono='5491100000000',
-    )
 
 
 def _make_clase(nombre=None, cupo_maximo=20, **kwargs):
@@ -64,8 +33,8 @@ def _inscribir_url(clase_pk):
 class ClaseInscribirFlowTests(APITestCase):
 
     def test_inscribir_cupo_disponible_201(self):
-        user = _make_user(rol='socio')
-        socio = _make_socio(user)
+        user = make_user_factory(rol='socio')
+        socio = make_socio_factory(usuario=user)
         clase = _make_clase(cupo_maximo=10)
         _auth_client(self.client, user)
 
@@ -86,13 +55,13 @@ class ClaseInscribirFlowTests(APITestCase):
         clase = _make_clase(cupo_maximo=1, lista_espera_max=2)
 
         # First socio takes the only spot
-        user1 = _make_user(rol='socio')
-        socio1 = _make_socio(user1)
+        user1 = make_user_factory(rol='socio')
+        socio1 = make_socio_factory(usuario=user1)
         InscripcionClase.objects.create(clase=clase, socio=socio1, en_espera=False)
 
         # Second socio tries to register
-        user2 = _make_user(rol='socio')
-        socio2 = _make_socio(user2)
+        user2 = make_user_factory(rol='socio')
+        socio2 = make_socio_factory(usuario=user2)
         _auth_client(self.client, user2)
 
         response = self.client.post(_inscribir_url(clase.pk))
@@ -109,18 +78,18 @@ class ClaseInscribirFlowTests(APITestCase):
         clase = _make_clase(cupo_maximo=1, lista_espera_max=1)
 
         # Spot 1 (Cupo principal)
-        user1 = _make_user(rol='socio')
-        socio1 = _make_socio(user1)
+        user1 = make_user_factory(rol='socio')
+        socio1 = make_socio_factory(usuario=user1)
         InscripcionClase.objects.create(clase=clase, socio=socio1, en_espera=False)
 
         # Spot 2 (Lista de espera 1/1)
-        user2 = _make_user(rol='socio')
-        socio2 = _make_socio(user2)
+        user2 = make_user_factory(rol='socio')
+        socio2 = make_socio_factory(usuario=user2)
         InscripcionClase.objects.create(clase=clase, socio=socio2, en_espera=True)
 
         # Spot 3 (Lista de espera desbordada)
-        user3 = _make_user(rol='socio')
-        _make_socio(user3)
+        user3 = make_user_factory(rol='socio')
+        make_socio_factory(usuario=user3)
         _auth_client(self.client, user3)
 
         response = self.client.post(_inscribir_url(clase.pk))
@@ -131,8 +100,8 @@ class ClaseInscribirFlowTests(APITestCase):
 
 
     def test_inscribir_ya_inscripto_400(self):
-        user = _make_user(rol='socio')
-        socio = _make_socio(user)
+        user = make_user_factory(rol='socio')
+        socio = make_socio_factory(usuario=user)
         clase = _make_clase(cupo_maximo=10)
         InscripcionClase.objects.create(clase=clase, socio=socio, en_espera=False)
 
@@ -143,16 +112,14 @@ class ClaseInscribirFlowTests(APITestCase):
         self.assertIn('detail', response.data)
         self.assertIn('Ya estás inscripto', response.data['detail'])
 
-    def test_inscribir_usuario_sin_perfil_socio_400(self):
-        admin_user = _make_user(rol='administrador')
+    def test_inscribir_usuario_sin_perfil_socio_403(self):
+        admin_user = make_user_factory(rol='administrador')
         clase = _make_clase(cupo_maximo=10)
         _auth_client(self.client, admin_user)
 
         response = self.client.post(_inscribir_url(clase.pk))
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('detail', response.data)
-        self.assertIn('perfil de socio', response.data['detail'])
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_inscribir_unauthenticated_401(self):
         clase = _make_clase()

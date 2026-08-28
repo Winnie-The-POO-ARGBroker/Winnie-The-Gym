@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { useLocation, useNavigate, NavLink } from 'react-router-dom'
 import { LogOut } from 'lucide-react'
 import { NAV_ICON_MAP } from '../../constants/navIcons'
-import useAuthStore from '../../stores/authStore'
-import { useThemeStore } from '../../stores/themeStore'
+import useAuth from '../../hooks/useAuth'
+import useThemeStore from '../../stores/themeStore'
 import WinnieLogo from '../ui/WinnieLogo'
 import Avatar from '../ui/Avatar'
 
@@ -42,7 +42,7 @@ const NAV_BY_ROLE = {
 export default function Sidebar() {
   const location = useLocation()
   const navigate = useNavigate()
-  const { user, clearAuth } = useAuthStore()
+  const { user, clearAuth } = useAuth()
   const { theme, toggleTheme } = useThemeStore()
   const [menuOpen, setMenuOpen] = useState(false)
   

@@ -16,14 +16,14 @@ def health(request):
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/health/', health),
-    path('api/auth/', include('apps.users.urls')),
+    path('api/auth/', include(('apps.users.urls', 'users'), namespace='users')),
     path('api/auth/', include('dj_rest_auth.urls')),
     path('api/auth/registration/', include('dj_rest_auth.registration.urls')),
     path('api/auth/social/', include('allauth.socialaccount.urls')),
-    path('api/access/', include('apps.access.urls')),
-    path('api/members/', include('apps.members.urls')),
-    path('api/memberships/', include('apps.memberships.urls')),
-    path('api/classes/', include('apps.classes.urls')),
+    path('api/access/', include(('apps.access.urls', 'access'), namespace='access')),
+    path('api/members/', include(('apps.members.urls', 'members'), namespace='members')),
+    path('api/memberships/', include(('apps.memberships.urls', 'memberships'), namespace='memberships')),
+    path('api/classes/', include(('apps.classes.urls', 'classes'), namespace='classes')),
 ]
 
 if settings.DEBUG:

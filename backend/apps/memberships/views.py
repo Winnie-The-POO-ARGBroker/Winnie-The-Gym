@@ -1,8 +1,5 @@
-import datetime
-
-from django.db import transaction
 from django.shortcuts import get_object_or_404
-from rest_framework import generics, status
+from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -16,42 +13,30 @@ from .serializers import (
     PlanMembresiaSerializer,
     SocioMeSerializer,
 )
+from .services import renovar_membresia
 
 
-class PlanListCreateView(generics.ListCreateAPIView):
+class PlanMembresiaViewSet(viewsets.ModelViewSet):
     queryset = PlanMembresia.objects.all().order_by('id')
     serializer_class = PlanMembresiaSerializer
 
     def get_permissions(self):
-        if self.request.method == 'POST':
+        if self.action in ('create', 'update', 'partial_update', 'destroy'):
             return [IsAdminOnly()]
+        # list and retrieve are readable by any authenticated user (including socios)
         return [IsAuthenticated()]
 
 
-class PlanRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = PlanMembresia.objects.all()
-    serializer_class = PlanMembresiaSerializer
-    http_method_names = ['get', 'patch', 'delete', 'head', 'options']
+class MembresiaViewSet(viewsets.ModelViewSet):
+    queryset = Membresia.objects.all().order_by('id')
 
     def get_permissions(self):
-        if self.request.method in ('PATCH', 'PUT', 'DELETE'):
+        if self.action in ('create', 'update', 'partial_update', 'destroy'):
             return [IsAdminOnly()]
-        return [IsAuthenticated()]
-
-
-class MembresiaListCreateView(generics.ListCreateAPIView):
-    queryset = Membresia.objects.all().order_by('id')
-    serializer_class = MembresiaSerializer
-    permission_classes = [IsReceptionistOrAdmin]
-
-
-class MembresiaRetrieveUpdateView(generics.RetrieveUpdateAPIView):
-    queryset = Membresia.objects.all()
-    permission_classes = [IsReceptionistOrAdmin]
-    http_method_names = ['get', 'patch', 'head', 'options']
+        return [IsReceptionistOrAdmin()]
 
     def get_serializer_class(self):
-        if self.request.method == 'GET':
+        if self.action == 'retrieve':
             return MembresiaDetailSerializer
         return MembresiaSerializer
 
@@ -73,19 +58,7 @@ class MeRenewView(APIView):
         plan = get_object_or_404(PlanMembresia, pk=plan_id, activo=True)
 
         socio = request.user.socio
-
-        with transaction.atomic():
-            Membresia.objects.filter(socio=socio, estado='activa').update(estado='vencida')
-
-            today = datetime.date.today()
-            fecha_fin = today + datetime.timedelta(days=plan.duracion_dias)
-            membresia = Membresia.objects.create(
-                socio=socio,
-                plan=plan,
-                fecha_inicio=today,
-                fecha_fin=fecha_fin,
-                estado='activa',
-            )
+        membresia = renovar_membresia(socio, plan)
 
         serializer = MembresiaDetailSerializer(membresia)
         return Response(serializer.data, status=status.HTTP_201_CREATED)

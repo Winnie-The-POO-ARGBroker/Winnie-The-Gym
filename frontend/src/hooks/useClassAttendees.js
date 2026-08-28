@@ -9,7 +9,11 @@ export function useClassAttendees(classId) {
 
   useEffect(() => {
     if (classId) {
-      setAttendees(getStoredAttendees(classId))
+      if (import.meta.env.DEV) {
+        setAttendees(getStoredAttendees(classId))
+      } else {
+        setAttendees([])
+      }
     }
   }, [classId])
 

@@ -1,4 +1,3 @@
-import React from 'react'
 import { Check, Minus, Plus } from 'lucide-react'
 
 export default function PlanComparativeTable({ planes = [], onCreateNew }) {
@@ -81,8 +80,8 @@ export default function PlanComparativeTable({ planes = [], onCreateNew }) {
             plan.es_popular || plan.nombre === 'Premium'
               ? 'bg-orange-500/20 text-orange-500 font-bold'
               : plan.nombre === 'Gold'
-              ? 'bg-yellow-500/20 text-yellow-500 font-bold'
-              : 'bg-green-500/20 text-green-500 font-bold'
+              ? 'bg-warning-500/20 text-warning-500 font-bold'
+              : 'bg-success-500/20 text-success-500 font-bold'
           }`}
         >
           <Check className="w-3.5 h-3.5 stroke-[3]" />

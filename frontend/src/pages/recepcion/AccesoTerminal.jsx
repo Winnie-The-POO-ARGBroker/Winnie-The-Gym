@@ -56,6 +56,34 @@ export default function AccesoTerminal() {
             onRegisterExit={() => {}}
           />
         </div>
+
+        {import.meta.env.DEV ? (
+          <div className="flex flex-wrap items-center gap-3 p-4 rounded-xl bg-bg-surface border border-subtle">
+            <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
+              Simular escaneo:
+            </span>
+            <button
+              onClick={() => simulateScan('success')}
+              className="px-3 py-1.5 rounded-lg bg-success-500 text-white text-xs font-bold"
+            >
+              Éxito
+            </button>
+            <button
+              onClick={() => simulateScan('error')}
+              className="px-3 py-1.5 rounded-lg bg-error-500 text-white text-xs font-bold"
+            >
+              Error
+            </button>
+            <button
+              onClick={() => simulateScan('warning')}
+              className="px-3 py-1.5 rounded-lg bg-warning-500 text-white text-xs font-bold"
+            >
+              Advertencia
+            </button>
+          </div>
+        ) : (
+          <p className="text-xs text-text-tertiary text-center">Esperando escaneo…</p>
+        )}
       </div>
     </AppLayout>
   );

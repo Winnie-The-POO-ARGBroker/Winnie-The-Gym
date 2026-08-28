@@ -1,8 +1,8 @@
 import { Navigate } from 'react-router-dom'
-import useAuthStore from '../stores/authStore'
+import useAuth from '../../hooks/useAuth'
 
 export default function ProtectedRoute({ children, roles }) {
-  const { accessToken, user } = useAuthStore()
+  const { accessToken, user } = useAuth()
 
   if (!accessToken) return <Navigate to="/login" replace />
   if (user && !user.is_profile_complete) return <Navigate to="/completar-perfil" replace />

@@ -1,16 +1,36 @@
+import { ArrowLeft } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import Badge from '../ui/Badge'
 
-export default function TopBar({ title, subtitle, showLive = false, showSearch = false, onScan, rightContent }) {
+function BackButton({ to, onClick, label = 'Volver' }) {
+  const navigate = useNavigate()
+  const handleClick = onClick ?? (() => (to ? navigate(to) : navigate(-1)))
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      aria-label={label}
+      className="p-2 rounded-xl bg-bg-surface border border-subtle text-text-secondary hover:text-text-primary hover:bg-bg-raised transition-colors"
+    >
+      <ArrowLeft className="w-5 h-5" />
+    </button>
+  )
+}
+
+export default function TopBar({ title, subtitle, showLive = false, showSearch = false, onScan, rightContent, backAction }) {
   return (
     <header className="flex items-center justify-between px-6 py-4 border-b border-strong flex-shrink-0 bg-bg-surface">
-      <div>
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-text-primary">{title}</h1>
-          {showLive && <Badge variant="live">En Vivo</Badge>}
+      <div className="flex items-center gap-3">
+        {backAction && <BackButton {...backAction} />}
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-text-primary">{title}</h1>
+            {showLive && <Badge variant="live">En Vivo</Badge>}
+          </div>
+          {subtitle && (
+            <p className="text-sm mt-0.5 text-text-secondary">{subtitle}</p>
+          )}
         </div>
-        {subtitle && (
-          <p className="text-sm mt-0.5 text-text-secondary">{subtitle}</p>
-        )}
       </div>
 
       {rightContent ? (

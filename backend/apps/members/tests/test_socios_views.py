@@ -1,43 +1,10 @@
 import datetime
 
-from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from apps.members.models import Socio
-
-User = get_user_model()
-
-_counter = 0
-
-
-def _make_user(email=None, rol='socio', **kwargs):
-    global _counter
-    _counter += 1
-    if email is None:
-        email = f'user{_counter}@test.com'
-    return User.objects.create_user(
-        email=email,
-        password='pass1234!',
-        username=email,
-        rol=rol,
-        **kwargs,
-    )
-
-
-def _make_socio(user, dni=None):
-    global _counter
-    if dni is None:
-        _counter += 1
-        dni = f'{_counter:08d}'
-    return Socio.objects.create(
-        usuario=user,
-        dni=dni,
-        nombre='Maria',
-        apellido='Garcia',
-        telefono='5491100000001',
-    )
+from conftest import make_socio_factory, make_user_factory
 
 
 def _auth_client(client, user):
@@ -59,9 +26,9 @@ def _baja_url(pk):
 class SocioListCreateTests(APITestCase):
 
     def test_list_socios_admin_200(self):
-        admin = _make_user(rol='administrador')
-        user = _make_user()
-        _make_socio(user)
+        admin = make_user_factory(rol='administrador')
+        user = make_user_factory()
+        make_socio_factory(usuario=user)
         _auth_client(self.client, admin)
 
         response = self.client.get(SOCIOS_URL)
@@ -76,7 +43,7 @@ class SocioListCreateTests(APITestCase):
             self.assertIn(field, first)
 
     def test_list_socios_recep_200(self):
-        recep = _make_user(rol='recepcionista')
+        recep = make_user_factory(rol='recepcionista')
         _auth_client(self.client, recep)
 
         response = self.client.get(SOCIOS_URL)
@@ -84,8 +51,8 @@ class SocioListCreateTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_create_socio_admin_201(self):
-        admin = _make_user(rol='administrador')
-        target_user = _make_user()
+        admin = make_user_factory(rol='administrador')
+        target_user = make_user_factory()
         _auth_client(self.client, admin)
 
         payload = {
@@ -102,10 +69,10 @@ class SocioListCreateTests(APITestCase):
         self.assertEqual(response.data['estado'], 'activo')
 
     def test_create_socio_duplicate_dni_400(self):
-        admin = _make_user(rol='administrador')
-        existing_user = _make_user()
-        _make_socio(existing_user, dni='11223344')
-        new_user = _make_user()
+        admin = make_user_factory(rol='administrador')
+        existing_user = make_user_factory()
+        make_socio_factory(usuario=existing_user, dni='11223344')
+        new_user = make_user_factory()
         _auth_client(self.client, admin)
 
         payload = {
@@ -125,7 +92,7 @@ class SocioListCreateTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_socio_role_list_403(self):
-        socio_user = _make_user(rol='socio')
+        socio_user = make_user_factory(rol='socio')
         _auth_client(self.client, socio_user)
 
         response = self.client.get(SOCIOS_URL)
@@ -133,8 +100,8 @@ class SocioListCreateTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_socio_role_create_403(self):
-        socio_user = _make_user(rol='socio')
-        other_user = _make_user()
+        socio_user = make_user_factory(rol='socio')
+        other_user = make_user_factory()
         _auth_client(self.client, socio_user)
 
         payload = {
@@ -152,9 +119,9 @@ class SocioListCreateTests(APITestCase):
 class SocioRetrieveUpdateTests(APITestCase):
 
     def test_retrieve_socio_200(self):
-        admin = _make_user(rol='administrador')
-        user = _make_user()
-        socio = _make_socio(user)
+        admin = make_user_factory(rol='administrador')
+        user = make_user_factory()
+        socio = make_socio_factory(usuario=user)
         _auth_client(self.client, admin)
 
         response = self.client.get(_detail_url(socio.pk))
@@ -163,7 +130,7 @@ class SocioRetrieveUpdateTests(APITestCase):
         self.assertEqual(response.data['id'], socio.pk)
 
     def test_retrieve_nonexistent_404(self):
-        admin = _make_user(rol='administrador')
+        admin = make_user_factory(rol='administrador')
         _auth_client(self.client, admin)
 
         response = self.client.get(_detail_url(99999))
@@ -171,9 +138,9 @@ class SocioRetrieveUpdateTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_partial_update_observaciones_200(self):
-        admin = _make_user(rol='administrador')
-        user = _make_user()
-        socio = _make_socio(user)
+        admin = make_user_factory(rol='administrador')
+        user = make_user_factory()
+        socio = make_socio_factory(usuario=user)
         original_numero = socio.numero_socio
         _auth_client(self.client, admin)
 
@@ -184,9 +151,9 @@ class SocioRetrieveUpdateTests(APITestCase):
         self.assertEqual(response.data['numero_socio'], original_numero)
 
     def test_partial_update_numero_socio_ignored(self):
-        admin = _make_user(rol='administrador')
-        user = _make_user()
-        socio = _make_socio(user)
+        admin = make_user_factory(rol='administrador')
+        user = make_user_factory()
+        socio = make_socio_factory(usuario=user)
         original_numero = socio.numero_socio
         _auth_client(self.client, admin)
 
@@ -199,9 +166,9 @@ class SocioRetrieveUpdateTests(APITestCase):
 class SocioDarBajaTests(APITestCase):
 
     def test_dar_baja_activo_200(self):
-        admin = _make_user(rol='administrador')
-        user = _make_user()
-        socio = _make_socio(user)
+        admin = make_user_factory(rol='administrador')
+        user = make_user_factory()
+        socio = make_socio_factory(usuario=user)
         _auth_client(self.client, admin)
 
         response = self.client.post(_baja_url(socio.pk))
@@ -215,9 +182,9 @@ class SocioDarBajaTests(APITestCase):
         self.assertTrue(user.is_active)
 
     def test_dar_baja_already_baja_400(self):
-        admin = _make_user(rol='administrador')
-        user = _make_user()
-        socio = _make_socio(user)
+        admin = make_user_factory(rol='administrador')
+        user = make_user_factory()
+        socio = make_socio_factory(usuario=user)
         socio.estado = 'baja'
         socio.save()
         _auth_client(self.client, admin)
@@ -227,19 +194,32 @@ class SocioDarBajaTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_dar_baja_unauthenticated_401(self):
-        user = _make_user()
-        socio = _make_socio(user)
+        user = make_user_factory()
+        socio = make_socio_factory(usuario=user)
 
         response = self.client.post(_baja_url(socio.pk))
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_dar_baja_socio_role_403(self):
-        socio_user = _make_user(rol='socio')
-        other_user = _make_user()
-        socio = _make_socio(other_user)
+        socio_user = make_user_factory(rol='socio')
+        other_user = make_user_factory()
+        socio = make_socio_factory(usuario=other_user)
         _auth_client(self.client, socio_user)
 
         response = self.client.post(_baja_url(socio.pk))
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_dar_baja_response_uses_full_socio_serializer_shape(self):
+        admin = make_user_factory(rol='administrador')
+        user = make_user_factory()
+        socio = make_socio_factory(usuario=user)
+        _auth_client(self.client, admin)
+
+        response = self.client.post(_baja_url(socio.pk))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # SocioSerializer exposes all these fields; SocioBajaSerializer only had estado + fecha_baja
+        for field in ('id', 'numero_socio', 'nombre', 'apellido', 'dni', 'telefono', 'observaciones'):
+            self.assertIn(field, response.data, f"Expected field '{field}' in dar-baja response")

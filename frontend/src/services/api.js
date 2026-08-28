@@ -1,21 +1,25 @@
 import axios from 'axios'
 import { toast } from 'sonner'
+import useAuthStore from '../stores/authStore'
+// Note: api.js keeps a direct useAuthStore.getState() import instead of the
+// useAuth() hook because axios interceptors run outside React's render
+// context and cannot call hooks.
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api',
 })
 
-function getAccessToken() {
-  try {
-    const raw = localStorage.getItem('auth-storage')
-    return raw ? JSON.parse(raw)?.state?.accessToken ?? null : null
-  } catch {
-    return null
-  }
+// SPA navigator injected from App.jsx via setApiNavigator(navigate).
+// This is required because axios interceptors run outside React context.
+let navigator = null
+let isRedirecting = false
+
+export function setApiNavigator(nav) {
+  navigator = nav
 }
 
 api.interceptors.request.use((config) => {
-  const token = getAccessToken()
+  const token = useAuthStore.getState().accessToken
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
@@ -23,12 +27,16 @@ api.interceptors.request.use((config) => {
 })
 
 api.interceptors.response.use(
-  (response) => response,
+  (r) => r,
   (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('auth-storage')
+    const url = error.config?.url ?? ''
+    const isAuthEndpoint = url.includes('/auth/token')
+    if (error.response?.status === 401 && !isAuthEndpoint && !isRedirecting) {
+      isRedirecting = true
+      useAuthStore.getState().clearAuth()
       toast.error('Your session has expired. Please log in again.')
-      window.location.href = '/login'
+      if (navigator) navigator('/login', { replace: true })
+      setTimeout(() => { isRedirecting = false }, 0)
     }
     return Promise.reject(error)
   }

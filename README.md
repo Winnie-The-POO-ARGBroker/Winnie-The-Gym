@@ -117,21 +117,24 @@ frontend/
 ├── index.html
 └── src/
     ├── components/          # Componentes reutilizables sin lógica de negocio
-    │   ├── ui/              # Atómicos: Button, Input, Modal, Badge, Card
-    │   └── shared/          # Compuestos: MemberCard, ClassCard, QRDisplay
-    ├── pages/               # Un componente por ruta de la aplicación
-    │   ├── auth/            # Login, callback de Google OAuth
-    │   ├── admin/           # Dashboard, gestión de socios, clases, reportes
-    │   ├── receptionist/    # Terminal de validación de acceso por QR
-    │   └── member/          # Portal del socio: credencial, QR, reservas
-    ├── layouts/             # Wrappers de ruta por rol (AdminLayout, MemberLayout)
-    ├── hooks/               # Custom hooks: useAuth, useWebSocket, useQR
-    ├── stores/              # Zustand: authStore (sesión y rol), uiStore (UI global)
-    ├── services/            # Llamadas a la API por dominio: members.js, classes.js
+    │   ├── ui/              # Atómicos: Button, Badge, Skeleton, EmptyState, WinnieLogo
+    │   ├── layout/           # AppLayout, TopBar, Sidebar, MemberLayout, AppBottomNav
+    │   ├── routing/          # Guards de ruta: ProtectedRoute, PublicRoute, CompleteProfileRoute
+    │   └── <dominio>/        # Compuestos por dominio: admin/, classes/, dashboard/, recepcion/, socio/
+    ├── pages/               # Un componente por ruta — sufijo `Page` obligatorio (ver Lineamientos Frontend)
+    │   ├── admin/           # Gestión de socios, planes de membresía
+    │   ├── recepcion/       # Terminal de acceso QR, gestión de socios en mostrador
+    │   └── socio/           # Portal del socio: credencial digital, clases
+    ├── constants/           # Config compartida sin estado: disciplinas.js, navIcons.js
+    ├── hooks/               # Custom hooks: useAuth, useClassAttendees
+    │   └── queries/         # Hooks de TanStack Query: useProfile, useUpdateProfile
+    ├── stores/              # Zustand: authStore (sesión y rol), themeStore (tema claro/oscuro)
+    ├── services/            # Llamadas a la API por dominio + api.js (instancia Axios + interceptores)
     └── lib/                 # Utilidades: cn() para Tailwind, formatters, validators
 ```
 
 > **Regla:** `components/` nunca importa de `stores/` ni `services/`. La lógica va en `hooks/` y el estado global en `stores/`. Las `pages/` orquestan todo.
+> **Regla:** los guards de ruta viven en `components/routing/`, nunca sueltos en `components/`. Los layouts de página viven en `components/layout/`, nunca en un directorio `layouts/` separado.
 
 <h3>Backend <code>backend/</code></h3>
 
@@ -150,8 +153,7 @@ backend/
 │   ├── members/             # Perfil de socios, certificados médicos
 │   ├── memberships/         # Planes, suscripciones, procesamiento de pagos
 │   ├── classes/             # Clases grupales, horarios, control de cupos y reservas
-│   ├── access/              # Motor QR: generación de tokens, validación, logs de ingreso
-│   └── reports/             # Motor de exportación PDF/CSV
+│   └── access/              # Motor QR: generación de tokens, validación, logs de ingreso
 ├── requirements/
 │   ├── base.txt             # Dependencias de producción
 │   ├── development.txt      # Herramientas de desarrollo (django-extensions)
@@ -163,6 +165,200 @@ backend/
 > **Regla:** cada app en `apps/` es autónoma. No importes modelos de otra app directamente — usá las relaciones de FK de Django o eventos/signals. La comunicación entre apps va por la capa de servicio, no por imports directos.
 
 <br>
+
+<h2 align='center'>📐 Lineamientos Backend</h2>
+
+### Arquitectura de vistas
+
+Toda app de dominio usa **`ModelViewSet` + `DefaultRouter`**. Las vistas no contienen lógica de negocio.
+
+| Patrón | Regla |
+|:---|:---|
+| ViewSet | `ModelViewSet` para todo CRUD estándar; `APIView` solo para endpoints no-CRUD (ej: auto-servicio del socio) |
+| Permisos | `get_permissions()` por acción — nunca `permission_classes` estático cuando hay variación entre acciones |
+| Acciones custom | `@action(detail=True/False, methods=[...], url_path='...', url_name='...')` en el ViewSet |
+| Service layer | La lógica de negocio va en `apps/<app>/services.py`. La vista llama al servicio y devuelve la respuesta |
+| Errores del service | El service lanza `rest_framework.exceptions.ValidationError({'detail': '...'})`. La vista no atrapa — DRF lo convierte en 400 |
+
+### Service layer
+
+Cada app con lógica de negocio no-trivial tiene su `services.py`:
+
+| App | Función | Descripción |
+|:---|:---|:---|
+| `members` | `dar_baja(socio)` | Transición de estado socio → baja, idempotente |
+| `memberships` | `renovar_membresia(socio, plan, fecha_inicio=None)` | Expira membresía activa y crea nueva, atómico |
+| `classes` | `inscribir_socio(clase, socio)` | Maneja cupo + lista de espera |
+| `access` | `has_active_membership(user)` | Lazy expiry: verifica y vence membresías expiradas |
+
+### Convención de nombres
+
+El proyecto usa una convención **bilingüe documentada**:
+
+| Elemento | Idioma | Ejemplos |
+|:---|:---:|:---|
+| Modelos de dominio | Español | `Socio`, `Clase`, `Membresia`, `PlanMembresia` |
+| Modelos de infraestructura | Inglés | `User`, `AccessLog` |
+| Campos de negocio | Español | `numero_socio`, `fecha_baja`, `estado`, `nombre` |
+| Campos técnicos / timestamps | Inglés | `created_at`, `updated_at`, `timestamp` |
+| URLs y acciones custom | Español | `/socios/`, `/clases/`, `dar-baja/`, `inscribir/` |
+| Archivos Python, funciones, variables | Inglés | `views.py`, `has_active_membership`, `get_permissions` |
+| Namespaces de URL | Inglés | `members:socio-list`, `classes:clase-detail` |
+
+### Convenciones de modelos
+
+- **`TextChoices`** para todos los campos de opciones — nunca raw list-of-tuples
+- **`Meta.ordering`** obligatorio en todo modelo con colecciones paginadas
+- **`TimeField`** para horarios, nunca `CharField`
+- **`created_at` / `updated_at`** en todos los modelos de dominio
+
+### Convenciones de tests
+
+- **TDD estricto**: test fallido primero, implementación después, test verde al final
+- **`backend/conftest.py`**: fixtures compartidos — `make_user`, `make_socio`, `make_plan`, `make_membresia`, `auth_client`
+- **Package `tests/`** por app — nunca un `tests.py` flat
+- **`APITestCase`** para integración, **`@pytest.mark.django_db`** para unit tests de services
+
+### Convenciones de migraciones
+
+- Una migración por cambio lógico — no agrupar schema + datos en el mismo archivo
+- Migraciones de datos siempre con `RunPython` + función de reversión
+- Para campos con datos existentes: nullable transition → data migration → non-nullable finalize (3 pasos)
+
+<br>
+
+<h2 align='center'>🎨 Lineamientos Frontend</h2>
+
+> Convenciones consolidadas tras la auditoría de calidad de frontend (`frontend-quality-audit`, cambio SDD archivado). Aplican a toda vista nueva.
+
+### Layout pattern
+
+Toda vista de la aplicación sigue esta estructura:
+
+```jsx
+<AppLayout>
+  <TopBar
+    title="Título de la vista"
+    subtitle="Información contextual"
+    backAction={{ to: '/admin/clases' }}
+    rightContent={<>/* botones y controles */</> }
+  />
+  <div className="flex-1 p-6 overflow-auto ...">
+    {/* contenido sin header */}
+  </div>
+</AppLayout>
+```
+
+**Reglas:**
+- `<TopBar>` es **siempre el primer hijo de `<AppLayout>`**, nunca dentro del content div. Los controles de acción (botones, filtros, navegadores de semana) van en `rightContent`.
+- Cuando la vista necesita volver a una ruta padre, usar la prop `backAction={{ to, onClick?, label? }}` de `TopBar` en lugar de armar un header custom con `ArrowLeft` inline.
+- Nunca duplicar un `<header>` propio dentro de una página — si existe, migrarlo a `TopBar`.
+
+### Convención de nombres de archivo
+
+Toda página bajo `pages/` usa el sufijo **`Page`** (`AttendancePage.jsx`, `ClassSchedulePage.jsx`), nunca `Screen`. El nombre del archivo y el de la función exportada deben coincidir.
+
+### Estado de datos remotos: TanStack Query
+
+Ninguna página hace fetch de datos con `useEffect` + `useState` manual. Los datos remotos se leen con hooks de `hooks/queries/`:
+
+```js
+// hooks/queries/useProfile.js
+export function useProfile() { return useQuery({ queryKey: PROFILE_KEY, queryFn: fetchProfile }) }
+export function useUpdateProfile() { return useMutation({ mutationFn, onSuccess: (data) => qc.setQueryData(PROFILE_KEY, data) }) }
+```
+
+La página consume `{ data, isPending, isError }` de `useQuery` o `.mutate()`/`.mutateAsync()` de `useMutation` — nunca `axios`/`api` directo dentro del componente de página (excepción: `mutationFn` la sigue llamando).
+
+### Estado de sesión: `useAuth()`, no `useAuthStore` directo
+
+Todo consumidor de sesión usa el hook `hooks/useAuth.js`, que envuelve `authStore` con selectores individuales:
+
+```js
+const { user, accessToken, refreshToken, setAuth, clearAuth } = useAuth()
+```
+
+**Excepción documentada:** `services/api.js` sigue importando `useAuthStore` directo (`useAuthStore.getState()`) porque los interceptores de Axios corren fuera del árbol de React y no pueden usar hooks. Está señalado con un comentario inline en el archivo.
+
+### Formularios: React Hook Form + Zod
+
+Todo formulario con validación no trivial usa `useForm({ resolver: zodResolver(schema) })` con un schema Zod dedicado (co-ubicado como `<Page>.schema.js` cuando crece, o inline si es simple). No se mantienen 5+ `useState` individuales por campo.
+
+### Guards de ruta
+
+Los guards viven en `components/routing/` (nunca sueltos en `components/`):
+
+| Guard | Responsabilidad |
+|:---|:---|
+| `ProtectedRoute` | Requiere sesión activa (`accessToken` + `user`) |
+| `PublicRoute` | Redirige usuarios ya autenticados a su home por rol (`socio` → `/socio/credencial`, resto → `/dashboard`) |
+| `CompleteProfileRoute` | Redirige a `/completar-perfil` si `user.is_profile_complete` es falso |
+
+### Rutas: una sola fuente de verdad
+
+No se registran rutas duplicadas para la misma pantalla. Las rutas legacy se resuelven con `<Navigate replace />`, nunca re-renderizando el componente viejo:
+
+```jsx
+<Route path="/membresias" element={<Navigate to="/admin/planes" replace />} />
+```
+
+### Design tokens
+
+Nunca usar colores hardcoded — usar los tokens semánticos del design system:
+
+| Token | Uso |
+|:---|:---|
+| `text-text-primary` | Texto principal |
+| `text-text-secondary` | Texto de soporte / labels |
+| `text-text-tertiary` | Texto deshabilitado / hints |
+| `bg-bg-base` | Fondo de la aplicación |
+| `bg-bg-surface` | Tarjetas y paneles |
+| `bg-bg-raised` | Elementos elevados, dropdowns |
+| `border-subtle` | Bordes suaves entre secciones |
+| `border-strong` | Bordes de separación prominentes |
+| `bg-success-500` / `text-success-500` | Estados positivos (antes `green-500`) |
+| `bg-error-500` / `text-error-500` | Estados negativos, errores, danger (antes `red-500`) |
+| `bg-warning-500` / `text-warning-500` | Estados de alerta / pendiente (antes `yellow-500`) |
+
+**Excepciones documentadas:**
+- El botón de Google OAuth usa `bg-white` hardcoded — es el estilo canónico de Google y no debe cambiarse.
+- `Button` variant `primary` (naranja de marca) no usa tokens de estado — es el color de marca, no un semáforo de estado.
+
+### Guards de desarrollo (mock data)
+
+Ninguna pantalla envía datos mock a producción. Todo dato de demo está guardado detrás de `import.meta.env.DEV`, y la ausencia de datos en producción se cubre con `EmptyState`:
+
+```jsx
+const IS_DEV = import.meta.env.DEV
+const items = IS_DEV ? mockData : []
+// ...
+{items.length === 0 && <EmptyState icon={Calendar} title="..." message="..." />}
+```
+
+UI exclusiva de desarrollo (botones demo, selector de rol, simulador de escaneo QR) va envuelta en:
+
+```jsx
+{import.meta.env.DEV && (
+  <>
+    {/* UI de desarrollo — nunca llega a producción */}
+  </>
+)}
+```
+
+### Navegación en errores de sesión (401)
+
+`services/api.js` no usa `window.location` ni `localStorage` para manejar sesión expirada. El interceptor de respuesta llama a `useAuthStore.getState().clearAuth()` y navega vía SPA usando un navigator inyectado desde `App.jsx` (`setApiNavigator(navigate)`), evitando un full page reload.
+
+### Componentes compartidos
+
+| Componente | Path | Uso |
+|:---|:---|:---|
+| `Button` | `components/ui/Button` | variants: primary / secondary / ghost / danger; sizes: sm / md / lg |
+| `Skeleton` | `components/ui/Skeleton` | Loading states con animate-pulse |
+| `Badge` | `components/ui/Badge` | Labels de estado (live, activo, suspendido) |
+| `TopBar` | `components/layout/TopBar` | Header de cada vista — siempre como primer hijo de AppLayout; soporta `backAction` |
+| `EmptyState` | `components/ui/EmptyState` | Placeholder para listas vacías / datos ausentes en producción |
+| `WinnieLogo` | `components/ui/WinnieLogo` | Logo con variantes de tamaño |
 
 <br>
 
@@ -275,6 +471,11 @@ Una Historia de Usuario se considera **Terminada** cuando cumple:
 
 | Versión | Fecha | Descripción | Autor |
 |:---:|:---:|:---|:---:|
+| Unreleased | — | Auditoría de calidad backend y frontend (`feature/code-quality-audit`, sin PR aún) | @MrForii |
+| [v0.8.0](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/CHANGELOG#080--2026-08-28) | 2026-08-28 | Gestión de membresías, planes y clases (admin) — parcial, ver #41 #42 | @gigilvsarg |
+| [v0.7.0](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/CHANGELOG#070--2026-08-27) | 2026-08-27 | Hub de clases, creación y toma de asistencias | @MagaBechis |
+| [v0.6.0](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/CHANGELOG#060--2026-08-25) | 2026-08-25 | Gestión de socios, membresías y planes — 15 endpoints, 78 tests | @MrForii |
+| [v0.5.0](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/CHANGELOG#050--2026-08-25) | 2026-08-25 | Módulo recepcionista y módulo socio, unificación de layouts responsive | @MagaBechis |
 | [v0.4.0](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/CHANGELOG#040--2026-08-21) | 2026-08-21 | Dashboard con vistas por rol, design system, componentes UI | @MagaBechis |
 | [v0.3.0](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/CHANGELOG#030--2026-08-13) | 2026-08-13 | Google OAuth, JWT, perfil de usuario, frontend SPA | @MrForii |
 | [v0.2.0](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/CHANGELOG#020--2026-08-10) | 2026-08-10 | Motor QR dinámico, anti-replay Redis, logs MongoDB | @Franco-Arce |

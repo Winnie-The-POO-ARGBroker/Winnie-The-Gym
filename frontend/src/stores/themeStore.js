@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-export const useThemeStore = create(
+const useThemeStore = create(
   persist(
     (set) => ({
       theme: 'dark',
@@ -11,3 +11,5 @@ export const useThemeStore = create(
     { name: 'theme-storage' }
   )
 )
+
+export default useThemeStore

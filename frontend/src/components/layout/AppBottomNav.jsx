@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import { NAV_ICON_MAP } from '../../constants/navIcons'
-import useAuthStore from '../../stores/authStore'
+import useAuth from '../../hooks/useAuth'
 
 const MOBILE_NAV = {
   administrador: [
@@ -20,7 +20,7 @@ const MOBILE_NAV = {
 }
 
 export default function AppBottomNav() {
-  const { user } = useAuthStore()
+  const { user } = useAuth()
   const rol = user?.rol
 
   const items = MOBILE_NAV[rol]

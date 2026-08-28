@@ -1,9 +1,11 @@
-from django.urls import path
+from django.urls import include, path
+from rest_framework.routers import DefaultRouter
 
-from .views import SocioDarBajaView, SocioListCreateView, SocioRetrieveUpdateView
+from .views import SocioViewSet
 
-urlpatterns = [
-    path('socios/', SocioListCreateView.as_view(), name='socio-list-create'),
-    path('socios/<int:pk>/', SocioRetrieveUpdateView.as_view(), name='socio-detail'),
-    path('socios/<int:pk>/dar-baja/', SocioDarBajaView.as_view(), name='socio-dar-baja'),
-]
+app_name = 'members'
+
+router = DefaultRouter()
+router.register(r'socios', SocioViewSet, basename='socio')
+
+urlpatterns = router.urls

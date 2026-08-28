@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Check,
   Eye,
-  ArrowLeft,
   Calendar,
   Clock,
   MapPin,
@@ -13,10 +12,14 @@ import {
   Save,
   Sparkles,
 } from 'lucide-react'
+
+const IS_DEV = import.meta.env.DEV
 import { toast } from 'sonner'
 import AppLayout from '../components/layout/AppLayout'
+import TopBar from '../components/layout/TopBar'
+import Button from '../components/ui/Button'
+import { DISCIPLINAS_CONFIG } from '../constants/disciplinas'
 import {
-  DISCIPLINAS_CONFIG,
   getClassById,
   saveOrUpdateClass,
   getStoredClasses,
@@ -33,7 +36,7 @@ const RECURRENCIA_DIAS = [
   { key: 'D', label: 'D' },
 ]
 
-export default function CreateClassScreen() {
+export default function CreateClassPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const editId = searchParams.get('id')
@@ -73,7 +76,7 @@ export default function CreateClassScreen() {
     const updated = exists
       ? formData.dias_recurrencia.filter((d) => d !== dayKey)
       : [...formData.dias_recurrencia, dayKey]
-    
+
     setFormData((prev) => ({
       ...prev,
       dias_recurrencia: updated,
@@ -86,7 +89,7 @@ export default function CreateClassScreen() {
     const updated = exists
       ? formData.planes_habilitados.filter((p) => p !== planName)
       : [...formData.planes_habilitados, planName]
-    
+
     setFormData((prev) => ({
       ...prev,
       planes_habilitados: updated,
@@ -140,31 +143,11 @@ export default function CreateClassScreen() {
 
   return (
     <AppLayout>
-      <div className="w-full flex-1 flex flex-col p-6 md:p-10 gap-7 overflow-y-auto max-w-[1840px] mx-auto transition-all animate-fadeIn">
-        
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate('/clases')}
-              className="p-2 rounded-xl bg-bg-surface border border-subtle text-text-secondary hover:text-text-primary hover:bg-bg-raised transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <div>
-              <h1 className="text-2xl md:text-3xl font-extrabold text-text-primary tracking-tight">
-                {editId ? 'Editar clase' : 'Crear nueva clase'}
-              </h1>
-              <p className="text-xs md:text-sm text-text-secondary mt-0.5 font-medium">
-                {editId
-                  ? 'Modificá los detalles y cupos de la actividad'
-                  : 'Completá los datos para publicarla en el calendario y reservas'}
-              </p>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex items-center gap-3">
+      <TopBar
+        title={editId ? 'Editar clase' : 'Crear clase'}
+        backAction={{ to: '/admin/clases' }}
+        rightContent={
+          <>
             <button
               type="button"
               onClick={() => navigate('/clases')}
@@ -172,23 +155,25 @@ export default function CreateClassScreen() {
             >
               Cancelar
             </button>
-            <button
-              type="button"
+            <Button
+              variant="primary"
               onClick={handleSubmit}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold shadow-md shadow-orange-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="gap-2 shadow-md shadow-orange-500/20 hover:scale-[1.02] active:scale-[0.98]"
             >
               <Check className="w-4 h-4" />
               {editId ? 'Guardar cambios' : 'Publicar clase'}
-            </button>
-          </div>
-        </div>
+            </Button>
+          </>
+        }
+      />
+      <div className="w-full flex-1 flex flex-col p-6 md:p-10 gap-7 overflow-y-auto max-w-[1840px] mx-auto transition-all animate-fadeIn">
 
         {/* Main Content Area */}
         <div className="flex flex-col xl:flex-row gap-8">
-          
+
           {/* FORM AREA (Left - flex-1) */}
           <form onSubmit={handleSubmit} className="flex-1 flex flex-col gap-6">
-            
+
             {/* 1. Información General */}
             <div className="bg-bg-surface rounded-2xl p-6 border border-subtle border-l-4 border-l-orange-500 shadow-sm space-y-5">
               <h2 className="text-base font-bold text-text-primary">
@@ -418,8 +403,8 @@ export default function CreateClassScreen() {
                             ? plan === 'Premium'
                               ? 'bg-orange-500/15 border-orange-500 text-orange-500'
                               : plan === 'Gold'
-                              ? 'bg-yellow-500/15 border-yellow-500 text-yellow-500'
-                              : 'bg-green-500/15 border-green-500 text-green-500'
+                              ? 'bg-warning-500/15 border-warning-500 text-warning-500'
+                              : 'bg-success-500/15 border-success-500 text-success-500'
                             : 'bg-bg-raised border-subtle text-text-tertiary'
                         }`}
                       >
@@ -441,7 +426,7 @@ export default function CreateClassScreen() {
 
           {/* RIGHT SIDEBAR: LIVE PREVIEW (xl:w-[380px]) */}
           <div className="w-full xl:w-[380px] flex flex-col gap-6">
-            
+
             {/* Live Preview Card */}
             <div className="bg-bg-surface rounded-2xl p-6 border border-subtle border-l-4 border-l-orange-500 shadow-sm">
               <div className="flex items-center justify-between gap-2 mb-4">
@@ -449,7 +434,7 @@ export default function CreateClassScreen() {
                   <Eye className="w-3.5 h-3.5 text-orange-500" />
                   Vista previa en vivo
                 </span>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-green-500/10 text-green-500">
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-success-500/10 text-success-500">
                   Activa
                 </span>
               </div>
@@ -511,23 +496,25 @@ export default function CreateClassScreen() {
                 Acciones rápidas
               </h3>
 
-              <button
-                type="button"
+              <Button
+                variant="primary"
                 onClick={handleSubmit}
-                className="w-full flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-xl font-bold text-xs shadow-md shadow-orange-500/20 transition-all hover:scale-[1.01]"
+                className="w-full gap-2 shadow-md shadow-orange-500/20 hover:scale-[1.01]"
               >
                 <Check className="w-4 h-4" />
                 {editId ? 'Guardar cambios' : 'Publicar clase'}
-              </button>
+              </Button>
 
-              <button
-                type="button"
-                onClick={handleDuplicateFromExisting}
-                className="w-full flex items-center justify-center gap-2 bg-bg-raised hover:bg-bg-surface border border-subtle text-text-primary py-2.5 rounded-xl font-semibold text-xs transition-colors"
-              >
-                <Copy className="w-3.5 h-3.5 text-text-secondary" />
-                Copiar de clase existente
-              </button>
+              {IS_DEV && (
+                <button
+                  type="button"
+                  onClick={handleDuplicateFromExisting}
+                  className="w-full flex items-center justify-center gap-2 bg-bg-raised hover:bg-bg-surface border border-subtle text-text-primary py-2.5 rounded-xl font-semibold text-xs transition-colors"
+                >
+                  <Copy className="w-3.5 h-3.5 text-text-secondary" />
+                  Copiar de clase existente
+                </button>
+              )}
             </div>
 
           </div>

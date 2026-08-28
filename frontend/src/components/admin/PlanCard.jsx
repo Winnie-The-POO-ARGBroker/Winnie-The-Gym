@@ -1,4 +1,3 @@
-import React from 'react'
 import { Edit2, Archive, Trash2, Check, X, Sparkles } from 'lucide-react'
 
 export default function PlanCard({ plan, onEdit, onArchive, onDelete, onDuplicate }) {
@@ -54,16 +53,16 @@ export default function PlanCard({ plan, onEdit, onArchive, onDelete, onDuplicat
 
         {/* Benefits Checklist */}
         <ul className="space-y-3.5 mb-6 text-sm">
-          {plan.beneficios?.map((b, idx) => (
-            <li key={idx} className="flex items-center gap-3">
+          {plan.beneficios?.map((b) => (
+            <li key={`${plan.id}-${b.texto}`} className="flex items-center gap-3">
               <span
                 className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs ${
                   b.incluido
                     ? isPopular
                       ? 'bg-orange-500/20 text-orange-500 font-bold'
                       : plan.nombre === 'Gold'
-                      ? 'bg-yellow-500/20 text-yellow-500 font-bold'
-                      : 'bg-green-500/20 text-green-500 font-bold'
+                      ? 'bg-warning-500/20 text-warning-500 font-bold'
+                      : 'bg-success-500/20 text-success-500 font-bold'
                     : 'bg-bg-raised text-text-tertiary'
                 }`}
               >

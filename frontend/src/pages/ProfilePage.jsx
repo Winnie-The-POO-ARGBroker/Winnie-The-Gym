@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -9,8 +9,8 @@ import Avatar from '../components/ui/Avatar'
 import Badge from '../components/ui/Badge'
 import Button from '../components/ui/Button'
 import Skeleton from '../components/ui/Skeleton'
-import api from '../services/api'
-import useAuthStore from '../stores/authStore'
+import useAuth from '../hooks/useAuth'
+import { useProfile, useUpdateProfile } from '../hooks/queries/useProfile'
 
 const schema = z.object({
   nombre: z.string().min(2, 'Mínimo 2 caracteres'),
@@ -25,9 +25,9 @@ const rolBadgeVariant = {
 }
 
 export default function ProfilePage() {
-  const { user, setAuth, accessToken, refreshToken } = useAuthStore()
-  const [profile, setProfile] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const { user, setAuth, accessToken, refreshToken } = useAuth()
+  const { data: profile, isPending: loading } = useProfile()
+  const updateProfile = useUpdateProfile()
 
   const {
     register,
@@ -39,20 +39,14 @@ export default function ProfilePage() {
   })
 
   useEffect(() => {
-    api.get('/auth/profile/').then(({ data }) => {
-      setProfile(data)
-      reset({ nombre: data.nombre, apellido: data.apellido, telefono: data.telefono })
-    }).catch(() => {
-      toast.error('No se pudo cargar el perfil. Intentá de nuevo.')
-    }).finally(() => {
-      setLoading(false)
-    })
-  }, [reset])
+    if (profile) {
+      reset({ nombre: profile.nombre, apellido: profile.apellido, telefono: profile.telefono })
+    }
+  }, [profile, reset])
 
   const onSubmit = async (values) => {
     try {
-      const { data } = await api.patch('/auth/profile/', values)
-      setProfile(data)
+      const data = await updateProfile.mutateAsync(values)
       reset({ nombre: data.nombre, apellido: data.apellido, telefono: data.telefono })
       setAuth({
         access: accessToken,

@@ -20,17 +20,17 @@ class PlanMembresia(models.Model):
     class Meta:
         verbose_name = 'Plan de Membresía'
         verbose_name_plural = 'Planes de Membresía'
+        ordering = ['nombre']
 
 
 class Membresia(models.Model):
 
-    ESTADO_CHOICES = [
-        ('activa', 'Activa'),
-        ('vencida', 'Vencida'),
-        ('suspendida', 'Suspendida'),
-        ('cancelada', 'Cancelada'),
-        ('pendiente_pago', 'Pendiente de Pago'),  # reserved — never writable via API
-    ]
+    class Estado(models.TextChoices):
+        ACTIVA = 'activa', 'Activa'
+        VENCIDA = 'vencida', 'Vencida'
+        SUSPENDIDA = 'suspendida', 'Suspendida'
+        CANCELADA = 'cancelada', 'Cancelada'
+        PENDIENTE_PAGO = 'pendiente_pago', 'Pendiente de Pago'  # reserved — never writable via API
 
     # ADR-7: string form for cross-app FKs
     socio = models.ForeignKey(
@@ -45,7 +45,7 @@ class Membresia(models.Model):
     )
     fecha_inicio = models.DateField(default=datetime.date.today)
     fecha_fin = models.DateField()
-    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='activa')
+    estado = models.CharField(max_length=20, choices=Estado.choices, default=Estado.ACTIVA)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -55,6 +55,7 @@ class Membresia(models.Model):
     class Meta:
         verbose_name = 'Membresía'
         verbose_name_plural = 'Membresías'
+        ordering = ['-fecha_inicio']
         indexes = [
             models.Index(fields=['socio', 'estado'], name='memberships_socio_e_idx'),
         ]

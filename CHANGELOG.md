@@ -6,6 +6,46 @@ Versionado según [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased]
+
+### Pendiente de PR — `feature/code-quality-audit`
+- Auditoría de calidad backend: permisos, namespacing, service layer, convenciones de modelos, consolidación de tests (5 slices)
+- Auditoría de calidad frontend: guards de producción para mock data, `TopBar` con `backAction`, migración a TanStack Query, hook `useAuth()`, formularios RHF+Zod, tokens semánticos de color, limpieza de archivos duplicados/huérfanos, renombre `Screen` → `Page`
+
+---
+
+## [0.8.0] — 2026-08-28
+**PR #40** · `feature/membresias` → `develop` · @gigilvsarg
+
+### Agregado
+- **Módulo de Membresías y Planes** (`/membresias`, `/admin/planes`): tarjetas de plan, gráfico de distribución de socios, tabla comparativa de características, modal CRUD (crear/editar/archivar/duplicar). UI completa contra `adminMockData.js` — integración con API real pendiente (#41)
+- **Módulo de Clases y Actividades** (`/clases`, `/admin/clases`, `/clases/crear`, `/clases/asistencia`): calendario semanal navegable, vista de lista y detalle con filtros, modal de asistentes con búsqueda, formulario de alta/edición con live preview, terminal de asistencia con exportación CSV
+- Backend `apps/classes`: modelos `Clase` e `InscripcionClase`, acción `inscribir` con control de cupo, tests TDD — nota: modelo distinto al originalmente especificado en #32, sin acción de cancelar (seguimiento en #42)
+- `apps/memberships`: habilitada eliminación/archivado de planes con permiso `IsAdminOnly`
+
+### Notas
+- Cubre parcialmente los issues #31 y #32 (ver comentarios en cada issue) — se abrieron #41 y #42 como seguimiento del alcance restante
+
+---
+
+## [0.7.0] — 2026-08-27
+**PR #36** · `feature/asistencia` → `develop` · @MagaBechis
+
+### Agregado
+- `ClassesScreen` (`/clases`): hub de gestión de clases para administrador con navegación centralizada
+- `AttendanceScreen` (`/clases/asistencia`): toma de asistencias con estado visual (presente / ausente / sin marcar) e insignias por plan de membresía (Básico / Gold / Premium), adaptable a Light/Dark mode
+- `AttendanceTable`: componente de tabla de asistentes reutilizable
+- `CreateClassScreen` (`/clases/crear`) + `CreateClassForm`: formulario de alta de clase (mockup inicial)
+- Sidebar actualizado: sección «Gestión Clases» visible para el rol administrador
+- `apps.classes` registrado en `INSTALLED_APPS` (stub — backend pendiente en #32)
+
+### Corregido
+- Tests de `has_active_membership` restaurados tras la consolidación de `tests.py`
+- Usuario de testing corregido: `rol='recepcionista'` en lugar de `is_staff=True`
+- `backend_logs.txt` eliminado del repo; `*.log` agregado a `.gitignore`
+
+---
+
 ## [0.6.0] — 2026-08-25
 **PR #26** · `feature/socios-membresias` → `develop` · @MrForii
 

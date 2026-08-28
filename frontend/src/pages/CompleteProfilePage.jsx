@@ -2,8 +2,9 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useNavigate } from 'react-router-dom'
+import { useMutation } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import useAuthStore from '../stores/authStore'
+import useAuth from '../hooks/useAuth'
 import api from '../services/api'
 import WinnieLogo from '../components/ui/WinnieLogo'
 import Button from '../components/ui/Button'
@@ -23,25 +24,25 @@ const FIELDS = [
 ]
 
 export default function CompleteProfilePage() {
-  const { user, setAuth } = useAuthStore()
+  const { user, setAuth, accessToken, refreshToken } = useAuth()
   const navigate = useNavigate()
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm({ resolver: zodResolver(schema) })
 
-  const onSubmit = async (values) => {
-    try {
-      await api.post('/auth/complete-profile/', values)
-      const currentState = useAuthStore.getState()
+  const completeProfile = useMutation({
+    mutationFn: (values) => api.post('/auth/complete-profile/', values).then((r) => r.data),
+    onSuccess: () => {
       setAuth({
-        access: currentState.accessToken,
-        refresh: currentState.refreshToken,
+        access: accessToken,
+        refresh: refreshToken,
         user: { ...user, is_profile_complete: true },
       })
       navigate('/dashboard')
-    } catch (err) {
+    },
+    onError: (err) => {
       const data = err.response?.data
       const message =
         (data && typeof data === 'object'
@@ -49,7 +50,11 @@ export default function CompleteProfilePage() {
           : data?.detail) ||
         'No se pudo guardar el perfil. Intentá de nuevo.'
       toast.error(message)
-    }
+    },
+  })
+
+  const onSubmit = (values) => {
+    completeProfile.mutate(values)
   }
 
   return (
@@ -83,7 +88,7 @@ export default function CompleteProfilePage() {
             </div>
           ))}
 
-          <Button type="submit" variant="primary" size="lg" loading={isSubmitting} className="w-full mt-2">
+          <Button type="submit" variant="primary" size="lg" loading={completeProfile.isPending} className="w-full mt-2">
             Continuar
           </Button>
         </form>

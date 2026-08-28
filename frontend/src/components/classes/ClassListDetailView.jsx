@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import {
   Users,
   Clock,
@@ -12,6 +12,7 @@ import {
   ShieldAlert,
 } from 'lucide-react'
 import { DISCIPLINAS_CONFIG } from '../../constants/disciplinas'
+import Button from '../ui/Button'
 
 const CATEGORIAS_FILTRO = [
   { key: 'todas', label: 'Todas' },
@@ -111,7 +112,7 @@ export default function ClassListDetailView({
                     <span
                       className={`px-2 py-0.5 rounded-lg text-xs font-bold ${
                         isFull
-                          ? 'bg-red-500/10 text-red-500 border border-red-500/30'
+                          ? 'bg-error-500/10 text-error-500 border border-error-500/30'
                           : 'bg-bg-raised text-text-primary border border-subtle'
                       }`}
                     >
@@ -162,7 +163,7 @@ export default function ClassListDetailView({
                   >
                     {currentCfg.label}
                   </span>
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-500/10 text-green-500 border border-green-500/20 flex items-center gap-1">
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-success-500/10 text-success-500 border border-success-500/20 flex items-center gap-1">
                     <CheckCircle2 className="w-3 h-3" />
                     Activa
                   </span>
@@ -253,7 +254,7 @@ export default function ClassListDetailView({
                   style={{ width: `${occupancyPct}%` }}
                   className={`h-full rounded-full transition-all duration-500 ${
                     occupancyPct >= 100
-                      ? 'bg-red-500'
+                      ? 'bg-error-500'
                       : occupancyPct >= 75
                       ? 'bg-orange-500'
                       : 'bg-primary'
@@ -285,7 +286,7 @@ export default function ClassListDetailView({
                       planNombre === 'Premium'
                         ? 'bg-orange-500/10 text-orange-500 border-orange-500/30'
                         : planNombre === 'Gold'
-                        ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/30'
+                        ? 'bg-warning-500/10 text-warning-500 border-warning-500/30'
                         : 'bg-bg-raised text-text-secondary border-subtle'
                     }`}
                   >
@@ -297,13 +298,14 @@ export default function ClassListDetailView({
 
             {/* Action Buttons */}
             <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-subtle">
-              <button
+              <Button
+                variant="primary"
                 onClick={() => onOpenAttendees(current)}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold shadow-md shadow-orange-500/20 transition-all hover:scale-[1.01]"
+                className="flex-1 gap-2 shadow-md shadow-orange-500/20 hover:scale-[1.02] active:scale-[0.98]"
               >
                 <Users className="w-4 h-4" />
                 Ver lista de inscriptos
-              </button>
+              </Button>
 
               <button
                 onClick={() => onEditClass(current)}
@@ -315,7 +317,7 @@ export default function ClassListDetailView({
 
               <button
                 onClick={() => onDeleteClass(current)}
-                className="flex items-center justify-center p-2.5 rounded-xl bg-bg-raised hover:bg-red-500/10 text-text-tertiary hover:text-red-500 border border-subtle transition-colors"
+                className="flex items-center justify-center p-2.5 rounded-xl bg-bg-raised hover:bg-error-500/10 text-text-tertiary hover:text-error-500 border border-subtle transition-colors"
                 title="Eliminar clase"
               >
                 <Trash2 className="w-4 h-4" />
