@@ -471,7 +471,10 @@ Una Historia de Usuario se considera **Terminada** cuando cumple:
 
 | Versión | Fecha | Descripción | Autor |
 |:---:|:---:|:---|:---:|
-| [v0.5.0](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/CHANGELOG#050--2026-08-27) | 2026-08-27 | Auditoría de calidad frontend: production safety, TopBar+backAction, TanStack Query, useAuth, tokens semánticos | @MrForii |
+| Unreleased | — | En curso: `feature/membresias` (PR [#40](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/pull/40)) · Auditoría de calidad backend y frontend (`feature/code-quality-audit`, sin PR aún) | @MrForii |
+| [v0.7.0](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/CHANGELOG#070--2026-08-27) | 2026-08-27 | Hub de clases, creación y toma de asistencias | @MagaBechis |
+| [v0.6.0](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/CHANGELOG#060--2026-08-25) | 2026-08-25 | Gestión de socios, membresías y planes — 15 endpoints, 78 tests | @MrForii |
+| [v0.5.0](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/CHANGELOG#050--2026-08-25) | 2026-08-25 | Módulo recepcionista y módulo socio, unificación de layouts responsive | @MagaBechis |
 | [v0.4.0](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/CHANGELOG#040--2026-08-21) | 2026-08-21 | Dashboard con vistas por rol, design system, componentes UI | @MagaBechis |
 | [v0.3.0](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/CHANGELOG#030--2026-08-13) | 2026-08-13 | Google OAuth, JWT, perfil de usuario, frontend SPA | @MrForii |
 | [v0.2.0](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/CHANGELOG#020--2026-08-10) | 2026-08-10 | Motor QR dinámico, anti-replay Redis, logs MongoDB | @Franco-Arce |

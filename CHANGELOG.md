@@ -6,6 +6,35 @@ Versionado según [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased]
+
+### En revisión — `feature/membresias` (PR #40, open)
+- Módulos de gestión de membresías, planes y clases según Figma
+
+### Pendiente de PR — `feature/code-quality-audit`
+- Auditoría de calidad backend: permisos, namespacing, service layer, convenciones de modelos, consolidación de tests (5 slices)
+- Auditoría de calidad frontend: guards de producción para mock data, `TopBar` con `backAction`, migración a TanStack Query, hook `useAuth()`, formularios RHF+Zod, tokens semánticos de color, limpieza de archivos duplicados/huérfanos, renombre `Screen` → `Page`
+
+---
+
+## [0.7.0] — 2026-08-27
+**PR #36** · `feature/asistencia` → `develop` · @MagaBechis
+
+### Agregado
+- `ClassesScreen` (`/clases`): hub de gestión de clases para administrador con navegación centralizada
+- `AttendanceScreen` (`/clases/asistencia`): toma de asistencias con estado visual (presente / ausente / sin marcar) e insignias por plan de membresía (Básico / Gold / Premium), adaptable a Light/Dark mode
+- `AttendanceTable`: componente de tabla de asistentes reutilizable
+- `CreateClassScreen` (`/clases/crear`) + `CreateClassForm`: formulario de alta de clase (mockup inicial)
+- Sidebar actualizado: sección «Gestión Clases» visible para el rol administrador
+- `apps.classes` registrado en `INSTALLED_APPS` (stub — backend pendiente en #32)
+
+### Corregido
+- Tests de `has_active_membership` restaurados tras la consolidación de `tests.py`
+- Usuario de testing corregido: `rol='recepcionista'` en lugar de `is_staff=True`
+- `backend_logs.txt` eliminado del repo; `*.log` agregado a `.gitignore`
+
+---
+
 ## [0.6.0] — 2026-08-25
 **PR #26** · `feature/socios-membresias` → `develop` · @MrForii
 
