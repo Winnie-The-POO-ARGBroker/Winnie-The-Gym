@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import Avatar from '../ui/Avatar'
+import Button from '../ui/Button'
 
 export default function ClassAttendeesModal({
   isOpen,
@@ -196,13 +197,14 @@ export default function ClassAttendeesModal({
             >
               Cerrar
             </button>
-            <button
+            <Button
+              variant="primary"
               onClick={onSave}
-              className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold shadow-md transition-colors"
+              className="gap-1.5 shadow-md shadow-orange-500/20 hover:scale-[1.02] active:scale-[0.98]"
             >
               <Save className="w-3.5 h-3.5" />
               Guardar asistencia
-            </button>
+            </Button>
           </div>
         </div>
       </div>

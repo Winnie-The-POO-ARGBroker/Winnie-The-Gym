@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import useAuthStore from '../stores/authStore'
 import api from '../services/api'
 import WinnieLogo from '../components/ui/WinnieLogo'
+import Button from '../components/ui/Button'
 
 export default function LoginPage() {
   const { setAuth } = useAuthStore()
@@ -105,7 +106,8 @@ export default function LoginPage() {
 
           {/* Quick Demo Logins */}
           <div className="flex flex-col gap-2">
-            <button
+            <Button
+              variant="primary"
               onClick={() => {
                 setAuth({
                   access: 'mock-access-token-admin',
@@ -122,10 +124,10 @@ export default function LoginPage() {
                 navigate('/dashboard')
                 toast.success('Sesión iniciada como Administrador')
               }}
-              className="w-full py-2.5 px-4 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2"
+              className="w-full gap-2 shadow-md shadow-orange-500/20 hover:scale-[1.02] active:scale-[0.98]"
             >
               👑 Ingresar como Administrador
-            </button>
+            </Button>
 
             <div className="grid grid-cols-2 gap-2">
               <button

@@ -8,6 +8,7 @@ import PlanDistributionChart from '../../components/admin/PlanDistributionChart'
 import PlanComparativeTable from '../../components/admin/PlanComparativeTable'
 import PlanFormModal from '../../components/admin/PlanFormModal'
 import EmptyState from '../../components/ui/EmptyState'
+import Button from '../../components/ui/Button'
 import {
   getStoredPlanes,
   saveStoredPlanes,
@@ -114,16 +115,17 @@ export default function AdminPlanesPage() {
               <Copy className="w-4 h-4 text-text-secondary" />
               Duplicar
             </button>
-            <button
+            <Button
+              variant="primary"
               onClick={() => {
                 setModalMode({ planToEdit: null, isDuplicate: false })
                 setIsModalOpen(true)
               }}
-              className="flex items-center gap-2 px-5 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold shadow-md shadow-orange-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="gap-2 shadow-md shadow-orange-500/20 hover:scale-[1.02] active:scale-[0.98]"
             >
               <Plus className="w-4 h-4" />
               Nuevo plan
-            </button>
+            </Button>
           </>
         }
       />

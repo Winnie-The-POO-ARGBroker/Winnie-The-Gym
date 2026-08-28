@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { X, Plus, Trash2, Check, Sparkles } from 'lucide-react'
+import Button from '../ui/Button'
 
 export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = null, isDuplicate = false }) {
   const [formData, setFormData] = useState({
@@ -286,13 +287,13 @@ export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = nu
           >
             Cancelar
           </button>
-          <button
-            type="button"
+          <Button
+            variant="primary"
             onClick={handleSubmit}
-            className="px-5 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold shadow-md transition-colors flex items-center gap-1.5"
+            className="gap-1.5 shadow-md shadow-orange-500/20 hover:scale-[1.02] active:scale-[0.98]"
           >
             {isDuplicate ? 'Duplicar Plan' : planToEdit ? 'Guardar Cambios' : 'Crear Plan'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

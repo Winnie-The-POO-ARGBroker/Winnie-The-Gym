@@ -15,6 +15,7 @@ import ClassCalendarView from '../components/classes/ClassCalendarView'
 import ClassListDetailView from '../components/classes/ClassListDetailView'
 import ClassAttendeesModal from '../components/classes/ClassAttendeesModal'
 import EmptyState from '../components/ui/EmptyState'
+import Button from '../components/ui/Button'
 import { useClassAttendees } from '../hooks/useClassAttendees'
 import {
   getStoredClasses,
@@ -121,13 +122,14 @@ export default function ClassesScreen() {
                 Lista y Detalle
               </button>
             </div>
-            <button
+            <Button
+              variant="primary"
               onClick={() => navigate('/clases/crear')}
-              className="flex items-center gap-2 px-5 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold shadow-md shadow-orange-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="gap-2 shadow-md shadow-orange-500/20 hover:scale-[1.02] active:scale-[0.98]"
             >
               <Plus className="w-4 h-4" />
               Nueva clase
-            </button>
+            </Button>
           </>
         }
       />

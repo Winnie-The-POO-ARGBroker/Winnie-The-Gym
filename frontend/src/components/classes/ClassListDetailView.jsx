@@ -12,6 +12,7 @@ import {
   ShieldAlert,
 } from 'lucide-react'
 import { DISCIPLINAS_CONFIG } from '../../constants/disciplinas'
+import Button from '../ui/Button'
 
 const CATEGORIAS_FILTRO = [
   { key: 'todas', label: 'Todas' },
@@ -297,13 +298,14 @@ export default function ClassListDetailView({
 
             {/* Action Buttons */}
             <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-subtle">
-              <button
+              <Button
+                variant="primary"
                 onClick={() => onOpenAttendees(current)}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold shadow-md shadow-orange-500/20 transition-all hover:scale-[1.01]"
+                className="flex-1 gap-2 shadow-md shadow-orange-500/20 hover:scale-[1.02] active:scale-[0.98]"
               >
                 <Users className="w-4 h-4" />
                 Ver lista de inscriptos
-              </button>
+              </Button>
 
               <button
                 onClick={() => onEditClass(current)}
