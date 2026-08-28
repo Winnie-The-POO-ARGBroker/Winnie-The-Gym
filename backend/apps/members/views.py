@@ -1,5 +1,3 @@
-import datetime
-
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
@@ -10,6 +8,7 @@ from apps.access.permissions import IsReceptionistOrAdmin
 
 from .models import Socio
 from .serializers import SocioSerializer
+from .services import dar_baja
 
 
 class SocioListCreateView(generics.ListCreateAPIView):
@@ -31,15 +30,13 @@ class SocioDarBajaView(APIView):
     def post(self, request, pk):
         socio = get_object_or_404(Socio, pk=pk)
 
-        if socio.estado == 'baja':
+        if socio.estado == Socio.Estado.BAJA:
             return Response(
                 {'detail': 'El socio ya está dado de baja.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        socio.estado = 'baja'
-        socio.fecha_baja = datetime.date.today()
-        socio.save(update_fields=['estado', 'fecha_baja', 'updated_at'])
+        dar_baja(socio)
 
         serializer = SocioSerializer(socio)
         return Response(serializer.data, status=status.HTTP_200_OK)

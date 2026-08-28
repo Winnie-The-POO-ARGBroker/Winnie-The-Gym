@@ -1,5 +1,6 @@
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
 from apps.access.permissions import IsAdminOnly, IsReceptionistOrAdmin, IsSocio
@@ -9,6 +10,7 @@ from .serializers import (
     ClaseSerializer,
     InscripcionClaseSerializer,
 )
+from .services import inscribir_socio
 
 
 class ClaseViewSet(viewsets.ModelViewSet):
@@ -30,31 +32,9 @@ class ClaseViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], permission_classes=[IsSocio])
     def inscribir(self, request, pk=None):
         clase = self.get_object()
-        user = request.user
-        socio = user.socio
+        socio = request.user.socio
 
-        if InscripcionClase.objects.filter(clase=clase, socio=socio).exists():
-            return Response(
-                {'detail': 'Ya estás inscripto en esta clase.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        cupos_ocupados = clase.inscripciones.filter(en_espera=False).count()
-        en_espera = cupos_ocupados >= clase.cupo_maximo
-
-        if en_espera:
-            en_lista = clase.inscripciones.filter(en_espera=True).count()
-            if en_lista >= clase.lista_espera_max:
-                return Response(
-                    {'detail': 'La clase y su lista de espera están completas.'},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-        inscripcion = InscripcionClase.objects.create(
-            clase=clase,
-            socio=socio,
-            en_espera=en_espera,
-        )
+        inscripcion = inscribir_socio(clase, socio)
 
         return Response(
             InscripcionClaseSerializer(inscripcion).data,
