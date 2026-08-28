@@ -150,8 +150,7 @@ backend/
 │   ├── members/             # Perfil de socios, certificados médicos
 │   ├── memberships/         # Planes, suscripciones, procesamiento de pagos
 │   ├── classes/             # Clases grupales, horarios, control de cupos y reservas
-│   ├── access/              # Motor QR: generación de tokens, validación, logs de ingreso
-│   └── reports/             # Motor de exportación PDF/CSV
+│   └── access/              # Motor QR: generación de tokens, validación, logs de ingreso
 ├── requirements/
 │   ├── base.txt             # Dependencias de producción
 │   ├── development.txt      # Herramientas de desarrollo (django-extensions)
@@ -163,6 +162,129 @@ backend/
 > **Regla:** cada app en `apps/` es autónoma. No importes modelos de otra app directamente — usá las relaciones de FK de Django o eventos/signals. La comunicación entre apps va por la capa de servicio, no por imports directos.
 
 <br>
+
+<h2 align='center'>📐 Lineamientos Backend</h2>
+
+### Arquitectura de vistas
+
+Toda app de dominio usa **`ModelViewSet` + `DefaultRouter`**. Las vistas no contienen lógica de negocio.
+
+| Patrón | Regla |
+|:---|:---|
+| ViewSet | `ModelViewSet` para todo CRUD estándar; `APIView` solo para endpoints no-CRUD (ej: auto-servicio del socio) |
+| Permisos | `get_permissions()` por acción — nunca `permission_classes` estático cuando hay variación entre acciones |
+| Acciones custom | `@action(detail=True/False, methods=[...], url_path='...', url_name='...')` en el ViewSet |
+| Service layer | La lógica de negocio va en `apps/<app>/services.py`. La vista llama al servicio y devuelve la respuesta |
+| Errores del service | El service lanza `rest_framework.exceptions.ValidationError({'detail': '...'})`. La vista no atrapa — DRF lo convierte en 400 |
+
+### Service layer
+
+Cada app con lógica de negocio no-trivial tiene su `services.py`:
+
+| App | Función | Descripción |
+|:---|:---|:---|
+| `members` | `dar_baja(socio)` | Transición de estado socio → baja, idempotente |
+| `memberships` | `renovar_membresia(socio, plan, fecha_inicio=None)` | Expira membresía activa y crea nueva, atómico |
+| `classes` | `inscribir_socio(clase, socio)` | Maneja cupo + lista de espera |
+| `access` | `has_active_membership(user)` | Lazy expiry: verifica y vence membresías expiradas |
+
+### Convención de nombres
+
+El proyecto usa una convención **bilingüe documentada**:
+
+| Elemento | Idioma | Ejemplos |
+|:---|:---:|:---|
+| Modelos de dominio | Español | `Socio`, `Clase`, `Membresia`, `PlanMembresia` |
+| Modelos de infraestructura | Inglés | `User`, `AccessLog` |
+| Campos de negocio | Español | `numero_socio`, `fecha_baja`, `estado`, `nombre` |
+| Campos técnicos / timestamps | Inglés | `created_at`, `updated_at`, `timestamp` |
+| URLs y acciones custom | Español | `/socios/`, `/clases/`, `dar-baja/`, `inscribir/` |
+| Archivos Python, funciones, variables | Inglés | `views.py`, `has_active_membership`, `get_permissions` |
+| Namespaces de URL | Inglés | `members:socio-list`, `classes:clase-detail` |
+
+### Convenciones de modelos
+
+- **`TextChoices`** para todos los campos de opciones — nunca raw list-of-tuples
+- **`Meta.ordering`** obligatorio en todo modelo con colecciones paginadas
+- **`TimeField`** para horarios, nunca `CharField`
+- **`created_at` / `updated_at`** en todos los modelos de dominio
+
+### Convenciones de tests
+
+- **TDD estricto**: test fallido primero, implementación después, test verde al final
+- **`backend/conftest.py`**: fixtures compartidos — `make_user`, `make_socio`, `make_plan`, `make_membresia`, `auth_client`
+- **Package `tests/`** por app — nunca un `tests.py` flat
+- **`APITestCase`** para integración, **`@pytest.mark.django_db`** para unit tests de services
+
+### Convenciones de migraciones
+
+- Una migración por cambio lógico — no agrupar schema + datos en el mismo archivo
+- Migraciones de datos siempre con `RunPython` + función de reversión
+- Para campos con datos existentes: nullable transition → data migration → non-nullable finalize (3 pasos)
+
+<br>
+
+<h2 align='center'>🎨 Lineamientos Frontend</h2>
+
+> Esta sección documenta las convenciones establecidas. Algunas vistas aún están en proceso de migración.
+
+### Layout pattern
+
+Toda vista de la aplicación sigue esta estructura:
+
+```jsx
+<AppLayout>
+  <TopBar
+    title="Título de la vista"
+    subtitle="Información contextual"
+    rightContent={<>/* botones y controles */</> }
+  />
+  <div className="flex-1 p-6 overflow-auto ...">
+    {/* contenido sin header */}
+  </div>
+</AppLayout>
+```
+
+**Regla:** `<TopBar>` es **siempre el primer hijo de `<AppLayout>`**, nunca dentro del content div. Los controles de acción (botones, filtros, navegadores de semana) van en `rightContent`.
+
+### Design tokens
+
+Nunca usar colores hardcoded — usar los tokens semánticos del design system:
+
+| Token | Uso |
+|:---|:---|
+| `text-text-primary` | Texto principal |
+| `text-text-secondary` | Texto de soporte / labels |
+| `text-text-tertiary` | Texto deshabilitado / hints |
+| `bg-bg-base` | Fondo de la aplicación |
+| `bg-bg-surface` | Tarjetas y paneles |
+| `bg-bg-raised` | Elementos elevados, dropdowns |
+| `border-subtle` | Bordes suaves entre secciones |
+| `border-strong` | Bordes de separación prominentes |
+
+**Excepción documentada:** el botón de Google OAuth usa `bg-white` hardcoded — es el estilo canónico de Google y no debe cambiarse.
+
+### Guards de desarrollo
+
+UI exclusiva de desarrollo (botones demo, accesos rápidos) envuelta siempre en:
+
+```jsx
+{import.meta.env.DEV && (
+  <>
+    {/* UI de desarrollo — nunca llega a producción */}
+  </>
+)}
+```
+
+### Componentes compartidos
+
+| Componente | Path | Uso |
+|:---|:---|:---|
+| `Button` | `components/ui/Button` | variants: primary / secondary / ghost / danger; sizes: sm / md / lg |
+| `Skeleton` | `components/ui/Skeleton` | Loading states con animate-pulse |
+| `Badge` | `components/ui/Badge` | Labels de estado (live, activo, suspendido) |
+| `TopBar` | `components/layout/TopBar` | Header de cada vista — siempre como primer hijo de AppLayout |
+| `WinnieLogo` | `components/ui/WinnieLogo` | Logo con variantes de tamaño |
 
 <br>
 
