@@ -14,19 +14,22 @@ import {
 import { toast } from 'sonner'
 import AppLayout from '../components/layout/AppLayout'
 import Avatar from '../components/ui/Avatar'
+import EmptyState from '../components/ui/EmptyState'
 import {
   getClassById,
   getStoredAttendees,
   saveStoredAttendees,
 } from '../services/adminMockData'
 
+const IS_DEV = import.meta.env.DEV
+
 export default function AttendanceScreen() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const classId = searchParams.get('id') || 'cls_funcional_1'
 
-  const [classInfo, setClassInfo] = useState(() => getClassById(classId))
-  const [attendees, setAttendees] = useState(() => getStoredAttendees(classId))
+  const [classInfo, setClassInfo] = useState(() => IS_DEV ? getClassById(classId) : null)
+  const [attendees, setAttendees] = useState(() => IS_DEV ? getStoredAttendees(classId) : [])
   const [waitingList, setWaitingList] = useState([
     { id: 'w_1', nombre: 'Iris Navarro', dni: '34.555.666', plan: 'Premium' },
     { id: 'w_2', nombre: 'Javier Benítez', dni: '36.777.888', plan: 'Gold' },
@@ -34,10 +37,12 @@ export default function AttendanceScreen() {
   ])
 
   useEffect(() => {
-    const cls = getClassById(classId)
-    if (cls) setClassInfo(cls)
-    const atts = getStoredAttendees(classId)
-    setAttendees(atts)
+    if (IS_DEV) {
+      const cls = getClassById(classId)
+      if (cls) setClassInfo(cls)
+      const atts = getStoredAttendees(classId)
+      setAttendees(atts)
+    }
   }, [classId])
 
   const handleToggleStatus = (attendeeId, newStatus) => {
@@ -184,6 +189,13 @@ export default function AttendanceScreen() {
 
             {/* Attendees Rows */}
             <div className="divide-y divide-subtle p-2 space-y-1">
+              {!IS_DEV && attendees.length === 0 && (
+                <EmptyState
+                  icon={Users}
+                  title="No hay inscriptos"
+                  message="Esta clase todavía no tiene socios anotados."
+                />
+              )}
               {attendees.map((att) => {
                 const isPresente = att.estado === 'presente'
                 const isAusente = att.estado === 'ausente'

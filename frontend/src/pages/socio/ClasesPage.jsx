@@ -1,11 +1,13 @@
 import { useState, useMemo } from 'react'
 import { toast } from 'sonner'
+import { Calendar } from 'lucide-react'
 import MemberLayout from '../../layouts/MemberLayout'
 import Badge from '../../components/ui/Badge'
 import Button from '../../components/ui/Button'
 import Card from '../../components/ui/Card'
 import FilterButton from '../../components/ui/FilterButton'
 import ClassCard from '../../components/socio/ClassCard'
+import EmptyState from '../../components/ui/EmptyState'
 import {
   DIAS_AGENDA,
   CATEGORIAS_CLASES,
@@ -13,10 +15,12 @@ import {
   saveStoredClasses,
 } from '../../services/socioMockData'
 
+const IS_DEV = import.meta.env.DEV
+
 export default function ClasesPage() {
   // Catálogo de clases con persistencia local simulada
   // TODO: reemplazar por API real -> GET /api/classes/
-  const [classesList, setClassesList] = useState(getStoredClasses)
+  const [classesList, setClassesList] = useState(() => IS_DEV ? getStoredClasses() : [])
   
   // Filtros interactivos con fecha de hoy por defecto
   const [selectedDay, setSelectedDay] = useState(
@@ -266,7 +270,13 @@ export default function ClasesPage() {
 
             {/* LISTA DE CLASES */}
             <div className="flex flex-col gap-2.5">
-              {filteredClasses.length === 0 ? (
+              {!IS_DEV && classesList.length === 0 ? (
+                <EmptyState
+                  icon={Calendar}
+                  title="No hay clases programadas"
+                  message="Consultá con recepción para ver la agenda."
+                />
+              ) : filteredClasses.length === 0 ? (
                 <Card className="p-6 text-center flex flex-col items-center justify-center gap-2">
                   <span className="text-2xl">🗓️</span>
                   <h4 className="text-xs font-bold text-text-primary">

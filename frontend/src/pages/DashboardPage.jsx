@@ -10,42 +10,50 @@ import ClassCapacityList from '../components/dashboard/ClassCapacityList'
 import Badge from '../components/ui/Badge'
 import Button from '../components/ui/Button'
 import FilterButton from '../components/ui/FilterButton'
-
-const MOCK_MOVEMENTS = [
-  { id: 1, name: 'Carlos Pérez', membership: 'Mensual', time: '09:24', type: 'entry' },
-  { id: 2, name: 'Laura Gómez', membership: 'Trimestral', time: '09:21', type: 'exit' },
-  { id: 3, name: 'Martín Silva', membership: 'Mensual', time: '09:18', type: 'entry' },
-  { id: 4, name: 'Valentina Cruz', membership: 'Anual', time: '09:15', type: 'exit' },
-  { id: 5, name: 'Diego Ramírez', membership: 'Mensual', time: '09:10', type: 'entry' },
-]
-
-const MOCK_ALERTS = [
-  { id: 1, name: 'Ana Torres', tag: 'Morosidad' },
-  { id: 2, name: 'Luis Herrera', tag: 'Morosidad' },
-  { id: 3, name: 'Sofía Medina', tag: 'Morosidad' },
-  { id: 4, name: 'Pablo Ríos', tag: 'Morosidad' },
-]
-
-const MOCK_CLASSES = [
-  { id: 1, name: 'Spinning Mañana', current: 20, max: 20 },
-  { id: 2, name: 'Yoga Tarde', current: 17, max: 20 },
-]
-
-
-const MOCK_SOCIO_DATA = {
-  plan: 'Pase Libre Full',
-  expirationDate: '30 de septiembre, 2026',
-  medicalCertificate: 'Al día (Vence Dic 2026)',
-  monthlyAttendance: 14,
-  upcomingClasses: [
-    { id: 1, name: 'Spinning Intensivo', time: 'Hoy · 18:30 hs', instructor: 'Prof. Lucas' },
-    { id: 2, name: 'Funcional Training', time: 'Mañana · 10:00 hs', instructor: 'Prof. Camila' },
-  ],
-}
+import EmptyState from '../components/ui/EmptyState'
 
 export default function DashboardPage() {
   const { user } = useAuthStore()
   const navigate = useNavigate()
+
+  const IS_DEV = import.meta.env.DEV
+
+  const MOCK_MOVEMENTS = IS_DEV ? [
+    { id: 1, name: 'Carlos Pérez', membership: 'Mensual', time: '09:24', type: 'entry' },
+    { id: 2, name: 'Laura Gómez', membership: 'Trimestral', time: '09:21', type: 'exit' },
+    { id: 3, name: 'Martín Silva', membership: 'Mensual', time: '09:18', type: 'entry' },
+    { id: 4, name: 'Valentina Cruz', membership: 'Anual', time: '09:15', type: 'exit' },
+    { id: 5, name: 'Diego Ramírez', membership: 'Mensual', time: '09:10', type: 'entry' },
+  ] : []
+
+  const MOCK_ALERTS = IS_DEV ? [
+    { id: 1, name: 'Ana Torres', tag: 'Morosidad' },
+    { id: 2, name: 'Luis Herrera', tag: 'Morosidad' },
+    { id: 3, name: 'Sofía Medina', tag: 'Morosidad' },
+    { id: 4, name: 'Pablo Ríos', tag: 'Morosidad' },
+  ] : []
+
+  const MOCK_CLASSES = IS_DEV ? [
+    { id: 1, name: 'Spinning Mañana', current: 20, max: 20 },
+    { id: 2, name: 'Yoga Tarde', current: 17, max: 20 },
+  ] : []
+
+  const MOCK_SOCIO_DATA = IS_DEV ? {
+    plan: 'Pase Libre Full',
+    expirationDate: '30 de septiembre, 2026',
+    medicalCertificate: 'Al día (Vence Dic 2026)',
+    monthlyAttendance: 14,
+    upcomingClasses: [
+      { id: 1, name: 'Spinning Intensivo', time: 'Hoy · 18:30 hs', instructor: 'Prof. Lucas' },
+      { id: 2, name: 'Funcional Training', time: 'Mañana · 10:00 hs', instructor: 'Prof. Camila' },
+    ],
+  } : {
+    plan: '',
+    expirationDate: '',
+    medicalCertificate: '',
+    monthlyAttendance: 0,
+    upcomingClasses: [],
+  }
 
   const [currentRole, setCurrentRole] = useState(user?.rol || 'administrador')
 

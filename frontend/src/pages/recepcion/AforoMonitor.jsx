@@ -16,8 +16,9 @@ export default function AforoMonitor() {
     { id: 3, type: 'in', name: 'María Pérez', time: 'hace 8 min' },
   ]);
 
-  // Mock WebSocket connection
+  // Mock WebSocket connection — only runs in DEV to avoid fake data in PROD
   useEffect(() => {
+    if (!import.meta.env.DEV) return;
     setIsConnected(true);
     const interval = setInterval(() => {
       const isEntry = Math.random() > 0.4;
@@ -55,17 +56,29 @@ export default function AforoMonitor() {
         }
       />
       <div className="flex-1 p-6 overflow-auto flex flex-col gap-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <OccupancyCard aforo={aforo} maxAforo={maxAforo} />
-          <RecentEventsPanel events={recentEvents} />
-        </div>
-        <AforoStatBar
-          promedioHoy={112}
-          picoMaximo={189}
-          picoHora="18:30"
-          ingresoUltimaHora={45}
-          egresoUltimaHora={23}
-        />
+        {!import.meta.env.DEV ? (
+          <div className="flex flex-col items-center justify-center gap-3 py-12 px-6 text-center text-text-secondary">
+            <Wifi className="w-8 h-8 text-text-tertiary" />
+            <p className="text-sm font-semibold">Sin datos en vivo</p>
+            <p className="text-xs text-text-tertiary max-w-xs">
+              El monitor de aforo requiere conexión al servidor. Los datos se mostrarán cuando haya una fuente en vivo disponible.
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <OccupancyCard aforo={aforo} maxAforo={maxAforo} />
+              <RecentEventsPanel events={recentEvents} />
+            </div>
+            <AforoStatBar
+              promedioHoy={112}
+              picoMaximo={189}
+              picoHora="18:30"
+              ingresoUltimaHora={45}
+              egresoUltimaHora={23}
+            />
+          </>
+        )}
       </div>
     </AppLayout>
   );

@@ -1,7 +1,8 @@
 import { useEffect } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { useThemeStore } from './stores/themeStore'
+import { setApiNavigator } from './services/api'
 import LoginPage from './pages/LoginPage'
 import CompleteProfilePage from './pages/CompleteProfilePage'
 import DashboardPage from './pages/DashboardPage'
@@ -35,6 +36,11 @@ function CompleteProfileRoute() {
 
 export default function App() {
   const { theme } = useThemeStore()
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    setApiNavigator(navigate)
+  }, [navigate])
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
+import { IdCard } from 'lucide-react'
 import MemberLayout from '../../layouts/MemberLayout'
 import Card from '../../components/ui/Card'
 import MembershipExpiredAlert from '../../components/socio/MembershipExpiredAlert'
@@ -7,16 +8,19 @@ import MemberCardHeader from '../../components/socio/MemberCardHeader'
 import QRDisplay from '../../components/socio/QRDisplay'
 import MemberPlanDetails from '../../components/socio/MemberPlanDetails'
 import QRFullscreenModal from '../../components/socio/QRFullscreenModal'
+import EmptyState from '../../components/ui/EmptyState'
 import { MOCK_MEMBER, generateMockQRToken } from '../../services/socioMockData'
+
+const IS_DEV = import.meta.env.DEV
 
 export default function CredencialDigitalPage() {
   // Estado del socio
   // TODO: reemplazar por API real -> GET /api/members/me/
-  const member = MOCK_MEMBER
-  
+  const member = IS_DEV ? MOCK_MEMBER : null
+
   // Estado del QR dinámico
   // TODO: reemplazar por API real -> GET /api/access/qr/generate/
-  const [qrData, setQrData] = useState(() => generateMockQRToken(MOCK_MEMBER))
+  const [qrData, setQrData] = useState(() => IS_DEV ? generateMockQRToken(MOCK_MEMBER) : null)
   const [timeLeft, setTimeLeft] = useState(30)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
@@ -25,6 +29,7 @@ export default function CredencialDigitalPage() {
 
   // Generación y rotación de nuevo token QR dinámico
   const refreshQR = useCallback((manual = false) => {
+    if (!IS_DEV) return
     setIsRefreshing(true)
     setTimeout(() => {
       // TODO: reemplazar por llamada axios api.get('/access/qr/generate/')
@@ -52,6 +57,18 @@ export default function CredencialDigitalPage() {
 
     return () => clearInterval(timer)
   }, [refreshQR])
+
+  if (!IS_DEV && !member) {
+    return (
+      <MemberLayout title="Credencial Digital" subtitle="Acceso al gimnasio por molinete">
+        <EmptyState
+          icon={IdCard}
+          title="Credencial no disponible"
+          message="Iniciá sesión para ver tu credencial digital."
+        />
+      </MemberLayout>
+    )
+  }
 
   return (
     <MemberLayout

@@ -6,6 +6,7 @@ import {
   List,
   ChevronLeft,
   ChevronRight,
+  Calendar,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import AppLayout from '../components/layout/AppLayout'
@@ -13,15 +14,18 @@ import TopBar from '../components/layout/TopBar'
 import ClassCalendarView from '../components/classes/ClassCalendarView'
 import ClassListDetailView from '../components/classes/ClassListDetailView'
 import ClassAttendeesModal from '../components/classes/ClassAttendeesModal'
+import EmptyState from '../components/ui/EmptyState'
 import { useClassAttendees } from '../hooks/useClassAttendees'
 import {
   getStoredClasses,
   deleteStoredClass,
 } from '../services/adminMockData'
 
+const IS_DEV = import.meta.env.DEV
+
 export default function ClassesScreen() {
   const navigate = useNavigate()
-  const [classes, setClasses] = useState(getStoredClasses)
+  const [classes, setClasses] = useState(() => IS_DEV ? getStoredClasses() : [])
   const [activeTab, setActiveTab] = useState('calendario') // 'calendario' | 'lista'
   const [selectedClass, setSelectedClass] = useState(classes[0] || null)
   const [isAttendeesModalOpen, setIsAttendeesModalOpen] = useState(false)
@@ -130,26 +134,42 @@ export default function ClassesScreen() {
       <div className="w-full flex-1 flex flex-col p-6 md:p-10 gap-7 overflow-y-auto max-w-[1840px] mx-auto transition-all animate-fadeIn">
         {/* TAB 1: PANTALLA 1 FIGMA (Calendario Semanal de Clases) */}
         {activeTab === 'calendario' && (
-          <ClassCalendarView
-            classes={classes}
-            onSelectClass={(cls) => {
-              setSelectedClass(cls)
-              setActiveTab('lista')
-            }}
-            onOpenAttendees={handleOpenAttendees}
-          />
+          !IS_DEV && classes.length === 0 ? (
+            <EmptyState
+              icon={Calendar}
+              title="No hay clases programadas"
+              message="Aún no se cargaron clases al calendario."
+            />
+          ) : (
+            <ClassCalendarView
+              classes={classes}
+              onSelectClass={(cls) => {
+                setSelectedClass(cls)
+                setActiveTab('lista')
+              }}
+              onOpenAttendees={handleOpenAttendees}
+            />
+          )
         )}
 
         {/* TAB 2: PANTALLA 2 FIGMA (Vista de Lista y Detalle de Clase) */}
         {activeTab === 'lista' && (
-          <ClassListDetailView
-            classes={classes}
-            selectedClass={selectedClass}
-            onSelectClass={handleSelectClass}
-            onOpenAttendees={handleOpenAttendees}
-            onEditClass={handleEditClass}
-            onDeleteClass={handleDeleteClass}
-          />
+          !IS_DEV && classes.length === 0 ? (
+            <EmptyState
+              icon={Calendar}
+              title="No hay clases programadas"
+              message="Aún no se cargaron clases al calendario."
+            />
+          ) : (
+            <ClassListDetailView
+              classes={classes}
+              selectedClass={selectedClass}
+              onSelectClass={handleSelectClass}
+              onOpenAttendees={handleOpenAttendees}
+              onEditClass={handleEditClass}
+              onDeleteClass={handleDeleteClass}
+            />
+          )
         )}
 
         {/* Modal de Asistentes / Inscriptos */}

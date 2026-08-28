@@ -13,6 +13,8 @@ import {
   Save,
   Sparkles,
 } from 'lucide-react'
+
+const IS_DEV = import.meta.env.DEV
 import { toast } from 'sonner'
 import AppLayout from '../components/layout/AppLayout'
 import {
@@ -520,14 +522,16 @@ export default function CreateClassScreen() {
                 {editId ? 'Guardar cambios' : 'Publicar clase'}
               </button>
 
-              <button
-                type="button"
-                onClick={handleDuplicateFromExisting}
-                className="w-full flex items-center justify-center gap-2 bg-bg-raised hover:bg-bg-surface border border-subtle text-text-primary py-2.5 rounded-xl font-semibold text-xs transition-colors"
-              >
-                <Copy className="w-3.5 h-3.5 text-text-secondary" />
-                Copiar de clase existente
-              </button>
+              {IS_DEV && (
+                <button
+                  type="button"
+                  onClick={handleDuplicateFromExisting}
+                  className="w-full flex items-center justify-center gap-2 bg-bg-raised hover:bg-bg-surface border border-subtle text-text-primary py-2.5 rounded-xl font-semibold text-xs transition-colors"
+                >
+                  <Copy className="w-3.5 h-3.5 text-text-secondary" />
+                  Copiar de clase existente
+                </button>
+              )}
             </div>
 
           </div>
