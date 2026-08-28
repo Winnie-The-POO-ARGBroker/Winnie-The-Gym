@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Plus, Copy, LayoutGrid, Table, Check, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import AppLayout from '../../components/layout/AppLayout'
+import TopBar from '../../components/layout/TopBar'
 import PlanCard from '../../components/admin/PlanCard'
 import PlanDistributionChart from '../../components/admin/PlanDistributionChart'
 import PlanComparativeTable from '../../components/admin/PlanComparativeTable'
@@ -74,23 +75,11 @@ export default function AdminPlanesPage() {
 
   return (
     <AppLayout>
-      {/* Figma Container Style: padding: 40px, gap: 28px, max-width 1840px / 1920px */}
-      <div className="w-full flex-1 flex flex-col p-6 md:p-10 gap-7 overflow-y-auto max-w-[1840px] mx-auto transition-all animate-fadeIn">
-        
-        {/* Main Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-extrabold text-text-primary tracking-tight">
-              {activeTab === 'tarjetas' ? 'Planes de membresía' : 'Comparativa de planes'}
-            </h1>
-            <p className="text-xs md:text-sm text-text-secondary mt-1 font-medium">
-              {activePlansCount} planes activos · {totalSocios.toLocaleString('es-AR')} socios
-            </p>
-          </div>
-
-          {/* Actions & View Switcher */}
-          <div className="flex flex-wrap items-center gap-3">
-            {/* View Switcher Tabs */}
+      <TopBar
+        title={activeTab === 'tarjetas' ? 'Planes de membresía' : 'Comparativa de planes'}
+        subtitle={`${activePlansCount} planes activos · ${totalSocios.toLocaleString('es-AR')} socios`}
+        rightContent={
+          <>
             <div className="flex items-center p-1 rounded-xl bg-bg-surface border border-subtle">
               <button
                 onClick={() => setActiveTab('tarjetas')}
@@ -115,8 +104,6 @@ export default function AdminPlanesPage() {
                 Comparativa
               </button>
             </div>
-
-            {/* Duplicate button (Figma Pantalla 1) */}
             <button
               onClick={handleOpenDuplicate}
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-bg-surface border border-subtle hover:bg-bg-raised text-text-primary text-xs font-semibold transition-colors"
@@ -124,8 +111,6 @@ export default function AdminPlanesPage() {
               <Copy className="w-4 h-4 text-text-secondary" />
               Duplicar
             </button>
-
-            {/* New Plan button (Figma Pantalla 1 y 2) */}
             <button
               onClick={() => {
                 setModalMode({ planToEdit: null, isDuplicate: false })
@@ -136,9 +121,10 @@ export default function AdminPlanesPage() {
               <Plus className="w-4 h-4" />
               Nuevo plan
             </button>
-          </div>
-        </div>
-
+          </>
+        }
+      />
+      <div className="w-full flex-1 flex flex-col p-6 md:p-10 gap-7 overflow-y-auto max-w-[1840px] mx-auto transition-all animate-fadeIn">
         {/* TAB 1: PANTALLA 1 FIGMA (Tarjetas de Planes + Distribución de Socios) */}
         {activeTab === 'tarjetas' && (
           <div className="flex flex-col gap-7 w-full">
