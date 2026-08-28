@@ -8,9 +8,21 @@ Versionado según [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Pendiente de PR — `feature/code-quality-audit`
-- Auditoría de calidad backend: permisos, namespacing, service layer, convenciones de modelos, consolidación de tests (5 slices)
-- Auditoría de calidad frontend: guards de producción para mock data, `TopBar` con `backAction`, migración a TanStack Query, hook `useAuth()`, formularios RHF+Zod, tokens semánticos de color, limpieza de archivos duplicados/huérfanos, renombre `Screen` → `Page`
+---
+
+## [0.9.0] — 2026-08-28
+**PR #43** · `feature/code-quality-audit` → `develop` · @MrForii
+
+### Cambiado
+- **Backend** (5 slices): permisos por `ViewSet` con `get_permissions()`, namespacing de URLs, dead code cleanup, convenciones de modelos con `TextChoices`, migraciones de datos seguras, extracción de capa de servicios (members, memberships, classes, access), migración a `ViewSet` para members y memberships, consolidación de estructura `tests/` por app con helpers de `conftest`
+- **Frontend**: renombrado `Screen` → `Page` (convención de naming de rutas), patrón `TopBar` unificado en `ClassesScreen`, `AdminPlanesPage` y vistas del dashboard, extracción de vistas del dashboard en componentes separados, hooks `useAuth` y `useProfile` (estado desacoplado de componentes), export default en `themeStore`, remoción de imports de React innecesarios (JSX Transform), fix de key warnings en listas, colores de estado semánticos (tokens), fix de redirect en `PublicRoute` + nuevo `CompleteProfileRoute`, RHF + Zod en `GestionSocios`
+- **Docs**: decisiones de arquitectura del audit documentadas en README, guidelines de backend y frontend agregadas al README
+
+### Corregido
+- Guards de producción: aislamiento de mocks de datos a entorno `DEV` únicamente, fixes en `api.js`
+
+### Cierra
+- #44 (backend), #45 (frontend), #46 (docs)
 
 ---
 
