@@ -1,4 +1,3 @@
-import React from 'react'
 import { Users, Clock, MapPin, Sparkles } from 'lucide-react'
 import { DISCIPLINAS_CONFIG } from '../../constants/disciplinas'
 
@@ -95,7 +94,7 @@ export default function ClassCalendarView({ classes = [], onSelectClass, onOpenA
                             {cls.nombre}
                           </span>
                           {isFull && (
-                            <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-red-500/20 text-red-500 border border-red-500/30">
+                            <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-error-500/20 text-error-500 border border-error-500/30">
                               LLENO
                             </span>
                           )}

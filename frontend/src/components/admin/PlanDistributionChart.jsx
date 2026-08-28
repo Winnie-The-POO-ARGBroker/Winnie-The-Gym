@@ -1,5 +1,3 @@
-import React from 'react'
-
 export default function PlanDistributionChart({ planes = [] }) {
   const totalSocios = planes.reduce((acc, p) => acc + (p.socios_activos || 0), 0)
 

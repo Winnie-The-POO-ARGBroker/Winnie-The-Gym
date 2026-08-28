@@ -1,13 +1,13 @@
 import { useGoogleLogin } from '@react-oauth/google'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import useAuthStore from '../stores/authStore'
+import useAuth from '../hooks/useAuth'
 import api from '../services/api'
 import WinnieLogo from '../components/ui/WinnieLogo'
 import Button from '../components/ui/Button'
 
 export default function LoginPage() {
-  const { setAuth } = useAuthStore()
+  const { setAuth } = useAuth()
   const navigate = useNavigate()
 
   const login = useGoogleLogin({

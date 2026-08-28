@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Check,
@@ -403,8 +403,8 @@ export default function CreateClassPage() {
                             ? plan === 'Premium'
                               ? 'bg-orange-500/15 border-orange-500 text-orange-500'
                               : plan === 'Gold'
-                              ? 'bg-yellow-500/15 border-yellow-500 text-yellow-500'
-                              : 'bg-green-500/15 border-green-500 text-green-500'
+                              ? 'bg-warning-500/15 border-warning-500 text-warning-500'
+                              : 'bg-success-500/15 border-success-500 text-success-500'
                             : 'bg-bg-raised border-subtle text-text-tertiary'
                         }`}
                       >
@@ -434,7 +434,7 @@ export default function CreateClassPage() {
                   <Eye className="w-3.5 h-3.5 text-orange-500" />
                   Vista previa en vivo
                 </span>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-green-500/10 text-green-500">
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-success-500/10 text-success-500">
                   Activa
                 </span>
               </div>

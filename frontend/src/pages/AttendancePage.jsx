@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Check,
@@ -142,10 +142,10 @@ export default function AttendancePage() {
               </div>
 
               <div className="flex items-center gap-2 text-xs">
-                <span className="px-3 py-1 rounded-xl font-bold bg-green-500/10 text-green-500 border border-green-500/20 flex items-center gap-1">
+                <span className="px-3 py-1 rounded-xl font-bold bg-success-500/10 text-success-500 border border-success-500/20 flex items-center gap-1">
                   <Check className="w-3 h-3 stroke-[3]" /> {presentesCount} presentes
                 </span>
-                <span className="px-3 py-1 rounded-xl font-bold bg-red-500/10 text-red-500 border border-red-500/20 flex items-center gap-1">
+                <span className="px-3 py-1 rounded-xl font-bold bg-error-500/10 text-error-500 border border-error-500/20 flex items-center gap-1">
                   <XIcon className="w-3 h-3 stroke-[3]" /> {ausentesCount} ausentes
                 </span>
                 <span className="px-3 py-1 rounded-xl font-medium bg-bg-raised text-text-secondary border border-subtle">
@@ -180,9 +180,9 @@ export default function AttendancePage() {
                     key={att.id}
                     className={`grid grid-cols-[3fr_2fr_2fr_220px] gap-4 items-center p-3 rounded-xl transition-colors ${
                       isPresente
-                        ? 'bg-green-500/5'
+                        ? 'bg-success-500/5'
                         : isAusente
-                        ? 'bg-red-500/5'
+                        ? 'bg-error-500/5'
                         : 'hover:bg-bg-raised/40'
                     }`}
                   >
@@ -190,16 +190,16 @@ export default function AttendancePage() {
                     <div className="flex items-center gap-3 pl-2">
                       <span
                         className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                          isPresente ? 'bg-green-500' : isAusente ? 'bg-red-500' : 'bg-subtle'
+                          isPresente ? 'bg-success-500' : isAusente ? 'bg-error-500' : 'bg-subtle'
                         }`}
                       />
                       <Avatar name={att.nombre} size={34} />
                       <span
                         className={`font-bold text-xs sm:text-sm truncate ${
                           isPresente
-                            ? 'text-green-500 font-semibold'
+                            ? 'text-success-500 font-semibold'
                             : isAusente
-                            ? 'text-red-500 line-through'
+                            ? 'text-error-500 line-through'
                             : 'text-text-primary'
                         }`}
                       >
@@ -219,7 +219,7 @@ export default function AttendancePage() {
                           att.plan === 'Premium'
                             ? 'bg-orange-500/10 text-orange-500 border-orange-500/30'
                             : att.plan === 'Gold'
-                            ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/30'
+                            ? 'bg-warning-500/10 text-warning-500 border-warning-500/30'
                             : 'bg-bg-raised text-text-secondary border-subtle'
                         }`}
                       >
@@ -233,8 +233,8 @@ export default function AttendancePage() {
                         onClick={() => toggleStatus(att.id, 'presente')}
                         className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                           isPresente
-                            ? 'bg-green-500 text-white shadow-sm'
-                            : 'bg-bg-raised border border-subtle text-text-secondary hover:text-text-primary hover:bg-green-500/20'
+                            ? 'bg-success-500 text-white shadow-sm'
+                            : 'bg-bg-raised border border-subtle text-text-secondary hover:text-text-primary hover:bg-success-500/20'
                         }`}
                       >
                         <Check className="w-3.5 h-3.5 stroke-[3]" />
@@ -245,8 +245,8 @@ export default function AttendancePage() {
                         onClick={() => toggleStatus(att.id, 'ausente')}
                         className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                           isAusente
-                            ? 'bg-red-500 text-white shadow-sm'
-                            : 'bg-bg-raised border border-subtle text-text-secondary hover:text-text-primary hover:bg-red-500/20'
+                            ? 'bg-error-500 text-white shadow-sm'
+                            : 'bg-bg-raised border border-subtle text-text-secondary hover:text-text-primary hover:bg-error-500/20'
                         }`}
                       >
                         <XIcon className="w-3.5 h-3.5 stroke-[3]" />
@@ -278,22 +278,22 @@ export default function AttendancePage() {
 
                 <div className="flex justify-between items-center py-2.5">
                   <span className="text-text-secondary">Presentes</span>
-                  <span className="font-bold text-green-500">{presentesCount}</span>
+                  <span className="font-bold text-success-500">{presentesCount}</span>
                 </div>
 
                 <div className="flex justify-between items-center py-2.5">
                   <span className="text-text-secondary">Ausentes</span>
-                  <span className="font-bold text-red-500">{ausentesCount}</span>
+                  <span className="font-bold text-error-500">{ausentesCount}</span>
                 </div>
 
                 <div className="flex justify-between items-center py-2.5">
                   <span className="text-text-secondary">Sin confirmar</span>
-                  <span className="font-bold text-yellow-500">{sinMarcarCount}</span>
+                  <span className="font-bold text-warning-500">{sinMarcarCount}</span>
                 </div>
 
                 <div className="flex justify-between items-center py-2.5">
                   <span className="text-text-secondary font-bold">Tasa de asistencia</span>
-                  <span className="font-extrabold text-green-500">{tasaAsistencia}%</span>
+                  <span className="font-extrabold text-success-500">{tasaAsistencia}%</span>
                 </div>
               </div>
             </div>
@@ -304,7 +304,7 @@ export default function AttendancePage() {
                 <h3 className="text-sm font-bold text-text-primary">
                   Lista de espera
                 </h3>
-                <span className="w-6 h-6 rounded-full bg-yellow-500/10 text-yellow-500 border border-yellow-500/30 flex items-center justify-center text-xs font-bold">
+                <span className="w-6 h-6 rounded-full bg-warning-500/10 text-warning-500 border border-warning-500/30 flex items-center justify-center text-xs font-bold">
                   {waitingList.length}
                 </span>
               </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { X, Plus, Trash2, Check, Sparkles } from 'lucide-react'
 import Button from '../ui/Button'
 
@@ -249,7 +249,7 @@ export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = nu
                     onClick={() => handleBenefitChange(idx, 'incluido', !b.incluido)}
                     className={`p-2 rounded-lg border transition-colors ${
                       b.incluido
-                        ? 'bg-green-500/20 text-green-500 border-green-500/40'
+                        ? 'bg-success-500/20 text-success-500 border-success-500/40'
                         : 'bg-bg-raised text-text-tertiary border-subtle'
                     }`}
                     title={b.incluido ? 'Incluido' : 'No incluido'}

@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import { Home, CalendarDays, Dumbbell, User } from 'lucide-react'
-import { useThemeStore } from '../../stores/themeStore'
-import useAuthStore from '../../stores/authStore'
+import useThemeStore from '../../stores/themeStore'
+import useAuth from '../../hooks/useAuth'
 import WinnieLogo from '../ui/WinnieLogo'
 import Avatar from '../ui/Avatar'
 
@@ -18,7 +18,7 @@ export default function MemberLayout({
   rightAction,
 }) {
   const { theme, toggleTheme } = useThemeStore()
-  const { user } = useAuthStore()
+  const { user } = useAuth()
 
   const displayName = user?.nombre
     ? `${user.nombre} ${user.apellido ?? ''}`.trim()

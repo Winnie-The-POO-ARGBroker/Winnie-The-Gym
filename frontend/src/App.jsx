@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { Toaster } from 'sonner'
-import { useThemeStore } from './stores/themeStore'
+import useThemeStore from './stores/themeStore'
 import { setApiNavigator } from './services/api'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'

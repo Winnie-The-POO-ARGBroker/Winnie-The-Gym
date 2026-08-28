@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import {
   X,
   Search,
@@ -82,10 +82,10 @@ export default function ClassAttendeesModal({
 
           {/* Stats summary badges */}
           <div className="flex items-center gap-2 text-xs">
-            <span className="px-2.5 py-1 rounded-lg font-bold bg-green-500/10 text-green-500 border border-green-500/20 flex items-center gap-1">
+            <span className="px-2.5 py-1 rounded-lg font-bold bg-success-500/10 text-success-500 border border-success-500/20 flex items-center gap-1">
               <Check className="w-3 h-3 stroke-[3]" /> {presentesCount} presentes
             </span>
-            <span className="px-2.5 py-1 rounded-lg font-bold bg-red-500/10 text-red-500 border border-red-500/20 flex items-center gap-1">
+            <span className="px-2.5 py-1 rounded-lg font-bold bg-error-500/10 text-error-500 border border-error-500/20 flex items-center gap-1">
               <XIcon className="w-3 h-3 stroke-[3]" /> {ausentesCount} ausentes
             </span>
             <span className="px-2.5 py-1 rounded-lg font-medium bg-bg-raised text-text-secondary border border-subtle">
@@ -110,9 +110,9 @@ export default function ClassAttendeesModal({
                   key={att.id}
                   className={`pt-3 first:pt-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl transition-colors ${
                     isPresente
-                      ? 'bg-green-500/5 border border-green-500/20'
+                      ? 'bg-success-500/5 border border-success-500/20'
                       : isAusente
-                      ? 'bg-red-500/5 border border-red-500/20'
+                      ? 'bg-error-500/5 border border-error-500/20'
                       : 'hover:bg-bg-raised/40'
                   }`}
                 >
@@ -138,7 +138,7 @@ export default function ClassAttendeesModal({
                         att.plan === 'Premium'
                           ? 'bg-orange-500/10 text-orange-500 border-orange-500/30'
                           : att.plan === 'Gold'
-                          ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/30'
+                          ? 'bg-warning-500/10 text-warning-500 border-warning-500/30'
                           : 'bg-bg-raised text-text-secondary border-subtle'
                       }`}
                     >
@@ -150,8 +150,8 @@ export default function ClassAttendeesModal({
                         onClick={() => onToggleStatus(att.id, 'presente')}
                         className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                           isPresente
-                            ? 'bg-green-500 text-white shadow-sm'
-                            : 'bg-bg-raised border border-subtle text-text-secondary hover:text-text-primary hover:bg-green-500/20'
+                            ? 'bg-success-500 text-white shadow-sm'
+                            : 'bg-bg-raised border border-subtle text-text-secondary hover:text-text-primary hover:bg-success-500/20'
                         }`}
                       >
                         <Check className="w-3.5 h-3.5 stroke-[3]" />
@@ -162,8 +162,8 @@ export default function ClassAttendeesModal({
                         onClick={() => onToggleStatus(att.id, 'ausente')}
                         className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                           isAusente
-                            ? 'bg-red-500 text-white shadow-sm'
-                            : 'bg-bg-raised border border-subtle text-text-secondary hover:text-text-primary hover:bg-red-500/20'
+                            ? 'bg-error-500 text-white shadow-sm'
+                            : 'bg-bg-raised border border-subtle text-text-secondary hover:text-text-primary hover:bg-error-500/20'
                         }`}
                       >
                         <XIcon className="w-3.5 h-3.5 stroke-[3]" />

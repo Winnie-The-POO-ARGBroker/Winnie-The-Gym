@@ -1,9 +1,8 @@
 import { Navigate } from 'react-router-dom'
-import useAuthStore from '../../stores/authStore'
+import useAuth from '../../hooks/useAuth'
 
 export default function PublicRoute({ children }) {
-  const accessToken = useAuthStore((s) => s.accessToken)
-  const user = useAuthStore((s) => s.user)
+  const { accessToken, user } = useAuth()
   if (accessToken && user) {
     const home = user.rol === 'socio' ? '/socio/credencial' : '/dashboard'
     return <Navigate to={home} replace />

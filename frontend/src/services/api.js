@@ -1,6 +1,9 @@
 import axios from 'axios'
 import { toast } from 'sonner'
 import useAuthStore from '../stores/authStore'
+// Note: api.js keeps a direct useAuthStore.getState() import instead of the
+// useAuth() hook because axios interceptors run outside React's render
+// context and cannot call hooks.
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api',

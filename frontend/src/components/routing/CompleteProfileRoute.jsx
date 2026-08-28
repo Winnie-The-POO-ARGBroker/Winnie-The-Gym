@@ -1,10 +1,9 @@
 import { Navigate } from 'react-router-dom'
-import useAuthStore from '../../stores/authStore'
+import useAuth from '../../hooks/useAuth'
 import CompleteProfilePage from '../../pages/CompleteProfilePage'
 
 export default function CompleteProfileRoute() {
-  const accessToken = useAuthStore((s) => s.accessToken)
-  const user = useAuthStore((s) => s.user)
+  const { accessToken, user } = useAuth()
   if (!accessToken || !user) return <Navigate to="/login" replace />
   if (user.is_profile_complete) return <Navigate to="/dashboard" replace />
   return <CompleteProfilePage />

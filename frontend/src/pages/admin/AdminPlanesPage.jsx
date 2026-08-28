@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { Plus, Copy, LayoutGrid, Table, Check, AlertCircle, CreditCard } from 'lucide-react'
 import { toast } from 'sonner'
 import AppLayout from '../../components/layout/AppLayout'

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import useAuthStore from '../stores/authStore'
+import useAuth from '../hooks/useAuth'
 import AppLayout from '../components/layout/AppLayout'
 import TopBar from '../components/layout/TopBar'
 import EmptyState from '../components/ui/EmptyState'
@@ -10,7 +10,7 @@ import RecepcionistaDashboardView from '../components/dashboard/views/Recepcioni
 import SocioDashboardView from '../components/dashboard/views/SocioDashboardView'
 
 export default function DashboardPage() {
-  const { user } = useAuthStore()
+  const { user } = useAuth()
   const navigate = useNavigate()
 
   const IS_DEV = import.meta.env.DEV
