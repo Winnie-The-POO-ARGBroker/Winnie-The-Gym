@@ -1,3 +1,6 @@
+# IDE config
+pyrightconfig.json
+
 # Python / Django
 __pycache__/
 *.py[cod]
@@ -28,6 +31,8 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
+pyrightconfig.json
+backend/pyrightconfig.json
 
 # Agent
 .atl/

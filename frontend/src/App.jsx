@@ -22,7 +22,9 @@ import AforoMonitor from './pages/recepcion/AforoMonitor'
 import GestionSocios from './pages/recepcion/GestionSocios'
 import Reportes from './pages/recepcion/Reportes'
 
-const COMING_SOON_PATHS = ['/socios', '/membresias', '/reportes', '/configuracion']
+import AdminPlanesPage from './pages/admin/AdminPlanesPage'
+
+const COMING_SOON_PATHS = ['/socios', '/reportes', '/configuracion']
 
 function CompleteProfileRoute() {
   const { accessToken, user } = useAuthStore()
@@ -49,9 +51,18 @@ export default function App() {
         {/* Protected */}
         <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
         <Route path="/perfil" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+        
+        {/* Clases routes */}
         <Route path="/clases" element={<ProtectedRoute><ClassesScreen /></ProtectedRoute>} />
+        <Route path="/admin/clases" element={<ProtectedRoute><ClassesScreen /></ProtectedRoute>} />
         <Route path="/clases/crear" element={<ProtectedRoute><CreateClassScreen /></ProtectedRoute>} />
+        <Route path="/admin/clases/crear" element={<ProtectedRoute><CreateClassScreen /></ProtectedRoute>} />
         <Route path="/clases/asistencia" element={<ProtectedRoute><AttendanceScreen /></ProtectedRoute>} />
+        <Route path="/admin/clases/asistencia" element={<ProtectedRoute><AttendanceScreen /></ProtectedRoute>} />
+
+        {/* Planes / Membresías routes */}
+        <Route path="/membresias" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><AdminPlanesPage /></ProtectedRoute>} />
+        <Route path="/admin/planes" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><AdminPlanesPage /></ProtectedRoute>} />
 
         {/* Recepcion routes */}
         <Route path="/recepcion/acceso" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><AccesoTerminal /></ProtectedRoute>} />

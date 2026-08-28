@@ -6,12 +6,12 @@ from .views import (
     MembresiaListCreateView,
     MembresiaRetrieveUpdateView,
     PlanListCreateView,
-    PlanRetrieveUpdateView,
+    PlanRetrieveUpdateDestroyView,
 )
 
 urlpatterns = [
     path('planes/', PlanListCreateView.as_view(), name='plan-list-create'),
-    path('planes/<int:pk>/', PlanRetrieveUpdateView.as_view(), name='plan-detail'),
+    path('planes/<int:pk>/', PlanRetrieveUpdateDestroyView.as_view(), name='plan-detail'),
     path('membresias/', MembresiaListCreateView.as_view(), name='membresia-list-create'),
     path('membresias/<int:pk>/', MembresiaRetrieveUpdateView.as_view(), name='membresia-detail'),
     path('me/', MeView.as_view(), name='me'),

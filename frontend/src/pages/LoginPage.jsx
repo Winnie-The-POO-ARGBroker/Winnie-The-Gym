@@ -93,14 +93,87 @@ export default function LoginPage() {
             Continuar con Google
           </button>
 
+          {import.meta.env.DEV && <>
           {/* Divider */}
           <div className="flex items-center gap-3">
             <div className="flex-1 h-px" style={{ backgroundColor: 'var(--color-border-subtle)' }} />
             <span className="text-xs whitespace-nowrap text-text-secondary">
-              acceso seguro OAuth 2.0
+              o acceso rápido demo
             </span>
             <div className="flex-1 h-px" style={{ backgroundColor: 'var(--color-border-subtle)' }} />
           </div>
+
+          {/* Quick Demo Logins */}
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={() => {
+                setAuth({
+                  access: 'mock-access-token-admin',
+                  refresh: 'mock-refresh-token',
+                  user: {
+                    id: 1,
+                    email: 'admin@winniegym.com',
+                    nombre: 'Rodrigo',
+                    apellido: 'Valdez',
+                    rol: 'administrador',
+                    is_profile_complete: true,
+                  },
+                })
+                navigate('/dashboard')
+                toast.success('Sesión iniciada como Administrador')
+              }}
+              className="w-full py-2.5 px-4 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2"
+            >
+              👑 Ingresar como Administrador
+            </button>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => {
+                  setAuth({
+                    access: 'mock-access-token-recep',
+                    refresh: 'mock-refresh-token',
+                    user: {
+                      id: 2,
+                      email: 'recep@winniegym.com',
+                      nombre: 'Magali',
+                      apellido: 'Bechis',
+                      rol: 'recepcionista',
+                      is_profile_complete: true,
+                    },
+                  })
+                  navigate('/dashboard')
+                  toast.success('Sesión iniciada como Recepcionista')
+                }}
+                className="py-2 px-3 rounded-xl bg-bg-raised hover:bg-bg-surface border border-subtle text-text-primary text-xs font-semibold transition-colors"
+              >
+                📋 Recepcionista
+              </button>
+
+              <button
+                onClick={() => {
+                  setAuth({
+                    access: 'mock-access-token-socio',
+                    refresh: 'mock-refresh-token',
+                    user: {
+                      id: 3,
+                      email: 'socio@winniegym.com',
+                      nombre: 'Martín',
+                      apellido: 'Bossi',
+                      rol: 'socio',
+                      is_profile_complete: true,
+                    },
+                  })
+                  navigate('/socio/credencial')
+                  toast.success('Sesión iniciada como Socio')
+                }}
+                className="py-2 px-3 rounded-xl bg-bg-raised hover:bg-bg-surface border border-subtle text-text-primary text-xs font-semibold transition-colors"
+              >
+                💳 Socio (Portal)
+              </button>
+            </div>
+          </div>
+          </>}
         </div>
       </div>
     </div>

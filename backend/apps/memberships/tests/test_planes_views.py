@@ -185,3 +185,20 @@ class PlanRetrieveUpdateTests(APITestCase):
         response = self.client.patch(_plane_detail_url(plan.pk), {'precio': '6000.00'})
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_delete_plan_admin_204(self):
+        admin = _make_user(rol='administrador')
+        plan = _make_plan()
+        _auth_client(self.client, admin)
+
+        response = self.client.delete(_plane_detail_url(plan.pk))
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_delete_plan_recep_403(self):
+        recep = _make_user(rol='recepcionista')
+        plan = _make_plan()
+        _auth_client(self.client, recep)
+
+        response = self.client.delete(_plane_detail_url(plan.pk))
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
