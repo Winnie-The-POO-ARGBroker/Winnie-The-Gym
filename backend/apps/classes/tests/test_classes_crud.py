@@ -1,29 +1,13 @@
 import datetime
 
-from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.classes.models import Clase
-
-User = get_user_model()
+from conftest import make_user_factory
 
 _counter = 0
-
-
-def _make_user(email=None, rol='socio', **kwargs):
-    global _counter
-    _counter += 1
-    if email is None:
-        email = f'user{_counter}@classes.test'
-    return User.objects.create_user(
-        email=email,
-        password='pass1234!',
-        username=email,
-        rol=rol,
-        **kwargs,
-    )
 
 
 def _make_clase(nombre=None, categoria='funcional', cupo_maximo=20, **kwargs):
@@ -54,7 +38,7 @@ def _clase_detail_url(pk):
 class ClaseListTests(APITestCase):
 
     def test_list_clases_admin_200(self):
-        admin = _make_user(rol='administrador')
+        admin = make_user_factory(rol='administrador')
         _make_clase()
         _auth_client(self.client, admin)
 
@@ -70,7 +54,7 @@ class ClaseListTests(APITestCase):
             self.assertIn(field, first)
 
     def test_list_clases_recep_200(self):
-        recep = _make_user(rol='recepcionista')
+        recep = make_user_factory(rol='recepcionista')
         _make_clase()
         _auth_client(self.client, recep)
 
@@ -78,7 +62,7 @@ class ClaseListTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_list_clases_socio_200(self):
-        socio_user = _make_user(rol='socio')
+        socio_user = make_user_factory(rol='socio')
         _make_clase()
         _auth_client(self.client, socio_user)
 
@@ -93,7 +77,7 @@ class ClaseListTests(APITestCase):
 class ClaseCreateTests(APITestCase):
 
     def test_create_clase_admin_201(self):
-        admin = _make_user(rol='administrador')
+        admin = make_user_factory(rol='administrador')
         _auth_client(self.client, admin)
 
         payload = {
@@ -120,7 +104,7 @@ class ClaseCreateTests(APITestCase):
         self.assertEqual(response.data['cupo_maximo'], 20)
 
     def test_create_clase_recep_403(self):
-        recep = _make_user(rol='recepcionista')
+        recep = make_user_factory(rol='recepcionista')
         _auth_client(self.client, recep)
 
         payload = {
@@ -132,7 +116,7 @@ class ClaseCreateTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_create_clase_socio_403(self):
-        socio = _make_user(rol='socio')
+        socio = make_user_factory(rol='socio')
         _auth_client(self.client, socio)
 
         payload = {
@@ -147,7 +131,7 @@ class ClaseCreateTests(APITestCase):
 class ClaseRetrieveUpdateTests(APITestCase):
 
     def test_retrieve_clase_200(self):
-        admin = _make_user(rol='administrador')
+        admin = make_user_factory(rol='administrador')
         clase = _make_clase(nombre='Crossfit WOD')
         _auth_client(self.client, admin)
 
@@ -159,7 +143,7 @@ class ClaseRetrieveUpdateTests(APITestCase):
         self.assertIn('inscripciones', response.data)
 
     def test_patch_clase_admin_200(self):
-        admin = _make_user(rol='administrador')
+        admin = make_user_factory(rol='administrador')
         clase = _make_clase(nombre='Pilates Mat', cupo_maximo=15)
         _auth_client(self.client, admin)
 
@@ -174,7 +158,7 @@ class ClaseRetrieveUpdateTests(APITestCase):
         self.assertEqual(response.data['instructor'], 'Sofia L.')
 
     def test_patch_clase_recep_403(self):
-        recep = _make_user(rol='recepcionista')
+        recep = make_user_factory(rol='recepcionista')
         clase = _make_clase()
         _auth_client(self.client, recep)
 
@@ -189,7 +173,7 @@ class ClaseRetrieveUpdateTests(APITestCase):
 class ClaseDeleteTests(APITestCase):
 
     def test_delete_clase_admin_204(self):
-        admin = _make_user(rol='administrador')
+        admin = make_user_factory(rol='administrador')
         clase = _make_clase()
         _auth_client(self.client, admin)
 
@@ -199,7 +183,7 @@ class ClaseDeleteTests(APITestCase):
         self.assertFalse(Clase.objects.filter(pk=clase.pk).exists())
 
     def test_delete_clase_recep_403(self):
-        recep = _make_user(rol='recepcionista')
+        recep = make_user_factory(rol='recepcionista')
         clase = _make_clase()
         _auth_client(self.client, recep)
 

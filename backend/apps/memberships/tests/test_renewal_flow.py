@@ -1,71 +1,11 @@
 import datetime
 
-from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from apps.members.models import Socio
-from apps.memberships.models import Membresia, PlanMembresia
-
-User = get_user_model()
-
-_counter = 0
-
-
-def _make_user(email=None, rol='socio', **kwargs):
-    global _counter
-    _counter += 1
-    if email is None:
-        email = f'user{_counter}@renew.test'
-    return User.objects.create_user(
-        email=email,
-        password='pass1234!',
-        username=email,
-        rol=rol,
-        **kwargs,
-    )
-
-
-def _make_socio(user, dni=None):
-    global _counter
-    _counter += 1
-    if dni is None:
-        dni = f'{_counter:08d}'
-    return Socio.objects.create(
-        usuario=user,
-        dni=dni,
-        nombre='Renew',
-        apellido='Socio',
-        telefono='5491100000077',
-    )
-
-
-def _make_plan(nombre=None, duracion_dias=30, precio='5000.00', activo=True):
-    global _counter
-    _counter += 1
-    if nombre is None:
-        nombre = f'Plan Renew {_counter}'
-    return PlanMembresia.objects.create(
-        nombre=nombre,
-        duracion_dias=duracion_dias,
-        precio=precio,
-        clases_asignadas=0,
-        activo=activo,
-    )
-
-
-def _make_membresia(socio, plan, estado='activa', fecha_inicio=None):
-    if fecha_inicio is None:
-        fecha_inicio = datetime.date.today()
-    fecha_fin = fecha_inicio + datetime.timedelta(days=plan.duracion_dias)
-    return Membresia.objects.create(
-        socio=socio,
-        plan=plan,
-        fecha_inicio=fecha_inicio,
-        fecha_fin=fecha_fin,
-        estado=estado,
-    )
+from apps.memberships.models import Membresia
+from conftest import make_membresia_factory, make_plan_factory, make_socio_factory, make_user_factory
 
 
 def _auth_client(client, user):
@@ -79,11 +19,11 @@ RENEW_URL = '/api/memberships/me/renew/'
 class RenewalHappyPathTests(APITestCase):
 
     def test_renewal_happy_path_201(self):
-        user = _make_user(rol='socio')
-        socio = _make_socio(user)
-        plan_a = _make_plan(duracion_dias=30)
-        plan_b = _make_plan(duracion_dias=365)
-        old_membresia = _make_membresia(socio, plan_a)
+        user = make_user_factory(rol='socio')
+        socio = make_socio_factory(usuario=user)
+        plan_a = make_plan_factory(duracion_dias=30)
+        plan_b = make_plan_factory(duracion_dias=365)
+        old_membresia = make_membresia_factory(socio, plan_a)
         _auth_client(self.client, user)
 
         response = self.client.post(RENEW_URL, {'plan_id': plan_b.pk})
@@ -102,9 +42,9 @@ class RenewalHappyPathTests(APITestCase):
         self.assertEqual(response.data['fecha_fin'], expected_fin.isoformat())
 
     def test_renewal_no_prior_membership_201(self):
-        user = _make_user(rol='socio')
-        _make_socio(user)
-        plan = _make_plan()
+        user = make_user_factory(rol='socio')
+        make_socio_factory(usuario=user)
+        plan = make_plan_factory()
         _auth_client(self.client, user)
 
         response = self.client.post(RENEW_URL, {'plan_id': plan.pk})
@@ -117,9 +57,9 @@ class RenewalHappyPathTests(APITestCase):
 class RenewalErrorTests(APITestCase):
 
     def test_renewal_inactive_plan_404(self):
-        user = _make_user(rol='socio')
-        _make_socio(user)
-        plan = _make_plan(activo=False)
+        user = make_user_factory(rol='socio')
+        make_socio_factory(usuario=user)
+        plan = make_plan_factory(activo=False)
         _auth_client(self.client, user)
 
         response = self.client.post(RENEW_URL, {'plan_id': plan.pk})
@@ -127,8 +67,8 @@ class RenewalErrorTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_renewal_nonexistent_plan_404(self):
-        user = _make_user(rol='socio')
-        _make_socio(user)
+        user = make_user_factory(rol='socio')
+        make_socio_factory(usuario=user)
         _auth_client(self.client, user)
 
         response = self.client.post(RENEW_URL, {'plan_id': 999999})
@@ -136,7 +76,7 @@ class RenewalErrorTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_renewal_non_socio_403(self):
-        recep = _make_user(rol='recepcionista')
+        recep = make_user_factory(rol='recepcionista')
         _auth_client(self.client, recep)
 
         response = self.client.post(RENEW_URL, {'plan_id': 1})

@@ -11,6 +11,7 @@ from apps.access.utils import (
     verify_and_consume_token,
     verify_dynamic_qr_token,
 )
+from conftest import make_user_factory
 
 User = get_user_model()
 
@@ -160,21 +161,13 @@ class AccessLogListViewTests(TestCase):
         self.client = APIClient()
         self.url = '/api/access/logs/'
 
-    def _make_user(self, email, rol='socio'):
-        return User.objects.create_user(
-            email=email,
-            password='pass1234!',
-            username=email,
-            rol=rol,
-        )
-
     def test_unauthenticated_returns_401(self):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_socio_sees_only_own_logs(self):
-        user = self._make_user('socio1@access.test', rol='socio')
-        other_user = self._make_user('socio2@access.test', rol='socio')
+        user = make_user_factory(email='socio1@access.test', rol='socio')
+        other_user = make_user_factory(email='socio2@access.test', rol='socio')
         AccessLog.objects.create(user=user, access_type='ENTRY', status='GRANTED')
         AccessLog.objects.create(user=other_user, access_type='ENTRY', status='GRANTED')
         self.client.force_authenticate(user=user)
@@ -186,8 +179,8 @@ class AccessLogListViewTests(TestCase):
         self.assertEqual(response.data[0]['user'], user.id)
 
     def test_admin_sees_all_logs(self):
-        user = self._make_user('socio3@access.test', rol='socio')
-        admin = self._make_user('admin@access.test', rol='administrador')
+        user = make_user_factory(email='socio3@access.test', rol='socio')
+        admin = make_user_factory(email='admin@access.test', rol='administrador')
         AccessLog.objects.create(user=user, access_type='ENTRY', status='GRANTED')
         self.client.force_authenticate(user=admin)
 

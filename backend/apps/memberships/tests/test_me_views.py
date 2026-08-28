@@ -1,72 +1,9 @@
-import datetime
-
-from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from apps.members.models import Socio
-from apps.memberships.models import Membresia, PlanMembresia
-
-User = get_user_model()
-
-_counter = 0
-
-
-def _make_user(email=None, rol='socio', **kwargs):
-    global _counter
-    _counter += 1
-    if email is None:
-        email = f'user{_counter}@me.test'
-    return User.objects.create_user(
-        email=email,
-        password='pass1234!',
-        username=email,
-        rol=rol,
-        **kwargs,
-    )
-
-
-def _make_socio(user, dni=None):
-    global _counter
-    _counter += 1
-    if dni is None:
-        dni = f'{_counter:08d}'
-    return Socio.objects.create(
-        usuario=user,
-        dni=dni,
-        nombre='Socio',
-        apellido='Me',
-        telefono='5491100000088',
-    )
-
-
-def _make_plan(nombre=None, duracion_dias=30, precio='5000.00', activo=True):
-    global _counter
-    _counter += 1
-    if nombre is None:
-        nombre = f'Plan Me {_counter}'
-    return PlanMembresia.objects.create(
-        nombre=nombre,
-        duracion_dias=duracion_dias,
-        precio=precio,
-        clases_asignadas=0,
-        activo=activo,
-    )
-
-
-def _make_membresia(socio, plan, estado='activa', fecha_inicio=None):
-    if fecha_inicio is None:
-        fecha_inicio = datetime.date.today()
-    fecha_fin = fecha_inicio + datetime.timedelta(days=plan.duracion_dias)
-    return Membresia.objects.create(
-        socio=socio,
-        plan=plan,
-        fecha_inicio=fecha_inicio,
-        fecha_fin=fecha_fin,
-        estado=estado,
-    )
+from conftest import make_membresia_factory, make_plan_factory, make_socio_factory, make_user_factory
 
 
 def _auth_client(client, user):
@@ -85,7 +22,7 @@ class MeViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_me_non_socio_role_403(self):
-        recep = _make_user(rol='recepcionista')
+        recep = make_user_factory(rol='recepcionista')
         _auth_client(self.client, recep)
 
         response = self.client.get(ME_URL)
@@ -93,10 +30,10 @@ class MeViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_me_socio_with_active_membership_200(self):
-        user = _make_user(rol='socio')
-        socio = _make_socio(user)
-        plan = _make_plan()
-        _make_membresia(socio, plan)
+        user = make_user_factory(rol='socio')
+        socio = make_socio_factory(usuario=user)
+        plan = make_plan_factory()
+        make_membresia_factory(socio, plan)
         _auth_client(self.client, user)
 
         response = self.client.get(ME_URL)
@@ -116,8 +53,8 @@ class MeViewTests(APITestCase):
             self.assertIn(field, plan_data)
 
     def test_me_socio_with_no_membership_200(self):
-        user = _make_user(rol='socio')
-        _make_socio(user)
+        user = make_user_factory(rol='socio')
+        make_socio_factory(usuario=user)
         _auth_client(self.client, user)
 
         response = self.client.get(ME_URL)
@@ -126,8 +63,8 @@ class MeViewTests(APITestCase):
         self.assertIsNone(response.data['membresia_activa'])
 
     def test_me_socio_cannot_access_socios_list_403(self):
-        user = _make_user(rol='socio')
-        _make_socio(user)
+        user = make_user_factory(rol='socio')
+        make_socio_factory(usuario=user)
         _auth_client(self.client, user)
 
         response = self.client.get(SOCIOS_URL)
