@@ -8,6 +8,42 @@ Versionado según [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Pendiente de PR — `feature/data-devops-hardening` (Fase D4)
+- **Logs estructurados en JSON** (`python-json-logger==2.0.7`): `LOGGING` en `settings/base.py` produce single-line JSON con `timestamp`, `level`, `name`, `message`, `pathname`, `lineno`. Toggle a formato plano con `LOG_FORMAT=plain` (para debugging local)
+- **Load tests con Locust** (`locust==2.31.5`): `backend/loadtests/locustfile.py` con 3 escenarios (`SocioUser`, `RecepcionistaUser`, `AdminUser`) que cubren login + generación QR + scan QR + reportes. README con instrucciones headless + generación de reporte HTML
+- **Sentry frontend** (`@sentry/react==8.30.0`): `frontend/src/lib/sentry.js` con `initSentry()` opt-in vía `VITE_SENTRY_DSN`. Zero cost cuando no está configurado. Sampling condicionado a env (10% en prod, 0% en dev)
+- **Availability report (RNF06)**: management command `python manage.py availability_report --days 30` calcula la disponibilidad desde `AccessLog` excluyendo denials legítimos de negocio. Output humano o JSON (`--json`)
+- **Doc RNF01/RNF06** (`docs/reports/rnf01-rnf06.md`) con fórmula, instrucciones de captura y criterios de aprobación
+- 10 tests nuevos (229 total): availability report en 6 escenarios (100%, exclusión business, umbral 99.9%, sub-target, ventana temporal, output plain); logging JSON validado + static check de locustfile
+
+### Pendiente de PR — `feature/data-devops-hardening` (Fase D3)
+- **WebSocket real de aforo (HU08 / RF07)**: `apps/access/consumers.py::AforoConsumer` reemplaza al mock del frontend
+- Ruta `ws://<host>/ws/aforo/?token=<jwt>` con autenticación JWT vía query string (`core/ws_auth.py::JWTAuthMiddleware`) — solo `administrador`, `recepcionista` y staff se conectan; el resto recibe close code `4403`
+- `core/asgi.py` reemplaza `URLRouter([])` vacío por routing real de `apps.access.routing`
+- **Broadcast automático**: signal `post_save` sobre `AccessLog` (`apps/access/ws_signals.py`) publica al channel layer `aforo_updates` con el nuevo count cuando entra/sale un socio. Ignora eventos DENIED
+- **Servicio `get_aforo_actual()`** con cache Redis 5s (`aforo:current`) para amortiguar reads frecuentes; `invalidate_aforo_cache()` en cada evento nuevo
+- **Mensajes**: `aforo.snapshot` (al conectar) + `aforo.update` (cada cambio) + soporte a `{action: 'refresh'}` desde el cliente
+- Dependencias nuevas: `daphne==4.1.2` (ASGI server para tests), `pytest-asyncio==0.24.0` (dev)
+- `pytest.ini` con `asyncio_mode = auto`
+- 5 tests nuevos (219 total): admin conecta + snapshot, anon rechazado, socio rechazado, broadcast on ENTRY, DENIED no rompe silencio
+
+### Pendiente de PR — `feature/data-devops-hardening` (Fase D2)
+- **Trail de auditoría en MongoDB** para acciones CRUD sobre modelos críticos (`Socio`, `PlanMembresia`, `Membresia`, `Clase`, `Pago`). Cablea la función `core.mongodb.log_audit_event` que estaba definida sin uso desde antes
+- **Middleware `CurrentUserMiddleware`** que expone el usuario autenticado a los signals via thread-local. Sin request activo (Celery, CLI, tests) el `actor_rol` queda como `'system'`
+- **`apps.common.audit`**: signal handlers `post_save`/`post_delete` con dispatch centralizado. Encoder JSON que soporta `Decimal`, `date`, `datetime`, `UUID` para persistencia lossless en Mongo
+- **Management command `python manage.py create_mongo_indexes`**: idempotente, provisiona 5 índices por colección + TTL index (default 90 días) sobre `qr_history` y `audit_logs`
+- **`MONGO_RETENTION_DAYS`** configurable por env (default: 90 días)
+- **Settings de tests aisladas**: `MONGO_DB_NAME = winnie_gym_logs_test` para no contaminar la db de dev
+- 6 tests nuevos: create/update/delete en 4 modelos + actor system + command idempotente (214 tests total)
+
+### Pendiente de PR — `feature/data-devops-hardening` (Fase D1)
+- **MER PostgreSQL** documentado: `docs/database/schema.dbml` (formato dbdiagram.io, editable online) + `docs/database/mer.md` con diagrama Mermaid embebido (GitHub lo renderiza), descripción de las 8 tablas, 7 relaciones, 6 índices y convenciones aplicadas
+- **Esquemas MongoDB**: `docs/database/mongo-schemas.md` documenta las colecciones `qr_history` (accesos QR) y `audit_logs` (auditoría admin) con campos, índices, TTL 90 días y justificación del uso NoSQL vs Postgres
+- **Arquitectura del sistema**: `docs/architecture.md` con diagrama de componentes Mermaid, servicios y flujos críticos (login, QR, pagos MP, job vencimientos) + target de deploy productivo
+- **README** actualizado con nueva sección "📚 Documentación técnica" que linkea a los 4 documentos
+- Cubre requisito ABP obligatorio de documentación técnica: MER + esquemas Mongo + arquitectura
+
+
 ### Pendiente de PR — `feature/backend-mp-emails-reports` (post-audit hardening)
 - **ALLOWED_HOSTS + CSRF_TRUSTED_ORIGINS + CORS regex** ampliados con wildcards para `.ngrok-free.dev/.app/.ngrok.io` — habilita que MercadoPago llegue al webhook real sin `DisallowedHost`
 - **Migración de `Thread(daemon=True)` → Celery task `access.log_qr_event`** para el guardado async de accesos en Mongo (retries + graceful shutdown)

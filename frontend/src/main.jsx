@@ -4,7 +4,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter } from 'react-router-dom'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import App from './App.jsx'
+import { initSentry } from './lib/sentry.js'
 import './index.css'
+
+initSentry()
 
 try {
   const stored = localStorage.getItem('theme-storage')

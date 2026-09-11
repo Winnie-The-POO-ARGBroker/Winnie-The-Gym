@@ -9,3 +9,6 @@ class CommonConfig(AppConfig):
     def ready(self):
         # Wire up signal receivers on app boot.
         from . import signals  # noqa: F401
+        from .audit import register_audit_signals
+
+        register_audit_signals()

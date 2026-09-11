@@ -8,6 +8,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 SECRET_KEY = config('SECRET_KEY')
 
 INSTALLED_APPS = [
+    # `daphne` must come first so it overrides Django's default runserver with
+    # an ASGI-capable one that speaks HTTP + WebSocket. Without this, `runserver`
+    # falls back to WSGI and every ws:// request answers 404.
+    'daphne',
     'channels',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -51,6 +55,9 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
+    # Must come AFTER AuthenticationMiddleware so request.user is populated
+    # before we stash it in thread-local for the audit trail.
+    'apps.common.middleware.CurrentUserMiddleware',
 ]
 
 ROOT_URLCONF = 'core.urls'
@@ -103,6 +110,41 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 SITE_ID = 1
+
+# ---------------------------------------------------------------------------
+# Structured JSON logging
+# ---------------------------------------------------------------------------
+# All log lines are emitted as single-line JSON so they can be shipped to
+# Loki/Datadog/CloudWatch without a parser. Toggle with LOG_FORMAT=plain.
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'json': {
+            '()': 'pythonjsonlogger.jsonlogger.JsonFormatter',
+            'format': '%(asctime)s %(name)s %(levelname)s %(message)s %(pathname)s %(lineno)d',
+            'rename_fields': {'asctime': 'timestamp', 'levelname': 'level'},
+        },
+        'plain': {
+            'format': '[{asctime}] {levelname} {name}: {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': config('LOG_FORMAT', default='json'),
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': config('LOG_LEVEL', default='INFO'),
+    },
+    'loggers': {
+        # Silence Django's unstructured request access log but keep errors.
+        'django.server': {'handlers': ['console'], 'level': 'WARNING', 'propagate': False},
+    },
+}
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -255,6 +297,7 @@ MONGODB = {
     'URI': config('MONGO_URI', default='mongodb://localhost:27017/'),
     'DB_NAME': config('MONGO_DB_NAME', default='winnie_gym_logs'),
 }
+MONGO_RETENTION_DAYS = config('MONGO_RETENTION_DAYS', cast=int, default=90)
 
 CHANNEL_LAYERS = {
     'default': {
