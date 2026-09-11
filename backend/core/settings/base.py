@@ -51,6 +51,9 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
+    # Must come AFTER AuthenticationMiddleware so request.user is populated
+    # before we stash it in thread-local for the audit trail.
+    'apps.common.middleware.CurrentUserMiddleware',
 ]
 
 ROOT_URLCONF = 'core.urls'
@@ -255,6 +258,7 @@ MONGODB = {
     'URI': config('MONGO_URI', default='mongodb://localhost:27017/'),
     'DB_NAME': config('MONGO_DB_NAME', default='winnie_gym_logs'),
 }
+MONGO_RETENTION_DAYS = config('MONGO_RETENTION_DAYS', cast=int, default=90)
 
 CHANNEL_LAYERS = {
     'default': {

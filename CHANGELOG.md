@@ -8,6 +8,15 @@ Versionado según [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Pendiente de PR — `feature/data-devops-hardening` (Fase D2)
+- **Trail de auditoría en MongoDB** para acciones CRUD sobre modelos críticos (`Socio`, `PlanMembresia`, `Membresia`, `Clase`, `Pago`). Cablea la función `core.mongodb.log_audit_event` que estaba definida sin uso desde antes
+- **Middleware `CurrentUserMiddleware`** que expone el usuario autenticado a los signals via thread-local. Sin request activo (Celery, CLI, tests) el `actor_rol` queda como `'system'`
+- **`apps.common.audit`**: signal handlers `post_save`/`post_delete` con dispatch centralizado. Encoder JSON que soporta `Decimal`, `date`, `datetime`, `UUID` para persistencia lossless en Mongo
+- **Management command `python manage.py create_mongo_indexes`**: idempotente, provisiona 5 índices por colección + TTL index (default 90 días) sobre `qr_history` y `audit_logs`
+- **`MONGO_RETENTION_DAYS`** configurable por env (default: 90 días)
+- **Settings de tests aisladas**: `MONGO_DB_NAME = winnie_gym_logs_test` para no contaminar la db de dev
+- 6 tests nuevos: create/update/delete en 4 modelos + actor system + command idempotente (214 tests total)
+
 ### Pendiente de PR — `feature/data-devops-hardening` (Fase D1)
 - **MER PostgreSQL** documentado: `docs/database/schema.dbml` (formato dbdiagram.io, editable online) + `docs/database/mer.md` con diagrama Mermaid embebido (GitHub lo renderiza), descripción de las 8 tablas, 7 relaciones, 6 índices y convenciones aplicadas
 - **Esquemas MongoDB**: `docs/database/mongo-schemas.md` documenta las colecciones `qr_history` (accesos QR) y `audit_logs` (auditoría admin) con campos, índices, TTL 90 días y justificación del uso NoSQL vs Postgres
