@@ -8,6 +8,14 @@ Versionado según [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Pendiente de PR — `feature/data-devops-hardening` (Fase D4)
+- **Logs estructurados en JSON** (`python-json-logger==2.0.7`): `LOGGING` en `settings/base.py` produce single-line JSON con `timestamp`, `level`, `name`, `message`, `pathname`, `lineno`. Toggle a formato plano con `LOG_FORMAT=plain` (para debugging local)
+- **Load tests con Locust** (`locust==2.31.5`): `backend/loadtests/locustfile.py` con 3 escenarios (`SocioUser`, `RecepcionistaUser`, `AdminUser`) que cubren login + generación QR + scan QR + reportes. README con instrucciones headless + generación de reporte HTML
+- **Sentry frontend** (`@sentry/react==8.30.0`): `frontend/src/lib/sentry.js` con `initSentry()` opt-in vía `VITE_SENTRY_DSN`. Zero cost cuando no está configurado. Sampling condicionado a env (10% en prod, 0% en dev)
+- **Availability report (RNF06)**: management command `python manage.py availability_report --days 30` calcula la disponibilidad desde `AccessLog` excluyendo denials legítimos de negocio. Output humano o JSON (`--json`)
+- **Doc RNF01/RNF06** (`docs/reports/rnf01-rnf06.md`) con fórmula, instrucciones de captura y criterios de aprobación
+- 10 tests nuevos (229 total): availability report en 6 escenarios (100%, exclusión business, umbral 99.9%, sub-target, ventana temporal, output plain); logging JSON validado + static check de locustfile
+
 ### Pendiente de PR — `feature/data-devops-hardening` (Fase D3)
 - **WebSocket real de aforo (HU08 / RF07)**: `apps/access/consumers.py::AforoConsumer` reemplaza al mock del frontend
 - Ruta `ws://<host>/ws/aforo/?token=<jwt>` con autenticación JWT vía query string (`core/ws_auth.py::JWTAuthMiddleware`) — solo `administrador`, `recepcionista` y staff se conectan; el resto recibe close code `4403`
