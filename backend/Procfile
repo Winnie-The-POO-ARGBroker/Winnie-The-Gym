@@ -1,0 +1,12 @@
+# Procfile leído por honcho en el web service de Render (plan Free no soporta
+# background workers separados, así que corremos los 3 procesos en el mismo
+# contenedor). Ver render.yaml y docs/deploy.md § 4.
+#
+# Trade-off aceptado para MVP académico: menos aislamiento (un OOM tira los 3)
+# a cambio de $0/mes. La arquitectura sigue soportando workers separados si
+# más adelante se paga el plan Starter — solo hay que revertir este Procfile
+# y descomentar los servicios worker/beat en render.yaml.
+
+web: daphne -b 0.0.0.0 -p ${PORT:-8000} core.asgi:application
+worker: celery -A core worker -l info --concurrency=1
+beat: celery -A core beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
