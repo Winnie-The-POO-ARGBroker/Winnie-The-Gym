@@ -1,0 +1,26 @@
+{% extends 'emails/_base.html' %}
+{% block subject %}Tu membresía en {{ brand_name }} está por vencer{% endblock %}
+{% block content %}
+  <p style="font-size: 16px;">Hola <strong>{{ nombre }}</strong>,</p>
+  {% if dias_restantes > 0 %}
+    <p style="font-size: 16px;">
+      Tu membresía del plan <strong>{{ plan_nombre }}</strong> vence en
+      <strong>{{ dias_restantes }} {{ dias_restantes|pluralize:"día,días" }}</strong>
+      (el {{ fecha_fin|date:"d/m/Y" }}).
+    </p>
+    <p style="font-size: 16px;">Renovala hoy para no perder acceso al gimnasio.</p>
+  {% else %}
+    <p style="font-size: 16px;">
+      Tu membresía del plan <strong>{{ plan_nombre }}</strong> venció el
+      <strong>{{ fecha_fin|date:"d/m/Y" }}</strong>.
+    </p>
+    <p style="font-size: 16px;">
+      Ingresá al portal para renovar y volver a acceder cuando quieras.
+    </p>
+  {% endif %}
+  <p style="text-align: center; margin: 24px 0;">
+    <a href="{{ frontend_url }}" style="display: inline-block; background-color: #735d3e; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px;">
+      Renovar membresía
+    </a>
+  </p>
+{% endblock %}

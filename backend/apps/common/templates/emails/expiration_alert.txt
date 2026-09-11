@@ -1,0 +1,9 @@
+Hola {{ nombre }},
+
+{% if dias_restantes > 0 %}Tu membresía del plan {{ plan_nombre }} vence en {{ dias_restantes }} {{ dias_restantes|pluralize:"día,días" }} (el {{ fecha_fin|date:"d/m/Y" }}).
+Renovala hoy para no perder acceso al gimnasio.{% else %}Tu membresía del plan {{ plan_nombre }} venció el {{ fecha_fin|date:"d/m/Y" }}.
+Renovala para volver a acceder al gimnasio.{% endif %}
+
+Renová desde tu panel: {{ frontend_url }}
+
+— El equipo de {{ brand_name }}

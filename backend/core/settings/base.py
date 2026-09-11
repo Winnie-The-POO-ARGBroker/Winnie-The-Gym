@@ -21,6 +21,8 @@ INSTALLED_APPS = [
     'corsheaders',
     'django_filters',
     'drf_spectacular',
+    'django_celery_beat',
+    'anymail',
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
@@ -28,6 +30,7 @@ INSTALLED_APPS = [
     'dj_rest_auth',
     'dj_rest_auth.registration',
     # Apps
+    'apps.common',
     'apps.users',
     'apps.members',
     'apps.memberships',
@@ -179,16 +182,41 @@ ACCOUNT_UNIQUE_EMAIL = True
 SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
 ACCOUNT_USERNAME_REQUIRED = False
 
-EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
+EMAIL_BACKEND = config(
+    'EMAIL_BACKEND',
+    default='anymail.backends.mailtrap.EmailBackend',
+)
+# Legacy SMTP config kept as a fallback provider (e.g. Gmail) when
+# EMAIL_BACKEND is switched to django.core.mail.backends.smtp.EmailBackend.
 EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
 EMAIL_PORT = config('EMAIL_PORT', cast=int, default=587)
 EMAIL_USE_TLS = config('EMAIL_USE_TLS', cast=bool, default=True)
 EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
-DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='Winnie Gym <noreply@winniegym.com>')
+DEFAULT_FROM_EMAIL = config(
+    'DEFAULT_FROM_EMAIL',
+    default='Winnie The Gym <hello@demomailtrap.co>',
+)
+EMAIL_REPLY_TO = config('EMAIL_REPLY_TO', default='')
 EMAIL_TIMEOUT = 5
 
+ANYMAIL = {
+    'MAILTRAP_API_TOKEN': config('MAILTRAP_API_TOKEN', default=''),
+}
+
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:5173')
+
+# ---------------------------------------------------------------------------
+# Celery
+# ---------------------------------------------------------------------------
+CELERY_BROKER_URL = config('CELERY_BROKER_URL', default='redis://redis:6379/1')
+CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default='redis://redis:6379/2')
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_TASK_TIME_LIMIT = 60
+CELERY_TASK_SOFT_TIME_LIMIT = 45
+CELERY_TASK_ALWAYS_EAGER = config('CELERY_TASK_ALWAYS_EAGER', cast=bool, default=False)
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 
 from django.core.exceptions import ImproperlyConfigured
 

@@ -1,0 +1,18 @@
+{% extends 'emails/_base.html' %}
+{% block subject %}¡Bienvenido/a a {{ brand_name }}!{% endblock %}
+{% block content %}
+  <p style="font-size: 16px;">Hola <strong>{{ nombre }}</strong>,</p>
+  <p style="font-size: 16px;">
+    Te damos la bienvenida a {{ brand_name }}. Tu número de socio es
+    <strong>{{ numero_socio }}</strong>.
+  </p>
+  <p style="font-size: 16px;">
+    Desde tu panel podés generar tu credencial QR, reservar clases y renovar
+    tu membresía cuando quieras.
+  </p>
+  <p style="text-align: center; margin: 24px 0;">
+    <a href="{{ frontend_url }}" style="display: inline-block; background-color: #735d3e; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px;">
+      Ir al panel
+    </a>
+  </p>
+{% endblock %}

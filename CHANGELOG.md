@@ -8,6 +8,18 @@ Versionado según [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Pendiente de PR — `feature/backend-mp-emails-reports` (Fase 2)
+- **Anymail + Mailtrap Sending (HTTP API)**: `EMAIL_BACKEND = anymail.backends.mailtrap.EmailBackend` con fallback a Gmail SMTP por env var. Sender por default: `Winnie The Gym <hello@demomailtrap.co>`
+- **Celery + Redis (broker/backend)**: nuevos servicios `celery-worker` y `celery-beat` en `docker-compose.yml`, misma imagen del backend. Reutilizan el Redis ya en el stack
+- **Django Celery Beat con DatabaseScheduler**: schedule editable desde el admin
+- **Helper `apps/common/emails.py::send_templated_email`**: renderiza HTML + texto, respeta reply-to, tolerante a fallos (nunca rompe el flujo)
+- **Task Celery `common.send_email`**: retry 3× con backoff 60s. Helper `enqueue_email()` para fire-and-forget
+- **Signal de bienvenida**: alta de `Socio` dispara email `welcome` async (dedup por `created=True`)
+- **Job periódico `memberships.check_expiring_memberships`**: corre diario 09:00 ARG. Envía alertas a 7/3/1 días del vencimiento + email final el día 0 con flip a `estado='vencida'`. Deduplicación por `Membresia.avisos_enviados` (JSONField)
+- **Recupero de contraseña**: endpoints `/api/auth/password/reset/` y `/api/auth/password/reset/confirm/` provistos por `dj-rest-auth` (integrados con el nuevo pipeline de email)
+- Migración de datos que instala el schedule inicial de Celery Beat
+- 9 tests nuevos (email helper, signal de bienvenida, task de vencimientos con dedup)
+
 ### Pendiente de PR — `feature/backend-mp-emails-reports` (Fase 1)
 - **Documentación OpenAPI**: `drf-spectacular` con Swagger UI (`/api/docs/`), ReDoc (`/api/redoc/`) y schema (`/api/schema/`). Todos los ViewSets anotados con `@extend_schema`
 - **Paginación global**: `PageNumberPagination` (page_size=10, `?page_size=` hasta 100) en todos los listados
