@@ -19,13 +19,19 @@ User = get_user_model()
 def _resolve_user(token):
     if not token:
         return AnonymousUser()
+    # Imported lazily so Django app registry is loaded before we touch models.
+    from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
+    from rest_framework_simplejwt.tokens import AccessToken
+
     try:
-        # Imported lazily so Django app registry is loaded before we touch models.
-        from rest_framework_simplejwt.tokens import AccessToken
         access = AccessToken(token)
         user_id = access['user_id']
+    except (InvalidToken, TokenError, KeyError):
+        return AnonymousUser()
+
+    try:
         return User.objects.get(pk=user_id)
-    except Exception:  # noqa: BLE001 — token invalid/expired/user missing
+    except User.DoesNotExist:
         return AnonymousUser()
 
 

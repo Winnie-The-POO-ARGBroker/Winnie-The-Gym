@@ -8,6 +8,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 SECRET_KEY = config('SECRET_KEY')
 
 INSTALLED_APPS = [
+    # `daphne` must come first so it overrides Django's default runserver with
+    # an ASGI-capable one that speaks HTTP + WebSocket. Without this, `runserver`
+    # falls back to WSGI and every ws:// request answers 404.
+    'daphne',
     'channels',
     'django.contrib.admin',
     'django.contrib.auth',

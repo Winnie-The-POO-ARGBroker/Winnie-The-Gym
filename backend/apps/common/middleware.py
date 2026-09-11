@@ -21,7 +21,8 @@ class CurrentUserMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        _thread_locals.user = getattr(request, 'user', None) if request.user.is_authenticated else None
+        user = getattr(request, 'user', None)
+        _thread_locals.user = user if getattr(user, 'is_authenticated', False) else None
         try:
             return self.get_response(request)
         finally:
