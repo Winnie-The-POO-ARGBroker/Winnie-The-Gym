@@ -1,0 +1,65 @@
+# syntax=docker/dockerfile:1.6
+
+# ---------------------------------------------------------------------------
+# Stage 1: builder — installs base.txt (prod-only deps) into a virtualenv
+# ---------------------------------------------------------------------------
+FROM python:3.12-slim AS builder
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Create a self-contained venv we copy into the runner image later.
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+COPY requirements/base.txt requirements/base.txt
+RUN pip install --no-cache-dir -r requirements/base.txt
+
+
+# ---------------------------------------------------------------------------
+# Stage 2: runner — slim runtime with only libpq + the venv
+# ---------------------------------------------------------------------------
+FROM python:3.12-slim AS runner
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PATH="/opt/venv/bin:$PATH" \
+    DJANGO_SETTINGS_MODULE=core.settings.production
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libpq5 curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Non-root user for the app process
+RUN adduser --disabled-password --gecos '' --uid 1000 app
+
+WORKDIR /app
+
+COPY --from=builder /opt/venv /opt/venv
+COPY --chown=app:app . /app/
+
+# Static files are collected at container start (see entrypoint.sh) so that
+# WhiteNoise can serve them from STATIC_ROOT.
+RUN mkdir -p /app/staticfiles && chown -R app:app /app/staticfiles
+
+USER app
+
+# Default port matches Render's $PORT convention.
+ENV PORT=8000
+EXPOSE 8000
+
+# entrypoint.sh runs migrations + collectstatic + create_mongo_indexes for
+# the web service, and skips them (via env flag) for celery-worker / beat.
+COPY --chown=app:app entrypoint.sh /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
+
+# Default command = Daphne serving HTTP + WebSocket over ASGI.
+CMD ["sh", "-c", "daphne -b 0.0.0.0 -p ${PORT} core.asgi:application"]
