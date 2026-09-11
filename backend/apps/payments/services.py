@@ -23,13 +23,17 @@ def _external_reference():
     return uuid.uuid4().hex
 
 
+def _is_public_url(base):
+    return bool(base) and 'localhost' not in base and '127.0.0.1' not in base
+
+
 def _build_back_urls():
     base = getattr(settings, 'FRONTEND_URL', 'http://localhost:5173').rstrip('/')
     return {
         'success': f'{base}/socio/credencial?pago=success',
         'failure': f'{base}/socio/credencial?pago=failure',
         'pending': f'{base}/socio/credencial?pago=pending',
-    }
+    }, _is_public_url(base)
 
 
 def _build_notification_url():
@@ -99,6 +103,7 @@ def crear_preferencia(socio, plan):
 
     payer_email = getattr(getattr(socio, 'usuario', None), 'email', None) or ''
 
+    back_urls, back_urls_are_public = _build_back_urls()
     preference_payload = {
         'items': [
             {
@@ -109,8 +114,7 @@ def crear_preferencia(socio, plan):
             }
         ],
         'external_reference': external_reference,
-        'back_urls': _build_back_urls(),
-        'auto_return': 'approved',
+        'back_urls': back_urls,
         'statement_descriptor': 'WinnieTheGym',
         'metadata': {
             'pago_id': pago.pk,
@@ -118,6 +122,10 @@ def crear_preferencia(socio, plan):
             'plan_id': plan.pk,
         },
     }
+    # MercadoPago requires publicly reachable back_urls to enable auto_return.
+    # In dev (localhost) we omit it so preferences still succeed on Sandbox.
+    if back_urls_are_public:
+        preference_payload['auto_return'] = 'approved'
     if payer_email:
         preference_payload['payer'] = {'email': payer_email}
     notification_url = _build_notification_url()
