@@ -27,15 +27,20 @@ services:
     rootDir: backend
     dockerfilePath: ./Dockerfile.prod
     dockerContext: .
-    healthCheckPath: /api/health/
+    # NOTA: dejamos que Render use port-scan (TCP) en vez de HTTP health check
+    # mientras se estabiliza el TLS handshake contra Mongo Atlas. Cuando el
+    # /api/health/ endpoint devuelva 200 consistentemente en prod, reactivar:
+    #   healthCheckPath: /api/health/
     envVars:
-      # Este servicio corre migraciones, static y Mongo indexes al arrancar.
+      # Este servicio corre migraciones y static al arrancar. Mongo indexes
+      # queda como TODO manual hasta destrabar el TLS (ver docs/deploy.md
+      # sección troubleshooting).
       - key: RUN_MIGRATIONS
         value: "1"
       - key: COLLECT_STATIC
         value: "1"
       - key: CREATE_MONGO_INDEXES
-        value: "1"
+        value: "0"
       - fromGroup: winnie-shared
 
   # --------------------------------------------------------------------------
