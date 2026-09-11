@@ -46,6 +46,9 @@ class Membresia(models.Model):
     fecha_inicio = models.DateField(default=datetime.date.today)
     fecha_fin = models.DateField()
     estado = models.CharField(max_length=20, choices=Estado.choices, default=Estado.ACTIVA)
+    # Tracks which expiration alerts (7/3/1/0) have already been emailed so the
+    # scheduled job does not re-send. Structure: {"7": true, "3": true, ...}.
+    avisos_enviados = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

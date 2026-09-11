@@ -1,0 +1,8 @@
+Hola {{ nombre }},
+
+Te damos la bienvenida a {{ brand_name }}. Tu número de socio es {{ numero_socio }}.
+
+Ingresá al panel para generar tu credencial QR, reservar clases y renovar tu membresía:
+{{ frontend_url }}
+
+— El equipo de {{ brand_name }}

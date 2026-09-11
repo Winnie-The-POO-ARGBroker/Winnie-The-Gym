@@ -1,0 +1,22 @@
+{% extends 'emails/_base.html' %}
+{% block subject %}Confirmamos tu pago en {{ brand_name }}{% endblock %}
+{% block content %}
+  <p style="font-size: 16px;">Hola <strong>{{ nombre }}</strong>,</p>
+  <p style="font-size: 16px;">
+    Confirmamos que recibimos tu pago del plan
+    <strong>{{ plan_nombre }}</strong> por <strong>${{ monto }} {{ moneda }}</strong>.
+  </p>
+  <p style="font-size: 16px;">
+    Tu membresía queda activa hasta el
+    <strong>{{ fecha_fin|date:"d/m/Y" }}</strong>. Ya podés generar tu QR y
+    reservar clases sin restricciones.
+  </p>
+  <p style="font-size: 14px; color: #6e6252;">
+    Identificador de pago: {{ mp_payment_id|default:"—" }}
+  </p>
+  <p style="text-align: center; margin: 24px 0;">
+    <a href="{{ frontend_url }}" style="display: inline-block; background-color: #735d3e; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px;">
+      Ver mi membresía
+    </a>
+  </p>
+{% endblock %}

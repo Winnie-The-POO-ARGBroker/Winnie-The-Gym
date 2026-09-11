@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>{% block subject %}{{ brand_name }}{% endblock %}</title>
+</head>
+<body style="font-family: Arial, Helvetica, sans-serif; background-color: #f7f5f0; margin: 0; padding: 24px; color: #2c261d;">
+  <div style="max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 12px; padding: 32px; border: 1px solid #e5dfd2;">
+    <h1 style="color: #735d3e; margin: 0 0 16px;">{{ brand_name }}</h1>
+    {% block content %}{% endblock %}
+    <hr style="border: none; border-top: 1px solid #e5dfd2; margin: 32px 0;" />
+    <p style="font-size: 12px; color: #8a7f6b;">
+      Este mensaje fue enviado automáticamente desde {{ brand_name }}. Si no
+      reconocés esta actividad, respondé este email.
+    </p>
+  </div>
+</body>
+</html>

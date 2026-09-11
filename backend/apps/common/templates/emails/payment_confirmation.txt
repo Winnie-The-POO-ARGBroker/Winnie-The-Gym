@@ -1,0 +1,10 @@
+Hola {{ nombre }},
+
+Confirmamos tu pago del plan {{ plan_nombre }} por ${{ monto }} {{ moneda }}.
+Tu membresía queda activa hasta el {{ fecha_fin|date:"d/m/Y" }}.
+
+Identificador de pago: {{ mp_payment_id|default:"—" }}
+
+Ingresá a tu panel: {{ frontend_url }}
+
+— El equipo de {{ brand_name }}

@@ -8,6 +8,60 @@ Versionado según [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Pendiente de PR — `feature/backend-mp-emails-reports` (post-audit hardening)
+- **ALLOWED_HOSTS + CSRF_TRUSTED_ORIGINS + CORS regex** ampliados con wildcards para `.ngrok-free.dev/.app/.ngrok.io` — habilita que MercadoPago llegue al webhook real sin `DisallowedHost`
+- **Migración de `Thread(daemon=True)` → Celery task `access.log_qr_event`** para el guardado async de accesos en Mongo (retries + graceful shutdown)
+- **Cobro manual** ahora loggea + persiste diferencia en `raw_webhook` cuando `monto != plan.precio` (auditable, no bloqueante)
+- **Sentry** integrado opt-in por env var `SENTRY_DSN` con integraciones Django, Celery y logging
+- **Health check completo** en `/api/health/` con probes reales a Postgres, Redis y Mongo (200 sano, 503 degradado — listo para UptimeRobot)
+- **BOM UTF-8** al inicio de todos los CSV exportados para que Excel/Numbers rendericen tildes y ñ correctamente
+- 8 tests nuevos (208 total): ALLOWED_HOSTS + CSRF wildcards, webhook acepta Host header ngrok, health con todas las probes, CSV con BOM, cobro manual matching/diff/over
+
+### Pendiente de PR — `feature/backend-mp-emails-reports` (Fase 4)
+- **App `reports`** con servicio de exportación agnóstico al formato (CSV / XLSX / PDF)
+- Nuevos endpoints (recep/admin):
+  - `GET /api/reportes/morosidad/?formato=csv|xlsx|pdf&estado=&plan_id=` — socios con membresía vencida o `pendiente_pago`, con días de atraso y monto adeudado
+  - `GET /api/reportes/facturacion/?formato=&mes=YYYY-MM&metodo=` — pagos aprobados del mes indicado (default: mes actual)
+  - `GET /api/reportes/asistencia/?formato=&fecha_desde=&fecha_hasta=` — ingresos por QR emparejados con su egreso y permanencia en minutos
+- **Exportadores** en `apps/reports/exporters.py`: `export_csv`, `export_xlsx` (openpyxl), `export_pdf` (reportlab landscape A4). Todos devuelven `HttpResponse` con `Content-Disposition: attachment`
+- Query param `?formato=` (no `?format=` para evitar chocar con el content-negotiation nativo de DRF)
+- 8 tests nuevos: 3 formatos de morosidad, permisos, facturación filtrada por mes, permanencia con y sin egreso emparejado
+
+### Pendiente de PR — `feature/backend-mp-emails-reports` (Fase 3)
+- **App `payments`** con modelo `Pago` (estados: `pendiente`/`aprobado`/`rechazado`/`cancelado`/`reembolsado`), FKs a `Socio`, `PlanMembresia` y `Membresia` (ADR-7), campos MP (`mp_preference_id`, `mp_payment_id` UNIQUE, `mp_external_reference`, `mp_status_detail`, `raw_webhook` JSONField)
+- **Integración MercadoPago Checkout Pro** vía SDK `mercadopago==2.2.3`:
+  - `POST /api/payments/preferencias/` (socio) — crea `Pago(pendiente)` + preferencia MP + devuelve `init_point`, `sandbox_init_point`, `external_reference`
+  - `POST /api/payments/webhook/` (sin auth, con validación HMAC-SHA256 v1) — actualiza `Pago`, activa membresía en `approved`, dispara email de confirmación, **idempotente por `mp_payment_id`**
+  - `POST /api/payments/cobros-manuales/` (recep/admin) — contingencia PDF riesgo #3, activa membresía en el acto + email
+  - `GET /api/payments/pagos/` (recep/admin) — listado con filtros
+- **Cliente MP aislado** en `apps/payments/mercadopago_client.py` (facilita mock en tests y futura migración)
+- **Notification URL configurable** por env (`MP_NGROK_URL` en dev, deploy real después)
+- **Renovación de membresía transaccional**: pago aprobado marca activas anteriores como `vencida` y crea nueva con `fecha_fin = today + plan.duracion_dias`
+- **Email `payment_confirmation`** disparado desde webhook y desde cobro manual
+- 15 tests nuevos cubriendo crear preferencia (éxito, permisos, plan inactivo, fallo MP), webhook (approved, rejected, firma inválida, duplicados, referencia desconocida) y cobro manual
+
+### Pendiente de PR — `feature/backend-mp-emails-reports` (Fase 2)
+- **Anymail + Mailtrap Sending (HTTP API)**: `EMAIL_BACKEND = anymail.backends.mailtrap.EmailBackend` con fallback a Gmail SMTP por env var. Sender por default: `Winnie The Gym <hello@demomailtrap.co>`
+- **Celery + Redis (broker/backend)**: nuevos servicios `celery-worker` y `celery-beat` en `docker-compose.yml`, misma imagen del backend. Reutilizan el Redis ya en el stack
+- **Django Celery Beat con DatabaseScheduler**: schedule editable desde el admin
+- **Helper `apps/common/emails.py::send_templated_email`**: renderiza HTML + texto, respeta reply-to, tolerante a fallos (nunca rompe el flujo)
+- **Task Celery `common.send_email`**: retry 3× con backoff 60s. Helper `enqueue_email()` para fire-and-forget
+- **Signal de bienvenida**: alta de `Socio` dispara email `welcome` async (dedup por `created=True`)
+- **Job periódico `memberships.check_expiring_memberships`**: corre diario 09:00 ARG. Envía alertas a 7/3/1 días del vencimiento + email final el día 0 con flip a `estado='vencida'`. Deduplicación por `Membresia.avisos_enviados` (JSONField)
+- **Recupero de contraseña**: endpoints `/api/auth/password/reset/` y `/api/auth/password/reset/confirm/` provistos por `dj-rest-auth` (integrados con el nuevo pipeline de email)
+- Migración de datos que instala el schedule inicial de Celery Beat
+- 9 tests nuevos (email helper, signal de bienvenida, task de vencimientos con dedup)
+
+### Pendiente de PR — `feature/backend-mp-emails-reports` (Fase 1)
+- **Documentación OpenAPI**: `drf-spectacular` con Swagger UI (`/api/docs/`), ReDoc (`/api/redoc/`) y schema (`/api/schema/`). Todos los ViewSets anotados con `@extend_schema`
+- **Paginación global**: `PageNumberPagination` (page_size=10, `?page_size=` hasta 100) en todos los listados
+- **Filtros**: `django-filter` con `FilterSet` custom por app (`apps/{app}/filters.py`) — cubre socios, planes, membresías, clases, inscripciones y access logs
+- **Búsqueda avanzada de clases (HU06)**: combina `?search=` (nombre/instructor/sala) + `categoria` + `dia` + `hora_desde`/`hora_hasta` + `cupo_disponible`
+- **Cancelación de reservas (HU07)**: nuevo endpoint `POST /api/classes/clases/{id}/cancelar/` con enforcement de `cancelacion_horas` y promoción automática desde lista de espera
+- **Subida de certificado médico (RF08)**: nuevo endpoint `POST /api/members/socios/{id}/certificado-medico/` con validación de tipo (PDF/JPG/PNG) y tamaño (máx 5 MB). Almacena bajo `MEDIA_ROOT/certificados_medicos/`
+- **Session timeout 30 min (RNF05)**: `SIMPLE_JWT.ACCESS_TOKEN_LIFETIME = 30 min`, rotación de refresh tokens habilitada
+- 20 tests nuevos: HU06, HU07, RF08, infra API (OpenAPI, paginación, session timeout)
+
 ### Pendiente de PR — `feature/code-quality-audit`
 - Auditoría de calidad backend: permisos, namespacing, service layer, convenciones de modelos, consolidación de tests (5 slices)
 - Auditoría de calidad frontend: guards de producción para mock data, `TopBar` con `backAction`, migración a TanStack Query, hook `useAuth()`, formularios RHF+Zod, tokens semánticos de color, limpieza de archivos duplicados/huérfanos, renombre `Screen` → `Page`
