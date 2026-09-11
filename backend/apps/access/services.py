@@ -1,9 +1,53 @@
 import logging
 
+from django.core.cache import cache
 from django.db import transaction
+from django.db.models import Count, Q
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
+
+
+AFORO_CACHE_KEY = 'aforo:current'
+AFORO_CACHE_TTL_SECONDS = 5
+
+
+def compute_aforo_actual():
+    """Return the count of socios currently inside the gym.
+
+    Definition: ENTRY (GRANTED) minus EXIT (GRANTED) of the current day,
+    clamped to 0. Runs a single aggregate query on `AccessLog`.
+    """
+    from apps.access.models import AccessLog  # local to avoid circular imports
+
+    today = timezone.localdate()
+    aggregate = (
+        AccessLog.objects
+        .filter(timestamp__date=today, status='GRANTED')
+        .aggregate(
+            entries=Count('id', filter=Q(access_type='ENTRY')),
+            exits=Count('id', filter=Q(access_type='EXIT')),
+        )
+    )
+    entries = aggregate.get('entries') or 0
+    exits = aggregate.get('exits') or 0
+    return max(entries - exits, 0)
+
+
+def get_aforo_actual(use_cache=True):
+    """Cached wrapper around `compute_aforo_actual` for hot paths (WebSocket)."""
+    if not use_cache:
+        return compute_aforo_actual()
+    cached = cache.get(AFORO_CACHE_KEY)
+    if cached is not None:
+        return cached
+    value = compute_aforo_actual()
+    cache.set(AFORO_CACHE_KEY, value, timeout=AFORO_CACHE_TTL_SECONDS)
+    return value
+
+
+def invalidate_aforo_cache():
+    cache.delete(AFORO_CACHE_KEY)
 
 
 def has_active_membership(user) -> bool:

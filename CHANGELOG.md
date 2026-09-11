@@ -8,6 +8,17 @@ Versionado según [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Pendiente de PR — `feature/data-devops-hardening` (Fase D3)
+- **WebSocket real de aforo (HU08 / RF07)**: `apps/access/consumers.py::AforoConsumer` reemplaza al mock del frontend
+- Ruta `ws://<host>/ws/aforo/?token=<jwt>` con autenticación JWT vía query string (`core/ws_auth.py::JWTAuthMiddleware`) — solo `administrador`, `recepcionista` y staff se conectan; el resto recibe close code `4403`
+- `core/asgi.py` reemplaza `URLRouter([])` vacío por routing real de `apps.access.routing`
+- **Broadcast automático**: signal `post_save` sobre `AccessLog` (`apps/access/ws_signals.py`) publica al channel layer `aforo_updates` con el nuevo count cuando entra/sale un socio. Ignora eventos DENIED
+- **Servicio `get_aforo_actual()`** con cache Redis 5s (`aforo:current`) para amortiguar reads frecuentes; `invalidate_aforo_cache()` en cada evento nuevo
+- **Mensajes**: `aforo.snapshot` (al conectar) + `aforo.update` (cada cambio) + soporte a `{action: 'refresh'}` desde el cliente
+- Dependencias nuevas: `daphne==4.1.2` (ASGI server para tests), `pytest-asyncio==0.24.0` (dev)
+- `pytest.ini` con `asyncio_mode = auto`
+- 5 tests nuevos (219 total): admin conecta + snapshot, anon rechazado, socio rechazado, broadcast on ENTRY, DENIED no rompe silencio
+
 ### Pendiente de PR — `feature/data-devops-hardening` (Fase D2)
 - **Trail de auditoría en MongoDB** para acciones CRUD sobre modelos críticos (`Socio`, `PlanMembresia`, `Membresia`, `Clase`, `Pago`). Cablea la función `core.mongodb.log_audit_event` que estaba definida sin uso desde antes
 - **Middleware `CurrentUserMiddleware`** que expone el usuario autenticado a los signals via thread-local. Sin request activo (Celery, CLI, tests) el `actor_rol` queda como `'system'`
