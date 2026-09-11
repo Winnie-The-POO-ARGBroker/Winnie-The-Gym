@@ -275,8 +275,27 @@ if not _REDIS_URL:
     _REDIS_URL = f'redis://{_redis_host}:{_redis_port}'
 _REDIS_URL = _REDIS_URL.rstrip('/')
 
-CELERY_BROKER_URL = config('CELERY_BROKER_URL', default=f'{_REDIS_URL}/0')
-CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default=f'{_REDIS_URL}/3')
+
+def _normalize_rediss(url):
+    """Celery/redis-py refuse `rediss://` URLs that do not declare
+    `ssl_cert_reqs`. Managed providers like Upstash publish the URL without
+    it, so we add the safe default (CERT_REQUIRED — validate server cert)
+    when it is missing. Non-TLS `redis://` URLs pass through unchanged.
+    """
+    if not url or not url.startswith('rediss://'):
+        return url
+    if 'ssl_cert_reqs=' in url:
+        return url
+    sep = '&' if '?' in url else '?'
+    return f'{url}{sep}ssl_cert_reqs=CERT_REQUIRED'
+
+
+# NOTE: `_REDIS_URL` stays without ssl_cert_reqs so the DB number (/1, /2...)
+# can be appended before the query string. `_normalize_rediss` is applied to
+# each derived URL after the /N is concatenated.
+
+CELERY_BROKER_URL = _normalize_rediss(config('CELERY_BROKER_URL', default=f'{_REDIS_URL}/0'))
+CELERY_RESULT_BACKEND = _normalize_rediss(config('CELERY_RESULT_BACKEND', default=f'{_REDIS_URL}/3'))
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_TIME_LIMIT = 60
 CELERY_TASK_SOFT_TIME_LIMIT = 45
@@ -301,7 +320,7 @@ QR_TOKEN_EXPIRATION_SECONDS = config('QR_TOKEN_EXPIRATION_SECONDS', cast=int, de
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': f'{_REDIS_URL}/1',
+        'LOCATION': _normalize_rediss(f'{_REDIS_URL}/1'),
     }
 }
 
@@ -317,7 +336,7 @@ CHANNEL_LAYERS = {
         # `channels_redis` 4.x accepts a URL string here (unlike the tuple form
         # that does not support auth/TLS). Dev Docker uses plain `redis://`;
         # Upstash / Redis Cloud use `rediss://default:<token>@...`.
-        'CONFIG': {'hosts': [f'{_REDIS_URL}/2']},
+        'CONFIG': {'hosts': [_normalize_rediss(f'{_REDIS_URL}/2')]},
     },
 }
 
