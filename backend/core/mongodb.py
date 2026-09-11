@@ -1,4 +1,6 @@
 import logging
+
+import certifi
 from django.conf import settings
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
@@ -11,6 +13,13 @@ _mongo_client = None
 def get_mongo_client():
     """
     Retorna la instancia del cliente MongoClient (Singleton).
+
+    Cuando el URI usa `mongodb+srv://` (Atlas) o `tls=true` explícito, pasa
+    `tlsCAFile=certifi.where()` para que el handshake funcione en imágenes
+    slim (Render / debian-slim) donde el bundle de CAs del sistema puede
+    estar incompleto y disparar `tlsv1 alert internal error`.
+    En dev local con `mongodb://mongo:27017/` sin TLS, este kwarg NO se
+    aplica para no forzar TLS contra un server que no lo soporta.
     """
     global _mongo_client
     if _mongo_client is None:
@@ -18,7 +27,12 @@ def get_mongo_client():
             mongo_uri = getattr(settings, 'MONGODB', {}).get(
                 'URI', 'mongodb://localhost:27017/'
             )
-            _mongo_client = MongoClient(mongo_uri, serverSelectionTimeoutMS=3000)
+            kwargs = {'serverSelectionTimeoutMS': 3000}
+            uri_lower = mongo_uri.lower()
+            if uri_lower.startswith('mongodb+srv://') or 'tls=true' in uri_lower or 'ssl=true' in uri_lower:
+                kwargs['tlsCAFile'] = certifi.where()
+
+            _mongo_client = MongoClient(mongo_uri, **kwargs)
             # Ping para verificar conexión
             _mongo_client.admin.command('ping')
             logger.info("Conexión exitosa a MongoDB")
