@@ -1,16 +1,21 @@
-# Render Blueprint — Winnie The Gym backend + Celery workers.
+# Render Blueprint — Winnie The Gym backend (single service on Free tier).
 #
-# Deploy: repo → Render → New → Blueprint → apunta a este archivo.
-# Los 3 servicios comparten la imagen `backend/Dockerfile.prod` y el mismo
-# env var group (`winnie-shared`), y sólo cambian el `startCommand`.
+# El plan Free de Render NO soporta `type: worker` (background workers), así
+# que Daphne + Celery worker + Celery beat conviven en el mismo web service
+# gestionados por `honcho` desde `backend/Procfile`.
 #
-# La creación de recursos externos (Postgres Supabase, Mongo Atlas, Redis
-# Upstash, Storage) NO se automatiza acá — hay que crearlos primero y pegar
-# las credenciales en el env var group. Ver docs/deploy.md paso a paso.
+# Cuando el proyecto migre a plan Starter ($7/mes por servicio), descomentar
+# los dos servicios de worker de más abajo y cambiar el CMD del Dockerfile.prod
+# de nuevo a `daphne` solo. Ver docs/deploy.md § troubleshooting.
+#
+# Los recursos externos (Postgres Supabase, Mongo Atlas, Redis Upstash,
+# Storage) NO se automatizan acá — hay que crearlos primero y pegar las
+# credenciales en el env var group. Ver docs/deploy.md paso a paso.
 
 services:
   # --------------------------------------------------------------------------
-  # Backend HTTP + WebSocket (Daphne sobre ASGI)
+  # Backend all-in-one — Daphne (HTTP + WS) + Celery worker + Celery beat
+  # gestionados por honcho desde el Procfile del backend.
   # --------------------------------------------------------------------------
   - type: web
     name: winnie-backend
@@ -24,7 +29,7 @@ services:
     dockerContext: .
     healthCheckPath: /api/health/
     envVars:
-      # Este servicio sí corre migraciones, static y Mongo indexes al arrancar.
+      # Este servicio corre migraciones, static y Mongo indexes al arrancar.
       - key: RUN_MIGRATIONS
         value: "1"
       - key: COLLECT_STATIC
@@ -34,42 +39,40 @@ services:
       - fromGroup: winnie-shared
 
   # --------------------------------------------------------------------------
-  # Celery worker — procesa emails, escrituras a Mongo, tareas encoladas
+  # PENDIENTE — Servicios worker separados (requieren plan Starter).
+  # Descomentar cuando el proyecto pueda pagar Render Starter.
   # --------------------------------------------------------------------------
-  - type: worker
-    name: winnie-celery-worker
-    runtime: docker
-    plan: free
-    region: oregon
-    branch: develop
-    autoDeploy: true
-    rootDir: backend
-    dockerfilePath: ./Dockerfile.prod
-    dockerContext: .
-    dockerCommand: celery -A core worker -l info --concurrency=2
-    envVars:
-      - fromGroup: winnie-shared
-
-  # --------------------------------------------------------------------------
-  # Celery beat — dispara el job diario de vencimientos (09:00 ARG)
-  # --------------------------------------------------------------------------
-  - type: worker
-    name: winnie-celery-beat
-    runtime: docker
-    plan: free
-    region: oregon
-    branch: develop
-    autoDeploy: true
-    rootDir: backend
-    dockerfilePath: ./Dockerfile.prod
-    dockerContext: .
-    dockerCommand: celery -A core beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
-    envVars:
-      - fromGroup: winnie-shared
+  # - type: worker
+  #   name: winnie-celery-worker
+  #   runtime: docker
+  #   plan: starter
+  #   region: oregon
+  #   branch: develop
+  #   autoDeploy: true
+  #   rootDir: backend
+  #   dockerfilePath: ./Dockerfile.prod
+  #   dockerContext: .
+  #   dockerCommand: celery -A core worker -l info --concurrency=2
+  #   envVars:
+  #     - fromGroup: winnie-shared
+  #
+  # - type: worker
+  #   name: winnie-celery-beat
+  #   runtime: docker
+  #   plan: starter
+  #   region: oregon
+  #   branch: develop
+  #   autoDeploy: true
+  #   rootDir: backend
+  #   dockerfilePath: ./Dockerfile.prod
+  #   dockerContext: .
+  #   dockerCommand: celery -A core beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+  #   envVars:
+  #     - fromGroup: winnie-shared
 
 
 # ---------------------------------------------------------------------------
-# Env var group compartido entre los 3 servicios.
+# Env var group compartido.
 # Los valores hay que cargarlos manualmente en Render antes del primer deploy.
 # Ver docs/deploy.md para los valores esperados por cada key.
 # ---------------------------------------------------------------------------
@@ -120,10 +123,9 @@ envVarGroups:
         value: "90"
 
       # Redis (Upstash — rediss:// TLS)
-      - key: REDIS_HOST
+      # REDIS_URL unifica cache + channel layer + celery (ver settings/base.py).
+      - key: REDIS_URL
         sync: false
-      - key: REDIS_PORT
-        value: "6379"
       - key: CELERY_BROKER_URL
         sync: false
       - key: CELERY_RESULT_BACKEND

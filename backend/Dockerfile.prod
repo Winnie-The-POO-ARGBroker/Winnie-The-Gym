@@ -61,5 +61,8 @@ EXPOSE 8000
 COPY --chown=app:app entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
 
-# Default command = Daphne serving HTTP + WebSocket over ASGI.
-CMD ["sh", "-c", "daphne -b 0.0.0.0 -p ${PORT} core.asgi:application"]
+# Default command = honcho boots the three processes described in the Procfile
+# (daphne web + celery worker + celery beat). Render free tier does not support
+# separate background worker services, so we cohabit inside the web service.
+# Overridable from render.yaml per service (kept for future paid-tier split).
+CMD ["honcho", "start"]
