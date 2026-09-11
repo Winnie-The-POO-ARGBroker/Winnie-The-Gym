@@ -1,4 +1,3 @@
-from threading import Thread
 import logging
 
 from django.contrib.auth import get_user_model
@@ -7,8 +6,6 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import status, generics, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
-
-from core.mongodb import log_qr_event
 
 from .filters import AccessLogFilter
 from .models import AccessLog
@@ -19,6 +16,7 @@ from .serializers import (
     ScanQRSerializer,
     AccessLogSerializer,
 )
+from .tasks import log_qr_event_task
 from .utils import (
     generate_dynamic_qr_token,
     verify_dynamic_qr_token,
@@ -26,17 +24,6 @@ from .utils import (
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
-
-
-def _async_mongo_log(payload: dict):
-    """
-    [BLOCKER-7 Fix]: Ejecuta la inyección en MongoDB de forma asíncrona fuera del hilo
-    crítico de la petición HTTP para no congelar el molinete si Mongo tiene latencia.
-    """
-    try:
-        log_qr_event(payload)
-    except Exception as e:
-        logger.error(f"Error asíncrono al guardar log en MongoDB: {e}", exc_info=True)
 
 
 @extend_schema(
@@ -122,7 +109,8 @@ class ScanQRView(APIView):
             scanned_by=scanned_by_user,
         )
 
-        # 5. [BLOCKER-3 & BLOCKER-7 & W-2 Fix]: Mongo payload sanitizado + guardado asíncrono
+        # 5. Fire the Mongo audit write via Celery so latency/outages on the
+        # document store never impact the QR validation response time.
         mongo_payload = {
             "postgres_access_log_id": access_log.id,
             "timestamp": timezone.now().isoformat(),
@@ -133,8 +121,7 @@ class ScanQRView(APIView):
             "scanned_by_id": scanned_by_user.id if scanned_by_user else None,
             "qr_jti": jti,
         }
-        # TODO: move to Django Channels worker for non-blocking Mongo writes (channels + channels_redis already installed)
-        Thread(target=_async_mongo_log, args=(mongo_payload,), daemon=True).start()
+        log_qr_event_task.delay(mongo_payload)
 
         # 6. Responder
         response_data = {

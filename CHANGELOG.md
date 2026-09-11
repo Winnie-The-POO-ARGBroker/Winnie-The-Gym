@@ -8,6 +8,15 @@ Versionado según [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Pendiente de PR — `feature/backend-mp-emails-reports` (post-audit hardening)
+- **ALLOWED_HOSTS + CSRF_TRUSTED_ORIGINS + CORS regex** ampliados con wildcards para `.ngrok-free.dev/.app/.ngrok.io` — habilita que MercadoPago llegue al webhook real sin `DisallowedHost`
+- **Migración de `Thread(daemon=True)` → Celery task `access.log_qr_event`** para el guardado async de accesos en Mongo (retries + graceful shutdown)
+- **Cobro manual** ahora loggea + persiste diferencia en `raw_webhook` cuando `monto != plan.precio` (auditable, no bloqueante)
+- **Sentry** integrado opt-in por env var `SENTRY_DSN` con integraciones Django, Celery y logging
+- **Health check completo** en `/api/health/` con probes reales a Postgres, Redis y Mongo (200 sano, 503 degradado — listo para UptimeRobot)
+- **BOM UTF-8** al inicio de todos los CSV exportados para que Excel/Numbers rendericen tildes y ñ correctamente
+- 8 tests nuevos (208 total): ALLOWED_HOSTS + CSRF wildcards, webhook acepta Host header ngrok, health con todas las probes, CSV con BOM, cobro manual matching/diff/over
+
 ### Pendiente de PR — `feature/backend-mp-emails-reports` (Fase 4)
 - **App `reports`** con servicio de exportación agnóstico al formato (CSV / XLSX / PDF)
 - Nuevos endpoints (recep/admin):

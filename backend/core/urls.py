@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib import admin
 from django.urls import path, include
 from django.http import HttpResponseRedirect, JsonResponse
@@ -12,12 +14,60 @@ from drf_spectacular.views import (
 from apps.users.views import SafePasswordResetView
 
 
+logger = logging.getLogger(__name__)
+
+
+def _check_postgres():
+    try:
+        from django.db import connection
+        with connection.cursor() as cur:
+            cur.execute('SELECT 1')
+        return True, None
+    except Exception as exc:
+        return False, str(exc)
+
+
+def _check_redis():
+    try:
+        from django.core.cache import cache
+        cache.set('_healthcheck', 'ok', timeout=5)
+        return cache.get('_healthcheck') == 'ok', None
+    except Exception as exc:
+        return False, str(exc)
+
+
+def _check_mongo():
+    try:
+        from core.mongodb import get_mongo_db
+        db = get_mongo_db()
+        db.command('ping')
+        return True, None
+    except Exception as exc:
+        return False, str(exc)
+
+
 def health(request):
-    return JsonResponse({
-        "status": "ok",
-        "service": "winnie-the-gym-api",
-        "version": "0.1.0",
-    })
+    """Full health check for UptimeRobot and Render probes.
+
+    Returns 200 when every dependency is reachable, 503 otherwise. Individual
+    check errors are included in the body without leaking secrets.
+    """
+    checks = {
+        'postgres': _check_postgres(),
+        'redis': _check_redis(),
+        'mongo': _check_mongo(),
+    }
+    all_ok = all(ok for ok, _ in checks.values())
+    body = {
+        'status': 'ok' if all_ok else 'degraded',
+        'service': 'winnie-the-gym-api',
+        'version': '0.1.0',
+        'checks': {
+            name: {'ok': ok, 'error': err}
+            for name, (ok, err) in checks.items()
+        },
+    }
+    return JsonResponse(body, status=200 if all_ok else 503)
 
 
 def password_reset_confirm_redirect(request, uidb64, token):

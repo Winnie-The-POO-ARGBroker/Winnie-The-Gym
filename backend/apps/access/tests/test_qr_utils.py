@@ -102,7 +102,7 @@ class DynamicQRAndAccessTestCase(TestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     @patch('apps.access.views.has_active_membership')
-    @patch('apps.access.views.log_qr_event')
+    @patch('apps.access.tasks.log_qr_event')
     def test_replay_attack_via_endpoint(self, mock_log, mock_has_active):
         mock_has_active.return_value = True
         """End-to-end replay attack on the scan endpoint."""
@@ -128,7 +128,7 @@ class DynamicQRAndAccessTestCase(TestCase):
         self.assertEqual(logs[1].denial_reason, 'REPLAY_ATTACK')
 
     @patch('apps.access.views.has_active_membership')
-    @patch('apps.access.views.log_qr_event')
+    @patch('apps.access.tasks.log_qr_event')
     def test_generate_and_scan_qr_views(self, mock_log_qr_event, mock_has_active):
         mock_log_qr_event.return_value = True
         mock_has_active.return_value = True

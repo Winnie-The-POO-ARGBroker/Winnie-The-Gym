@@ -19,7 +19,9 @@ def _filename(slug, extension):
 
 
 def export_csv(slug, headers, rows):
-    response = HttpResponse(content_type=CSV_CONTENT_TYPE)
+    # Prepend the UTF-8 BOM so Excel/Numbers open the file with the correct
+    # encoding and render Spanish accents/ñ properly instead of mojibake.
+    response = HttpResponse('﻿', content_type=CSV_CONTENT_TYPE)
     response['Content-Disposition'] = f'attachment; filename="{_filename(slug, "csv")}"'
     writer = csv.writer(response)
     writer.writerow(headers)

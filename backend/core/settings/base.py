@@ -1,3 +1,4 @@
+import logging
 from datetime import timedelta
 from pathlib import Path
 from decouple import config
@@ -265,5 +266,35 @@ CHANNEL_LAYERS = {
 }
 
 ASGI_APPLICATION = 'core.asgi.application'
+
+
+# ---------------------------------------------------------------------------
+# Sentry (opt-in via env)
+# ---------------------------------------------------------------------------
+SENTRY_DSN = config('SENTRY_DSN', default='')
+SENTRY_ENVIRONMENT = config('SENTRY_ENVIRONMENT', default='development')
+SENTRY_TRACES_SAMPLE_RATE = config('SENTRY_TRACES_SAMPLE_RATE', cast=float, default=0.0)
+
+if SENTRY_DSN:
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.celery import CeleryIntegration
+        from sentry_sdk.integrations.django import DjangoIntegration
+        from sentry_sdk.integrations.logging import LoggingIntegration
+
+        sentry_sdk.init(
+            dsn=SENTRY_DSN,
+            environment=SENTRY_ENVIRONMENT,
+            integrations=[
+                DjangoIntegration(),
+                CeleryIntegration(),
+                LoggingIntegration(level=logging.INFO, event_level=logging.ERROR),
+            ],
+            traces_sample_rate=SENTRY_TRACES_SAMPLE_RATE,
+            send_default_pii=False,
+        )
+    except ImportError:
+        # sentry-sdk missing at import time is a valid dev state; skip silently.
+        pass
 
 

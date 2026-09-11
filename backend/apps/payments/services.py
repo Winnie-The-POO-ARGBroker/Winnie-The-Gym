@@ -147,7 +147,30 @@ def crear_preferencia(socio, plan):
 
 
 def cobro_manual(actor, socio, plan, monto, observacion=''):
-    """Register a receptionist-triggered manual payment (PDF risk #3 fallback)."""
+    """Register a receptionist-triggered manual payment (PDF risk #3 fallback).
+
+    The receptionist is trusted to decide the actual amount (partial payments,
+    negotiated discounts, etc.), but we always log any drift from the plan's
+    listed price so the admin has a paper trail during audit.
+    """
+    monto = Decimal(str(monto))
+    plan_precio = Decimal(plan.precio)
+    diferencia = monto - plan_precio
+
+    metadata = {
+        'source': 'manual',
+        'actor_id': actor.pk if actor else None,
+        'observacion': observacion,
+        'plan_precio': str(plan_precio),
+        'monto_cobrado': str(monto),
+    }
+    if diferencia != 0:
+        metadata['diferencia_vs_plan'] = str(diferencia)
+        logger.warning(
+            'Cobro manual con diferencia vs precio del plan: socio=%s plan=%s cobrado=%s esperado=%s diff=%s',
+            socio.pk, plan.pk, monto, plan_precio, diferencia,
+        )
+
     with transaction.atomic():
         pago = Pago.objects.create(
             socio=socio,
@@ -158,7 +181,7 @@ def cobro_manual(actor, socio, plan, monto, observacion=''):
             estado=Pago.Estado.APROBADO,
             mp_external_reference=_external_reference(),
             paid_at=timezone.now(),
-            raw_webhook={'source': 'manual', 'actor_id': actor.pk if actor else None, 'observacion': observacion},
+            raw_webhook=metadata,
         )
         _activate_membership(pago)
 
