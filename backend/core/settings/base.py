@@ -327,11 +327,14 @@ if len(QR_SECRET_KEY) < 32:
     )
 QR_TOKEN_EXPIRATION_SECONDS = config('QR_TOKEN_EXPIRATION_SECONDS', cast=int, default=30)
 
-# Django's built-in RedisCache uses redis-py directly. redis-py rejects
-# `?ssl_cert_reqs=CERT_REQUIRED` (Celery-style) as an "Invalid SSL
-# Certificate Requirements Flag" — it only understands lowercase
-# `none|optional|required`. Instead of normalising the URL, we pass the
-# right SSL kwargs via OPTIONS.CONNECTION_POOL_KWARGS when the URL is TLS.
+# Django's built-in RedisCache (Django 4+) uses redis-py directly and passes
+# OPTIONS as flat kwargs to `redis.Redis(**OPTIONS)`. Do NOT wrap them in
+# `CONNECTION_POOL_KWARGS` — that's a django-redis-only key and Django's
+# built-in raises `AbstractConnection.__init__() got an unexpected keyword
+# argument 'CONNECTION_POOL_KWARGS'`.
+#
+# redis-py also rejects the URL query `?ssl_cert_reqs=CERT_REQUIRED` (the
+# Celery-uppercase spelling), so we pass the SSL kwargs flat.
 _CACHE_URL = f'{_REDIS_URL}/1'
 CACHES = {
     'default': {
@@ -341,9 +344,7 @@ CACHES = {
 }
 if _CACHE_URL.startswith('rediss://'):
     import ssl as _ssl
-    CACHES['default']['OPTIONS'] = {
-        'CONNECTION_POOL_KWARGS': {'ssl_cert_reqs': _ssl.CERT_REQUIRED},
-    }
+    CACHES['default']['OPTIONS'] = {'ssl_cert_reqs': _ssl.CERT_REQUIRED}
 
 MONGODB = {
     'URI': config('MONGO_URI', default='mongodb://localhost:27017/'),
