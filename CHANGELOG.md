@@ -8,6 +8,14 @@ Versionado según [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Pendiente de PR — `feature/data-devops-hardening` (Fase D1)
+- **MER PostgreSQL** documentado: `docs/database/schema.dbml` (formato dbdiagram.io, editable online) + `docs/database/mer.md` con diagrama Mermaid embebido (GitHub lo renderiza), descripción de las 8 tablas, 7 relaciones, 6 índices y convenciones aplicadas
+- **Esquemas MongoDB**: `docs/database/mongo-schemas.md` documenta las colecciones `qr_history` (accesos QR) y `audit_logs` (auditoría admin) con campos, índices, TTL 90 días y justificación del uso NoSQL vs Postgres
+- **Arquitectura del sistema**: `docs/architecture.md` con diagrama de componentes Mermaid, servicios y flujos críticos (login, QR, pagos MP, job vencimientos) + target de deploy productivo
+- **README** actualizado con nueva sección "📚 Documentación técnica" que linkea a los 4 documentos
+- Cubre requisito ABP obligatorio de documentación técnica: MER + esquemas Mongo + arquitectura
+
+
 ### Pendiente de PR — `feature/backend-mp-emails-reports` (post-audit hardening)
 - **ALLOWED_HOSTS + CSRF_TRUSTED_ORIGINS + CORS regex** ampliados con wildcards para `.ngrok-free.dev/.app/.ngrok.io` — habilita que MercadoPago llegue al webhook real sin `DisallowedHost`
 - **Migración de `Thread(daemon=True)` → Celery task `access.log_qr_event`** para el guardado async de accesos en Mongo (retries + graceful shutdown)

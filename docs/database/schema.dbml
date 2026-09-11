@@ -1,0 +1,193 @@
+// Winnie The Gym — PostgreSQL relational schema (MER).
+// Editable at https://dbdiagram.io — paste this file to regenerate the diagram.
+// Kept in sync with backend/apps/*/models.py.
+
+Project winnie_the_gym {
+  database_type: 'PostgreSQL'
+  Note: '''
+    Sistema integral de gestión de gimnasios: socios, membresías, planes,
+    clases grupales, control de accesos por QR y pagos (MercadoPago + manual).
+    Fuente de verdad transaccional. Los logs de auditoría y accesos QR viven
+    en MongoDB (ver docs/database/mongo-schemas.md).
+  '''
+}
+
+// ---------------------------------------------------------------------------
+// Users & Membership Model
+// ---------------------------------------------------------------------------
+
+Table users_user {
+  id bigserial [pk]
+  email varchar(254) [unique, not null]
+  username varchar(150) [unique, not null]
+  password varchar(128) [not null]
+  google_id varchar(255) [unique, null]
+  rol varchar(20) [not null, note: 'administrador | recepcionista | socio']
+  foto varchar(200) [null]
+  first_name varchar(150)
+  last_name varchar(150)
+  is_active bool [default: true]
+  is_staff bool [default: false]
+  is_superuser bool [default: false]
+  date_joined timestamp
+  last_login timestamp
+
+  indexes {
+    email [unique]
+    google_id [unique]
+  }
+  Note: 'Extiende AbstractUser de Django. Login por email + password o Google OAuth.'
+}
+
+Table members_socio {
+  id bigserial [pk]
+  usuario_id bigint [ref: - users_user.id, unique, not null, note: 'OneToOne — un usuario tiene a lo sumo un perfil de Socio.']
+  numero_socio varchar(10) [unique, not null, note: 'Generado por sequence socio_numero_seq (S-00001, S-00002...).']
+  dni varchar(20) [unique, not null]
+  nombre varchar(100) [not null]
+  apellido varchar(100) [not null]
+  telefono varchar(30) [not null]
+  certificado_medico_url varchar(200) [note: 'URL al archivo (local MEDIA en dev, Supabase Storage en prod).']
+  estado varchar(20) [not null, default: 'activo', note: 'activo | suspendido | baja']
+  fecha_baja date [null]
+  observaciones text
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+
+  indexes {
+    numero_socio [unique]
+    dni [unique]
+  }
+}
+
+Table memberships_planmembresia {
+  id bigserial [pk]
+  nombre varchar(100) [unique, not null]
+  duracion_dias int [not null]
+  precio decimal(10,2) [not null]
+  clases_asignadas int [not null, default: 0]
+  activo bool [not null, default: true]
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+}
+
+Table memberships_membresia {
+  id bigserial [pk]
+  socio_id bigint [ref: > members_socio.id, not null]
+  plan_id bigint [ref: > memberships_planmembresia.id, not null]
+  fecha_inicio date [not null]
+  fecha_fin date [not null]
+  estado varchar(20) [not null, default: 'activa', note: 'activa | vencida | suspendida | cancelada | pendiente_pago']
+  avisos_enviados jsonb [note: 'Dedup del job de vencimientos: {"7": true, "3": true, ...}']
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+
+  indexes {
+    (socio_id, estado) [name: 'memberships_socio_e_idx']
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Payments
+// ---------------------------------------------------------------------------
+
+Table payments_pago {
+  id bigserial [pk]
+  socio_id bigint [ref: > members_socio.id, not null, note: 'PROTECT: los pagos históricos no se borran cuando se da de baja al socio.']
+  plan_id bigint [ref: > memberships_planmembresia.id, not null, note: 'PROTECT: idem plan.']
+  membresia_id bigint [ref: > memberships_membresia.id, null, note: 'SET_NULL cuando la membresía se limpia (ej. reembolso).']
+  monto decimal(10,2) [not null]
+  moneda varchar(3) [not null, default: 'ARS']
+  metodo varchar(20) [not null, note: 'mercado_pago | manual']
+  estado varchar(20) [not null, default: 'pendiente', note: 'pendiente | aprobado | rechazado | cancelado | reembolsado']
+  mp_preference_id varchar(100)
+  mp_payment_id varchar(100) [unique, null, note: 'Idempotencia del webhook: mismo payment_id → mismo Pago.']
+  mp_external_reference varchar(64) [note: 'UUID hex generado por el backend para linkear preferencia ↔ pago.']
+  mp_status_detail varchar(100)
+  raw_webhook jsonb [note: 'Payload crudo recibido de MP para auditoría / reclamos.']
+  paid_at timestamp [null]
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+
+  indexes {
+    (socio_id, estado) [name: 'pagos_socio_e_idx']
+    mp_external_reference [name: 'pagos_extref_idx']
+    mp_payment_id [unique]
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Classes & Enrollments
+// ---------------------------------------------------------------------------
+
+Table classes_clase {
+  id bigserial [pk]
+  nombre varchar(120) [not null]
+  categoria varchar(50) [not null, default: 'funcional', note: 'funcional | spinning | crossfit | pilates | yoga | boxeo | hiit']
+  descripcion text
+  dia varchar(20) [not null, note: 'lunes | martes | miercoles | jueves | viernes | sabado | domingo']
+  hora time [not null]
+  duracion_min int [not null, default: 45]
+  sala varchar(80) [not null, default: 'Sala A']
+  instructor varchar(120)
+  cupo_maximo int [not null, default: 20]
+  lista_espera_max int [not null, default: 5]
+  cancelacion_horas int [not null, default: 2, note: 'Ventana mínima antes del inicio para cancelar sin penalidad.']
+  planes_habilitados jsonb [note: 'IDs de PlanMembresia que dan acceso a esta clase.']
+  recurrencia varchar(100) [default: 'Semanal - L/M/V']
+  dias_recurrencia jsonb
+  estado varchar(20) [not null, default: 'activa', note: 'activa | cancelada | finalizada']
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+}
+
+Table classes_inscripcionclase {
+  id bigserial [pk]
+  clase_id bigint [ref: > classes_clase.id, not null]
+  socio_id bigint [ref: > members_socio.id, not null]
+  asistio bool [not null, default: false]
+  en_espera bool [not null, default: false, note: 'true si el cupo estaba lleno al momento de reservar.']
+  created_at timestamp [not null]
+
+  indexes {
+    (clase_id, socio_id) [unique, name: 'inscripcion_unica']
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Access control (QR)
+// ---------------------------------------------------------------------------
+
+Table access_accesslog {
+  id bigserial [pk]
+  user_id bigint [ref: > users_user.id, null, note: 'SET_NULL: cuando el usuario se elimina el log queda pero anonimizado.']
+  scanned_by_id bigint [ref: > users_user.id, null, note: 'SET_NULL: recepcionista o dispositivo que escaneó.']
+  access_type varchar(10) [not null, default: 'ENTRY', note: 'ENTRY | EXIT']
+  status varchar(10) [not null, default: 'GRANTED', note: 'GRANTED | DENIED']
+  denial_reason varchar(50) [null, note: 'TOKEN_EXPIRED | INVALID_SIGNATURE | INVALID_TOKEN | REPLAY_ATTACK | MEMBERSHIP_INACTIVE | NO_MEMBERSHIP | USER_SUSPENDED | UNKNOWN_USER']
+  qr_jti varchar(64) [null, note: 'Identificador único del token QR consumido (anti-replay).']
+  timestamp timestamp [not null]
+
+  indexes {
+    timestamp
+    qr_jti
+  }
+  Note: '''
+    Log relacional de accesos. Mirror del evento se persiste también en
+    MongoDB (`qr_history`) para análisis histórico masivo sin degradar
+    performance transaccional.
+  '''
+}
+
+// ---------------------------------------------------------------------------
+// Django Celery Beat (dependencia externa — solo referencia)
+// ---------------------------------------------------------------------------
+
+Table django_celery_beat_periodictask {
+  id bigserial [pk]
+  name varchar(200) [unique, not null]
+  task varchar(200) [not null]
+  enabled bool [default: true]
+  crontab_id bigint [null]
+  Note: 'Provisto por django_celery_beat. Schedule editable desde Django admin.'
+}

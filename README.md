@@ -107,6 +107,14 @@ Desarrollar una aplicación web integral para la gestión de gimnasios que autom
 
 <br>
 
+<h2 align='center'>📚 Documentación técnica</h2>
+
+- [**Modelo Entidad-Relación (MER)**](docs/database/mer.md) — 8 modelos PostgreSQL con relaciones, índices y convenciones. Fuente: [`docs/database/schema.dbml`](docs/database/schema.dbml) (editable en [dbdiagram.io](https://dbdiagram.io))
+- [**Esquemas MongoDB**](docs/database/mongo-schemas.md) — Colecciones `qr_history` y `audit_logs` con campos, índices, política de retención (TTL 90 días) y justificación del uso NoSQL
+- [**Arquitectura del sistema**](docs/architecture.md) — Diagrama de componentes, servicios, flujos críticos (auth, QR, pagos MP, job vencimientos) y target de deploy
+- [**Decisiones técnicas**](.atl/decisions/) — Registro por bundle de trabajo (proposal + specs + tradeoffs + alternativas descartadas)
+- [**API REST** (Swagger UI)](http://localhost:8000/api/docs/) — Con `docker compose up` corriendo · alternativa: [ReDoc](http://localhost:8000/api/redoc/)
+
 <h2 align='center'>🗂️ Estructura del Proyecto</h2>
 
 <h3>Frontend <code>frontend/</code></h3>
