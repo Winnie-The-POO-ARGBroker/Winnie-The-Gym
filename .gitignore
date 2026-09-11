@@ -35,6 +35,8 @@ pyrightconfig.json
 backend/pyrightconfig.json
 
 # Agent
-.atl/
+.atl/skill-registry.md
+.atl/.skill-registry.cache.json
+.atl/workflow/
 backend_logs.txt
 *.log

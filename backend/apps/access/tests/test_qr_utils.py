@@ -175,8 +175,9 @@ class AccessLogListViewTests(TestCase):
         response = self.client.get(self.url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['user'], user.id)
+        results = response.data.get('results', response.data)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]['user'], user.id)
 
     def test_admin_sees_all_logs(self):
         user = make_user_factory(email='socio3@access.test', rol='socio')
@@ -187,4 +188,5 @@ class AccessLogListViewTests(TestCase):
         response = self.client.get(self.url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
+        results = response.data.get('results', response.data)
+        self.assertEqual(len(results), 1)

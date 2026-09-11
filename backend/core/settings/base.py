@@ -1,3 +1,4 @@
+from datetime import timedelta
 from pathlib import Path
 from decouple import config
 
@@ -18,6 +19,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
+    'django_filters',
+    'drf_spectacular',
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
@@ -102,6 +105,50 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10,
+    'DEFAULT_FILTER_BACKENDS': (
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
+    ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Winnie The Gym API',
+    'DESCRIPTION': (
+        'API RESTful para la gestión integral de gimnasios: socios, membresías, '
+        'clases, control de accesos con QR, pagos con MercadoPago y reportes.'
+    ),
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SWAGGER_UI_SETTINGS': {
+        'persistAuthorization': True,
+        'displayOperationId': False,
+    },
+    'ENUM_GENERATE_CHOICE_DESCRIPTION': False,
+    'TAGS': [
+        {'name': 'auth', 'description': 'Autenticación local, Google OAuth y recupero de contraseña.'},
+        {'name': 'users', 'description': 'Gestión de usuarios de la plataforma (admin, recep, socio).'},
+        {'name': 'members', 'description': 'ABM de socios y carga de certificado médico (RF08).'},
+        {'name': 'memberships', 'description': 'Planes de membresía y suscripciones de socios.'},
+        {'name': 'classes', 'description': 'Clases grupales, cupos, reservas y cancelaciones (HU06, HU07).'},
+        {'name': 'access', 'description': 'Validación de acceso por QR, historial y monitor de aforo.'},
+        {'name': 'payments', 'description': 'Integración con MercadoPago Checkout Pro y cobros manuales.'},
+        {'name': 'reports', 'description': 'Reportes exportables en CSV/PDF/XLSX.'},
+        {'name': 'health', 'description': 'Endpoints de infraestructura.'},
+    ],
+}
+
+SIMPLE_JWT = {
+    # RNF05 — Auto-invalidate admin/recepcionista sessions after 30 minutes of inactivity.
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': False,
+    'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
 REST_AUTH = {

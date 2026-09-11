@@ -8,6 +8,16 @@ Versionado según [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Pendiente de PR — `feature/backend-mp-emails-reports` (Fase 1)
+- **Documentación OpenAPI**: `drf-spectacular` con Swagger UI (`/api/docs/`), ReDoc (`/api/redoc/`) y schema (`/api/schema/`). Todos los ViewSets anotados con `@extend_schema`
+- **Paginación global**: `PageNumberPagination` (page_size=10, `?page_size=` hasta 100) en todos los listados
+- **Filtros**: `django-filter` con `FilterSet` custom por app (`apps/{app}/filters.py`) — cubre socios, planes, membresías, clases, inscripciones y access logs
+- **Búsqueda avanzada de clases (HU06)**: combina `?search=` (nombre/instructor/sala) + `categoria` + `dia` + `hora_desde`/`hora_hasta` + `cupo_disponible`
+- **Cancelación de reservas (HU07)**: nuevo endpoint `POST /api/classes/clases/{id}/cancelar/` con enforcement de `cancelacion_horas` y promoción automática desde lista de espera
+- **Subida de certificado médico (RF08)**: nuevo endpoint `POST /api/members/socios/{id}/certificado-medico/` con validación de tipo (PDF/JPG/PNG) y tamaño (máx 5 MB). Almacena bajo `MEDIA_ROOT/certificados_medicos/`
+- **Session timeout 30 min (RNF05)**: `SIMPLE_JWT.ACCESS_TOKEN_LIFETIME = 30 min`, rotación de refresh tokens habilitada
+- 20 tests nuevos: HU06, HU07, RF08, infra API (OpenAPI, paginación, session timeout)
+
 ### Pendiente de PR — `feature/code-quality-audit`
 - Auditoría de calidad backend: permisos, namespacing, service layer, convenciones de modelos, consolidación de tests (5 slices)
 - Auditoría de calidad frontend: guards de producción para mock data, `TopBar` con `backAction`, migración a TanStack Query, hook `useAuth()`, formularios RHF+Zod, tokens semánticos de color, limpieza de archivos duplicados/huérfanos, renombre `Screen` → `Page`
