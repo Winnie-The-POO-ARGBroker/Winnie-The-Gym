@@ -327,12 +327,23 @@ if len(QR_SECRET_KEY) < 32:
     )
 QR_TOKEN_EXPIRATION_SECONDS = config('QR_TOKEN_EXPIRATION_SECONDS', cast=int, default=30)
 
+# Django's built-in RedisCache uses redis-py directly. redis-py rejects
+# `?ssl_cert_reqs=CERT_REQUIRED` (Celery-style) as an "Invalid SSL
+# Certificate Requirements Flag" — it only understands lowercase
+# `none|optional|required`. Instead of normalising the URL, we pass the
+# right SSL kwargs via OPTIONS.CONNECTION_POOL_KWARGS when the URL is TLS.
+_CACHE_URL = f'{_REDIS_URL}/1'
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': _normalize_rediss(f'{_REDIS_URL}/1'),
+        'LOCATION': _CACHE_URL,
     }
 }
+if _CACHE_URL.startswith('rediss://'):
+    import ssl as _ssl
+    CACHES['default']['OPTIONS'] = {
+        'CONNECTION_POOL_KWARGS': {'ssl_cert_reqs': _ssl.CERT_REQUIRED},
+    }
 
 MONGODB = {
     'URI': config('MONGO_URI', default='mongodb://localhost:27017/'),
@@ -345,8 +356,10 @@ CHANNEL_LAYERS = {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         # `channels_redis` 4.x accepts a URL string here (unlike the tuple form
         # that does not support auth/TLS). Dev Docker uses plain `redis://`;
-        # Upstash / Redis Cloud use `rediss://default:<token>@...`.
-        'CONFIG': {'hosts': [_normalize_rediss(f'{_REDIS_URL}/2')]},
+        # Upstash / Redis Cloud use `rediss://default:<token>@...`. The client
+        # (redis.asyncio) handles TLS automatically from the `rediss` scheme,
+        # no `?ssl_cert_reqs=` query needed (unlike Celery).
+        'CONFIG': {'hosts': [f'{_REDIS_URL}/2']},
     },
 }
 
