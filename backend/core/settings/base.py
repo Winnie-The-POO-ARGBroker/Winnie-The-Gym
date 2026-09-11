@@ -273,14 +273,42 @@ if not _REDIS_URL:
     _redis_host = config('REDIS_HOST', default='redis')
     _redis_port = config('REDIS_PORT', default=6379, cast=int)
     _REDIS_URL = f'redis://{_redis_host}:{_redis_port}'
-_REDIS_URL = _REDIS_URL.rstrip('/')
+
+# Strip any trailing / and any existing DB number so `_redis_url_for(db)`
+# below can compose cleanly.
+from urllib.parse import urlparse, urlunparse as _urlunparse  # noqa: E402
+_parsed_redis = urlparse(_REDIS_URL)
+_REDIS_URL = _urlunparse(_parsed_redis._replace(path='')).rstrip('/')
+
+# Upstash and RedisLabs Cloud only expose DB 0. Trying to `SELECT 1` raises
+# "Only 0th database is supported! Selected DB: 1". Detect the host and force
+# every consumer to use /0 (name collisions are avoided by natural prefixes:
+# celery uses `celery-*`, Django cache uses `:1:*`, Channels uses `asgi:*`).
+_SINGLE_DB_HOSTS = ('upstash.io', 'redislabs.com', 'redis.cloud')
+_REDIS_SINGLE_DB = any(h in _REDIS_URL.lower() for h in _SINGLE_DB_HOSTS)
+
+
+def _redis_url_for(db_number):
+    return f'{_REDIS_URL}/0' if _REDIS_SINGLE_DB else f'{_REDIS_URL}/{db_number}'
+
+
+def _force_single_db(url):
+    """Force /0 on any Redis URL pointing at a single-DB provider (Upstash /
+    RedisLabs Cloud). If the URL points at a multi-DB server, leave it as is."""
+    if not url:
+        return url
+    lower = url.lower()
+    if not any(h in lower for h in _SINGLE_DB_HOSTS):
+        return url
+    parsed = urlparse(url)
+    return _urlunparse(parsed._replace(path='/0'))
 
 
 def _normalize_rediss(url):
-    """Celery/redis-py refuse `rediss://` URLs that do not declare
-    `ssl_cert_reqs`. Managed providers like Upstash publish the URL without
-    it, so we add the safe default (CERT_REQUIRED — validate server cert)
-    when it is missing. Non-TLS `redis://` URLs pass through unchanged.
+    """Celery only: kombu validates that `ssl_cert_reqs` is present in the URL
+    before it also honours `CELERY_BROKER_USE_SSL`. Non-TLS URLs pass through.
+    We do NOT add this query for redis-py (Django cache) or channels-redis —
+    they either reject the uppercase spelling or accept the kwarg via config.
     """
     if not url or not url.startswith('rediss://'):
         return url
@@ -290,12 +318,8 @@ def _normalize_rediss(url):
     return f'{url}{sep}ssl_cert_reqs=CERT_REQUIRED'
 
 
-# NOTE: `_REDIS_URL` stays without ssl_cert_reqs so the DB number (/1, /2...)
-# can be appended before the query string. `_normalize_rediss` is applied to
-# each derived URL after the /N is concatenated.
-
-CELERY_BROKER_URL = _normalize_rediss(config('CELERY_BROKER_URL', default=f'{_REDIS_URL}/0'))
-CELERY_RESULT_BACKEND = _normalize_rediss(config('CELERY_RESULT_BACKEND', default=f'{_REDIS_URL}/3'))
+CELERY_BROKER_URL = _normalize_rediss(_force_single_db(config('CELERY_BROKER_URL', default=_redis_url_for(0))))
+CELERY_RESULT_BACKEND = _normalize_rediss(_force_single_db(config('CELERY_RESULT_BACKEND', default=_redis_url_for(3))))
 
 # Celery discards the URL query string when parsing rediss:// so passing
 # `?ssl_cert_reqs=CERT_REQUIRED` in the URL is not enough. The canonical way
@@ -335,7 +359,7 @@ QR_TOKEN_EXPIRATION_SECONDS = config('QR_TOKEN_EXPIRATION_SECONDS', cast=int, de
 #
 # redis-py also rejects the URL query `?ssl_cert_reqs=CERT_REQUIRED` (the
 # Celery-uppercase spelling), so we pass the SSL kwargs flat.
-_CACHE_URL = f'{_REDIS_URL}/1'
+_CACHE_URL = _redis_url_for(1)
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
@@ -360,7 +384,7 @@ CHANNEL_LAYERS = {
         # Upstash / Redis Cloud use `rediss://default:<token>@...`. The client
         # (redis.asyncio) handles TLS automatically from the `rediss` scheme,
         # no `?ssl_cert_reqs=` query needed (unlike Celery).
-        'CONFIG': {'hosts': [f'{_REDIS_URL}/2']},
+        'CONFIG': {'hosts': [_redis_url_for(2)]},
     },
 }
 
