@@ -1,0 +1,178 @@
+# Render Blueprint — Winnie The Gym backend + Celery workers.
+#
+# Deploy: repo → Render → New → Blueprint → apunta a este archivo.
+# Los 3 servicios comparten la imagen `backend/Dockerfile.prod` y el mismo
+# env var group (`winnie-shared`), y sólo cambian el `startCommand`.
+#
+# La creación de recursos externos (Postgres Supabase, Mongo Atlas, Redis
+# Upstash, Storage) NO se automatiza acá — hay que crearlos primero y pegar
+# las credenciales en el env var group. Ver docs/deploy.md paso a paso.
+
+services:
+  # --------------------------------------------------------------------------
+  # Backend HTTP + WebSocket (Daphne sobre ASGI)
+  # --------------------------------------------------------------------------
+  - type: web
+    name: winnie-backend
+    runtime: docker
+    plan: free
+    region: oregon
+    branch: develop
+    autoDeploy: true
+    rootDir: backend
+    dockerfilePath: ./Dockerfile.prod
+    dockerContext: .
+    healthCheckPath: /api/health/
+    envVars:
+      # Este servicio sí corre migraciones, static y Mongo indexes al arrancar.
+      - key: RUN_MIGRATIONS
+        value: "1"
+      - key: COLLECT_STATIC
+        value: "1"
+      - key: CREATE_MONGO_INDEXES
+        value: "1"
+      - fromGroup: winnie-shared
+
+  # --------------------------------------------------------------------------
+  # Celery worker — procesa emails, escrituras a Mongo, tareas encoladas
+  # --------------------------------------------------------------------------
+  - type: worker
+    name: winnie-celery-worker
+    runtime: docker
+    plan: free
+    region: oregon
+    branch: develop
+    autoDeploy: true
+    rootDir: backend
+    dockerfilePath: ./Dockerfile.prod
+    dockerContext: .
+    dockerCommand: celery -A core worker -l info --concurrency=2
+    envVars:
+      - fromGroup: winnie-shared
+
+  # --------------------------------------------------------------------------
+  # Celery beat — dispara el job diario de vencimientos (09:00 ARG)
+  # --------------------------------------------------------------------------
+  - type: worker
+    name: winnie-celery-beat
+    runtime: docker
+    plan: free
+    region: oregon
+    branch: develop
+    autoDeploy: true
+    rootDir: backend
+    dockerfilePath: ./Dockerfile.prod
+    dockerContext: .
+    dockerCommand: celery -A core beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    envVars:
+      - fromGroup: winnie-shared
+
+
+# ---------------------------------------------------------------------------
+# Env var group compartido entre los 3 servicios.
+# Los valores hay que cargarlos manualmente en Render antes del primer deploy.
+# Ver docs/deploy.md para los valores esperados por cada key.
+# ---------------------------------------------------------------------------
+envVarGroups:
+  - name: winnie-shared
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: core.settings.production
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: LOG_FORMAT
+        value: json
+      - key: LOG_LEVEL
+        value: INFO
+
+      # Django core
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALLOWED_HOSTS
+        value: winnie-backend.onrender.com
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://winnie-the-gym.vercel.app
+      - key: CSRF_TRUSTED_ORIGINS
+        value: https://winnie-the-gym.vercel.app,https://winnie-backend.onrender.com
+      - key: FRONTEND_URL
+        value: https://winnie-the-gym.vercel.app
+      - key: QR_SECRET_KEY
+        generateValue: true
+
+      # Postgres (Supabase — SESSION mode connection string)
+      - key: DB_NAME
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        sync: false
+
+      # MongoDB (Atlas)
+      - key: MONGO_URI
+        sync: false
+      - key: MONGO_DB_NAME
+        value: winnie_gym_logs
+      - key: MONGO_RETENTION_DAYS
+        value: "90"
+
+      # Redis (Upstash — rediss:// TLS)
+      - key: REDIS_HOST
+        sync: false
+      - key: REDIS_PORT
+        value: "6379"
+      - key: CELERY_BROKER_URL
+        sync: false
+      - key: CELERY_RESULT_BACKEND
+        sync: false
+
+      # Google OAuth
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+
+      # MercadoPago (Sandbox al inicio; luego mover a prod)
+      - key: MP_ACCESS_TOKEN
+        sync: false
+      - key: MP_PUBLIC_KEY
+        sync: false
+      - key: MP_WEBHOOK_SECRET
+        sync: false
+      - key: MP_APP_ID
+        sync: false
+      - key: MP_NGROK_URL
+        value: https://winnie-backend.onrender.com
+
+      # Mailtrap (Anymail HTTP)
+      - key: EMAIL_BACKEND
+        value: anymail.backends.mailtrap.EmailBackend
+      - key: MAILTRAP_API_TOKEN
+        sync: false
+      - key: DEFAULT_FROM_EMAIL
+        value: Winnie The Gym <hello@demomailtrap.co>
+      - key: EMAIL_REPLY_TO
+        sync: false
+
+      # Supabase Storage (fichas médicas RF08 — S3-compatible endpoint)
+      - key: SUPABASE_STORAGE_ACCESS_KEY
+        sync: false
+      - key: SUPABASE_STORAGE_SECRET_KEY
+        sync: false
+      - key: SUPABASE_STORAGE_BUCKET
+        value: fichas-medicas
+      - key: SUPABASE_STORAGE_ENDPOINT
+        sync: false
+      - key: SUPABASE_STORAGE_PUBLIC_URL_BASE
+        sync: false
+
+      # Sentry (opt-in — dejar vacío para no activar)
+      - key: SENTRY_DSN
+        sync: false
+      - key: SENTRY_ENVIRONMENT
+        value: production
+      - key: SENTRY_TRACES_SAMPLE_RATE
+        value: "0.1"

@@ -8,6 +8,24 @@ Versionado según [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Pendiente de PR — `feature/production-deploy-prep`
+- **`Dockerfile.prod`** multi-stage (builder + runner slim) para el backend. No incluye deps de development (locust, django-extensions, pytest). Usa user no-root, `DJANGO_SETTINGS_MODULE=core.settings.production` por default y default CMD `daphne -b 0.0.0.0 -p ${PORT} core.asgi:application`
+- **`backend/entrypoint.sh`** compartido por los 3 servicios de Render (web + worker + beat). Corre migrations, collectstatic y `create_mongo_indexes` sólo cuando la env var correspondiente está en `1` (el web las hace, los workers no)
+- **`render.yaml` Blueprint** declarativo: 3 servicios (`winnie-backend`, `winnie-celery-worker`, `winnie-celery-beat`) + `envVarGroup winnie-shared` con todas las env vars requeridas y flags de sync
+- **`frontend/vercel.json`** con SPA rewrite, cache headers para `/assets/*` y security headers (X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy)
+- **`settings/production.py` hardened**:
+  - `SECURE_PROXY_SSL_HEADER` para Render, `SECURE_SSL_REDIRECT`, `SECURE_HSTS_SECONDS=1y` con preload+subdomains
+  - Session/CSRF cookies secure, `X_FRAME_OPTIONS='DENY'`, `SECURE_REFERRER_POLICY='same-origin'`
+  - `CSRF_TRUSTED_ORIGINS` configurable + regex para `*.vercel.app` y `*.onrender.com`
+  - `LOGGING` forzado a `json` en producción
+- **WhiteNoise** (`whitenoise==6.7.0`) para servir static files desde el mismo proceso Django con `CompressedManifestStaticFilesStorage`. Middleware insertado post-SecurityMiddleware
+- **Supabase Storage adapter** (`apps/common/storages.py::SupabaseMediaStorage`) via `django-storages[s3]` + `boto3` para persistir las fichas médicas (RF08) en Supabase Storage en prod. En dev sigue usando `FileSystemStorage` local sin cambios
+- **`docs/deploy.md`** (400+ líneas) paso a paso con setup de Supabase, Atlas, Upstash, Render, Vercel, UptimeRobot; troubleshooting común; checklist post-deploy
+- **`backend/.env.example`** actualizado con todas las env vars nuevas del proyecto (MP, Mailtrap, Celery, Sentry, Supabase Storage, security prod)
+- **`frontend/vercel.json` + `frontend/.env.example`** con la doc de env vars requeridas (VITE_API_URL, VITE_WS_BASE_URL, VITE_GOOGLE_CLIENT_ID, VITE_MP_PUBLIC_KEY, VITE_SENTRY_DSN)
+- README con nueva sección de deploy + link a la guía completa
+- Imagen Docker prod verificada localmente: build exitoso, settings/production.py carga sin errores, whitenoise en middleware, Supabase storage por default, SSL redirect activo
+
 ### Pendiente de PR — `feature/data-devops-hardening` (Fase D4)
 - **Logs estructurados en JSON** (`python-json-logger==2.0.7`): `LOGGING` en `settings/base.py` produce single-line JSON con `timestamp`, `level`, `name`, `message`, `pathname`, `lineno`. Toggle a formato plano con `LOG_FORMAT=plain` (para debugging local)
 - **Load tests con Locust** (`locust==2.31.5`): `backend/loadtests/locustfile.py` con 3 escenarios (`SocioUser`, `RecepcionistaUser`, `AdminUser`) que cubren login + generación QR + scan QR + reportes. README con instrucciones headless + generación de reporte HTML
