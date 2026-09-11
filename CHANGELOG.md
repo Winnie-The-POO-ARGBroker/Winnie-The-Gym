@@ -8,6 +8,19 @@ Versionado según [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Pendiente de PR — `feature/backend-mp-emails-reports` (Fase 3)
+- **App `payments`** con modelo `Pago` (estados: `pendiente`/`aprobado`/`rechazado`/`cancelado`/`reembolsado`), FKs a `Socio`, `PlanMembresia` y `Membresia` (ADR-7), campos MP (`mp_preference_id`, `mp_payment_id` UNIQUE, `mp_external_reference`, `mp_status_detail`, `raw_webhook` JSONField)
+- **Integración MercadoPago Checkout Pro** vía SDK `mercadopago==2.2.3`:
+  - `POST /api/payments/preferencias/` (socio) — crea `Pago(pendiente)` + preferencia MP + devuelve `init_point`, `sandbox_init_point`, `external_reference`
+  - `POST /api/payments/webhook/` (sin auth, con validación HMAC-SHA256 v1) — actualiza `Pago`, activa membresía en `approved`, dispara email de confirmación, **idempotente por `mp_payment_id`**
+  - `POST /api/payments/cobros-manuales/` (recep/admin) — contingencia PDF riesgo #3, activa membresía en el acto + email
+  - `GET /api/payments/pagos/` (recep/admin) — listado con filtros
+- **Cliente MP aislado** en `apps/payments/mercadopago_client.py` (facilita mock en tests y futura migración)
+- **Notification URL configurable** por env (`MP_NGROK_URL` en dev, deploy real después)
+- **Renovación de membresía transaccional**: pago aprobado marca activas anteriores como `vencida` y crea nueva con `fecha_fin = today + plan.duracion_dias`
+- **Email `payment_confirmation`** disparado desde webhook y desde cobro manual
+- 15 tests nuevos cubriendo crear preferencia (éxito, permisos, plan inactivo, fallo MP), webhook (approved, rejected, firma inválida, duplicados, referencia desconocida) y cobro manual
+
 ### Pendiente de PR — `feature/backend-mp-emails-reports` (Fase 2)
 - **Anymail + Mailtrap Sending (HTTP API)**: `EMAIL_BACKEND = anymail.backends.mailtrap.EmailBackend` con fallback a Gmail SMTP por env var. Sender por default: `Winnie The Gym <hello@demomailtrap.co>`
 - **Celery + Redis (broker/backend)**: nuevos servicios `celery-worker` y `celery-beat` en `docker-compose.yml`, misma imagen del backend. Reutilizan el Redis ya en el stack

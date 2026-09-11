@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'apps.memberships',
     'apps.classes',
     'apps.access',
+    'apps.payments',
 ]
 
 MIDDLEWARE = [
@@ -209,6 +210,15 @@ FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:5173')
 # ---------------------------------------------------------------------------
 # Celery
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# MercadoPago
+# ---------------------------------------------------------------------------
+MP_ACCESS_TOKEN = config('MP_ACCESS_TOKEN', default='')
+MP_PUBLIC_KEY = config('MP_PUBLIC_KEY', default='')
+MP_WEBHOOK_SECRET = config('MP_WEBHOOK_SECRET', default='')
+MP_APP_ID = config('MP_APP_ID', default='')
+MP_NGROK_URL = config('MP_NGROK_URL', default='')
+
 CELERY_BROKER_URL = config('CELERY_BROKER_URL', default='redis://redis:6379/1')
 CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default='redis://redis:6379/2')
 CELERY_TIMEZONE = TIME_ZONE
