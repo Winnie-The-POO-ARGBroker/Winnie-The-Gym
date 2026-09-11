@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'apps.classes',
     'apps.access',
     'apps.payments',
+    'apps.reports',
 ]
 
 MIDDLEWARE = [

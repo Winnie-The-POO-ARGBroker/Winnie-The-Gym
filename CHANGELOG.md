@@ -8,6 +8,16 @@ Versionado según [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Pendiente de PR — `feature/backend-mp-emails-reports` (Fase 4)
+- **App `reports`** con servicio de exportación agnóstico al formato (CSV / XLSX / PDF)
+- Nuevos endpoints (recep/admin):
+  - `GET /api/reportes/morosidad/?formato=csv|xlsx|pdf&estado=&plan_id=` — socios con membresía vencida o `pendiente_pago`, con días de atraso y monto adeudado
+  - `GET /api/reportes/facturacion/?formato=&mes=YYYY-MM&metodo=` — pagos aprobados del mes indicado (default: mes actual)
+  - `GET /api/reportes/asistencia/?formato=&fecha_desde=&fecha_hasta=` — ingresos por QR emparejados con su egreso y permanencia en minutos
+- **Exportadores** en `apps/reports/exporters.py`: `export_csv`, `export_xlsx` (openpyxl), `export_pdf` (reportlab landscape A4). Todos devuelven `HttpResponse` con `Content-Disposition: attachment`
+- Query param `?formato=` (no `?format=` para evitar chocar con el content-negotiation nativo de DRF)
+- 8 tests nuevos: 3 formatos de morosidad, permisos, facturación filtrada por mes, permanencia con y sin egreso emparejado
+
 ### Pendiente de PR — `feature/backend-mp-emails-reports` (Fase 3)
 - **App `payments`** con modelo `Pago` (estados: `pendiente`/`aprobado`/`rechazado`/`cancelado`/`reembolsado`), FKs a `Socio`, `PlanMembresia` y `Membresia` (ADR-7), campos MP (`mp_preference_id`, `mp_payment_id` UNIQUE, `mp_external_reference`, `mp_status_detail`, `raw_webhook` JSONField)
 - **Integración MercadoPago Checkout Pro** vía SDK `mercadopago==2.2.3`:

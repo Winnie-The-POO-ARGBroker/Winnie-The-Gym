@@ -33,6 +33,7 @@ urlpatterns = [
     path('api/memberships/', include(('apps.memberships.urls', 'memberships'), namespace='memberships')),
     path('api/classes/', include(('apps.classes.urls', 'classes'), namespace='classes')),
     path('api/payments/', include(('apps.payments.urls', 'payments'), namespace='payments')),
+    path('api/reportes/', include(('apps.reports.urls', 'reports'), namespace='reports')),
 ]
 
 if settings.DEBUG:

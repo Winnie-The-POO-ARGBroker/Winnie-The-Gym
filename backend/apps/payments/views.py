@@ -114,6 +114,7 @@ def cobro_manual_view(request):
         'activa la membresía cuando el estado pasa a `approved` y dispara el email '
         'de confirmación. Idempotente por `mp_payment_id`.'
     ),
+    request=OpenApiTypes.OBJECT,
     parameters=[
         OpenApiParameter('data.id', OpenApiTypes.STR, OpenApiParameter.QUERY, required=False),
         OpenApiParameter('x-signature', OpenApiTypes.STR, OpenApiParameter.HEADER, required=False),
