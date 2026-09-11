@@ -296,6 +296,16 @@ def _normalize_rediss(url):
 
 CELERY_BROKER_URL = _normalize_rediss(config('CELERY_BROKER_URL', default=f'{_REDIS_URL}/0'))
 CELERY_RESULT_BACKEND = _normalize_rediss(config('CELERY_RESULT_BACKEND', default=f'{_REDIS_URL}/3'))
+
+# Celery discards the URL query string when parsing rediss:// so passing
+# `?ssl_cert_reqs=CERT_REQUIRED` in the URL is not enough. The canonical way
+# is to declare the SSL options as dicts. Kombu (broker) and celery.backends
+# .redis (result backend) each have their own setting.
+if CELERY_BROKER_URL.startswith('rediss://'):
+    import ssl as _ssl
+    CELERY_BROKER_USE_SSL = {'ssl_cert_reqs': _ssl.CERT_REQUIRED}
+    CELERY_REDIS_BACKEND_USE_SSL = {'ssl_cert_reqs': _ssl.CERT_REQUIRED}
+
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_TIME_LIMIT = 60
 CELERY_TASK_SOFT_TIME_LIMIT = 45
