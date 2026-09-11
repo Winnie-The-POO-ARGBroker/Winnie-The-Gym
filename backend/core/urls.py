@@ -37,37 +37,79 @@ def _check_redis():
 
 
 def _check_mongo():
+    """Non-critical: keep the probe cheap (2s) so a Mongo blip does not stall
+    the whole `/api/health/` response and keep the singleton reusable."""
     try:
-        from core.mongodb import get_mongo_db
-        db = get_mongo_db()
-        db.command('ping')
+        import certifi
+        from django.conf import settings
+        from pymongo import MongoClient
+        from pymongo.errors import PyMongoError
+
+        uri = getattr(settings, 'MONGODB', {}).get('URI', '')
+        if not uri:
+            return False, 'MONGO_URI not configured'
+        kwargs = {'serverSelectionTimeoutMS': 2000}
+        uri_lower = uri.lower()
+        if uri_lower.startswith('mongodb+srv://') or 'tls=true' in uri_lower or 'ssl=true' in uri_lower:
+            kwargs['tlsCAFile'] = certifi.where()
+        client = MongoClient(uri, **kwargs)
+        client.admin.command('ping')
+        client.close()
         return True, None
+    except PyMongoError as exc:
+        return False, str(exc)[:200]
     except Exception as exc:
-        return False, str(exc)
+        return False, f'{type(exc).__name__}: {str(exc)[:200]}'
+
+
+CRITICAL_CHECKS = ('postgres', 'redis')
 
 
 def health(request):
-    """Full health check for UptimeRobot and Render probes.
+    """Health check for UptimeRobot and Render probes.
 
-    Returns 200 when every dependency is reachable, 503 otherwise. Individual
-    check errors are included in the body without leaking secrets.
+    Critical dependencies (postgres, redis) determine the HTTP status:
+      - Both OK → 200 `ok`
+      - Any critical down → 503 `unhealthy`
+
+    Non-critical dependencies (mongo) never fail the response — they only
+    downgrade `status` to `degraded` in the body. Mongo hosts audit trail
+    and QR history — losing it temporarily degrades observability but does
+    not break the user-facing app. This is intentional so UptimeRobot does
+    not page for a Mongo TLS blip while Postgres/Redis are healthy.
     """
     checks = {
         'postgres': _check_postgres(),
         'redis': _check_redis(),
         'mongo': _check_mongo(),
     }
-    all_ok = all(ok for ok, _ in checks.values())
+    critical_ok = all(checks[name][0] for name in CRITICAL_CHECKS)
+    any_degraded = any(not ok for ok, _ in checks.values())
+
+    if not critical_ok:
+        status = 'unhealthy'
+        http_status = 503
+    elif any_degraded:
+        status = 'degraded'
+        http_status = 200
+    else:
+        status = 'ok'
+        http_status = 200
+
     body = {
-        'status': 'ok' if all_ok else 'degraded',
+        'status': status,
         'service': 'winnie-the-gym-api',
         'version': '0.1.0',
         'checks': {
-            name: {'ok': ok, 'error': err}
+            name: {
+                'ok': ok,
+                'error': err,
+                'critical': name in CRITICAL_CHECKS,
+            }
             for name, (ok, err) in checks.items()
         },
     }
-    return JsonResponse(body, status=200 if all_ok else 503)
+    return JsonResponse(body, status=http_status)
 
 
 def password_reset_confirm_redirect(request, uidb64, token):
