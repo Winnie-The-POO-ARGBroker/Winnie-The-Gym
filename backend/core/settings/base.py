@@ -263,8 +263,20 @@ MP_WEBHOOK_SECRET = config('MP_WEBHOOK_SECRET', default='')
 MP_APP_ID = config('MP_APP_ID', default='')
 MP_NGROK_URL = config('MP_NGROK_URL', default='')
 
-CELERY_BROKER_URL = config('CELERY_BROKER_URL', default='redis://redis:6379/1')
-CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default='redis://redis:6379/2')
+# ---------------------------------------------------------------------------
+# Redis — shared by Cache, Channel Layer and Celery. Uses a single REDIS_URL
+# so managed providers with TLS+auth (Upstash, Redis Cloud) work with the
+# same code path as local docker-compose (redis:// without password).
+# ---------------------------------------------------------------------------
+_REDIS_URL = config('REDIS_URL', default='')
+if not _REDIS_URL:
+    _redis_host = config('REDIS_HOST', default='redis')
+    _redis_port = config('REDIS_PORT', default=6379, cast=int)
+    _REDIS_URL = f'redis://{_redis_host}:{_redis_port}'
+_REDIS_URL = _REDIS_URL.rstrip('/')
+
+CELERY_BROKER_URL = config('CELERY_BROKER_URL', default=f'{_REDIS_URL}/0')
+CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default=f'{_REDIS_URL}/3')
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_TIME_LIMIT = 60
 CELERY_TASK_SOFT_TIME_LIMIT = 45
@@ -289,7 +301,7 @@ QR_TOKEN_EXPIRATION_SECONDS = config('QR_TOKEN_EXPIRATION_SECONDS', cast=int, de
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': f"redis://{config('REDIS_HOST', default='redis')}:{config('REDIS_PORT', default=6379, cast=int)}/1",
+        'LOCATION': f'{_REDIS_URL}/1',
     }
 }
 
@@ -302,9 +314,10 @@ MONGO_RETENTION_DAYS = config('MONGO_RETENTION_DAYS', cast=int, default=90)
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            'hosts': [(config('REDIS_HOST', default='localhost'), config('REDIS_PORT', default=6379, cast=int))],
-        },
+        # `channels_redis` 4.x accepts a URL string here (unlike the tuple form
+        # that does not support auth/TLS). Dev Docker uses plain `redis://`;
+        # Upstash / Redis Cloud use `rediss://default:<token>@...`.
+        'CONFIG': {'hosts': [f'{_REDIS_URL}/2']},
     },
 }
 
