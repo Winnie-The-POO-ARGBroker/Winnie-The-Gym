@@ -4,6 +4,7 @@ from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from dj_rest_auth.registration.views import SocialLoginView
 from dj_rest_auth.views import PasswordResetView as BasePasswordResetView
+from django.conf import settings
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
@@ -18,6 +19,13 @@ logger = logging.getLogger(__name__)
 class GoogleLoginView(SocialLoginView):
     adapter_class = GoogleOAuth2Adapter
     client_class = OAuth2Client
+
+    @property
+    def callback_url(self):
+        # Must match the `redirect_uri` the frontend sends to Google in the
+        # authorize step. If they diverge, Google rejects the code exchange
+        # with `redirect_uri_mismatch` and dj-rest-auth returns 400.
+        return f"{settings.FRONTEND_URL.rstrip('/')}/auth/callback"
 
 
 class SafePasswordResetView(BasePasswordResetView):
