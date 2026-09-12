@@ -4,6 +4,7 @@ import { Toaster } from 'sonner'
 import useThemeStore from './stores/themeStore'
 import { setApiNavigator } from './services/api'
 import LoginPage from './pages/LoginPage'
+import AuthCallback from './pages/AuthCallback'
 import DashboardPage from './pages/DashboardPage'
 import ProfilePage from './pages/ProfilePage'
 import NotFoundPage from './pages/NotFoundPage'
@@ -44,6 +45,7 @@ export default function App() {
       <Routes>
         {/* Public only — redirect to /dashboard if already logged in */}
         <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/completar-perfil" element={<CompleteProfileRoute />} />
 
         {/* Protected */}
