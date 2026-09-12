@@ -2,7 +2,6 @@ import { useGoogleLogin } from '@react-oauth/google'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import useAuth from '../hooks/useAuth'
-import api from '../services/api'
 import WinnieLogo from '../components/ui/WinnieLogo'
 import Button from '../components/ui/Button'
 
@@ -10,23 +9,13 @@ export default function LoginPage() {
   const { setAuth } = useAuth()
   const navigate = useNavigate()
 
+  // auth-code flow with same-tab redirect. Avoids the "Failed to open popup"
+  // error caused by Chrome's third-party cookie restrictions on the implicit
+  // popup flow. Token exchange happens in AuthCallback + backend.
   const login = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      try {
-        const { data } = await api.post('/auth/google/', {
-          access_token: tokenResponse.access_token,
-        })
-        setAuth(data)
-        if (data.user?.is_profile_complete) {
-          navigate('/dashboard')
-        } else {
-          navigate('/completar-perfil')
-        }
-      } catch {
-        toast.error('No se pudo iniciar sesión. Intentá de nuevo.')
-      }
-    },
-    onError: () => toast.error('Error al conectar con Google. Intentá de nuevo.'),
+    flow: 'auth-code',
+    ux_mode: 'redirect',
+    redirect_uri: `${window.location.origin}/auth/callback`,
   })
 
   return (
