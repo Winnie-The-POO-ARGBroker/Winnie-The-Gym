@@ -1,15 +1,6 @@
 import { NavLink } from 'react-router-dom'
-import { Home, CalendarDays, Dumbbell, User } from 'lucide-react'
 import useThemeStore from '../../stores/themeStore'
-import useAuth from '../../hooks/useAuth'
-import WinnieLogo from '../ui/WinnieLogo'
-import Avatar from '../ui/Avatar'
-
-const SIDEBAR_NAV = [
-  { label: 'Inicio',  path: '/socio/credencial', Icon: Home },
-  { label: 'Clases',  path: '/socio/clases',     Icon: CalendarDays },
-  { label: 'Perfil',  path: '/perfil',           Icon: User },
-]
+import Sidebar from './Sidebar'
 
 export default function MemberLayout({
   children,
@@ -18,92 +9,12 @@ export default function MemberLayout({
   rightAction,
 }) {
   const { theme, toggleTheme } = useThemeStore()
-  const { user } = useAuth()
-
-  const displayName = user?.nombre
-    ? `${user.nombre} ${user.apellido ?? ''}`.trim()
-    : user?.email ?? 'Usuario'
 
   return (
     <div className="min-h-screen bg-bg-base flex justify-center md:justify-start selection:bg-primary selection:text-white">
 
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col w-56 flex-shrink-0 sticky top-0 h-screen bg-bg-surface border-r border-subtle">
-        <div className="px-5 py-6">
-          <WinnieLogo size="sm" />
-        </div>
-
-        <nav className="flex-1 flex flex-col gap-1 px-3 overflow-y-auto">
-          {SIDEBAR_NAV.map(({ label, path, Icon }) => (
-            <NavLink
-              key={path}
-              to={path}
-              className={({ isActive }) =>
-                `group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                  isActive
-                    ? 'bg-primary text-white shadow-md'
-                    : 'text-text-secondary hover:bg-bg-raised hover:text-text-primary'
-                }`
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  <Icon
-                    className={`w-5 h-5 flex-shrink-0 transition-colors ${isActive ? 'text-white' : 'text-text-secondary group-hover:text-text-primary'}`}
-                    strokeWidth={isActive ? 2.5 : 2}
-                  />
-                  {label}
-                </>
-              )}
-            </NavLink>
-          ))}
-
-          <button
-            type="button"
-            disabled
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-text-tertiary cursor-not-allowed opacity-40"
-          >
-            <Dumbbell className="w-5 h-5 flex-shrink-0" strokeWidth={2} />
-            Rutina
-          </button>
-        </nav>
-
-        <div className="flex justify-end px-4 pb-2">
-          <button
-            onClick={toggleTheme}
-            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-            className="p-2 rounded-lg transition-colors hover:bg-bg-raised text-text-tertiary hover:text-text-secondary"
-          >
-            {theme === 'dark' ? (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <circle cx="12" cy="12" r="5" />
-                <line x1="12" y1="1" x2="12" y2="3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                <line x1="12" y1="21" x2="12" y2="23" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                <line x1="1" y1="12" x2="3" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                <line x1="21" y1="12" x2="23" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            ) : (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-              </svg>
-            )}
-          </button>
-        </div>
-
-        <div className="mx-3 mb-4">
-          <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-bg-raised">
-            <Avatar name={displayName} size={36} />
-            <div className="flex flex-col min-w-0 flex-1">
-              <span className="text-sm font-medium text-text-primary truncate">{displayName}</span>
-              <span className="text-xs text-text-secondary">Socio</span>
-            </div>
-          </div>
-        </div>
-      </aside>
+      <Sidebar />
 
       {/* Content Frame */}
       <div className="w-full sm:max-w-sm md:max-w-none md:flex-1 min-h-screen bg-bg-base text-text-primary flex flex-col relative sm:shadow-2xl sm:border-x sm:border-subtle md:shadow-none md:border-x-0">

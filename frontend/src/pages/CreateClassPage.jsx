@@ -19,11 +19,7 @@ import AppLayout from '../components/layout/AppLayout'
 import TopBar from '../components/layout/TopBar'
 import Button from '../components/ui/Button'
 import { DISCIPLINAS_CONFIG } from '../constants/disciplinas'
-import {
-  getClassById,
-  saveOrUpdateClass,
-  getStoredClasses,
-} from '../services/adminMockData'
+import api from '../services/api'
 
 const DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 const RECURRENCIA_DIAS = [
@@ -61,10 +57,20 @@ export default function CreateClassPage() {
 
   useEffect(() => {
     if (editId) {
-      const existing = getClassById(editId)
-      if (existing) {
-        setFormData(existing)
+      const fetchClass = async () => {
+        try {
+          const res = await api.get(`/classes/clases/${editId}/`)
+          const existing = res.data
+          setFormData({
+            ...existing,
+            dia: existing.dia ? existing.dia.charAt(0).toUpperCase() + existing.dia.slice(1) : 'Lunes',
+          })
+        } catch (error) {
+          toast.error('Error al cargar la clase')
+          console.error(error)
+        }
       }
+      fetchClass()
     }
   }, [editId])
 
@@ -96,48 +102,64 @@ export default function CreateClassPage() {
     }))
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     if (e) e.preventDefault()
     if (!formData.nombre.trim()) {
       toast.error('El nombre de la clase es obligatorio')
       return
     }
 
-    // Calculate end time
-    const [h, m] = (formData.hora || '08:00').split(':').map(Number)
-    const totalMinutes = h * 60 + m + Number(formData.duracion_min || 45)
-    const endH = String(Math.floor(totalMinutes / 60) % 24).padStart(2, '0')
-    const endM = String(totalMinutes % 60).padStart(2, '0')
-    const hora_fin = `${endH}:${endM}`
+    try {
+      const normalizeDay = (d) => d.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      
+      let finalDia = formData.dia
+      if (formData.dias_recurrencia && formData.dias_recurrencia.length > 0) {
+        const reverseDiasMap = { 'L': 'Lunes', 'M': 'Martes', 'X': 'Miércoles', 'J': 'Jueves', 'V': 'Viernes', 'S': 'Sábado', 'D': 'Domingo' }
+        finalDia = reverseDiasMap[formData.dias_recurrencia[0]]
+      }
 
-    const saved = saveOrUpdateClass({
-      ...formData,
-      hora_fin,
-      duracion_min: Number(formData.duracion_min),
-      cupo_maximo: Number(formData.cupo_maximo),
-      lista_espera_max: Number(formData.lista_espera_max),
-      cancelacion_horas: Number(formData.cancelacion_horas),
-    })
+      const payload = {
+        ...formData,
+        dia: normalizeDay(finalDia),
+        duracion_min: Number(formData.duracion_min),
+        cupo_maximo: Number(formData.cupo_maximo),
+        lista_espera_max: Number(formData.lista_espera_max),
+        cancelacion_horas: Number(formData.cancelacion_horas),
+      }
 
-    toast.success(
-      editId
-        ? `Clase "${formData.nombre}" actualizada con éxito`
-        : `Clase "${formData.nombre}" publicada correctamente`
-    )
-    navigate('/clases')
+      if (editId) {
+        await api.put(`/classes/clases/${editId}/`, payload)
+        toast.success(`Clase "${formData.nombre}" actualizada con éxito`)
+      } else {
+        await api.post('/classes/clases/', payload)
+        toast.success(`Clase "${formData.nombre}" publicada correctamente`)
+      }
+      navigate('/admin/clases')
+    } catch (error) {
+      toast.error('Error al guardar la clase')
+      console.error(error)
+    }
   }
 
-  const handleDuplicateFromExisting = () => {
-    const allClasses = getStoredClasses()
-    if (allClasses.length > 0) {
-      const toClone = allClasses[0]
-      setFormData({
-        ...toClone,
-        id: undefined,
-        nombre: `${toClone.nombre} (Copia)`,
-        cupos_reservados: 0,
-      })
-      toast.info('Datos copiados de una clase existente')
+  const handleDuplicateFromExisting = async () => {
+    try {
+      const res = await api.get('/classes/clases/')
+      if (res.data.length > 0) {
+        const toClone = res.data[0]
+        setFormData({
+          ...toClone,
+          id: undefined,
+          dia: toClone.dia ? toClone.dia.charAt(0).toUpperCase() + toClone.dia.slice(1) : 'Lunes',
+          nombre: `${toClone.nombre} (Copia)`,
+          cupos_reservados: 0,
+        })
+        toast.info('Datos copiados de una clase existente')
+      } else {
+        toast.info('No hay clases para copiar')
+      }
+    } catch (error) {
+      toast.error('Error al obtener clases')
+      console.error(error)
     }
   }
 
@@ -150,7 +172,7 @@ export default function CreateClassPage() {
           <>
             <button
               type="button"
-              onClick={() => navigate('/clases')}
+              onClick={() => navigate('/admin/clases')}
               className="px-4 py-2.5 rounded-xl bg-bg-surface border border-subtle text-text-secondary hover:text-text-primary hover:bg-bg-raised text-xs font-semibold transition-colors"
             >
               Cancelar
@@ -410,10 +432,10 @@ export default function CreateClassPage() {
                       >
                         <div
                           className={`w-4 h-4 rounded flex items-center justify-center text-[10px] ${
-                            isChecked ? 'bg-current text-white' : 'border border-subtle'
+                            isChecked ? 'bg-current' : 'border border-subtle'
                           }`}
                         >
-                          {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
+                          {isChecked && <Check className="w-3 h-3 text-white stroke-[3]" />}
                         </div>
                         {plan}
                       </button>

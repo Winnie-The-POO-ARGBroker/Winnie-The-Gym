@@ -12,6 +12,9 @@ const useAuthStore = create(
         accessToken: data.access,
         refreshToken: data.refresh,
       }),
+      updateRole: (newRole) => set((state) => ({
+        user: state.user ? { ...state.user, rol: newRole } : null
+      })),
       clearAuth: () => set({ user: null, accessToken: null, refreshToken: null }),
     }),
     {

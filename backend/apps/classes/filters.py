@@ -16,15 +16,27 @@ class ClaseFilter(django_filters.FilterSet):
     duracion_min_lte = django_filters.NumberFilter(field_name='duracion_min', lookup_expr='lte')
     cupo_disponible = django_filters.BooleanFilter(method='filter_cupo_disponible')
 
+    dia = django_filters.CharFilter(method='filter_por_dia')
+
     class Meta:
         model = Clase
         fields = {
             'categoria': ['exact', 'in'],
-            'dia': ['exact', 'in'],
             'estado': ['exact', 'in'],
             'sala': ['exact', 'icontains'],
             'instructor': ['exact', 'icontains'],
         }
+
+    def filter_por_dia(self, queryset, name, value):
+        from django.db.models import Q
+        dias_map = {
+            'lunes': 'L', 'martes': 'M', 'miercoles': 'X',
+            'jueves': 'J', 'viernes': 'V', 'sabado': 'S', 'domingo': 'D'
+        }
+        key = dias_map.get(value.lower())
+        if key:
+            return queryset.filter(Q(dia=value) | Q(dias_recurrencia__contains=key))
+        return queryset.filter(dia=value)
 
     def filter_cupo_disponible(self, queryset, name, value):
         if value is None:

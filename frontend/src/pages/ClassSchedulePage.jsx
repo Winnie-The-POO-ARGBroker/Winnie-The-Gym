@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Plus,
@@ -17,16 +17,14 @@ import ClassAttendeesModal from '../components/classes/ClassAttendeesModal'
 import EmptyState from '../components/ui/EmptyState'
 import Button from '../components/ui/Button'
 import { useClassAttendees } from '../hooks/useClassAttendees'
-import {
-  getStoredClasses,
-  deleteStoredClass,
-} from '../services/adminMockData'
+import api from '../services/api'
 
 const IS_DEV = import.meta.env.DEV
 
 export default function ClassSchedulePage() {
   const navigate = useNavigate()
-  const [classes, setClasses] = useState(() => IS_DEV ? getStoredClasses() : [])
+  const [classes, setClasses] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('calendario') // 'calendario' | 'lista'
   const [selectedClass, setSelectedClass] = useState(classes[0] || null)
   const [isAttendeesModalOpen, setIsAttendeesModalOpen] = useState(false)
@@ -46,6 +44,27 @@ export default function ClassSchedulePage() {
     'Semana del 22 al 27 de Junio',
   ]
 
+  const fetchClasses = async () => {
+    setIsLoading(true)
+    try {
+      const response = await api.get('/classes/clases/')
+      const classData = response.data.results || response.data
+      setClasses(classData)
+      if (classData.length > 0 && !selectedClass) {
+        setSelectedClass(classData[0])
+      }
+    } catch (error) {
+      toast.error('Error al cargar las clases')
+      console.error(error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchClasses()
+  }, [])
+
   const handleOpenAttendees = (cls) => {
     setClassForModal(cls)
     setIsAttendeesModalOpen(true)
@@ -56,16 +75,22 @@ export default function ClassSchedulePage() {
   }
 
   const handleEditClass = (cls) => {
-    navigate(`/clases/crear?id=${cls.id}`)
+    navigate(`/admin/clases/crear?id=${cls.id}`)
   }
 
-  const handleDeleteClass = (cls) => {
-    const updated = deleteStoredClass(cls.id)
-    setClasses(updated)
-    if (selectedClass?.id === cls.id) {
-      setSelectedClass(updated[0] || null)
+  const handleDeleteClass = async (cls) => {
+    try {
+      await api.delete(`/classes/clases/${cls.id}/`)
+      const updated = classes.filter((c) => c.id !== cls.id)
+      setClasses(updated)
+      if (selectedClass?.id === cls.id) {
+        setSelectedClass(updated[0] || null)
+      }
+      toast.info(`Clase "${cls.nombre}" eliminada correctamente`)
+    } catch (error) {
+      toast.error('Error al eliminar la clase')
+      console.error(error)
     }
-    toast.info(`Clase "${cls.nombre}" eliminada correctamente`)
   }
 
   return (
@@ -124,7 +149,7 @@ export default function ClassSchedulePage() {
             </div>
             <Button
               variant="primary"
-              onClick={() => navigate('/clases/crear')}
+              onClick={() => navigate('/admin/clases/crear')}
               className="gap-2 shadow-md shadow-orange-500/20 hover:scale-[1.02] active:scale-[0.98]"
             >
               <Plus className="w-4 h-4" />
@@ -133,10 +158,12 @@ export default function ClassSchedulePage() {
           </>
         }
       />
-      <div className="w-full flex-1 flex flex-col p-6 md:p-10 gap-7 overflow-y-auto max-w-[1840px] mx-auto transition-all animate-fadeIn">
+      <div className="w-full flex flex-col p-6 md:p-10 gap-7 max-w-[1840px] mx-auto transition-all animate-fadeIn">
         {/* TAB 1: PANTALLA 1 FIGMA (Calendario Semanal de Clases) */}
         {activeTab === 'calendario' && (
-          !IS_DEV && classes.length === 0 ? (
+          isLoading ? (
+            <div className="flex justify-center py-20 text-text-secondary">Cargando...</div>
+          ) : classes.length === 0 ? (
             <EmptyState
               icon={Calendar}
               title="No hay clases programadas"
@@ -156,7 +183,9 @@ export default function ClassSchedulePage() {
 
         {/* TAB 2: PANTALLA 2 FIGMA (Vista de Lista y Detalle de Clase) */}
         {activeTab === 'lista' && (
-          !IS_DEV && classes.length === 0 ? (
+          isLoading ? (
+            <div className="flex justify-center py-20 text-text-secondary">Cargando...</div>
+          ) : classes.length === 0 ? (
             <EmptyState
               icon={Calendar}
               title="No hay clases programadas"
