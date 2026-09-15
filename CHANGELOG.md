@@ -8,117 +8,159 @@ Versionado según [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Pendiente de PR — `feature/production-deploy-prep`
-- **`Dockerfile.prod`** multi-stage (builder + runner slim) para el backend. No incluye deps de development (locust, django-extensions, pytest). Usa user no-root, `DJANGO_SETTINGS_MODULE=core.settings.production` por default y default CMD `daphne -b 0.0.0.0 -p ${PORT} core.asgi:application`
-- **`backend/entrypoint.sh`** compartido por los 3 servicios de Render (web + worker + beat). Corre migrations, collectstatic y `create_mongo_indexes` sólo cuando la env var correspondiente está en `1` (el web las hace, los workers no)
-- **`render.yaml` Blueprint** declarativo: 3 servicios (`winnie-backend`, `winnie-celery-worker`, `winnie-celery-beat`) + `envVarGroup winnie-shared` con todas las env vars requeridas y flags de sync
-- **`frontend/vercel.json`** con SPA rewrite, cache headers para `/assets/*` y security headers (X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy)
-- **`settings/production.py` hardened**:
-  - `SECURE_PROXY_SSL_HEADER` para Render, `SECURE_SSL_REDIRECT`, `SECURE_HSTS_SECONDS=1y` con preload+subdomains
-  - Session/CSRF cookies secure, `X_FRAME_OPTIONS='DENY'`, `SECURE_REFERRER_POLICY='same-origin'`
-  - `CSRF_TRUSTED_ORIGINS` configurable + regex para `*.vercel.app` y `*.onrender.com`
-  - `LOGGING` forzado a `json` en producción
-- **WhiteNoise** (`whitenoise==6.7.0`) para servir static files desde el mismo proceso Django con `CompressedManifestStaticFilesStorage`. Middleware insertado post-SecurityMiddleware
-- **Supabase Storage adapter** (`apps/common/storages.py::SupabaseMediaStorage`) via `django-storages[s3]` + `boto3` para persistir las fichas médicas (RF08) en Supabase Storage en prod. En dev sigue usando `FileSystemStorage` local sin cambios
-- **`docs/deploy.md`** (400+ líneas) paso a paso con setup de Supabase, Atlas, Upstash, Render, Vercel, UptimeRobot; troubleshooting común; checklist post-deploy
-- **`backend/.env.example`** actualizado con todas las env vars nuevas del proyecto (MP, Mailtrap, Celery, Sentry, Supabase Storage, security prod)
-- **`frontend/vercel.json` + `frontend/.env.example`** con la doc de env vars requeridas (VITE_API_URL, VITE_WS_BASE_URL, VITE_GOOGLE_CLIENT_ID, VITE_MP_PUBLIC_KEY, VITE_SENTRY_DSN)
-- README con nueva sección de deploy + link a la guía completa
-- Imagen Docker prod verificada localmente: build exitoso, settings/production.py carga sin errores, whitenoise en middleware, Supabase storage por default, SSL redirect activo
+_Sin cambios pendientes al día de la fecha._
 
-### Pendiente de PR — `feature/data-devops-hardening` (Fase D4)
-- **Logs estructurados en JSON** (`python-json-logger==2.0.7`): `LOGGING` en `settings/base.py` produce single-line JSON con `timestamp`, `level`, `name`, `message`, `pathname`, `lineno`. Toggle a formato plano con `LOG_FORMAT=plain` (para debugging local)
-- **Load tests con Locust** (`locust==2.31.5`): `backend/loadtests/locustfile.py` con 3 escenarios (`SocioUser`, `RecepcionistaUser`, `AdminUser`) que cubren login + generación QR + scan QR + reportes. README con instrucciones headless + generación de reporte HTML
-- **Sentry frontend** (`@sentry/react==8.30.0`): `frontend/src/lib/sentry.js` con `initSentry()` opt-in vía `VITE_SENTRY_DSN`. Zero cost cuando no está configurado. Sampling condicionado a env (10% en prod, 0% en dev)
-- **Availability report (RNF06)**: management command `python manage.py availability_report --days 30` calcula la disponibilidad desde `AccessLog` excluyendo denials legítimos de negocio. Output humano o JSON (`--json`)
-- **Doc RNF01/RNF06** (`docs/reports/rnf01-rnf06.md`) con fórmula, instrucciones de captura y criterios de aprobación
-- 10 tests nuevos (229 total): availability report en 6 escenarios (100%, exclusión business, umbral 99.9%, sub-target, ventana temporal, output plain); logging JSON validado + static check de locustfile
+---
 
-### Pendiente de PR — `feature/data-devops-hardening` (Fase D3)
-- **WebSocket real de aforo (HU08 / RF07)**: `apps/access/consumers.py::AforoConsumer` reemplaza al mock del frontend
-- Ruta `ws://<host>/ws/aforo/?token=<jwt>` con autenticación JWT vía query string (`core/ws_auth.py::JWTAuthMiddleware`) — solo `administrador`, `recepcionista` y staff se conectan; el resto recibe close code `4403`
-- `core/asgi.py` reemplaza `URLRouter([])` vacío por routing real de `apps.access.routing`
-- **Broadcast automático**: signal `post_save` sobre `AccessLog` (`apps/access/ws_signals.py`) publica al channel layer `aforo_updates` con el nuevo count cuando entra/sale un socio. Ignora eventos DENIED
-- **Servicio `get_aforo_actual()`** con cache Redis 5s (`aforo:current`) para amortiguar reads frecuentes; `invalidate_aforo_cache()` en cada evento nuevo
-- **Mensajes**: `aforo.snapshot` (al conectar) + `aforo.update` (cada cambio) + soporte a `{action: 'refresh'}` desde el cliente
-- Dependencias nuevas: `daphne==4.1.2` (ASGI server para tests), `pytest-asyncio==0.24.0` (dev)
-- `pytest.ini` con `asyncio_mode = auto`
-- 5 tests nuevos (219 total): admin conecta + snapshot, anon rechazado, socio rechazado, broadcast on ENTRY, DENIED no rompe silencio
+## [1.0.0] — 2026-09-15
+**PR #75** · Google OAuth auth-code flow · @MrForii
+**PR #76** · fix backend `callback_url` · @MrForii
+**PR #77** · refactor UI: sidebar unificado, scheduling cleanup, Vitest setup · @MagaBechis
 
-### Pendiente de PR — `feature/data-devops-hardening` (Fase D2)
-- **Trail de auditoría en MongoDB** para acciones CRUD sobre modelos críticos (`Socio`, `PlanMembresia`, `Membresia`, `Clase`, `Pago`). Cablea la función `core.mongodb.log_audit_event` que estaba definida sin uso desde antes
-- **Middleware `CurrentUserMiddleware`** que expone el usuario autenticado a los signals via thread-local. Sin request activo (Celery, CLI, tests) el `actor_rol` queda como `'system'`
-- **`apps.common.audit`**: signal handlers `post_save`/`post_delete` con dispatch centralizado. Encoder JSON que soporta `Decimal`, `date`, `datetime`, `UUID` para persistencia lossless en Mongo
-- **Management command `python manage.py create_mongo_indexes`**: idempotente, provisiona 5 índices por colección + TTL index (default 90 días) sobre `qr_history` y `audit_logs`
-- **`MONGO_RETENTION_DAYS`** configurable por env (default: 90 días)
-- **Settings de tests aisladas**: `MONGO_DB_NAME = winnie_gym_logs_test` para no contaminar la db de dev
-- 6 tests nuevos: create/update/delete en 4 modelos + actor system + command idempotente (214 tests total)
+### Agregado
+- **`AuthCallback` page** (`/auth/callback`): intercambia el code de Google con el backend y redirige al usuario a `/dashboard` o `/completar-perfil`; maneja cancelación con toast y retorno a `/login`
+- **Vitest setup**: `frontend/setupTests.js`, `vite.config.js` con entorno de tests; tests unitarios iniciales para `Button`, `EmptyState` y `ClassSchedulePage` (`frontend/src/components/ui/__tests__/` y `frontend/src/pages/__tests__/`)
 
-### Pendiente de PR — `feature/data-devops-hardening` (Fase D1)
-- **MER PostgreSQL** documentado: `docs/database/schema.dbml` (formato dbdiagram.io, editable online) + `docs/database/mer.md` con diagrama Mermaid embebido (GitHub lo renderiza), descripción de las 8 tablas, 7 relaciones, 6 índices y convenciones aplicadas
-- **Esquemas MongoDB**: `docs/database/mongo-schemas.md` documenta las colecciones `qr_history` (accesos QR) y `audit_logs` (auditoría admin) con campos, índices, TTL 90 días y justificación del uso NoSQL vs Postgres
-- **Arquitectura del sistema**: `docs/architecture.md` con diagrama de componentes Mermaid, servicios y flujos críticos (login, QR, pagos MP, job vencimientos) + target de deploy productivo
-- **README** actualizado con nueva sección "📚 Documentación técnica" que linkea a los 4 documentos
-- Cubre requisito ABP obligatorio de documentación técnica: MER + esquemas Mongo + arquitectura
+### Cambiado
+- **Google OAuth**: flujo cambiado de implicit popup (`useGoogleLogin` default) a `auth-code` con redirección en la misma pestaña (`flow: 'auth-code'`, `ux_mode: 'redirect'`); elimina el error de popup bloqueado por Chrome en producción con cookies de terceros restringidas
+- **`GoogleLoginView.callback_url`** pinado a `${FRONTEND_URL}/auth/callback` en el backend (`apps/users/views.py`) para que ambas fases del flujo OAuth (autorización + intercambio de token) usen el mismo `redirect_uri` — corrige el error 400 `redirect_uri_mismatch` de `dj-rest-auth` / allauth
+- **Sidebar unificado**: `Sidebar.jsx` y `navIcons.js` consolidados; `MemberLayout` y `AppBottomNav` actualizados para reutilizar la misma fuente de verdad de navegación
+- **`ClassSchedulePage`**: limpieza de lógica de filtrado y desborde de scroll; `ClassCalendarView` y `ClassCard` refactorizados
+- **`ClasesPage` (socio)**: scroll overflow corregido; mock data alineado con el shape real de la API (`socioMockData.js`)
+- **Serializers y filtros de clases** (`backend/apps/classes/`): ajustes menores para alinearse con los cambios del frontend
+- `authStore.js` y `useAuth.js` limpiados de lógica duplicada; `services/constants.js` centraliza las constantes de endpoints
 
+### Notas de deploy
+- Agregar en Google Cloud Console los Authorized Redirect URIs:
+  - `http://localhost:5173/auth/callback` (dev)
+  - `https://winnie-the-gym.vercel.app/auth/callback` (prod)
+- `FRONTEND_URL` ya presente en el env group de Render y en `settings/base.py`
 
-### Pendiente de PR — `feature/backend-mp-emails-reports` (post-audit hardening)
-- **ALLOWED_HOSTS + CSRF_TRUSTED_ORIGINS + CORS regex** ampliados con wildcards para `.ngrok-free.dev/.app/.ngrok.io` — habilita que MercadoPago llegue al webhook real sin `DisallowedHost`
-- **Migración de `Thread(daemon=True)` → Celery task `access.log_qr_event`** para el guardado async de accesos en Mongo (retries + graceful shutdown)
-- **Cobro manual** ahora loggea + persiste diferencia en `raw_webhook` cuando `monto != plan.precio` (auditable, no bloqueante)
-- **Sentry** integrado opt-in por env var `SENTRY_DSN` con integraciones Django, Celery y logging
-- **Health check completo** en `/api/health/` con probes reales a Postgres, Redis y Mongo (200 sano, 503 degradado — listo para UptimeRobot)
-- **BOM UTF-8** al inicio de todos los CSV exportados para que Excel/Numbers rendericen tildes y ñ correctamente
-- 8 tests nuevos (208 total): ALLOWED_HOSTS + CSRF wildcards, webhook acepta Host header ngrok, health con todas las probes, CSV con BOM, cobro manual matching/diff/over
+**PRs**: #75, #76, #77
+**Merge commit**: `22261cd`
 
-### Pendiente de PR — `feature/backend-mp-emails-reports` (Fase 4)
-- **App `reports`** con servicio de exportación agnóstico al formato (CSV / XLSX / PDF)
-- Nuevos endpoints (recep/admin):
-  - `GET /api/reportes/morosidad/?formato=csv|xlsx|pdf&estado=&plan_id=` — socios con membresía vencida o `pendiente_pago`, con días de atraso y monto adeudado
-  - `GET /api/reportes/facturacion/?formato=&mes=YYYY-MM&metodo=` — pagos aprobados del mes indicado (default: mes actual)
-  - `GET /api/reportes/asistencia/?formato=&fecha_desde=&fecha_hasta=` — ingresos por QR emparejados con su egreso y permanencia en minutos
-- **Exportadores** en `apps/reports/exporters.py`: `export_csv`, `export_xlsx` (openpyxl), `export_pdf` (reportlab landscape A4). Todos devuelven `HttpResponse` con `Content-Disposition: attachment`
-- Query param `?formato=` (no `?format=` para evitar chocar con el content-negotiation nativo de DRF)
-- 8 tests nuevos: 3 formatos de morosidad, permisos, facturación filtrada por mes, permanencia con y sin egreso emparejado
+---
 
-### Pendiente de PR — `feature/backend-mp-emails-reports` (Fase 3)
-- **App `payments`** con modelo `Pago` (estados: `pendiente`/`aprobado`/`rechazado`/`cancelado`/`reembolsado`), FKs a `Socio`, `PlanMembresia` y `Membresia` (ADR-7), campos MP (`mp_preference_id`, `mp_payment_id` UNIQUE, `mp_external_reference`, `mp_status_detail`, `raw_webhook` JSONField)
-- **Integración MercadoPago Checkout Pro** vía SDK `mercadopago==2.2.3`:
-  - `POST /api/payments/preferencias/` (socio) — crea `Pago(pendiente)` + preferencia MP + devuelve `init_point`, `sandbox_init_point`, `external_reference`
-  - `POST /api/payments/webhook/` (sin auth, con validación HMAC-SHA256 v1) — actualiza `Pago`, activa membresía en `approved`, dispara email de confirmación, **idempotente por `mp_payment_id`**
-  - `POST /api/payments/cobros-manuales/` (recep/admin) — contingencia PDF riesgo #3, activa membresía en el acto + email
-  - `GET /api/payments/pagos/` (recep/admin) — listado con filtros
-- **Cliente MP aislado** en `apps/payments/mercadopago_client.py` (facilita mock en tests y futura migración)
-- **Notification URL configurable** por env (`MP_NGROK_URL` en dev, deploy real después)
-- **Renovación de membresía transaccional**: pago aprobado marca activas anteriores como `vencida` y crea nueva con `fecha_fin = today + plan.duracion_dias`
-- **Email `payment_confirmation`** disparado desde webhook y desde cobro manual
-- 15 tests nuevos cubriendo crear preferencia (éxito, permisos, plan inactivo, fallo MP), webhook (approved, rejected, firma inválida, duplicados, referencia desconocida) y cobro manual
+## [0.12.0] — 2026-09-11
+**PR #64** · `feature/production-deploy-prep` → `develop` · @Franco-Arce
+**Hotfixes #65–#74** · correcciones de deploy en producción (Render + Upstash + Atlas)
 
-### Pendiente de PR — `feature/backend-mp-emails-reports` (Fase 2)
-- **Anymail + Mailtrap Sending (HTTP API)**: `EMAIL_BACKEND = anymail.backends.mailtrap.EmailBackend` con fallback a Gmail SMTP por env var. Sender por default: `Winnie The Gym <hello@demomailtrap.co>`
-- **Celery + Redis (broker/backend)**: nuevos servicios `celery-worker` y `celery-beat` en `docker-compose.yml`, misma imagen del backend. Reutilizan el Redis ya en el stack
-- **Django Celery Beat con DatabaseScheduler**: schedule editable desde el admin
-- **Helper `apps/common/emails.py::send_templated_email`**: renderiza HTML + texto, respeta reply-to, tolerante a fallos (nunca rompe el flujo)
-- **Task Celery `common.send_email`**: retry 3× con backoff 60s. Helper `enqueue_email()` para fire-and-forget
-- **Signal de bienvenida**: alta de `Socio` dispara email `welcome` async (dedup por `created=True`)
-- **Job periódico `memberships.check_expiring_memberships`**: corre diario 09:00 ARG. Envía alertas a 7/3/1 días del vencimiento + email final el día 0 con flip a `estado='vencida'`. Deduplicación por `Membresia.avisos_enviados` (JSONField)
-- **Recupero de contraseña**: endpoints `/api/auth/password/reset/` y `/api/auth/password/reset/confirm/` provistos por `dj-rest-auth` (integrados con el nuevo pipeline de email)
-- Migración de datos que instala el schedule inicial de Celery Beat
-- 9 tests nuevos (email helper, signal de bienvenida, task de vencimientos con dedup)
+### Agregado
+- **`backend/Dockerfile.prod`** multi-stage (builder + runner slim en `python:3.12-slim`): sin dev deps (locust, django-extensions, pytest), user no-root (`app:1000`), CMD `daphne -b 0.0.0.0 -p ${PORT} core.asgi:application` por default
+- **`backend/entrypoint.sh`** compartido por los 3 servicios de Render: flags `RUN_MIGRATIONS`, `COLLECT_STATIC` y `CREATE_MONGO_INDEXES` controlan qué corre en cada servicio (sólo el web las activa)
+- **`render.yaml` Blueprint**: 3 servicios (`winnie-backend`, `winnie-celery-worker`, `winnie-celery-beat`) + `envVarGroup winnie-shared` con todas las env vars requeridas (revertido a proceso único por limitación de free tier — ver Cambiado)
+- **`frontend/vercel.json`**: SPA rewrite, cache headers para `/assets/*` y security headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`)
+- **`settings/production.py` hardened**: `SECURE_PROXY_SSL_HEADER`, `SECURE_SSL_REDIRECT`, `SECURE_HSTS_SECONDS=1y` con preload y subdomains, cookies CSRF/session con `Secure`, `X_FRAME_OPTIONS='DENY'`, `CSRF_TRUSTED_ORIGINS` con regex para `*.vercel.app` y `*.onrender.com`, logging JSON forzado
+- **WhiteNoise** (`whitenoise==6.7.0`) con `CompressedManifestStaticFilesStorage` para servir static files desde el mismo proceso Django; middleware insertado post-`SecurityMiddleware`
+- **Supabase Storage adapter** (`apps/common/storages.py::SupabaseMediaStorage`) vía `django-storages[s3]` + `boto3` para persistir certificados médicos (RF08) en producción; dev sigue usando `FileSystemStorage` local
+- **`docs/deploy.md`** (400+ líneas): setup paso a paso de Supabase, Atlas, Upstash, Render y Vercel; troubleshooting común; checklist post-deploy
+- **`backend/.env.example`** y **`frontend/.env.example`** actualizados con todas las env vars nuevas del proyecto
 
-### Pendiente de PR — `feature/backend-mp-emails-reports` (Fase 1)
-- **Documentación OpenAPI**: `drf-spectacular` con Swagger UI (`/api/docs/`), ReDoc (`/api/redoc/`) y schema (`/api/schema/`). Todos los ViewSets anotados con `@extend_schema`
-- **Paginación global**: `PageNumberPagination` (page_size=10, `?page_size=` hasta 100) en todos los listados
-- **Filtros**: `django-filter` con `FilterSet` custom por app (`apps/{app}/filters.py`) — cubre socios, planes, membresías, clases, inscripciones y access logs
-- **Búsqueda avanzada de clases (HU06)**: combina `?search=` (nombre/instructor/sala) + `categoria` + `dia` + `hora_desde`/`hora_hasta` + `cupo_disponible`
-- **Cancelación de reservas (HU07)**: nuevo endpoint `POST /api/classes/clases/{id}/cancelar/` con enforcement de `cancelacion_horas` y promoción automática desde lista de espera
-- **Subida de certificado médico (RF08)**: nuevo endpoint `POST /api/members/socios/{id}/certificado-medico/` con validación de tipo (PDF/JPG/PNG) y tamaño (máx 5 MB). Almacena bajo `MEDIA_ROOT/certificados_medicos/`
-- **Session timeout 30 min (RNF05)**: `SIMPLE_JWT.ACCESS_TOKEN_LIFETIME = 30 min`, rotación de refresh tokens habilitada
-- 20 tests nuevos: HU06, HU07, RF08, infra API (OpenAPI, paginación, session timeout)
+### Cambiado
+- **Redis TLS / Upstash** (hotfixes #65, #68, #69, #72, #73, #74): configuración de Cache, Channel Layer y Celery unificada bajo `REDIS_URL`; helper que agrega `ssl_cert_reqs=CERT_REQUIRED` como int en `OPTIONS` para `django.core.cache.RedisCache`; `CELERY_BROKER_USE_SSL` y `redis_backend_use_ssl` declarados como dicts explícitos (Celery descarta query params de URLs `rediss://`); forzado de `/0` en URLs de Upstash (proveedor single-DB que rechaza `DB > 0`)
+- **Render Free tier** (hotfix #66): los 3 procesos (Daphne + Celery worker + Celery beat) consolidados en un único web service gestionado por **honcho** vía `Procfile`; `render.yaml` actualizado a servicio único (reversible con 2 líneas al pasar a plan Starter)
+- **Atlas TLS / MongoDB** (hotfix #67): `honcho` y `certifi` agregados a `requirements/base.txt`; bundle CA de `certifi` requerido en `python:3.12-slim` para el handshake TLS con Atlas
+- **Health check** (hotfixes #70, #71): probe de MongoDB clasificada como no-crítica (devuelve `200 degraded` en lugar de `503`) mientras se investigaba el TLS handshake en Render; `healthCheckPath` en `render.yaml` reemplazado por port-scan TCP para no bloquear el deploy
+- README con nueva sección de deploy y link a `docs/deploy.md`
 
-### Pendiente de PR — `feature/code-quality-audit`
-- Auditoría de calidad backend: permisos, namespacing, service layer, convenciones de modelos, consolidación de tests (5 slices)
-- Auditoría de calidad frontend: guards de producción para mock data, `TopBar` con `backAction`, migración a TanStack Query, hook `useAuth()`, formularios RHF+Zod, tokens semánticos de color, limpieza de archivos duplicados/huérfanos, renombre `Screen` → `Page`
+**PRs**: #64, #65, #66, #67, #68, #69, #70, #71, #72, #73, #74
+**Merge commit**: `c02b375`
+
+---
+
+## [0.11.0] — 2026-09-11
+**PR #54** · `feature/data-devops-hardening` → `develop` · @Franco-Arce
+
+### Agregado
+- **MER PostgreSQL**: `docs/database/schema.dbml` (formato dbdiagram.io) + `docs/database/mer.md` con diagrama Mermaid embebido; documenta las 8 tablas, 7 relaciones críticas, 6 índices y convenciones aplicadas
+- **Esquemas MongoDB**: `docs/database/mongo-schemas.md` con las colecciones `qr_history` y `audit_logs`: campos, índices, TTL 90 días y justificación de uso NoSQL vs Postgres
+- **Arquitectura del sistema**: `docs/architecture.md` con diagrama de componentes Mermaid, flujos críticos (login, QR, pagos MP, job vencimientos) y target de deploy productivo
+- **Trail de auditoría en MongoDB** (`apps.common.audit`): signal receivers `post_save`/`post_delete` sobre `Socio`, `PlanMembresia`, `Membresia`, `Clase` y `Pago` que persisten eventos con snapshot post-cambio; encoder JSON que soporta `Decimal`, `date`, `datetime` y `UUID` para persistencia lossless
+- **`CurrentUserMiddleware`**: expone el usuario autenticado a signals via thread-local; fallback `actor_rol='system'` para CLI, Celery y tests
+- **Management command `create_mongo_indexes`**: idempotente; provisiona 4 índices de performance + TTL 90d por colección en `qr_history` y `audit_logs`. `MONGO_RETENTION_DAYS` configurable por env
+- **WebSocket real de aforo (HU08 / RF07)**: `apps.access.consumers.AforoConsumer` reemplaza el mock del frontend; envía `aforo.snapshot` al conectar y `aforo.update` en cada cambio. Auth JWT por query string `?token=<jwt>` (`core.ws_auth.JWTAuthMiddleware`); acceso denegado con close code `4403` para socios y anónimos
+- **Broadcast automático de aforo**: signal `post_save` sobre `AccessLog` (`apps/access/ws_signals.py`) publica al channel layer `aforo_updates`. Ignora eventos `DENIED`
+- **Servicio `get_aforo_actual()`** con cache Redis 5s (key `aforo:current`); `invalidate_aforo_cache()` en cada evento
+- `core/asgi.py` reemplaza `URLRouter([])` vacío por routing real de `apps.access.routing` (cerrando el mock de HU08)
+- **Logs estructurados JSON** via `python-json-logger==2.0.7`; toggle a formato plano con `LOG_FORMAT=plain` para debug local
+- **Load tests con Locust** (`backend/loadtests/locustfile.py`): 3 escenarios (`SocioUser`, `RecepcionistaUser`, `AdminUser`) cubriendo login + generación QR + scan + reportes; instrucciones headless en README (RNF01)
+- **Sentry frontend** (`@sentry/react==8.30.0`): `frontend/src/lib/sentry.js`, opt-in vía `VITE_SENTRY_DSN`; zero cost sin DSN; sampling 10% en prod, 0% en dev
+- **Management command `availability_report`**: `python manage.py availability_report --days N [--json]` calcula disponibilidad (RNF06) desde `AccessLog` excluyendo denials legítimos de negocio
+- `docs/reports/rnf01-rnf06.md` con fórmula, instrucciones de captura y criterios de aprobación
+
+### Cambiado
+- `MONGO_DB_NAME` en test settings aislada a `winnie_gym_logs_test` para no contaminar la base de desarrollo
+- Dependencias nuevas: `daphne==4.1.2` (ASGI server para tests asyncio), `pytest-asyncio==0.24.0` (dev); `pytest.ini` con `asyncio_mode = auto`
+- README con nueva sección «📚 Documentación técnica» linkeando los 4 documentos técnicos
+
+**PRs**: #54
+**Merge commit**: `40027aa`
+
+Suite: **229 tests** (+21 vs v0.10.0, 0 fallas).
+
+---
+
+## [0.10.0] — 2026-09-11
+**PR #48** · `feature/backend-mp-emails-reports` → `develop` · @Franco-Arce
+
+### Agregado
+- **Infraestructura API**: documentación OpenAPI vía `drf-spectacular` con Swagger UI (`/api/docs/`), ReDoc (`/api/redoc/`) y schema descargable (`/api/schema/`); todos los ViewSets anotados con `@extend_schema`
+- **Paginación global**: `PageNumberPagination` (page_size=10, máx 100 vía `?page_size=`) en todos los listados
+- **Filtros avanzados**: `django-filter` con `FilterSet` custom en las 5 apps (`apps/{app}/filters.py`); socios, planes, membresías, clases, inscripciones y access logs
+- **Búsqueda avanzada de clases (HU06)**: combina `?search=` + `categoria` + `dia` + `hora_desde`/`hora_hasta` + `cupo_disponible`
+- **Cancelación de reservas (HU07)**: `POST /api/classes/clases/{id}/cancelar/` con enforcement de `cancelacion_horas` y promoción automática desde lista de espera
+- **Certificado médico (RF08)**: `POST /api/members/socios/{id}/certificado-medico/` con validación de tipo (PDF/JPG/PNG) y tamaño máx 5 MB
+- **App `payments`** con modelo `Pago` (5 estados, FK a `Socio`, `PlanMembresia` y `Membresia`, campos MP completos)
+- **MercadoPago Checkout Pro**: `POST /api/payments/preferencias/` (socio) crea `Pago(pendiente)` + preferencia MP; `POST /api/payments/webhook/` valida firma HMAC-SHA256, es idempotente por `mp_payment_id` y activa la membresía en `approved`; `POST /api/payments/cobros-manuales/` (recep/admin) contingencia PDF riesgo #3
+- **Emails transaccionales async** vía Anymail + Mailtrap HTTP API; `apps/common/emails.py::send_templated_email` con retry 3× backoff 60s; templates: bienvenida (signal `post_save` de Socio), confirmación de pago y alerta de vencimiento
+- **Celery + Redis**: worker y beat en `docker-compose.yml`; `DatabaseScheduler` editable desde el admin
+- **Job diario de vencimientos** (`memberships.check_expiring_memberships`): corre 09:00 ARG; alertas a 7/3/1/0 días del vencimiento + flip a `estado='vencida'`; deduplicado por `Membresia.avisos_enviados`
+- **Reportes exportables (RF09 / HU09)**: app `reports` con exportadores agnósticos CSV (`stdlib`), XLSX (`openpyxl`) y PDF (`reportlab`, landscape A4); endpoints `GET /api/reportes/morosidad/`, `GET /api/reportes/facturacion/` y `GET /api/reportes/asistencia/` con parámetro `?formato=` (no `?format=` para evitar conflicto con content-negotiation de DRF)
+- **Health check completo**: `/api/health/` con probes reales a Postgres, Redis y Mongo (200 sano / 503 degradado)
+- **Password reset**: endpoints provistos por `dj-rest-auth` con `SafePasswordResetView` (siempre 200 para no revelar existencia de cuenta)
+- **Recupero de contraseña**: `POST /api/auth/password/reset/` y `POST /api/auth/password/reset/confirm/`
+
+### Cambiado
+- `SIMPLE_JWT.ACCESS_TOKEN_LIFETIME` reducido a 30 minutos con rotación de refresh tokens (RNF05)
+- `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGIN_REGEXES` y `CSRF_TRUSTED_ORIGINS` ampliados con wildcards para `.ngrok-free.dev/.app/.ngrok.io` (habilita el webhook MP en desarrollo)
+- Escritura async de accesos en Mongo migrada de `Thread(daemon=True)` a Celery task `access.log_qr_event` (retries + graceful shutdown)
+- Cobro manual registra y persiste diferencia respecto a `plan.precio` cuando el monto no coincide (auditable, no bloqueante)
+- BOM UTF-8 al inicio de todos los CSV exportados para renderizado correcto de tildes y ñ en Excel/Numbers
+- `mercadopago_client.py` como cliente aislado para facilitar mock en tests y futura migración de SDK
+- Sentry integrado opt-in vía env var `SENTRY_DSN` con integraciones Django, Celery y logging
+
+### Corregido
+- `MP_NGROK_URL` omite `auto_return` cuando `back_urls.success` es localhost (MP rechaza URLs no públicas en sandbox)
+
+**Requisitos ABP cubiertos**: 40+ endpoints documentados, paginación, filtros en 5 apps, consumo de API externa con valor real (MercadoPago Sandbox), 3 escenarios de email transaccional, carga de archivos (RF08), exportación CSV/PDF/XLSX (HU09). Suite: **208 tests** (0 fallas).
+
+**PRs**: #48
+**Merge commit**: `d4f4b8e`
+
+---
+
+## [0.9.0] — 2026-08-28
+**PR #43** · `feature/code-quality-audit` → `develop` · @Franco-Arce · @MagaBechis · @MrForii
+
+### Cambiado
+- **Backend — permisos y namespacing**: permisos declarados por ViewSet, URLs con namespacing de app, eliminación de código muerto y dead imports (Slice 1)
+- **Backend — convenciones de modelos**: campos migrados a `TextChoices`, migraciones de datos seguras y sólo aditivas (Slice 2)
+- **Backend — capa de servicio**: lógica de negocio extraída de las vistas a módulos `services.py` en `members`, `memberships`, `classes` y `access` (Slice 3)
+- **Backend — ViewSets**: `members` y `memberships` migrados desde APIView a ViewSet con router; rutas resultantes compatibles con los existentes (Slice 4)
+- **Backend — tests**: estructura `tests/` por app consolidada con `conftest.py` y helpers reutilizables; cobertura mantenida (Slice 5)
+- **Frontend — naming**: componentes renombrados de `Screen` → `Page` para coincidir con la convención de rutas del proyecto
+- **Frontend — TopBar**: patrón unificado con prop `backAction` en `ClassesPage`, `AdminPlanesPage` y vistas de dashboard
+- **Frontend — estado**: hooks `useAuth` y `useProfile` extraídos; estado desacoplado de los componentes de presentación
+- **Frontend — formularios**: `GestionSocios` migrado a React Hook Form + Zod
+- **Frontend — mock isolation**: datos mock aislados detrás de `import.meta.env.DEV`; `api.js` corregido para no filtrar mocks en producción
+- **Frontend — miscelánea**: `themeStore` con `export default`, imports de React innecesarios eliminados (JSX Transform), key warnings en listas corregidos, colores de estado migrados a tokens semánticos, `PublicRoute` y nuevo `CompleteProfileRoute` corregidos
+
+### Docs
+- README actualizado con decisiones de arquitectura del audit y guidelines de backend/frontend
+- `CHANGELOG.md` sincronizado con entradas `v0.7.0` y `v0.8.0`
+
+**PRs**: #43
+**Merge commit**: `1838c10`
 
 ---
 
