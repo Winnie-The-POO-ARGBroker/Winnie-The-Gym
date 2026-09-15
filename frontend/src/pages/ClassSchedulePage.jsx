@@ -18,6 +18,7 @@ import EmptyState from '../components/ui/EmptyState'
 import Button from '../components/ui/Button'
 import { useClassAttendees } from '../hooks/useClassAttendees'
 import api from '../services/api'
+import { ALL_RECORDS_PAGE_SIZE } from '../services/constants'
 
 const IS_DEV = import.meta.env.DEV
 
@@ -47,7 +48,7 @@ export default function ClassSchedulePage() {
   const fetchClasses = async () => {
     setIsLoading(true)
     try {
-      const response = await api.get('/classes/clases/', { params: { page_size: 1000 } })
+      const response = await api.get('/classes/clases/', { params: { page_size: ALL_RECORDS_PAGE_SIZE } })
       const classData = response.data.results || response.data
       setClasses(classData)
       if (classData.length > 0 && !selectedClass) {

@@ -13,6 +13,7 @@ import {
   CATEGORIAS_CLASES,
 } from '../../services/socioMockData'
 import api from '../../services/api'
+import { ALL_RECORDS_PAGE_SIZE } from '../../services/constants'
 import { useEffect, useCallback } from 'react'
 
 const IS_DEV = import.meta.env.DEV
@@ -101,7 +102,7 @@ export default function ClasesPage() {
       // We do not have a dedicated endpoint for my bookings yet, so we get all classes where user is enrolled.
       // This is a temporary workaround until an endpoint is made. We can fetch all and filter or use the API if it supports it.
       // But since we want to list active bookings, we'll fetch them without day/category filters for now.
-      const res = await api.get('/classes/clases/', { params: { page_size: 1000 } }) 
+      const res = await api.get('/classes/clases/', { params: { page_size: ALL_RECORDS_PAGE_SIZE } }) 
       const myBooks = res.data.results
         .filter(c => c.user_inscrito)
         .map(c => {

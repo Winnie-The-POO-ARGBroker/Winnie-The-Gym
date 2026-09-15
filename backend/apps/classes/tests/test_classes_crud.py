@@ -4,8 +4,8 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from apps.classes.models import Clase
-from conftest import make_user_factory
+from apps.classes.models import Clase, InscripcionClase
+from conftest import make_user_factory, make_socio_factory
 
 _counter = 0
 
@@ -194,10 +194,8 @@ class ClaseDeleteTests(APITestCase):
 class ClaseUserInscritoTests(APITestCase):
     def test_user_inscrito_true(self):
         socio_user = make_user_factory(rol='socio')
-        from conftest import make_socio_factory
         socio = make_socio_factory(usuario=socio_user)
         clase = _make_clase()
-        from apps.classes.models import InscripcionClase
         InscripcionClase.objects.create(clase=clase, socio=socio, en_espera=False)
         _auth_client(self.client, socio_user)
 
@@ -208,7 +206,13 @@ class ClaseUserInscritoTests(APITestCase):
 
     def test_user_inscrito_false(self):
         socio = make_user_factory(rol='socio')
-        _make_clase()
+        clase = _make_clase()
+        
+        # Sumar inscripción de otro socio para ejercitar el filter
+        otro_user = make_user_factory(rol='socio')
+        otro_socio = make_socio_factory(usuario=otro_user)
+        InscripcionClase.objects.create(clase=clase, socio=otro_socio, en_espera=False)
+
         _auth_client(self.client, socio)
 
         response = self.client.get(CLASES_URL)

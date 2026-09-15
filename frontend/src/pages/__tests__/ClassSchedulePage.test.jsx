@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { BrowserRouter } from 'react-router-dom'
 import ClassSchedulePage from '../ClassSchedulePage'
 import api from '../../services/api'
+import { ALL_RECORDS_PAGE_SIZE } from '../../services/constants'
 
 // Mock de la API
 vi.mock('../../services/api', () => {
@@ -22,7 +23,7 @@ describe('ClassSchedulePage', () => {
     vi.clearAllMocks()
   })
 
-  it('llama a la API con page_size=1000 al cargar el calendario', async () => {
+  it(`llama a la API con page_size=${ALL_RECORDS_PAGE_SIZE} al cargar el calendario`, async () => {
     api.get.mockResolvedValueOnce({ data: { results: [] } })
 
     renderWithRouter(<ClassSchedulePage />)
@@ -32,7 +33,7 @@ describe('ClassSchedulePage', () => {
     // el test pasa por suerte en JSDOM local pero es no-determinístico en CI.
     await waitFor(() => {
       expect(api.get).toHaveBeenCalledWith('/classes/clases/', {
-        params: { page_size: 1000 }
+        params: { page_size: ALL_RECORDS_PAGE_SIZE }
       })
     })
   })
