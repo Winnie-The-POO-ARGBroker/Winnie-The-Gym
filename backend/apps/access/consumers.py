@@ -18,12 +18,12 @@ AFORO_GROUP = 'aforo_updates'
 class AforoConsumer(AsyncJsonWebsocketConsumer):
 
     async def connect(self):
+        await self.accept()
         user = self.scope.get('user')
         if not self._is_authorized(user):
             await self.close(code=4403)
             return
         await self.channel_layer.group_add(AFORO_GROUP, self.channel_name)
-        await self.accept()
         # Send the initial snapshot immediately so the client renders on connect.
         await self.send_json({
             'type': 'aforo.snapshot',

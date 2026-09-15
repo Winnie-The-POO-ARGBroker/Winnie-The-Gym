@@ -26,18 +26,59 @@ api.interceptors.request.use((config) => {
   return config
 })
 
+let isRefreshing = false
+let refreshSubscribers = []
+
+function subscribeTokenRefresh(cb) {
+  refreshSubscribers.push(cb)
+}
+
+function onRefreshed(token) {
+  refreshSubscribers.map(cb => cb(token))
+  refreshSubscribers = []
+}
+
 api.interceptors.response.use(
   (r) => r,
-  (error) => {
-    const url = error.config?.url ?? ''
+  async (error) => {
+    const originalRequest = error.config
+    const url = originalRequest?.url ?? ''
     const isAuthEndpoint = url.includes('/auth/token')
-    if (error.response?.status === 401 && !isAuthEndpoint && !isRedirecting) {
-      isRedirecting = true
-      useAuthStore.getState().clearAuth()
-      toast.error('Your session has expired. Please log in again.')
-      if (navigator) navigator('/login', { replace: true })
-      setTimeout(() => { isRedirecting = false }, 0)
+
+    if (error.response?.status === 401 && !isAuthEndpoint && !originalRequest._retry) {
+      if (isRefreshing) {
+        return new Promise(resolve => {
+          subscribeTokenRefresh(token => {
+            originalRequest.headers.Authorization = `Bearer ${token}`
+            resolve(api(originalRequest))
+          })
+        })
+      }
+
+      originalRequest._retry = true
+      isRefreshing = true
+
+      const success = await useAuthStore.getState().refreshAuthToken()
+
+      if (success) {
+        isRefreshing = false
+        const newToken = useAuthStore.getState().accessToken
+        onRefreshed(newToken)
+        originalRequest.headers.Authorization = `Bearer ${newToken}`
+        return api(originalRequest)
+      } else {
+        isRefreshing = false
+        if (!isRedirecting) {
+          isRedirecting = true
+          useAuthStore.getState().clearAuth()
+          toast.error('Tu sesión ha expirado. Por favor, iniciá sesión nuevamente.')
+          if (navigator) navigator('/login', { replace: true })
+          setTimeout(() => { isRedirecting = false }, 0)
+        }
+        return Promise.reject(error)
+      }
     }
+
     return Promise.reject(error)
   }
 )
