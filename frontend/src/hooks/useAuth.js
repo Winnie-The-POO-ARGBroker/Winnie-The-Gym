@@ -5,7 +5,8 @@ export default function useAuth() {
   const accessToken = useAuthStore((s) => s.accessToken)
   const refreshToken = useAuthStore((s) => s.refreshToken)
   const setAuth = useAuthStore((s) => s.setAuth)
+  const updateRole = useAuthStore((s) => s.updateRole)
   const clearAuth = useAuthStore((s) => s.clearAuth)
 
-  return { user, accessToken, refreshToken, setAuth, clearAuth }
+  return { user, accessToken, refreshToken, setAuth, updateRole, clearAuth }
 }

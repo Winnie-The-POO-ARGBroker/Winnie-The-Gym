@@ -51,6 +51,9 @@ export default {
           950: '#0A0A0A',
         },
       },
+      spacing: {
+        sidebar: '16rem',
+      },
     },
   },
   plugins: [],

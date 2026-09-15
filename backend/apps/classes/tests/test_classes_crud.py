@@ -4,8 +4,8 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from apps.classes.models import Clase
-from conftest import make_user_factory
+from apps.classes.models import Clase, InscripcionClase
+from conftest import make_user_factory, make_socio_factory
 
 _counter = 0
 
@@ -189,3 +189,66 @@ class ClaseDeleteTests(APITestCase):
 
         response = self.client.delete(_clase_detail_url(clase.pk))
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class ClaseUserInscritoTests(APITestCase):
+    def test_user_inscrito_true(self):
+        socio_user = make_user_factory(rol='socio')
+        socio = make_socio_factory(usuario=socio_user)
+        clase = _make_clase()
+        InscripcionClase.objects.create(clase=clase, socio=socio, en_espera=False)
+        _auth_client(self.client, socio_user)
+
+        response = self.client.get(CLASES_URL)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.data.get('results', response.data)
+        self.assertTrue(data[0]['user_inscrito'])
+
+    def test_user_inscrito_false(self):
+        socio = make_user_factory(rol='socio')
+        clase = _make_clase()
+        
+        # Sumar inscripción de otro socio para ejercitar el filter
+        otro_user = make_user_factory(rol='socio')
+        otro_socio = make_socio_factory(usuario=otro_user)
+        InscripcionClase.objects.create(clase=clase, socio=otro_socio, en_espera=False)
+
+        _auth_client(self.client, socio)
+
+        response = self.client.get(CLASES_URL)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.data.get('results', response.data)
+        self.assertFalse(data[0]['user_inscrito'])
+
+    def test_user_inscrito_admin(self):
+        admin = make_user_factory(rol='administrador')
+        _make_clase()
+        _auth_client(self.client, admin)
+
+        response = self.client.get(CLASES_URL)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.data.get('results', response.data)
+        self.assertFalse(data[0]['user_inscrito'])
+
+
+class ClaseFilterTests(APITestCase):
+    def test_filter_por_turno(self):
+        admin = make_user_factory(rol='administrador')
+        _auth_client(self.client, admin)
+
+        _make_clase(nombre='Clase 11:59', hora='11:59:59')
+        _make_clase(nombre='Clase 12:00', hora='12:00:00')
+
+        # Test morning filter (<= 11:59:59)
+        res_manana = self.client.get(CLASES_URL, {'hora_hasta': '11:59:59'})
+        data_manana = res_manana.data.get('results', res_manana.data)
+        self.assertEqual(len(data_manana), 1)
+        self.assertEqual(data_manana[0]['nombre'], 'Clase 11:59')
+
+        # Test afternoon filter (>= 12:00:00)
+        res_tarde = self.client.get(CLASES_URL, {'hora_desde': '12:00:00'})
+        data_tarde = res_tarde.data.get('results', res_tarde.data)
+        self.assertEqual(len(data_tarde), 1)
+        self.assertEqual(data_tarde[0]['nombre'], 'Clase 12:00')
+
+

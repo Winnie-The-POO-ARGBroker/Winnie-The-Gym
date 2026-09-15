@@ -24,6 +24,7 @@ class InscripcionClaseSerializer(serializers.ModelSerializer):
 
 class ClaseSerializer(serializers.ModelSerializer):
     cupos_reservados = serializers.IntegerField(read_only=True)
+    user_inscrito = serializers.SerializerMethodField()
 
     class Meta:
         model = Clase
@@ -47,7 +48,18 @@ class ClaseSerializer(serializers.ModelSerializer):
             'estado',
             'created_at',
             'updated_at',
+            'user_inscrito',
         )
+
+    def get_user_inscrito(self, obj):
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated or not getattr(request.user, 'is_profile_complete', False):
+            return False
+        # We assume `socio` exists because `is_profile_complete` is true.
+        try:
+            return obj.inscripciones.filter(socio=request.user.socio, en_espera=False).exists()
+        except Exception:
+            return False
 
 
 class ClaseDetailSerializer(ClaseSerializer):

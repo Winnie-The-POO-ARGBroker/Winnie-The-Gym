@@ -14,7 +14,7 @@ const NAV_BY_ROLE = {
     { label: 'Dashboard',         path: '/dashboard',          icon: 'chart' },
     { divider: true, label: 'Administración' },
     { label: 'Membresías',        path: '/membresias',         icon: 'card' },
-    { label: 'Clases',            path: '/clases',             icon: 'monitor' },
+    { label: 'Clases',            path: '/admin/clases',       icon: 'calendar' },
     { label: 'Socios',            path: '/recepcion/socios',   icon: 'people' },
     { divider: true, label: 'Control & Recepción' },
     { label: 'Acceso QR',         path: '/recepcion/acceso',   icon: 'scan' },
@@ -22,20 +22,22 @@ const NAV_BY_ROLE = {
     { label: 'Reportes',          path: '/recepcion/reportes', icon: 'chart-line' },
     { divider: true, label: 'Portal Socio (Vista)' },
     { label: 'Mi Credencial',     path: '/socio/credencial',   icon: 'card' },
-    { label: 'Reserva Clases',    path: '/socio/clases',       icon: 'monitor' },
+    { label: 'Reserva Clases',    path: '/socio/clases',       icon: 'calendar' },
     { divider: true, label: 'Sistema' },
     { label: 'Configuración',     path: '/configuracion',      icon: 'gear' },
   ],
   recepcionista: [
     { label: 'Dashboard',         path: '/dashboard',          icon: 'chart' },
+    { label: 'Clases',            path: '/admin/clases',       icon: 'calendar' },
     { label: 'Acceso',            path: '/recepcion/acceso',   icon: 'scan' },
     { label: 'Aforo',             path: '/recepcion/aforo',    icon: 'activity' },
     { label: 'Socios',            path: '/recepcion/socios',   icon: 'people' },
     { label: 'Reportes',          path: '/recepcion/reportes', icon: 'chart-line' },
   ],
   socio: [
+    { label: 'Dashboard',         path: '/dashboard',          icon: 'chart' },
     { label: 'Mi Credencial',     path: '/socio/credencial',   icon: 'card' },
-    { label: 'Clases',            path: '/socio/clases',       icon: 'monitor' },
+    { label: 'Clases',            path: '/socio/clases',       icon: 'calendar' },
   ],
 }
 
@@ -61,10 +63,13 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="hidden md:flex flex-col h-full w-60 flex-shrink-0 bg-bg-surface border-r border-subtle">
+    // z-50 stacking order: sidebar (z-50) > bottom-nav (z-40) > header (z-20)
+    <aside className="hidden md:flex w-sidebar bg-bg-surface border-r border-subtle flex-col h-full z-50 transition-colors">
       {/* Logo */}
       <div className="px-5 py-6">
-        <WinnieLogo size="sm" />
+        <NavLink to="/dashboard" className="inline-block transition-transform hover:scale-105">
+          <WinnieLogo size="sm" />
+        </NavLink>
       </div>
 
       {/* Nav */}

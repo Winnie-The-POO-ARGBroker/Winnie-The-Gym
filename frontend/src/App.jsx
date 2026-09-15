@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import useThemeStore from './stores/themeStore'
+import useAuth from './hooks/useAuth'
 import { setApiNavigator } from './services/api'
 import LoginPage from './pages/LoginPage'
 import AuthCallback from './pages/AuthCallback'
@@ -26,6 +27,13 @@ import Reportes from './pages/recepcion/Reportes'
 import AdminPlanesPage from './pages/admin/AdminPlanesPage'
 
 const COMING_SOON_PATHS = ['/socios', '/reportes', '/configuracion']
+
+function RoleBasedClasesRedirect() {
+  const { user } = useAuth()
+  if (!user) return <Navigate to="/login" replace />
+  if (user.rol === 'socio') return <Navigate to="/socio/clases" replace />
+  return <Navigate to="/admin/clases" replace />
+}
 
 export default function App() {
   const { theme } = useThemeStore()
@@ -52,9 +60,9 @@ export default function App() {
         <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
         <Route path="/perfil" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
         
-        {/* Socio class schedule */}
+        {/* Redirect for legacy /clases route */}
         <Route path="/clases" element={
-          <ProtectedRoute roles={['administrador', 'socio']}><ClasesPage /></ProtectedRoute>
+          <ProtectedRoute><RoleBasedClasesRedirect /></ProtectedRoute>
         } />
 
         {/* Admin class management */}

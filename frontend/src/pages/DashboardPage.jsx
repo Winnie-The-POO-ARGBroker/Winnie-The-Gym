@@ -10,7 +10,7 @@ import RecepcionistaDashboardView from '../components/dashboard/views/Recepcioni
 import SocioDashboardView from '../components/dashboard/views/SocioDashboardView'
 
 export default function DashboardPage() {
-  const { user } = useAuth()
+  const { user, updateRole } = useAuth()
   const navigate = useNavigate()
 
   const IS_DEV = import.meta.env.DEV
@@ -52,9 +52,7 @@ export default function DashboardPage() {
     upcomingClasses: [],
   }
 
-  const [devRole, setDevRole] = useState(user?.rol || 'administrador')
-
-  const effectiveRole = IS_DEV ? devRole : user?.rol
+  const effectiveRole = user?.rol || 'administrador'
 
   const displayName = user?.nombre
     ? `${user.nombre} ${user.apellido ?? ''}`.trim()
@@ -73,7 +71,7 @@ export default function DashboardPage() {
       <div className="flex-1 p-6 overflow-auto flex flex-col gap-6">
 
         {IS_DEV && (
-          <DevRoleSelector value={devRole} onChange={setDevRole} />
+          <DevRoleSelector value={effectiveRole} onChange={updateRole} />
         )}
 
         {effectiveRole === 'administrador' && (

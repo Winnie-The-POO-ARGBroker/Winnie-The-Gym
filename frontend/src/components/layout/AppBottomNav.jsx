@@ -12,6 +12,7 @@ const MOBILE_NAV = {
   ],
   recepcionista: [
     { label: 'Dashboard', path: '/dashboard',          icon: 'chart' },
+    { label: 'Clases',    path: '/admin/clases',       icon: 'calendar' },
     { label: 'Acceso',    path: '/recepcion/acceso',   icon: 'scan' },
     { label: 'Aforo',     path: '/recepcion/aforo',    icon: 'activity' },
     { label: 'Socios',    path: '/recepcion/socios',   icon: 'people' },

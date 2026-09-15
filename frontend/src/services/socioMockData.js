@@ -84,14 +84,14 @@ export function generateMockQRToken(member = MOCK_MEMBER) {
 
 // Categorías de clases para filtrado
 export const CATEGORIAS_CLASES = [
-  { id: 'todas', label: 'Todas las disciplinas', icon: '⚡' },
-  { id: 'crossfit', label: 'CrossFit', icon: '🏋️' },
-  { id: 'spinning', label: 'Spinning', icon: '🚴' },
-  { id: 'yoga', label: 'Power Yoga', icon: '🧘' },
-  { id: 'pilates', label: 'Pilates Reformer', icon: '🤸' },
-  { id: 'boxeo', label: 'Boxeo & Funcional', icon: '🥊' },
-  { id: 'hiit', label: 'HIIT Circuit', icon: '🔥' },
-  { id: 'musculacion', label: 'Musculación Guiada', icon: '💪' },
+  { id: 'todas', label: 'Todas las disciplinas' },
+  { id: 'crossfit', label: 'CrossFit' },
+  { id: 'spinning', label: 'Spinning' },
+  { id: 'yoga', label: 'Power Yoga' },
+  { id: 'pilates', label: 'Pilates Reformer' },
+  { id: 'boxeo', label: 'Boxeo & Funcional' },
+  { id: 'hiit', label: 'HIIT Circuit' },
+  { id: 'musculacion', label: 'Musculación Guiada' },
 ]
 
 // Generador de fechas dinámicas a partir de hoy
