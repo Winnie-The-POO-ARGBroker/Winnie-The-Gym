@@ -17,6 +17,7 @@
 | Versión | Fecha | Autor(es) | Descripción del cambio |
 |---|---|---|---|
 | 1.0 | 14/09/2026 | Equipo QA (Magali Bechis, Gisele Lavisse, Jimena Gallegillo) con soporte técnico de Rodrigo Valdez | Elaboración inicial del Plan de Pruebas para la entrega de V&V del Sprint 3. |
+| 1.1 | 15/09/2026 | Rodrigo Valdez | Incorporación de tests automatizados frontend (Vitest + React Testing Library) sumados en el PR #77; actualización del conteo de tests backend (229 → 233) y ampliación de las secciones de estrategia, criterios, entregables, herramientas y planificación. |
 
 ## 3. Información del Proyecto
 
@@ -126,7 +127,7 @@ Cada vez que se agregue o modifique una historia de usuario, la regresión míni
 
 | Tipo de prueba | Enfoque | Herramientas |
 |---|---|---|
-| **Funcional** | Automatizada sobre los 8 módulos backend (casos de éxito, validaciones, reglas de negocio); manual sobre flujos de UI del frontend | pytest, pytest-django, Django REST test client, ejecución manual guiada por `casos-de-prueba.csv` |
+| **Funcional** | Automatizada sobre los 8 módulos backend (casos de éxito, validaciones, reglas de negocio); automatizada parcial sobre el frontend (componentes de UI compartidos + página de gestión de clases); manual sobre el resto de los flujos del frontend | pytest, pytest-django, Django REST test client, Vitest + React Testing Library, ejecución manual guiada por `casos-de-prueba.csv` |
 | **Integración** | Verificación de interacción real entre Django, PostgreSQL, MongoDB (auditoría/historial QR), Redis (channel layer WS) y Celery (tareas async) | pytest con fixtures de DB real de test, Docker Compose |
 | **Usabilidad** | Revisión manual de los flujos de socio/recepción/admin en el frontend (claridad, feedback visual, estados de error) | Ejecución manual, navegador |
 | **Seguridad** | Anti-replay y firma HMAC de tokens QR, validación de firma HMAC-SHA256 del webhook de MercadoPago, gating por rol/autenticación (401/403), hardening de `ALLOWED_HOSTS`/CSRF para túneles ngrok | pytest (`test_qr_utils.py`, `test_webhook.py`, `test_infra_hardening.py`) |
@@ -135,7 +136,8 @@ Cada vez que se agregue o modifique una historia de usuario, la regresión míni
 ## 12. Criterios de Aceptación/Rechazo
 
 **Aceptación:**
-- La suite completa de pytest (229 tests) debe ejecutarse en verde (0 failed) antes de considerar aprobado un módulo backend.
+- La suite completa de pytest (233 tests backend) debe ejecutarse en verde (0 failed) antes de considerar aprobado un módulo backend.
+- La suite de Vitest + React Testing Library (3 tests frontend al momento de esta versión) debe ejecutarse en verde antes de considerar aprobado un cambio en las áreas cubiertas (`Button`, `EmptyState`, `ClassSchedulePage`).
 - Cada caso de prueba manual del frontend debe ejecutarse y documentar su Resultado Obtenido; se acepta el caso si el resultado obtenido coincide con el esperado.
 - Los RNF01 y RNF06 deben cumplir los umbrales definidos en `docs/reports/rnf01-rnf06.md` (p95 < 2000ms y disponibilidad ≥ 99.9% respectivamente).
 
@@ -163,6 +165,8 @@ La ejecución se reanuda cuando:
 - Reportes de bugs ya cargados como GitHub Issues **#78 a #85** (cerrados), usando la plantilla `.github/ISSUE_TEMPLATE/bug_report.md`.
 - Reporte de requisitos no funcionales de performance/disponibilidad: `docs/reports/rnf01-rnf06.md`.
 - Script y README de pruebas de carga: `backend/loadtests/locustfile.py`, `backend/loadtests/README.md`.
+- Suite de tests automatizados backend: `backend/apps/**/tests/` (233 tests, ejecutables vía `docker compose exec backend pytest -q`).
+- Suite inicial de tests automatizados frontend: `frontend/src/**/__tests__/*.test.jsx` (3 tests iniciales sobre `Button`, `EmptyState` y `ClassSchedulePage`; setup en `frontend/vite.config.js` + `frontend/setupTests.js`).
 - Documento de arquitectura: `docs/architecture.md`.
 
 ## 16. Recursos
@@ -218,12 +222,13 @@ Según `docker-compose.yml` (raíz del repo) y la wiki del equipo (`Guia-de-Setu
 
 - **pytest** + **pytest-django** + **pytest-asyncio** (asyncio_mode=auto, `backend/pytest.ini`) — motor de tests automatizados backend.
 - **Django REST Framework test client** (`APIClient`) — pruebas de endpoints HTTP.
+- **Vitest** + **React Testing Library** + **jsdom** (`frontend/vite.config.js`, `frontend/setupTests.js`) — motor de tests automatizados frontend (componentes UI y páginas). Ejecutable vía `docker compose exec frontend npx vitest run`. Cobertura inicial: `Button`, `EmptyState`, `ClassSchedulePage` — se planea extender a `LoginPage`, `AuthCallback` y `DashboardPage` en el próximo sprint.
 - **Locust 2.31.5** (`backend/loadtests/locustfile.py`) — pruebas de carga para RNF01/RNF06.
 - **Comando de gestión `availability_report`** — cálculo empírico de disponibilidad del módulo de accesos.
 - **Docker / Docker Compose** — entorno reproducible de ejecución (db, redis, mongo, backend, frontend).
 - **GitHub Issues** con plantilla `.github/ISSUE_TEMPLATE/bug_report.md` — registro y seguimiento de bugs.
 - **Navegador (Chrome/Edge/Firefox)** — ejecución manual de casos de frontend.
-- Herramienta de cobertura de código (ej. `coverage.py`/`pytest-cov`): no se encontró configurada en `backend/requirements/*.txt` ni en `pytest.ini` al momento de este relevamiento — [PENDIENTE: definir con el equipo] si se va a incorporar.
+- Herramienta de cobertura de código (ej. `coverage.py`/`pytest-cov` en backend, `@vitest/coverage-v8` en frontend): no configurada al momento de este relevamiento — [PENDIENTE: definir con el equipo] si se va a incorporar.
 - Cliente REST manual (Postman/Insomnia) para exploración ad-hoc: [PENDIENTE: definir con el equipo].
 
 ## 19. Personal y Roles
@@ -241,11 +246,12 @@ Fuente: wiki del equipo, página Home, tabla "Equipo".
 
 ## 20. Planificación y Organización
 
-La actividad de V&V se ejecuta en paralelo al cierre del Sprint 3 (que finaliza el 20/09/2026), con entrega específica de esta actividad el 17/09/2026. El trabajo se organiza en tres frentes:
+La actividad de V&V se ejecuta en paralelo al cierre del Sprint 3 (que finaliza el 20/09/2026), con entrega específica de esta actividad el 17/09/2026. El trabajo se organiza en cuatro frentes:
 
-1. **Regresión automatizada backend:** ejecución de la suite pytest completa (229 tests) sobre los 8 módulos.
-2. **Testing manual frontend:** ejecución guiada de los 5 casos definidos en `casos-de-prueba.csv` para las pantallas de login, credencial digital, reservas de clases, terminal de acceso y gestión de socios.
-3. **Consolidación de hallazgos:** cualquier defecto nuevo se carga como GitHub Issue con la plantilla oficial, siguiendo el mismo formato que los issues #78-#85 ya cerrados.
+1. **Regresión automatizada backend:** ejecución de la suite pytest completa (233 tests) sobre los 8 módulos.
+2. **Regresión automatizada frontend:** ejecución de la suite Vitest (`npx vitest run`) sobre los componentes y páginas cubiertos (`Button`, `EmptyState`, `ClassSchedulePage` en esta ronda). No reemplaza al testing manual, lo complementa protegiendo contra regresiones en las áreas ya cubiertas.
+3. **Testing manual frontend:** ejecución guiada de los 5 casos definidos en `casos-de-prueba.csv` para las pantallas de login, credencial digital, reservas de clases, terminal de acceso y gestión de socios.
+4. **Consolidación de hallazgos:** cualquier defecto nuevo se carga como GitHub Issue con la plantilla oficial, siguiendo el mismo formato que los issues #78-#85 ya cerrados.
 
 ## 21. Procedimientos de Prueba
 
