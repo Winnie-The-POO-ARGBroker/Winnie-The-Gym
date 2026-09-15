@@ -189,3 +189,38 @@ class ClaseDeleteTests(APITestCase):
 
         response = self.client.delete(_clase_detail_url(clase.pk))
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class ClaseUserInscritoTests(APITestCase):
+    def test_user_inscrito_true(self):
+        socio = make_user_factory(rol='socio')
+        clase = _make_clase()
+        from apps.classes.models import InscripcionClase
+        InscripcionClase.objects.create(clase=clase, socio=socio, en_espera=False)
+        _auth_client(self.client, socio)
+
+        response = self.client.get(CLASES_URL)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.data.get('results', response.data)
+        self.assertTrue(data[0]['user_inscrito'])
+
+    def test_user_inscrito_false(self):
+        socio = make_user_factory(rol='socio')
+        _make_clase()
+        _auth_client(self.client, socio)
+
+        response = self.client.get(CLASES_URL)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.data.get('results', response.data)
+        self.assertFalse(data[0]['user_inscrito'])
+
+    def test_user_inscrito_admin(self):
+        admin = make_user_factory(rol='administrador')
+        _make_clase()
+        _auth_client(self.client, admin)
+
+        response = self.client.get(CLASES_URL)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.data.get('results', response.data)
+        self.assertFalse(data[0]['user_inscrito'])
+

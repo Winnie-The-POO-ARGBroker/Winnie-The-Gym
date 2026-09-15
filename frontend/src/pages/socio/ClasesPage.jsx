@@ -47,7 +47,7 @@ export default function ClasesPage() {
       if (selectedCategory !== 'todas') params.categoria = selectedCategory
       if (searchQuery.trim()) params.search = searchQuery
 
-      if (selectedTurno === 'manana') params.hora_hasta = '12:00:00'
+      if (selectedTurno === 'manana') params.hora_hasta = '11:59:59'
       if (selectedTurno === 'tarde') params.hora_desde = '12:00:00'
 
       const res = await api.get('/classes/clases/', { params })
@@ -88,7 +88,10 @@ export default function ClasesPage() {
   useEffect(() => {
     // Only fetch if catalog tab is active, or initially
     if (activeTab === 'catalogo') {
-      fetchClasses()
+      const timeoutId = setTimeout(() => {
+        fetchClasses()
+      }, 300)
+      return () => clearTimeout(timeoutId)
     }
   }, [fetchClasses, activeTab])
 
@@ -99,7 +102,7 @@ export default function ClasesPage() {
       // We do not have a dedicated endpoint for my bookings yet, so we get all classes where user is enrolled.
       // This is a temporary workaround until an endpoint is made. We can fetch all and filter or use the API if it supports it.
       // But since we want to list active bookings, we'll fetch them without day/category filters for now.
-      const res = await api.get('/classes/clases/') 
+      const res = await api.get('/classes/clases/', { params: { page_size: 1000 } }) 
       const myBooks = res.data.results
         .filter(c => c.user_inscrito)
         .map(c => {
@@ -110,7 +113,7 @@ export default function ClasesPage() {
 
           return {
             id: c.id,
-            fecha: selectedDay, 
+            fecha: c.dia, 
             nombre: c.nombre,
             categoria: c.categoria,
             instructor: c.instructor,
@@ -222,7 +225,7 @@ export default function ClasesPage() {
               <span className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">
                 Día de la semana
               </span>
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-2 w-full max-w-[calc(100vw-40px)] sm:max-w-full">
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-2 w-full scrollbar-none">
                 {DIAS_AGENDA.map((dia) => {
                   const isSelected = dia.id === selectedDay
                   return (
@@ -308,7 +311,7 @@ export default function ClasesPage() {
             </div>
 
             {/* SELECTOR DE DISCIPLINAS */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-2 w-full max-w-[calc(100vw-40px)] sm:max-w-full">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-2 w-full scrollbar-none">
               {CATEGORIAS_CLASES.map((cat) => {
                 const isSelected = selectedCategory === cat.id
                 return (
@@ -343,11 +346,11 @@ export default function ClasesPage() {
                   message="Consultá con recepción para ver la agenda."
                 />
               ) : isLoading ? (
-                <Card className="p-6 text-center flex flex-col items-center justify-center gap-2">
-                  <h4 className="text-xs font-bold text-text-primary">
-                    Cargando clases...
-                  </h4>
-                </Card>
+                <EmptyState
+                  icon={Calendar}
+                  title="Cargando clases..."
+                  message="Por favor esperá unos segundos."
+                />
               ) : filteredClasses.length === 0 ? (
                 <Card className="p-6 text-center flex flex-col items-center justify-center gap-2">
                   <h4 className="text-xs font-bold text-text-primary">
@@ -380,11 +383,11 @@ export default function ClasesPage() {
             </span>
 
             {isLoading ? (
-              <Card className="p-6 text-center flex flex-col items-center justify-center gap-2">
-                <h4 className="text-xs font-bold text-text-primary">
-                  Cargando reservas...
-                </h4>
-              </Card>
+                <EmptyState
+                  icon={Calendar}
+                  title="Cargando reservas..."
+                  message="Por favor esperá unos segundos."
+                />
             ) : myBookings.length === 0 ? (
               <Card className="p-6 text-center flex flex-col items-center justify-center gap-2">
                 <h4 className="text-xs font-bold text-text-primary">

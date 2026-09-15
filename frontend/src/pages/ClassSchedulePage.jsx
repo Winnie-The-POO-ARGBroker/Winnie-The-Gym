@@ -162,7 +162,11 @@ export default function ClassSchedulePage() {
         {/* TAB 1: PANTALLA 1 FIGMA (Calendario Semanal de Clases) */}
         {activeTab === 'calendario' && (
           isLoading ? (
-            <div className="flex justify-center py-20 text-text-secondary">Cargando...</div>
+            <EmptyState
+              icon={Calendar}
+              title="Cargando calendario..."
+              message="Por favor esperá unos segundos."
+            />
           ) : classes.length === 0 ? (
             <EmptyState
               icon={Calendar}
@@ -184,7 +188,11 @@ export default function ClassSchedulePage() {
         {/* TAB 2: PANTALLA 2 FIGMA (Vista de Lista y Detalle de Clase) */}
         {activeTab === 'lista' && (
           isLoading ? (
-            <div className="flex justify-center py-20 text-text-secondary">Cargando...</div>
+            <EmptyState
+              icon={Calendar}
+              title="Cargando lista..."
+              message="Por favor esperá unos segundos."
+            />
           ) : classes.length === 0 ? (
             <EmptyState
               icon={Calendar}

@@ -144,8 +144,9 @@ export default function CreateClassPage() {
   const handleDuplicateFromExisting = async () => {
     try {
       const res = await api.get('/classes/clases/')
-      if (res.data.length > 0) {
-        const toClone = res.data[0]
+      const results = res.data.results || res.data
+      if (results && results.length > 0) {
+        const toClone = results[0]
         setFormData({
           ...toClone,
           id: undefined,
