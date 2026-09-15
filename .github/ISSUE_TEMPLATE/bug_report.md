@@ -4,26 +4,27 @@ about: "Reportar un comportamiento incorrecto"
 labels: bug
 ---
 
-## Descripción del problema
-<!-- Qué está pasando que no debería pasar -->
+## Tema / Pantalla
+<!-- Nombre del tema o pantalla afectada -->
 
-## Pasos para reproducirlo
+## Ambiente de Testing
+- Sistema Operativo:
+- Navegador:
+- Versión:
+
+## Precondiciones
+<!-- Condiciones previas necesarias para reproducir el bug -->
+
+## Pasos para Reproducir
 1. 
 2. 
 3. 
 
-## Comportamiento esperado
-<!-- Qué debería pasar -->
+## Resultado Esperado
+<!-- Comportamiento esperado al realizar los pasos anteriores -->
 
-## Comportamiento actual
-<!-- Qué pasa en realidad -->
+## Resultado Obtenido
+<!-- Comportamiento real obtenido al realizar los pasos anteriores -->
 
-## Entorno
-- [ ] Local (Docker)
-- [ ] Producción
-
-## Screenshots / Logs
-<!-- Si aplica, agregar capturas o logs relevantes -->
-
-## Branch sugerida
-`fix/nombre-descriptivo`
+## Evidencia
+<!-- Adjuntar capturas de pantalla, videos o cualquier otra evidencia que respalde el reporte -->
