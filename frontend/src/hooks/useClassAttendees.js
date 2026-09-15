@@ -1,36 +1,46 @@
 import { useState, useEffect } from 'react'
-import {
-  getStoredAttendees,
-  saveStoredAttendees,
-} from '../services/adminMockData'
+import api from '../services/api'
 
 export function useClassAttendees(classId) {
   const [attendees, setAttendees] = useState([])
 
-  useEffect(() => {
-    if (classId) {
-      if (import.meta.env.DEV) {
-        setAttendees(getStoredAttendees(classId))
-      } else {
-        setAttendees([])
-      }
+  const fetchAttendees = async () => {
+    if (!classId) return
+    try {
+      const res = await api.get(`/classes/clases/${classId}/`)
+      setAttendees(res.data.inscripciones || [])
+    } catch (err) {
+      console.error('Error fetching attendees:', err)
+      setAttendees([])
     }
+  }
+
+  useEffect(() => {
+    fetchAttendees()
   }, [classId])
 
-  const toggleStatus = (attendeeId, newStatus) => {
-    setAttendees((prev) =>
-      prev.map((att) =>
-        att.id === attendeeId
-          ? { ...att, estado: att.estado === newStatus ? 'sin_marcar' : newStatus }
-          : att
+  const toggleStatus = async (attendeeId, newStatus) => {
+    // newStatus is conceptually 'presente' | 'ausente' in UI,
+    // but the backend uses `asistio` boolean.
+    // Let's assume newStatus logic: if setting to 'presente', asistio=True.
+    const asistio = newStatus === 'presente'
+    try {
+      await api.patch(`/classes/inscripciones/${attendeeId}/`, { asistio })
+      // Update local state to reflect UI changes immediately or refetch
+      setAttendees((prev) =>
+        prev.map((att) =>
+          att.id === attendeeId
+            ? { ...att, asistio }
+            : att
+        )
       )
-    )
+    } catch (err) {
+      console.error('Error updating attendance status:', err)
+    }
   }
 
   const saveAttendees = () => {
-    if (classId) {
-      saveStoredAttendees(classId, attendees)
-    }
+    // Handled individually by toggleStatus for API
   }
 
   return {
@@ -38,5 +48,6 @@ export function useClassAttendees(classId) {
     setAttendees,
     toggleStatus,
     saveAttendees,
+    fetchAttendees,
   }
 }

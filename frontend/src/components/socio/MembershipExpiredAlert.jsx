@@ -11,7 +11,9 @@ export default function MembershipExpiredAlert({ fechaVencimiento }) {
           Membresía Vencida
         </span>
         <span className="text-[11px] text-text-secondary leading-tight block mt-0.5">
-          Tu plan venció el {fechaVencimiento}. Acercate a recepción para renovar.
+          {fechaVencimiento
+            ? `Tu plan venció el ${fechaVencimiento}. Acercate a recepción para renovar.`
+            : `No tienes un plan activo. Acercate a recepción para contratar uno.`}
         </span>
       </div>
     </div>

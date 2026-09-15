@@ -55,7 +55,7 @@ class SocioMeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Socio
-        fields = ('id', 'numero_socio', 'nombre', 'apellido', 'estado', 'membresia_activa')
+        fields = ('id', 'numero_socio', 'dni', 'nombre', 'apellido', 'estado', 'membresia_activa')
 
     def get_membresia_activa(self, obj):
         m = obj.membresias.filter(estado='activa').order_by('-fecha_fin').first()

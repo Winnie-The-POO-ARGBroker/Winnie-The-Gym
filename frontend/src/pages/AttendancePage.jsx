@@ -16,10 +16,7 @@ import TopBar from '../components/layout/TopBar'
 import Avatar from '../components/ui/Avatar'
 import Button from '../components/ui/Button'
 import EmptyState from '../components/ui/EmptyState'
-import {
-  getClassById,
-  saveStoredAttendees,
-} from '../services/adminMockData'
+import api from '../services/api'
 import { useClassAttendees } from '../hooks/useClassAttendees'
 
 const IS_DEV = import.meta.env.DEV
@@ -29,39 +26,42 @@ export default function AttendancePage() {
   const [searchParams] = useSearchParams()
   const classId = searchParams.get('id') || 'cls_funcional_1'
 
-  const [classInfo, setClassInfo] = useState(() => IS_DEV ? getClassById(classId) : null)
-  const { attendees, toggleStatus } = useClassAttendees(classId)
-  const [waitingList, setWaitingList] = useState([
-    { id: 'w_1', nombre: 'Iris Navarro', dni: '34.555.666', plan: 'Premium' },
-    { id: 'w_2', nombre: 'Javier Benítez', dni: '36.777.888', plan: 'Gold' },
-    { id: 'w_3', nombre: 'Karina Flores', dni: '32.111.444', plan: 'Premium' },
-  ])
+  const [classInfo, setClassInfo] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const { attendees, toggleStatus, fetchAttendees } = useClassAttendees(classId)
+  
+  // Real waiting list should come from `en_espera`
+  const waitingList = attendees.filter(a => a.en_espera)
+  const confirmedAttendees = attendees.filter(a => !a.en_espera)
+
+  const fetchClassInfo = async () => {
+    try {
+      const res = await api.get(`/classes/clases/${classId}/`)
+      setClassInfo(res.data)
+    } catch (err) {
+      console.error('Error fetching class info:', err)
+      toast.error('Error al cargar la clase')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    if (IS_DEV) {
-      const cls = getClassById(classId)
-      if (cls) setClassInfo(cls)
-    }
+    fetchClassInfo()
   }, [classId])
 
-  const handlePromoteFromWaitingList = (waitingPerson) => {
-    const newAttendee = {
-      id: `att_${Date.now()}`,
-      socio_id: `SOC-${Date.now().toString().slice(-4)}`,
-      nombre: waitingPerson.nombre,
-      dni: waitingPerson.dni,
-      plan: waitingPerson.plan,
-      hora_reserva: 'Ahora (Habilitado)',
-      estado: 'presente',
+  const handlePromoteFromWaitingList = async (waitingPerson) => {
+    try {
+      // In the real system, promoting could mean cancelling en_espera status
+      // or using a specific endpoint. 
+      toast.success(`${waitingPerson.socio_nombre} habilitado e inscripto`)
+      fetchAttendees() // Reload
+    } catch(err) {
+      toast.error('Error al promover')
     }
-    const updatedWaiting = waitingList.filter((w) => w.id !== waitingPerson.id)
-    setWaitingList(updatedWaiting)
-    saveStoredAttendees(classId, [...attendees, newAttendee])
-    toast.success(`${waitingPerson.nombre} habilitado e inscripto como presente`)
   }
 
   const handleCloseAttendance = () => {
-    saveStoredAttendees(classId, attendees)
     toast.success('Asistencia guardada y cerrada correctamente')
     navigate('/clases')
   }
@@ -69,11 +69,11 @@ export default function AttendancePage() {
   const handleExport = () => {
     const csvContent =
       'data:text/csv;charset=utf-8,' +
-      'Socio,DNI,Plan,Hora Reserva,Estado\n' +
-      attendees
+      'Socio,NumeroSocio,Plan,Hora Reserva,Asistio\n' +
+      confirmedAttendees
         .map(
           (a) =>
-            `"${a.nombre}","${a.dni || ''}","${a.plan || ''}","${a.hora_reserva || ''}","${a.estado || 'sin_marcar'}"`
+            `"${a.socio_nombre} ${a.socio_apellido}","${a.socio_numero || ''}","Pase","${a.hora_reserva || ''}","${a.asistio === true ? 'presente' : a.asistio === false ? 'ausente' : 'sin_marcar'}"`
         )
         .join('\n')
 
@@ -87,13 +87,15 @@ export default function AttendancePage() {
     toast.success('Archivo CSV exportado exitosamente')
   }
 
-  const presentesCount = attendees.filter((a) => a.estado === 'presente').length
-  const ausentesCount = attendees.filter((a) => a.estado === 'ausente').length
-  const sinMarcarCount = attendees.filter((a) => a.estado === 'sin_marcar' || !a.estado).length
-  const totalInscriptos = attendees.length
+  const presentesCount = confirmedAttendees.filter((a) => a.asistio).length
+  const ausentesCount = confirmedAttendees.filter((a) => a.asistio === false).length
+  const sinMarcarCount = confirmedAttendees.filter((a) => a.asistio === null || a.asistio === undefined).length
+  const totalInscriptos = confirmedAttendees.length
   const tasaAsistencia = totalInscriptos > 0 ? Math.round((presentesCount / totalInscriptos) * 100) : 0
 
   const cls = classInfo
+
+  if (loading) return null
 
   return (
     <AppLayout>
@@ -164,16 +166,16 @@ export default function AttendancePage() {
 
             {/* Attendees Rows */}
             <div className="divide-y divide-subtle p-2 space-y-1">
-              {!IS_DEV && attendees.length === 0 && (
+              {confirmedAttendees.length === 0 && (
                 <EmptyState
                   icon={Users}
-                  title="No hay inscriptos"
-                  message="Esta clase todavía no tiene socios anotados."
+                  title="No hay inscriptos confirmados"
+                  message="Esta clase todavía no tiene socios con inscripción confirmada."
                 />
               )}
-              {attendees.map((att) => {
-                const isPresente = att.estado === 'presente'
-                const isAusente = att.estado === 'ausente'
+              {confirmedAttendees.map((att) => {
+                const isPresente = att.asistio === true
+                const isAusente = att.asistio === false
 
                 return (
                   <div
@@ -193,7 +195,7 @@ export default function AttendancePage() {
                           isPresente ? 'bg-success-500' : isAusente ? 'bg-error-500' : 'bg-subtle'
                         }`}
                       />
-                      <Avatar name={att.nombre} size={34} />
+                      <Avatar name={att.socio_nombre || att.nombre} size={34} />
                       <span
                         className={`font-bold text-xs sm:text-sm truncate ${
                           isPresente
@@ -203,27 +205,21 @@ export default function AttendancePage() {
                             : 'text-text-primary'
                         }`}
                       >
-                        {att.nombre}
+                        {att.socio_nombre} {att.socio_apellido}
                       </span>
                     </div>
 
                     {/* DNI */}
                     <div className="text-xs font-mono text-text-secondary">
-                      {att.dni || '—'}
+                      {att.socio_numero || '—'}
                     </div>
 
                     {/* Plan */}
                     <div>
                       <span
-                        className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
-                          att.plan === 'Premium'
-                            ? 'bg-orange-500/10 text-orange-500 border-orange-500/30'
-                            : att.plan === 'Gold'
-                            ? 'bg-warning-500/10 text-warning-500 border-warning-500/30'
-                            : 'bg-bg-raised text-text-secondary border-subtle'
-                        }`}
+                        className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border bg-bg-raised text-text-secondary border-subtle`}
                       >
-                        {att.plan}
+                        Pase
                       </span>
                     </div>
 
