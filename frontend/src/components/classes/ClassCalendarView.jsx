@@ -16,6 +16,16 @@ const HORAS_GRILLA = [
   '10:00',
   '11:00',
   '12:00',
+  '13:00',
+  '14:00',
+  '15:00',
+  '16:00',
+  '17:00',
+  '18:00',
+  '19:00',
+  '20:00',
+  '21:00',
+  '22:00',
 ]
 
 export default function ClassCalendarView({ classes = [], onSelectClass, onOpenAttendees }) {
@@ -23,9 +33,30 @@ export default function ClassCalendarView({ classes = [], onSelectClass, onOpenA
   const getClassesForSlot = (diaKey, horaStr) => {
     const slotHour = parseInt(horaStr.split(':')[0], 10)
     return classes.filter((cls) => {
-      if (cls.dia !== diaKey && !cls.dias_recurrencia?.includes(diaKey.charAt(0))) {
-        if (cls.dia !== diaKey) return false
+      const diasMap = {
+        'Lunes': 'L',
+        'Martes': 'M',
+        'Miércoles': 'X',
+        'Jueves': 'J',
+        'Viernes': 'V',
+        'Sábado': 'S',
+        'Domingo': 'D'
       }
+      const recKey = diasMap[diaKey]
+
+      const hasRecurrencia = cls.dias_recurrencia && cls.dias_recurrencia.length > 0
+      
+      let dayMatch = false
+      if (hasRecurrencia) {
+        dayMatch = cls.dias_recurrencia.includes(recKey)
+      } else {
+        const primaryDay = cls.dia?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        const targetDay = diaKey.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        dayMatch = primaryDay === targetDay
+      }
+
+      if (!dayMatch) return false
+      
       const clsHour = parseInt((cls.hora || '08:00').split(':')[0], 10)
       return clsHour === slotHour
     })

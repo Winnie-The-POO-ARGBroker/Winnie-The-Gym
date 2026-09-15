@@ -11,16 +11,18 @@ import EmptyState from '../../components/ui/EmptyState'
 import {
   DIAS_AGENDA,
   CATEGORIAS_CLASES,
-  getStoredClasses,
-  saveStoredClasses,
 } from '../../services/socioMockData'
+import api from '../../services/api'
+import { ALL_RECORDS_PAGE_SIZE } from '../../services/constants'
+import { useEffect, useCallback } from 'react'
 
 const IS_DEV = import.meta.env.DEV
 
 export default function ClasesPage() {
   // Catálogo de clases con persistencia local simulada
   // TODO: reemplazar por API real -> GET /api/classes/
-  const [classesList, setClassesList] = useState(() => IS_DEV ? getStoredClasses() : [])
+  const [classesList, setClassesList] = useState([])
+  const [isLoading, setIsLoading] = useState(false)
   
   // Filtros interactivos con fecha de hoy por defecto
   const [selectedDay, setSelectedDay] = useState(
@@ -31,81 +33,148 @@ export default function ClasesPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [activeTab, setActiveTab] = useState('catalogo') // 'catalogo' | 'mis_reservas'
 
-  // Clases reservadas por el socio
+  // Fetch clases with backend filters
+  const fetchClasses = useCallback(async () => {
+    setIsLoading(true)
+    try {
+      // Map selectedDay to weekday (lunes, martes...)
+      const d = new Date(`${selectedDay}T00:00:00`)
+      const diasMap = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado']
+      const diaParam = diasMap[d.getDay()]
+
+      const params = {
+        dia: diaParam,
+      }
+      if (selectedCategory !== 'todas') params.categoria = selectedCategory
+      if (searchQuery.trim()) params.search = searchQuery
+
+      if (selectedTurno === 'manana') params.hora_hasta = '11:59:59'
+      if (selectedTurno === 'tarde') params.hora_desde = '12:00:00'
+
+      const res = await api.get('/classes/clases/', { params })
+      const formattedClasses = res.data.results.map((c) => {
+        // Calculate horaFin
+        const [h, m] = c.hora.split(':').map(Number)
+        const dateObj = new Date()
+        dateObj.setHours(h, m + c.duracion_min, 0)
+        const horaFin = `${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}`
+        
+        return {
+          id: c.id,
+          fecha: undefined,
+          nombre: c.nombre,
+          categoria: c.categoria,
+          instructor: c.instructor,
+          instructorAvatar: '',
+          horaInicio: c.hora.substring(0, 5),
+          horaFin: horaFin,
+          duracionMin: c.duracion_min,
+          sala: c.sala,
+          cuposTotales: c.cupo_maximo,
+          cuposReservados: c.cupos_reservados,
+          isBooked: c.user_inscrito,
+          descripcion: c.descripcion,
+        }
+      })
+      setClassesList(formattedClasses)
+    } catch (error) {
+      toast.error('Error al cargar clases')
+      console.error(error)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [selectedDay, selectedCategory, selectedTurno, searchQuery])
+
+  useEffect(() => {
+    // Only fetch if catalog tab is active, or initially
+    if (activeTab === 'catalogo') {
+      const timeoutId = setTimeout(() => {
+        fetchClasses()
+      }, 300)
+      return () => clearTimeout(timeoutId)
+    }
+  }, [fetchClasses, activeTab])
+
+  // Mis reservas
+  const fetchMyBookings = useCallback(async () => {
+    setIsLoading(true)
+    try {
+      // We do not have a dedicated endpoint for my bookings yet, so we get all classes where user is enrolled.
+      // This is a temporary workaround until an endpoint is made. We can fetch all and filter or use the API if it supports it.
+      // But since we want to list active bookings, we'll fetch them without day/category filters for now.
+      const res = await api.get('/classes/clases/', { params: { page_size: ALL_RECORDS_PAGE_SIZE } }) 
+      const myBooks = res.data.results
+        .filter(c => c.user_inscrito)
+        .map(c => {
+          const [h, m] = c.hora.split(':').map(Number)
+          const dateObj = new Date()
+          dateObj.setHours(h, m + c.duracion_min, 0)
+          const horaFin = `${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}`
+
+          return {
+            id: c.id,
+            fecha: undefined, 
+            nombre: c.nombre,
+            categoria: c.categoria,
+            instructor: c.instructor,
+            instructorAvatar: '',
+            horaInicio: c.hora.substring(0, 5),
+            horaFin: horaFin,
+            duracionMin: c.duracion_min,
+            sala: c.sala,
+            cuposTotales: c.cupo_maximo,
+            cuposReservados: c.cupos_reservados,
+            isBooked: true,
+            descripcion: c.descripcion,
+          }
+        })
+      setClassesList(myBooks)
+    } catch (error) {
+      toast.error('Error al cargar tus reservas')
+      console.error(error)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (activeTab === 'mis_reservas') {
+      fetchMyBookings()
+    }
+  }, [fetchMyBookings, activeTab])
+
+  // Clases reservadas por el socio (para el contador del tab)
   const myBookings = useMemo(() => {
     return classesList.filter((c) => c.isBooked)
   }, [classesList])
 
-  // Filtrado de clases para el catálogo
-  const filteredClasses = useMemo(() => {
-    return classesList.filter((c) => {
-      // Filtro por día
-      if (c.fecha !== selectedDay) return false
-
-      // Filtro por categoría
-      if (selectedCategory !== 'todas' && c.categoria !== selectedCategory) return false
-
-      // Filtro por turno
-      if (selectedTurno !== 'todos' && c.turno !== selectedTurno) return false
-
-      // Filtro por texto de búsqueda (nombre clase o instructor)
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase()
-        const matchName = c.nombre.toLowerCase().includes(q)
-        const matchInstructor = c.instructor.toLowerCase().includes(q)
-        const matchSala = c.sala.toLowerCase().includes(q)
-        if (!matchName && !matchInstructor && !matchSala) return false
-      }
-
-      return true
-    })
-  }, [classesList, selectedDay, selectedCategory, selectedTurno, searchQuery])
+  // Filtrado de clases para el catálogo ya lo hace el backend!
+  const filteredClasses = classesList
 
   // Acción de reservar cupo
-  // TODO: reemplazar por API real -> POST /api/classes/:id/book/
-  const handleBookClass = (classId) => {
-    setClassesList((prev) => {
-      const updated = prev.map((c) => {
-        if (c.id === classId) {
-          if (c.cuposReservados >= c.cuposTotales) {
-            toast.error('Esta clase ya no tiene cupos disponibles')
-            return c
-          }
-          toast.success(`¡Cupo reservado para ${c.nombre}!`)
-          return {
-            ...c,
-            isBooked: true,
-            cuposReservados: c.cuposReservados + 1,
-          }
-        }
-        return c
-      })
-      saveStoredClasses(updated)
-      return updated
-    })
+  const handleBookClass = async (classId) => {
+    try {
+      await api.post(`/classes/clases/${classId}/inscribir/`)
+      toast.success('¡Cupo reservado con éxito!')
+      if (activeTab === 'catalogo') fetchClasses()
+      else fetchMyBookings()
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error al reservar la clase')
+      console.error(error)
+    }
   }
 
   // Acción de cancelar reserva
-  // TODO: reemplazar por API real -> POST /api/classes/:id/cancel/
-  const handleCancelBooking = (classId) => {
-    const clase = classesList.find((c) => c.id === classId)
-    if (!clase?.isBooked) return
-
-    setClassesList((prev) => {
-      const updated = prev.map((c) => {
-        if (c.id === classId) {
-          toast.info(`Reserva cancelada para ${c.nombre}`)
-          return {
-            ...c,
-            isBooked: false,
-            cuposReservados: Math.max(0, c.cuposReservados - 1),
-          }
-        }
-        return c
-      })
-      saveStoredClasses(updated)
-      return updated
-    })
+  const handleCancelBooking = async (classId) => {
+    try {
+      await api.post(`/classes/clases/${classId}/cancelar/`)
+      toast.info('Reserva cancelada correctamente')
+      if (activeTab === 'catalogo') fetchClasses()
+      else fetchMyBookings()
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error al cancelar reserva')
+      console.error(error)
+    }
   }
 
   // Info del día seleccionado
@@ -155,7 +224,7 @@ export default function ClasesPage() {
               <span className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">
                 Día de la semana
               </span>
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-2 w-full scrollbar-none">
                 {DIAS_AGENDA.map((dia) => {
                   const isSelected = dia.id === selectedDay
                   return (
@@ -163,7 +232,7 @@ export default function ClasesPage() {
                       key={dia.id}
                       active={isSelected}
                       onClick={() => setSelectedDay(dia.id)}
-                      className="flex flex-col items-center justify-center min-w-[50px] py-1.5 px-1"
+                      className="flex flex-col items-center justify-center min-w-[50px] py-1.5 px-1 flex-shrink-0"
                     >
                       <span className="text-[10px] font-medium uppercase tracking-tight">
                         {dia.diaNombre}
@@ -241,7 +310,7 @@ export default function ClasesPage() {
             </div>
 
             {/* SELECTOR DE DISCIPLINAS */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-2 w-full scrollbar-none">
               {CATEGORIAS_CLASES.map((cat) => {
                 const isSelected = selectedCategory === cat.id
                 return (
@@ -249,9 +318,8 @@ export default function ClasesPage() {
                     key={cat.id}
                     active={isSelected}
                     onClick={() => setSelectedCategory(cat.id)}
-                    className="whitespace-nowrap px-2.5 py-1 rounded-full text-xs font-medium flex items-center gap-1"
+                    className="whitespace-nowrap px-2.5 py-1 rounded-full text-xs font-medium flex-shrink-0 flex items-center gap-1"
                   >
-                    <span>{cat.icon}</span>
                     <span>{cat.label}</span>
                   </FilterButton>
                 )
@@ -270,7 +338,13 @@ export default function ClasesPage() {
 
             {/* LISTA DE CLASES */}
             <div className="flex flex-col gap-2.5">
-              {!IS_DEV && classesList.length === 0 ? (
+              {isLoading ? (
+                <EmptyState
+                  icon={Calendar}
+                  title="Cargando clases..."
+                  message="Por favor esperá unos segundos."
+                />
+              ) : !IS_DEV && classesList.length === 0 ? (
                 <EmptyState
                   icon={Calendar}
                   title="No hay clases programadas"
@@ -278,7 +352,6 @@ export default function ClasesPage() {
                 />
               ) : filteredClasses.length === 0 ? (
                 <Card className="p-6 text-center flex flex-col items-center justify-center gap-2">
-                  <span className="text-2xl">🗓️</span>
                   <h4 className="text-xs font-bold text-text-primary">
                     No hay clases con estos filtros
                   </h4>
@@ -308,9 +381,14 @@ export default function ClasesPage() {
               Tus reservas activas ({myBookings.length})
             </span>
 
-            {myBookings.length === 0 ? (
+            {isLoading ? (
+                <EmptyState
+                  icon={Calendar}
+                  title="Cargando reservas..."
+                  message="Por favor esperá unos segundos."
+                />
+            ) : myBookings.length === 0 ? (
               <Card className="p-6 text-center flex flex-col items-center justify-center gap-2">
-                <span className="text-3xl">🎫</span>
                 <h4 className="text-xs font-bold text-text-primary">
                   No tenés reservas activas
                 </h4>

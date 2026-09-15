@@ -7,6 +7,8 @@ import {
   Settings,
   ScanLine,
   Activity,
+  Home,
+  CalendarDays,
 } from 'lucide-react'
 
 export const NAV_ICON_MAP = {
@@ -18,4 +20,6 @@ export const NAV_ICON_MAP = {
   gear:         Settings,
   scan:         ScanLine,
   activity:     Activity,
+  home:         Home,
+  calendar:     CalendarDays,
 }

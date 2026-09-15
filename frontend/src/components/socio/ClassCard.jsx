@@ -8,7 +8,7 @@ export default function ClassCard({ clase, variant, onBook, onCancel }) {
       <Card className="border-primary/40 p-3.5 flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold text-primary uppercase">
-            {clase.fecha} • {clase.horaInicio}h
+            {clase.fecha ? `${clase.fecha} • ` : ''}{clase.horaInicio}h
           </span>
           <Badge variant="live">Confirmada</Badge>
         </div>
@@ -82,7 +82,7 @@ export default function ClassCard({ clase, variant, onBook, onCancel }) {
           {clase.nombre}
         </h3>
         <p className="text-xs text-text-secondary mt-0.5">
-          {clase.sala} • Intensidad {clase.intensidad}
+          {clase.sala}{clase.intensidad ? ` • Intensidad ${clase.intensidad}` : ''}
         </p>
       </div>
 
