@@ -47,7 +47,7 @@ export default function ClassSchedulePage() {
   const fetchClasses = async () => {
     setIsLoading(true)
     try {
-      const response = await api.get('/classes/clases/')
+      const response = await api.get('/classes/clases/', { params: { page_size: 1000 } })
       const classData = response.data.results || response.data
       setClasses(classData)
       if (classData.length > 0 && !selectedClass) {

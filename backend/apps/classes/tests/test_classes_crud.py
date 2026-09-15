@@ -193,11 +193,13 @@ class ClaseDeleteTests(APITestCase):
 
 class ClaseUserInscritoTests(APITestCase):
     def test_user_inscrito_true(self):
-        socio = make_user_factory(rol='socio')
+        socio_user = make_user_factory(rol='socio')
+        from conftest import make_socio_factory
+        socio = make_socio_factory(usuario=socio_user)
         clase = _make_clase()
         from apps.classes.models import InscripcionClase
         InscripcionClase.objects.create(clase=clase, socio=socio, en_espera=False)
-        _auth_client(self.client, socio)
+        _auth_client(self.client, socio_user)
 
         response = self.client.get(CLASES_URL)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -223,4 +225,26 @@ class ClaseUserInscritoTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.data.get('results', response.data)
         self.assertFalse(data[0]['user_inscrito'])
+
+
+class ClaseFilterTests(APITestCase):
+    def test_filter_por_turno(self):
+        admin = make_user_factory(rol='administrador')
+        _auth_client(self.client, admin)
+
+        _make_clase(nombre='Clase 11:59', hora='11:59:59')
+        _make_clase(nombre='Clase 12:00', hora='12:00:00')
+
+        # Test morning filter (<= 11:59:59)
+        res_manana = self.client.get(CLASES_URL, {'hora_hasta': '11:59:59'})
+        data_manana = res_manana.data.get('results', res_manana.data)
+        self.assertEqual(len(data_manana), 1)
+        self.assertEqual(data_manana[0]['nombre'], 'Clase 11:59')
+
+        # Test afternoon filter (>= 12:00:00)
+        res_tarde = self.client.get(CLASES_URL, {'hora_desde': '12:00:00'})
+        data_tarde = res_tarde.data.get('results', res_tarde.data)
+        self.assertEqual(len(data_tarde), 1)
+        self.assertEqual(data_tarde[0]['nombre'], 'Clase 12:00')
+
 

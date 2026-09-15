@@ -60,7 +60,7 @@ export default function ClasesPage() {
         
         return {
           id: c.id,
-          fecha: selectedDay,
+          fecha: undefined,
           nombre: c.nombre,
           categoria: c.categoria,
           instructor: c.instructor,
@@ -69,7 +69,6 @@ export default function ClasesPage() {
           horaFin: horaFin,
           duracionMin: c.duracion_min,
           sala: c.sala,
-          intensidad: 'Media', // Placeholder, backend doesn't provide
           cuposTotales: c.cupo_maximo,
           cuposReservados: c.cupos_reservados,
           isBooked: c.user_inscrito,
@@ -113,7 +112,7 @@ export default function ClasesPage() {
 
           return {
             id: c.id,
-            fecha: c.dia, 
+            fecha: undefined, 
             nombre: c.nombre,
             categoria: c.categoria,
             instructor: c.instructor,
@@ -122,7 +121,6 @@ export default function ClasesPage() {
             horaFin: horaFin,
             duracionMin: c.duracion_min,
             sala: c.sala,
-            intensidad: 'Media',
             cuposTotales: c.cupo_maximo,
             cuposReservados: c.cupos_reservados,
             isBooked: true,
@@ -136,7 +134,7 @@ export default function ClasesPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [selectedDay])
+  }, [])
 
   useEffect(() => {
     if (activeTab === 'mis_reservas') {
@@ -339,17 +337,17 @@ export default function ClasesPage() {
 
             {/* LISTA DE CLASES */}
             <div className="flex flex-col gap-2.5">
-              {!IS_DEV && classesList.length === 0 ? (
-                <EmptyState
-                  icon={Calendar}
-                  title="No hay clases programadas"
-                  message="Consultá con recepción para ver la agenda."
-                />
-              ) : isLoading ? (
+              {isLoading ? (
                 <EmptyState
                   icon={Calendar}
                   title="Cargando clases..."
                   message="Por favor esperá unos segundos."
+                />
+              ) : !IS_DEV && classesList.length === 0 ? (
+                <EmptyState
+                  icon={Calendar}
+                  title="No hay clases programadas"
+                  message="Consultá con recepción para ver la agenda."
                 />
               ) : filteredClasses.length === 0 ? (
                 <Card className="p-6 text-center flex flex-col items-center justify-center gap-2">
