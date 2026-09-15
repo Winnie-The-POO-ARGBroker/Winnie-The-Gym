@@ -38,12 +38,11 @@ Winnie The Gym es un sistema de gestión integral para gimnasios que cubre auten
 
 | Rol | Nombre | Aprobación | Fecha |
 |---|---|---|---|
-| QA Lead / Scrum Master | Magali Bechis | [PENDIENTE: definir con el equipo] | [PENDIENTE: definir con el equipo] |
-| Referente técnico full-stack | Rodrigo Valdez | [PENDIENTE: definir con el equipo] | [PENDIENTE: definir con el equipo] |
-| QA Tester | Gisele Lavisse | [PENDIENTE: definir con el equipo] | [PENDIENTE: definir con el equipo] |
-| QA Tester | Jimena Gallegillo | [PENDIENTE: definir con el equipo] | [PENDIENTE: definir con el equipo] |
+| Elaborado por | Magali Bechis | Elaborado | 14/09/2026 |
+| Revisado por | Rodrigo Valdez | Revisado | 14/09/2026 |
+| Aprobado por | Docente evaluadora | Pendiente | — |
 
-Este plan no cuenta aún con firmas/aprobaciones formales registradas; el equipo no definió un circuito de sign-off explícito al momento de redactar este documento.
+Circuito de sign-off: el documento fue elaborado por Magali Bechis (QA Lead / Scrum Master) y revisado por Rodrigo Valdez (referente técnico full-stack). Queda pendiente la aprobación formal de la docente evaluadora al momento de la entrega.
 
 ## 5. Resumen Ejecutivo
 
@@ -147,11 +146,15 @@ Cada vez que se agregue o modifique una historia de usuario, la regresión míni
 
 ## 13. Criterios de Suspensión
 
-[PENDIENTE: definir con el equipo]
+La ejecución de pruebas sobre un módulo se suspende si:
+- Aparece un bug de severidad **Crítica/Bloqueante** que impide continuar ejecutando el resto de los casos planificados sobre ese módulo (ej.: un endpoint caído, un flujo de login roto).
+- Más del **30% de los casos de prueba** de un mismo módulo resultan en Fallo en una misma ronda de ejecución — indica un problema sistémico que conviene resolver antes de seguir invirtiendo tiempo en testing puntual.
 
 ## 14. Criterios de Reanudación
 
-[PENDIENTE: definir con el equipo]
+La ejecución se reanuda cuando:
+- El bug bloqueante que motivó la suspensión fue corregido (PR mergeado a `develop`) y re-verificado manualmente o vía la suite automatizada, según corresponda.
+- La tasa de fallos del módulo vuelve a estar por debajo del 30% tras aplicar el/los fix(es) correspondientes.
 
 ## 15. Entregables
 
