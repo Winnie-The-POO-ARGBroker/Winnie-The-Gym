@@ -378,13 +378,16 @@ MONGO_RETENTION_DAYS = config('MONGO_RETENTION_DAYS', cast=int, default=90)
 
 CHANNEL_LAYERS = {
     'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'BACKEND': 'channels_redis.pubsub.RedisPubSubChannelLayer',
         # `channels_redis` 4.x accepts a URL string here (unlike the tuple form
         # that does not support auth/TLS). Dev Docker uses plain `redis://`;
         # Upstash / Redis Cloud use `rediss://default:<token>@...`. The client
         # (redis.asyncio) handles TLS automatically from the `rediss` scheme,
         # no `?ssl_cert_reqs=` query needed (unlike Celery).
-        'CONFIG': {'hosts': [_redis_url_for(2)]},
+        'CONFIG': {
+            'hosts': [_redis_url_for(2)],
+            'health_check_interval': 15,
+        },
     },
 }
 

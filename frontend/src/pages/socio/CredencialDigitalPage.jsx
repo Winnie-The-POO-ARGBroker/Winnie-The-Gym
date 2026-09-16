@@ -9,42 +9,73 @@ import QRDisplay from '../../components/socio/QRDisplay'
 import MemberPlanDetails from '../../components/socio/MemberPlanDetails'
 import QRFullscreenModal from '../../components/socio/QRFullscreenModal'
 import EmptyState from '../../components/ui/EmptyState'
-import { MOCK_MEMBER, generateMockQRToken } from '../../services/socioMockData'
-
-const IS_DEV = import.meta.env.DEV
+import api from '../../services/api'
+import useAuth from '../../hooks/useAuth'
 
 export default function CredencialDigitalPage() {
-  // Estado del socio
-  // TODO: reemplazar por API real -> GET /api/members/me/
-  const member = IS_DEV ? MOCK_MEMBER : null
-
-  // Estado del QR dinámico
-  // TODO: reemplazar por API real -> GET /api/access/qr/generate/
-  const [qrData, setQrData] = useState(() => IS_DEV ? generateMockQRToken(MOCK_MEMBER) : null)
+  const { user } = useAuth()
+  const [member, setMember] = useState(null)
+  const [qrData, setQrData] = useState(null)
   const [timeLeft, setTimeLeft] = useState(30)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
-  const isExpired = member.membresia.estado === 'vencida'
+  // Obtener perfil del socio
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await api.get('/memberships/me/')
+        const data = res.data
+        // Mapear los datos de la API a la estructura que espera la UI
+        setMember({
+          ...data,
+          socioNumero: data.numero_socio,
+          sedeHabitual: 'Sede Central', // Hardcoded por ahora
+          membresia: data.membresia_activa ? {
+            ...data.membresia_activa,
+            planNombre: data.membresia_activa.plan?.nombre,
+            fechaVencimiento: data.membresia_activa.fecha_fin,
+          } : null
+        })
+      } catch (error) {
+        console.error('Error fetching member profile:', error)
+        toast.error('Error al cargar perfil')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchProfile()
+  }, [])
 
-  // Generación y rotación de nuevo token QR dinámico
-  const refreshQR = useCallback((manual = false) => {
-    if (!IS_DEV) return
+  const refreshQR = useCallback(async (manual = false) => {
     setIsRefreshing(true)
-    setTimeout(() => {
-      // TODO: reemplazar por llamada axios api.get('/access/qr/generate/')
-      const newToken = generateMockQRToken(member)
-      setQrData(newToken)
+    try {
+      const res = await api.get('/access/qr/generate/')
+      setQrData(res.data.qr_token)
       setTimeLeft(30)
-      setIsRefreshing(false)
       if (manual) {
         toast.success('Código QR actualizado')
       }
-    }, 200)
-  }, [member])
+    } catch (error) {
+      console.error('Error al generar QR:', error)
+      toast.error('Error al generar QR')
+    } finally {
+      setIsRefreshing(false)
+    }
+  }, [])
+
+  // Cargar QR inicial cuando el miembro está listo
+  useEffect(() => {
+    if (member) {
+      refreshQR()
+    }
+  }, [member, refreshQR])
 
   // Temporizador de expiración de 30 segundos
   useEffect(() => {
+    if (!qrData) return
+
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
@@ -56,19 +87,29 @@ export default function CredencialDigitalPage() {
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [refreshQR])
+  }, [qrData, refreshQR])
 
-  if (!IS_DEV && !member) {
+  if (isLoading) {
+    return (
+      <MemberLayout title="Credencial Digital" subtitle="Acceso al gimnasio por molinete">
+        <div className="flex justify-center p-8">Cargando...</div>
+      </MemberLayout>
+    )
+  }
+
+  if (!member) {
     return (
       <MemberLayout title="Credencial Digital" subtitle="Acceso al gimnasio por molinete">
         <EmptyState
           icon={IdCard}
-          title="Credencial no disponible"
-          message="Iniciá sesión para ver tu credencial digital."
+          title={user?.rol === 'administrador' ? 'Vista de Administrador' : 'Credencial no disponible'}
+          message={user?.rol === 'administrador' ? 'Las credenciales digitales son exclusivas para los socios.' : 'Iniciá sesión para ver tu credencial digital.'}
         />
       </MemberLayout>
     )
   }
+
+  const isExpired = !member.membresia || member.membresia.estado === 'vencida'
 
   return (
     <MemberLayout
@@ -80,7 +121,7 @@ export default function CredencialDigitalPage() {
 
         {/* Alerta de Membresía Vencida */}
         {isExpired && (
-          <MembershipExpiredAlert fechaVencimiento={member.membresia.fechaVencimiento} />
+          <MembershipExpiredAlert fechaVencimiento={member.membresia?.fechaVencimiento} />
         )}
 
         {/* TARJETA DE CREDENCIAL DIGITAL */}
@@ -97,7 +138,7 @@ export default function CredencialDigitalPage() {
 
           {/* CÓDIGO QR DINÁMICO */}
           <QRDisplay
-            qrToken={qrData.qr_token}
+            qrToken={qrData}
             timeLeft={timeLeft}
             maxTime={30}
             isRefreshing={isRefreshing}
@@ -107,7 +148,9 @@ export default function CredencialDigitalPage() {
           />
 
           {/* DETALLES DEL PLAN */}
-          <MemberPlanDetails membresia={member.membresia} />
+          {member.membresia && (
+            <MemberPlanDetails membresia={member.membresia} />
+          )}
         </Card>
 
         {/* CARD INFORMACIÓN ADICIONAL */}
@@ -117,21 +160,23 @@ export default function CredencialDigitalPage() {
           </span>
           <div className="flex items-center justify-between text-text-primary font-medium pt-1">
             <span>{member.sedeHabitual}</span>
-            <span className="text-primary text-[11px] font-semibold">Pase Libre</span>
+            <span className="text-primary text-[11px] font-semibold">{member.membresia?.planNombre || 'Sin Plan'}</span>
           </div>
         </Card>
 
       </div>
 
-      {/* MODAL QR PANTALLA COMPLETA (Fondo Blanco Puro de Alto Contraste) */}
-      <QRFullscreenModal
-        isOpen={isFullscreen}
-        onClose={() => setIsFullscreen(false)}
-        member={member}
-        qrToken={qrData.qr_token}
-        timeLeft={timeLeft}
-        isExpired={isExpired}
-      />
+      {/* MODAL QR PANTALLA COMPLETA */}
+      {qrData && (
+        <QRFullscreenModal
+          isOpen={isFullscreen}
+          onClose={() => setIsFullscreen(false)}
+          member={member}
+          qrToken={qrData}
+          timeLeft={timeLeft}
+          isExpired={isExpired}
+        />
+      )}
     </MemberLayout>
   )
 }

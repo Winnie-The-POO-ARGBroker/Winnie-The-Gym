@@ -52,7 +52,9 @@ async def test_admin_can_connect_and_receives_snapshot():
 @pytest.mark.asyncio
 async def test_anonymous_is_rejected():
     comm, connected = await _connect(token=None)
-    assert not connected
+    assert connected
+    close_code = await comm.receive_output(timeout=1)
+    assert close_code == {"type": "websocket.close", "code": 4403}
 
 
 @pytest.mark.django_db(transaction=True)
@@ -63,7 +65,9 @@ async def test_socio_is_rejected():
     token = await sync_to_async(_token_for)(socio_user)
 
     comm, connected = await _connect(token)
-    assert not connected
+    assert connected
+    close_code = await comm.receive_output(timeout=1)
+    assert close_code == {"type": "websocket.close", "code": 4403}
 
 
 @pytest.mark.django_db(transaction=True)

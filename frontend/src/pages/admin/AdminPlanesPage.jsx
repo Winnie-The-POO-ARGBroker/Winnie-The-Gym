@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, Copy, LayoutGrid, Table, Check, AlertCircle, CreditCard } from 'lucide-react'
 import { toast } from 'sonner'
 import AppLayout from '../../components/layout/AppLayout'
@@ -9,70 +9,90 @@ import PlanComparativeTable from '../../components/admin/PlanComparativeTable'
 import PlanFormModal from '../../components/admin/PlanFormModal'
 import EmptyState from '../../components/ui/EmptyState'
 import Button from '../../components/ui/Button'
-import {
-  getStoredPlanes,
-  saveStoredPlanes,
-} from '../../services/adminMockData'
+import api from '../../services/api'
 
 const IS_DEV = import.meta.env.DEV
 
 export default function AdminPlanesPage() {
-  const [planes, setPlanes] = useState(() => IS_DEV ? getStoredPlanes() : [])
+  const [planes, setPlanes] = useState([])
+  const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('tarjetas') // 'tarjetas' | 'comparativa'
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalMode, setModalMode] = useState({ planToEdit: null, isDuplicate: false })
   const [selectedPlanForDuplicate, setSelectedPlanForDuplicate] = useState(null)
 
+  const fetchPlanes = async () => {
+    try {
+      const response = await api.get('/memberships/planes/')
+      setPlanes(response.data.results || response.data)
+    } catch (error) {
+      console.error('Error fetching planes:', error)
+      toast.error('Error al cargar planes')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchPlanes()
+  }, [])
+
   const activePlansCount = planes.filter((p) => p.activo).length
   const totalSocios = planes.reduce((acc, p) => acc + (p.socios_activos || 0), 0)
 
   // Handle Save (Create or Edit)
-  const handleSavePlan = (planData) => {
-    let updatedPlanes = []
-    if (planData.id) {
-      // Edit
-      updatedPlanes = planes.map((p) => (p.id === planData.id ? { ...p, ...planData } : p))
-      toast.success(`Plan "${planData.nombre}" actualizado con éxito`)
-    } else {
-      // Create or Duplicate
-      const newPlan = {
-        ...planData,
-        id: Date.now(),
-        activo: true,
-        color: planData.es_popular ? '#FF5722' : '#525252',
+  const handleSavePlan = async (planData) => {
+    try {
+      if (planData.id) {
+        // Edit
+        await api.patch(`/memberships/planes/${planData.id}/`, planData)
+        toast.success(`Plan "${planData.nombre}" actualizado con éxito`)
+      } else {
+        // Create
+        await api.post('/memberships/planes/', {
+          ...planData,
+          activo: true
+        })
+        toast.success(`Plan "${planData.nombre}" creado exitosamente`)
       }
-      updatedPlanes = [...planes, newPlan]
-      toast.success(`Plan "${newPlan.nombre}" creado exitosamente`)
+      fetchPlanes()
+    } catch (error) {
+      console.error('Error saving plan:', error)
+      toast.error('Error al guardar el plan')
     }
-    setPlanes(updatedPlanes)
-    saveStoredPlanes(updatedPlanes)
   }
 
   // Handle Delete
-  const handleDeletePlan = (plan) => {
+  const handleDeletePlan = async (plan) => {
     if (planes.length <= 1) {
       toast.error('Debe existir al menos un plan activo en el sistema')
       return
     }
-    const updated = planes.filter((p) => p.id !== plan.id)
-    setPlanes(updated)
-    saveStoredPlanes(updated)
-    toast.info(`Plan "${plan.nombre}" eliminado`)
+    try {
+      await api.delete(`/memberships/planes/${plan.id}/`)
+      toast.info(`Plan "${plan.nombre}" eliminado`)
+      fetchPlanes()
+    } catch (error) {
+      console.error('Error deleting plan:', error)
+      toast.error('Error al eliminar el plan')
+    }
   }
 
   // Handle Archive / Toggle Active
-  const handleArchivePlan = (plan) => {
-    const updated = planes.map((p) =>
-      p.id === plan.id ? { ...p, activo: !p.activo } : p
-    )
-    setPlanes(updated)
-    saveStoredPlanes(updated)
-    toast.success(`Plan "${plan.nombre}" ${plan.activo ? 'archivado' : 'activado'}`)
+  const handleArchivePlan = async (plan) => {
+    try {
+      await api.patch(`/memberships/planes/${plan.id}/`, { activo: !plan.activo })
+      toast.success(`Plan "${plan.nombre}" ${plan.activo ? 'archivado' : 'activado'}`)
+      fetchPlanes()
+    } catch (error) {
+      console.error('Error toggling plan:', error)
+      toast.error('Error al archivar/activar el plan')
+    }
   }
 
   // Quick duplicate trigger
   const handleOpenDuplicate = () => {
-    const planToClone = planes.find((p) => p.es_popular) || planes[0]
+    const planToClone = planes.find((p) => p.es_popular) || planes[0] || {}
     setModalMode({ planToEdit: planToClone, isDuplicate: true })
     setIsModalOpen(true)
   }

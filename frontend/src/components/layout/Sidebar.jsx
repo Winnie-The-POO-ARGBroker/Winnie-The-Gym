@@ -64,7 +64,7 @@ export default function Sidebar() {
 
   return (
     // z-50 stacking order: sidebar (z-50) > bottom-nav (z-40) > header (z-20)
-    <aside className="hidden md:flex w-sidebar bg-bg-surface border-r border-subtle flex-col h-full z-50 transition-colors">
+    <aside className="hidden md:flex w-sidebar bg-bg-surface border-r border-subtle flex-col h-screen sticky top-0 z-50 transition-colors">
       {/* Logo */}
       <div className="px-5 py-6">
         <NavLink to="/dashboard" className="inline-block transition-transform hover:scale-105">

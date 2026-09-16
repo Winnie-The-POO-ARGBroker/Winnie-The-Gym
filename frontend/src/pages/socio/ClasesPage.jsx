@@ -8,10 +8,10 @@ import Card from '../../components/ui/Card'
 import FilterButton from '../../components/ui/FilterButton'
 import ClassCard from '../../components/socio/ClassCard'
 import EmptyState from '../../components/ui/EmptyState'
-import {
-  DIAS_AGENDA,
-  CATEGORIAS_CLASES,
-} from '../../services/socioMockData'
+import { CATEGORIAS_CLASES } from '../../constants/clases'
+import { generateDaysAgenda } from '../../utils/agenda'
+
+const DIAS_AGENDA = generateDaysAgenda()
 import api from '../../services/api'
 import { ALL_RECORDS_PAGE_SIZE } from '../../services/constants'
 import { useEffect, useCallback } from 'react'

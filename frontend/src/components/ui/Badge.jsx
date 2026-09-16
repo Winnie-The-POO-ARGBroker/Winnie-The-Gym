@@ -11,11 +11,11 @@ const variantStyles = {
   },
 }
 
-export default function Badge({ variant = 'success', children }) {
+export default function Badge({ variant = 'success', className, children }) {
   const s = variantStyles[variant] ?? variantStyles.success
   return (
     <span
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${className || ''}`}
       style={{ backgroundColor: s.backgroundColor, color: s.color, border: s.border }}
     >
       {variant === 'live' && (
