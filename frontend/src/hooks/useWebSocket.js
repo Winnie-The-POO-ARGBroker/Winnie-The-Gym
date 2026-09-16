@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import useAuthStore from '../stores/authStore';
+import { getApiNavigator } from '../services/api';
 
 const MAX_RECONNECT_ATTEMPTS = 10;
 const INITIAL_BACKOFF_MS = 2000;
@@ -81,8 +82,11 @@ export default function useWebSocket(path) {
             return;
           } else {
             console.error('Token refresh failed. Redirecting to login.');
+            clearTimeout(reconnectTimeoutRef.current);
             useAuthStore.getState().clearAuth();
-            window.location.href = '/login';
+            const nav = getApiNavigator();
+            if (nav) nav('/login');
+            else window.location.href = '/login';
             return;
           }
         }

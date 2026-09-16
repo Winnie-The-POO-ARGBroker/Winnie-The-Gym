@@ -68,11 +68,11 @@ export default function AforoMonitor() {
         </div>
         {/* TODO: reemplazar cuando exista endpoint de stats */}
         <AforoStatBar
-          promedioHoy={112}
-          picoMaximo={189}
-          picoHora="18:30"
-          ingresoUltimaHora={45}
-          egresoUltimaHora={23}
+          promedioHoy={undefined}
+          picoMaximo={undefined}
+          picoHora={undefined}
+          ingresoUltimaHora={undefined}
+          egresoUltimaHora={undefined}
         />
       </div>
     </AppLayout>

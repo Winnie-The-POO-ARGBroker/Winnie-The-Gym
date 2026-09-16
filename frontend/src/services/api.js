@@ -18,6 +18,10 @@ export function setApiNavigator(nav) {
   navigator = nav
 }
 
+export function getApiNavigator() {
+  return navigator
+}
+
 api.interceptors.request.use((config) => {
   const token = useAuthStore.getState().accessToken
   if (token) {

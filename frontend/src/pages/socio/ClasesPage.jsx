@@ -9,7 +9,7 @@ import FilterButton from '../../components/ui/FilterButton'
 import ClassCard from '../../components/socio/ClassCard'
 import EmptyState from '../../components/ui/EmptyState'
 import { CATEGORIAS_CLASES } from '../../constants/clases'
-import { generateDaysAgenda } from '../../services/agenda'
+import { generateDaysAgenda } from '../../utils/agenda'
 
 const DIAS_AGENDA = generateDaysAgenda()
 import api from '../../services/api'
