@@ -40,7 +40,7 @@ export function useClassAttendees(classId) {
   }
 
   const saveAttendees = () => {
-    // Handled individually by toggleStatus for API
+    fetchAttendees()
   }
 
   return {

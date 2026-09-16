@@ -4,6 +4,7 @@ import TopBar from '../../components/layout/TopBar';
 import OccupancyCard from '../../components/recepcion/OccupancyCard';
 import RecentEventsPanel from '../../components/recepcion/RecentEventsPanel';
 import AforoStatBar from '../../components/recepcion/AforoStatBar';
+import Badge from '../../components/ui/Badge';
 import { Wifi, Loader2 } from 'lucide-react';
 import useWebSocket from '../../hooks/useWebSocket';
 
@@ -31,24 +32,24 @@ export default function AforoMonitor() {
   let statusBadge = null;
   if (isConnecting) {
     statusBadge = (
-      <div className="px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium bg-warning-500/10 text-warning-500 border border-warning-500/20">
+      <Badge variant="warning" className="px-4 py-2 flex items-center gap-2 text-sm font-medium">
         <Loader2 className="w-4 h-4 animate-spin" />
         Reconectando...
-      </div>
+      </Badge>
     );
   } else if (isConnected) {
     statusBadge = (
-      <div className="px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium bg-success-500/10 text-success-500 border border-success-500/20">
+      <Badge variant="success" className="px-4 py-2 flex items-center gap-2 text-sm font-medium">
         <Wifi className="w-4 h-4" />
         Conectado
-      </div>
+      </Badge>
     );
   } else {
     statusBadge = (
-      <div className="px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium bg-error-500/10 text-error-500 border border-error-500/20">
+      <Badge variant="danger" className="px-4 py-2 flex items-center gap-2 text-sm font-medium">
         <Wifi className="w-4 h-4" />
         Desconectado
-      </div>
+      </Badge>
     );
   }
 
@@ -65,6 +66,7 @@ export default function AforoMonitor() {
           <OccupancyCard aforo={aforo} maxAforo={maxAforo} />
           <RecentEventsPanel events={recentEvents} />
         </div>
+        {/* TODO: reemplazar cuando exista endpoint de stats */}
         <AforoStatBar
           promedioHoy={112}
           picoMaximo={189}

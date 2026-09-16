@@ -47,8 +47,11 @@ api.interceptors.response.use(
 
     if (error.response?.status === 401 && !isAuthEndpoint && !originalRequest._retry) {
       if (isRefreshing) {
-        return new Promise(resolve => {
+        return new Promise((resolve, reject) => {
           subscribeTokenRefresh(token => {
+            if (!token) {
+              return reject(error)
+            }
             originalRequest.headers.Authorization = `Bearer ${token}`
             resolve(api(originalRequest))
           })
@@ -68,6 +71,7 @@ api.interceptors.response.use(
         return api(originalRequest)
       } else {
         isRefreshing = false
+        onRefreshed(null)
         if (!isRedirecting) {
           isRedirecting = true
           useAuthStore.getState().clearAuth()

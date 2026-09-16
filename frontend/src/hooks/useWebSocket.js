@@ -23,6 +23,12 @@ export default function useWebSocket(path) {
     const wsBaseUrl = apiBaseUrl.replace(/^http/, 'ws').replace(/\/api\/?$/, '');
     
     const token = useAuthStore.getState().accessToken;
+    
+    if (!token) {
+      setIsConnecting(false);
+      return;
+    }
+
     const wsUrl = `${wsBaseUrl}${path}?token=${token}`;
 
     setIsConnecting(true);
@@ -83,13 +89,13 @@ export default function useWebSocket(path) {
         
         // Exponential backoff logic
         if (reconnectAttempts.current < MAX_RECONNECT_ATTEMPTS) {
+          reconnectAttempts.current += 1;
           const backoff = Math.min(
-            INITIAL_BACKOFF_MS * (2 ** reconnectAttempts.current),
+            INITIAL_BACKOFF_MS * (2 ** (reconnectAttempts.current - 1)),
             MAX_BACKOFF_MS
           );
           
           reconnectTimeoutRef.current = setTimeout(() => {
-            reconnectAttempts.current += 1;
             connect();
           }, backoff);
         } else {

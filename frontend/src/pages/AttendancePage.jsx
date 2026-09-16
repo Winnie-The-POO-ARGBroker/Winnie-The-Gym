@@ -16,6 +16,7 @@ import TopBar from '../components/layout/TopBar'
 import Avatar from '../components/ui/Avatar'
 import Button from '../components/ui/Button'
 import EmptyState from '../components/ui/EmptyState'
+import Skeleton from '../components/ui/Skeleton'
 import api from '../services/api'
 import { useClassAttendees } from '../hooks/useClassAttendees'
 
@@ -24,7 +25,7 @@ const IS_DEV = import.meta.env.DEV
 export default function AttendancePage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const classId = searchParams.get('id') || 'cls_funcional_1'
+  const classId = searchParams.get('id')
 
   const [classInfo, setClassInfo] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -47,8 +48,13 @@ export default function AttendancePage() {
   }
 
   useEffect(() => {
+    if (!classId) {
+      toast.error('Clase no encontrada')
+      navigate('/admin/clases')
+      return
+    }
     fetchClassInfo()
-  }, [classId])
+  }, [classId, navigate])
 
   const handlePromoteFromWaitingList = async (waitingPerson) => {
     try {
@@ -95,7 +101,19 @@ export default function AttendancePage() {
 
   const cls = classInfo
 
-  if (loading) return null
+  if (loading) {
+    return (
+      <AppLayout>
+        <TopBar
+          title="Asistencia"
+          backAction={{ to: '/admin/clases' }}
+        />
+        <div className="w-full flex-1 p-6 md:p-10 max-w-[1840px] mx-auto">
+          <Skeleton className="h-64 w-full rounded-2xl" />
+        </div>
+      </AppLayout>
+    )
+  }
 
   return (
     <AppLayout>
