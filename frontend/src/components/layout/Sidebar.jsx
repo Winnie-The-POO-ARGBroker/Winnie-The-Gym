@@ -19,7 +19,7 @@ const NAV_BY_ROLE = {
     { divider: true, label: 'Control & Recepción' },
     { label: 'Acceso QR',         path: '/recepcion/acceso',   icon: 'scan' },
     { label: 'Aforo en Vivo',     path: '/recepcion/aforo',    icon: 'activity' },
-    { label: 'Cobros manuales',   path: '/recepcion/cobros',   icon: 'credit' },
+    { label: 'Cobros manuales',   path: '/recepcion/cobros',   icon: 'card' },
     { label: 'Reportes',          path: '/recepcion/reportes', icon: 'chart-line' },
     { divider: true, label: 'Portal Socio (Vista)' },
     { label: 'Mi Credencial',     path: '/socio/credencial',   icon: 'card' },
@@ -40,7 +40,7 @@ const NAV_BY_ROLE = {
     { label: 'Dashboard',         path: '/dashboard',          icon: 'chart' },
     { label: 'Mi Credencial',     path: '/socio/credencial',   icon: 'card' },
     { label: 'Clases',            path: '/socio/clases',       icon: 'calendar' },
-    { label: 'Pagar membresía',   path: '/socio/checkout',     icon: 'credit' },
+    { label: 'Pagar membresía',   path: '/socio/checkout',     icon: 'card' },
   ],
 }
 

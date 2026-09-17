@@ -37,6 +37,10 @@ export default {
         warning: {
           500: '#FFC107',
         },
+        info: {
+          500: '#1E88E5',
+          600: '#166FBD',
+        },
         neutral: {
           50:  '#FAFAFA',
           100: '#F5F5F5',

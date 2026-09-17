@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { toast } from 'sonner'
 import { Search, CreditCard, User, FileText } from 'lucide-react'
 import AppLayout from '../../components/layout/AppLayout'
@@ -9,16 +9,7 @@ import Button from '../../components/ui/Button'
 import HistorialPagosCard from '../../components/pagos/HistorialPagosCard'
 import api from '../../services/api'
 import { cobrarManual } from '../../services/pagosService'
-
-// Debounce hook simple para evitar requests en cada keystroke
-function useDebounce(value, delay = 400) {
-  const [debounced, setDebounced] = useState(value)
-  useEffect(() => {
-    const id = setTimeout(() => setDebounced(value), delay)
-    return () => clearTimeout(id)
-  }, [value, delay])
-  return debounced
-}
+import useDebounce from '../../hooks/useDebounce'
 
 export default function CobroManualPage() {
   // ── Búsqueda de socio ──
@@ -27,6 +18,8 @@ export default function CobroManualPage() {
   const [socios, setSocios] = useState([])
   const [buscando, setBuscando] = useState(false)
   const [socioSeleccionado, setSocioSeleccionado] = useState(null)
+  // índice del item con foco de teclado en el listbox
+  const [activoIdx, setActivoIdx] = useState(-1)
 
   // ── Planes ──
   const [planes, setPlanes] = useState([])
@@ -36,6 +29,9 @@ export default function CobroManualPage() {
   const [monto, setMonto] = useState('')
   const [observacion, setObservacion] = useState('')
   const [guardando, setGuardando] = useState(false)
+
+  // Ref al input de búsqueda para devolver el foco después de seleccionar con teclado
+  const inputRef = useRef(null)
 
   // Cargar planes al montar
   useEffect(() => {
@@ -54,26 +50,37 @@ export default function CobroManualPage() {
     if (plan) setMonto(String(plan.precio))
   }, [planId, planes])
 
-  // Búsqueda de socios con debounce
+  // Búsqueda de socios con debounce + AbortController
   useEffect(() => {
     if (!debouncedBusqueda.trim()) {
       setSocios([])
       return
     }
-    let cancelled = false
+    const controller = new AbortController()
     setBuscando(true)
-    api.get('/members/socios/', { params: { search: debouncedBusqueda, page_size: 6 } })
+    setActivoIdx(-1)
+    api.get('/members/socios/', {
+      params: { search: debouncedBusqueda, page_size: 6 },
+      signal: controller.signal,
+    })
       .then((res) => {
-        if (!cancelled) setSocios(res.data.results ?? res.data)
+        setSocios(res.data.results ?? res.data)
       })
-      .catch(() => { if (!cancelled) setSocios([]) })
-      .finally(() => { if (!cancelled) setBuscando(false) })
-    return () => { cancelled = true }
+      .catch((err) => {
+        // Ignorar errores de abort (request cancelada intencionalmente)
+        if (err?.code === 'ERR_CANCELED' || err?.name === 'AbortError' || err?.name === 'CanceledError') return
+        setSocios([])
+      })
+      .finally(() => {
+        setBuscando(false)
+      })
+    return () => controller.abort()
   }, [debouncedBusqueda])
 
   const seleccionarSocio = useCallback((socio) => {
     setSocioSeleccionado(socio)
     setSocios([])
+    setActivoIdx(-1)
     setBusqueda(`${socio.nombre} ${socio.apellido} — DNI ${socio.dni}`)
   }, [])
 
@@ -81,9 +88,31 @@ export default function CobroManualPage() {
     setSocioSeleccionado(null)
     setBusqueda('')
     setSocios([])
+    setActivoIdx(-1)
   }, [])
 
-  const handleSubmit = async (e) => {
+  // Navegación de teclado en el autocomplete (ARIA pattern: listbox)
+  const handleKeyDown = useCallback((e) => {
+    if (socios.length === 0) return
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setActivoIdx((prev) => Math.min(prev + 1, socios.length - 1))
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setActivoIdx((prev) => Math.max(prev - 1, 0))
+    } else if (e.key === 'Enter') {
+      e.preventDefault()
+      if (activoIdx >= 0 && socios[activoIdx]) {
+        seleccionarSocio(socios[activoIdx])
+      }
+    } else if (e.key === 'Escape') {
+      setSocios([])
+      setActivoIdx(-1)
+    }
+  }, [socios, activoIdx, seleccionarSocio])
+
+  const handleSubmit = useCallback(async (e) => {
     e.preventDefault()
     if (!socioSeleccionado) return toast.error('Seleccioná un socio')
     if (!planId) return toast.error('Seleccioná un plan')
@@ -109,9 +138,12 @@ export default function CobroManualPage() {
     } finally {
       setGuardando(false)
     }
-  }
+  }, [socioSeleccionado, planId, monto, observacion, limpiarSocio])
 
   const planActual = planes.find((p) => String(p.id) === String(planId))
+
+  const listboxId = 'busqueda-socio-listbox'
+  const dropdownAbierto = socios.length > 0 && !socioSeleccionado
 
   return (
     <AppLayout>
@@ -134,7 +166,9 @@ export default function CobroManualPage() {
               </div>
 
               <div className="relative">
+                {/* Input con atributos ARIA para el pattern combobox */}
                 <Input
+                  ref={inputRef}
                   id="busqueda-socio"
                   label="Buscar por nombre, apellido o DNI"
                   icon={Search}
@@ -144,21 +178,44 @@ export default function CobroManualPage() {
                     setBusqueda(e.target.value)
                     if (socioSeleccionado) setSocioSeleccionado(null)
                   }}
+                  onKeyDown={handleKeyDown}
                   autoComplete="off"
+                  role="combobox"
+                  aria-expanded={dropdownAbierto}
+                  aria-controls={listboxId}
+                  aria-autocomplete="list"
+                  aria-activedescendant={
+                    activoIdx >= 0 ? `busqueda-socio-opt-${activoIdx}` : undefined
+                  }
                 />
                 {buscando && (
                   <p className="text-[11px] text-text-tertiary mt-1 pl-1">Buscando...</p>
                 )}
 
-                {/* Dropdown de resultados */}
-                {socios.length > 0 && !socioSeleccionado && (
-                  <ul className="absolute z-20 w-full mt-1 bg-bg-surface border border-subtle rounded-xl shadow-lg overflow-hidden">
-                    {socios.map((s) => (
-                      <li key={s.id}>
+                {/* Dropdown de resultados — listbox ARIA */}
+                {dropdownAbierto && (
+                  <ul
+                    id={listboxId}
+                    role="listbox"
+                    aria-label="Resultados de búsqueda de socios"
+                    className="absolute z-20 w-full mt-1 bg-bg-surface border border-subtle rounded-xl shadow-lg overflow-hidden"
+                  >
+                    {socios.map((s, idx) => (
+                      <li
+                        key={s.id}
+                        id={`busqueda-socio-opt-${idx}`}
+                        role="option"
+                        aria-selected={idx === activoIdx}
+                      >
                         <button
                           type="button"
-                          className="w-full text-left px-4 py-2.5 text-sm hover:bg-bg-raised transition-colors"
+                          className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
+                            idx === activoIdx
+                              ? 'bg-bg-raised text-text-primary'
+                              : 'hover:bg-bg-raised'
+                          }`}
                           onClick={() => seleccionarSocio(s)}
+                          onMouseEnter={() => setActivoIdx(idx)}
                         >
                           <span className="font-medium text-text-primary">
                             {s.nombre} {s.apellido}
@@ -236,7 +293,7 @@ export default function CobroManualPage() {
                   id="campo-monto"
                   label="Monto cobrado (ARS)"
                   type="number"
-                  min="1"
+                  min="0.01"
                   step="0.01"
                   placeholder="Ej: 12000"
                   value={monto}
@@ -283,7 +340,7 @@ export default function CobroManualPage() {
               size="lg"
               loading={guardando}
               onClick={handleSubmit}
-              className="w-full gap-2 shadow-md shadow-orange-500/20"
+              className="w-full gap-2 shadow-md shadow-primary/20"
             >
               <CreditCard className="w-4 h-4" />
               Registrar cobro y activar membresía
@@ -296,6 +353,7 @@ export default function CobroManualPage() {
               <HistorialPagosCard
                 socioId={socioSeleccionado?.id ?? null}
                 limit={8}
+                staffOnly
               />
               {!socioSeleccionado && (
                 <Card className="p-4">

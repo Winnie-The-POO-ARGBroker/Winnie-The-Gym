@@ -98,7 +98,7 @@ export default function App() {
         {/* Socio routes — mobile first */}
         <Route path="/socio/credencial" element={<ProtectedRoute roles={['administrador', 'socio']}><CredencialDigitalPage /></ProtectedRoute>} />
         <Route path="/socio/clases" element={<ProtectedRoute roles={['administrador', 'socio']}><ClasesPage /></ProtectedRoute>} />
-        <Route path="/socio/checkout" element={<ProtectedRoute roles={['socio', 'administrador']}><CheckoutPage /></ProtectedRoute>} />
+        <Route path="/socio/checkout" element={<ProtectedRoute roles={['socio']}><CheckoutPage /></ProtectedRoute>} />
         <Route path="/socio" element={<ProtectedRoute roles={['administrador', 'socio']}><Navigate to="/socio/credencial" replace /></ProtectedRoute>} />
 
         {/* Sidebar routes — protected, coming soon */}

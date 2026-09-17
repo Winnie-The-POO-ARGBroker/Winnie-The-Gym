@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { CreditCard, CheckCircle, ShieldCheck, Zap } from 'lucide-react'
 import MemberLayout from '../../components/layout/MemberLayout'
-import Card from '../../components/ui/Card'
+import EmptyState from '../../components/ui/EmptyState'
 import Button from '../../components/ui/Button'
 import api from '../../services/api'
 import { crearPreferencia, resolverInitPoint } from '../../services/pagosService'
@@ -138,16 +138,13 @@ export default function CheckoutPage() {
           </div>
         )}
 
-        {/* Grid de planes */}
+        {/* Sin planes disponibles */}
         {!isLoadingPlanes && planes.length === 0 && (
-          <Card className="p-6 text-center">
-            <p className="text-sm text-text-secondary">
-              No hay planes disponibles en este momento.
-            </p>
-            <p className="text-xs text-text-tertiary mt-1">
-              Acercate a recepción para obtener más información.
-            </p>
-          </Card>
+          <EmptyState
+            icon={CreditCard}
+            title="Sin planes disponibles"
+            message="No hay planes activos en este momento. Acercate a recepción para obtener más información."
+          />
         )}
 
         {!isLoadingPlanes && planes.map((plan) => (

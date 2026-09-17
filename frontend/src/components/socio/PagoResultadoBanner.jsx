@@ -1,4 +1,5 @@
-import { CheckCircle, XCircle, Clock } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { CheckCircle, XCircle, Clock, X } from 'lucide-react'
 
 const ESTADOS = {
   success: {
@@ -23,11 +24,21 @@ const ESTADOS = {
 
 /**
  * Banner contextual que se muestra al socio al volver de MercadoPago.
+ * Se auto-oculta a los 6 segundos o al presionar el botón X.
  * @param {'success'|'failure'|'pending'} estado
  */
 export default function PagoResultadoBanner({ estado }) {
   const config = ESTADOS[estado]
-  if (!config) return null
+  const [visible, setVisible] = useState(true)
+
+  // Auto-hide a los 6 segundos
+  useEffect(() => {
+    if (!config) return
+    const timer = setTimeout(() => setVisible(false), 6000)
+    return () => clearTimeout(timer)
+  }, [config])
+
+  if (!config || !visible) return null
 
   const { icon: Icon, colorClass, titulo, mensaje } = config
 
@@ -45,6 +56,14 @@ export default function PagoResultadoBanner({ estado }) {
           {mensaje}
         </span>
       </div>
+      <button
+        type="button"
+        onClick={() => setVisible(false)}
+        aria-label="Cerrar notificación"
+        className="shrink-0 opacity-60 hover:opacity-100 transition-opacity p-0.5 -mt-0.5 -mr-0.5"
+      >
+        <X className="w-3.5 h-3.5" />
+      </button>
     </div>
   )
 }

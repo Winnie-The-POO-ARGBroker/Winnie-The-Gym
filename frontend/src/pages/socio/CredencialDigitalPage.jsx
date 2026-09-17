@@ -24,10 +24,13 @@ export default function CredencialDigitalPage() {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
-  // Leer el resultado del pago que MercadoPago adjunta en el back_url
-  const pagoResultado = searchParams.get('pago') // 'success' | 'failure' | 'pending' | null
+  // Capturar el resultado del pago en el primer render con useState lazy.
+  // Usar useState (en lugar de leer searchParams en cada render) evita el race
+  // condition de React StrictMode (double-invoke): el valor se fija una vez y
+  // el effect se ejecuta con el valor correcto aunque corra dos veces en dev.
+  const [pagoResultado] = useState(() => searchParams.get('pago'))
 
-  // Limpiar el query param de la URL una vez leído para evitar que persista al recargar
+  // Limpiar el query param de la URL una vez leído para evitar que persista al recargar.
   useEffect(() => {
     if (pagoResultado) {
       setSearchParams((prev) => {
@@ -35,8 +38,7 @@ export default function CredencialDigitalPage() {
         return prev
       }, { replace: true })
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [pagoResultado, setSearchParams])
 
   // Obtener perfil del socio
   useEffect(() => {

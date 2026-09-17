@@ -61,3 +61,17 @@ class CobroManualTests(APITestCase):
         _auth(self.client, self.recep)
         response = self.client.post(URL, self._payload(plan_id=99999), format='json')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_monto_cero_returns_400(self):
+        """Un cobro con monto=0 debe ser rechazado por el serializer (min_value=0.01)."""
+        _auth(self.client, self.recep)
+        response = self.client.post(URL, self._payload(monto='0.00'), format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('monto', response.data)
+
+    def test_monto_negativo_returns_400(self):
+        """Un cobro con monto negativo debe ser rechazado por el serializer."""
+        _auth(self.client, self.recep)
+        response = self.client.post(URL, self._payload(monto='-100.00'), format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('monto', response.data)

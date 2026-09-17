@@ -223,3 +223,55 @@ class SocioDarBajaTests(APITestCase):
         # SocioSerializer exposes all these fields; SocioBajaSerializer only had estado + fecha_baja
         for field in ('id', 'numero_socio', 'nombre', 'apellido', 'dni', 'telefono', 'observaciones'):
             self.assertIn(field, response.data, f"Expected field '{field}' in dar-baja response")
+
+
+class SocioSearchTests(APITestCase):
+    """
+    Verifica que el ?search= del autocomplete aplique SearchFilter correctamente.
+    Regresión del blocker: SocioViewSet no declaraba filter_backends, por lo que
+    SearchFilter nunca se aplicaba aunque search_fields estuviera definido.
+    """
+
+    def setUp(self):
+        self.admin = make_user_factory(rol='administrador')
+        _auth_client(self.client, self.admin)
+
+        u1 = make_user_factory()
+        u2 = make_user_factory()
+        u3 = make_user_factory()
+
+        self.socio_juan = make_socio_factory(usuario=u1, nombre='Juan', apellido='Perez', dni='11111111')
+        self.socio_maria = make_socio_factory(usuario=u2, nombre='Maria', apellido='Juanez', dni='22222222')
+        self.socio_pedro = make_socio_factory(usuario=u3, nombre='Pedro', apellido='Lopez', dni='33333333')
+
+    def test_search_por_nombre_devuelve_solo_match(self):
+        """?search=Juan devuelve socios cuyo nombre o apellido contenga 'Juan'."""
+        response = self.client.get(SOCIOS_URL, {'search': 'Juan'})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.data.get('results', response.data)
+        ids = [s['id'] for s in data]
+
+        self.assertIn(self.socio_juan.pk, ids, 'Debería incluir a Juan Perez')
+        self.assertIn(self.socio_maria.pk, ids, 'Debería incluir a Maria Juanez (apellido contiene Juan)')
+        self.assertNotIn(self.socio_pedro.pk, ids, 'No debería incluir a Pedro Lopez')
+
+    def test_search_por_dni_devuelve_solo_match(self):
+        """?search=11111111 devuelve solo el socio con ese DNI."""
+        response = self.client.get(SOCIOS_URL, {'search': '11111111'})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.data.get('results', response.data)
+        ids = [s['id'] for s in data]
+
+        self.assertIn(self.socio_juan.pk, ids)
+        self.assertNotIn(self.socio_maria.pk, ids)
+        self.assertNotIn(self.socio_pedro.pk, ids)
+
+    def test_search_sin_resultados_devuelve_lista_vacia(self):
+        """?search=zzznomatch devuelve lista vacía, no un error."""
+        response = self.client.get(SOCIOS_URL, {'search': 'zzznomatch'})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.data.get('results', response.data)
+        self.assertEqual(len(data), 0)
