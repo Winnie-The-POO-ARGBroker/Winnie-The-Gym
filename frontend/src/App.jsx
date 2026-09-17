@@ -25,6 +25,8 @@ import GestionSocios from './pages/recepcion/GestionSocios'
 import Reportes from './pages/recepcion/Reportes'
 
 import AdminPlanesPage from './pages/admin/AdminPlanesPage'
+import CheckoutPage from './pages/socio/CheckoutPage'
+import CobroManualPage from './pages/recepcion/CobroManualPage'
 
 const COMING_SOON_PATHS = ['/socios', '/reportes', '/configuracion']
 
@@ -91,10 +93,12 @@ export default function App() {
         <Route path="/recepcion/aforo" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><AforoMonitor /></ProtectedRoute>} />
         <Route path="/recepcion/socios" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><GestionSocios /></ProtectedRoute>} />
         <Route path="/recepcion/reportes" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><Reportes /></ProtectedRoute>} />
+        <Route path="/recepcion/cobros" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><CobroManualPage /></ProtectedRoute>} />
 
         {/* Socio routes — mobile first */}
         <Route path="/socio/credencial" element={<ProtectedRoute roles={['administrador', 'socio']}><CredencialDigitalPage /></ProtectedRoute>} />
         <Route path="/socio/clases" element={<ProtectedRoute roles={['administrador', 'socio']}><ClasesPage /></ProtectedRoute>} />
+        <Route path="/socio/checkout" element={<ProtectedRoute roles={['socio', 'administrador']}><CheckoutPage /></ProtectedRoute>} />
         <Route path="/socio" element={<ProtectedRoute roles={['administrador', 'socio']}><Navigate to="/socio/credencial" replace /></ProtectedRoute>} />
 
         {/* Sidebar routes — protected, coming soon */}
