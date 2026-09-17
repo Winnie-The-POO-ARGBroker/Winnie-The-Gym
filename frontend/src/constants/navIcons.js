@@ -15,6 +15,7 @@ export const NAV_ICON_MAP = {
   chart:        LayoutDashboard,
   people:       Users,
   card:         CreditCard,
+  credit:       CreditCard,
   monitor:      MonitorPlay,
   'chart-line': LineChart,
   gear:         Settings,
