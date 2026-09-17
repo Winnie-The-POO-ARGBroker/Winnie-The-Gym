@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from rest_framework import serializers
 
 from .models import Pago
@@ -48,5 +50,5 @@ class CobroManualSerializer(serializers.Serializer):
     """Payload for the receptionist-only manual charge endpoint (PDF risk #3)."""
     socio_id = serializers.IntegerField()
     plan_id = serializers.IntegerField()
-    monto = serializers.DecimalField(max_digits=10, decimal_places=2)
+    monto = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=Decimal('0.01'))
     observacion = serializers.CharField(required=False, allow_blank=True, max_length=200)

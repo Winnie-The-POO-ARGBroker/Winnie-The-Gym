@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { IdCard } from 'lucide-react'
 import MemberLayout from '../../components/layout/MemberLayout'
 import Card from '../../components/ui/Card'
 import MembershipExpiredAlert from '../../components/socio/MembershipExpiredAlert'
+import PagoResultadoBanner from '../../components/socio/PagoResultadoBanner'
 import MemberCardHeader from '../../components/socio/MemberCardHeader'
 import QRDisplay from '../../components/socio/QRDisplay'
 import MemberPlanDetails from '../../components/socio/MemberPlanDetails'
@@ -14,12 +16,29 @@ import useAuth from '../../hooks/useAuth'
 
 export default function CredencialDigitalPage() {
   const { user } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [member, setMember] = useState(null)
   const [qrData, setQrData] = useState(null)
   const [timeLeft, setTimeLeft] = useState(30)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+
+  // Capturar el resultado del pago en el primer render con useState lazy.
+  // Usar useState (en lugar de leer searchParams en cada render) evita el race
+  // condition de React StrictMode (double-invoke): el valor se fija una vez y
+  // el effect se ejecuta con el valor correcto aunque corra dos veces en dev.
+  const [pagoResultado] = useState(() => searchParams.get('pago'))
+
+  // Limpiar el query param de la URL una vez leído para evitar que persista al recargar.
+  useEffect(() => {
+    if (pagoResultado) {
+      setSearchParams((prev) => {
+        prev.delete('pago')
+        return prev
+      }, { replace: true })
+    }
+  }, [pagoResultado, setSearchParams])
 
   // Obtener perfil del socio
   useEffect(() => {
@@ -118,6 +137,11 @@ export default function CredencialDigitalPage() {
       subtitle="Acceso al gimnasio por molinete"
     >
       <div className="flex flex-col gap-3 w-full animate-fadeIn">
+
+        {/* Banner de resultado del pago — se muestra al volver de MercadoPago */}
+        {pagoResultado && (
+          <PagoResultadoBanner estado={pagoResultado} />
+        )}
 
         {/* Alerta de Membresía Vencida */}
         {isExpired && (

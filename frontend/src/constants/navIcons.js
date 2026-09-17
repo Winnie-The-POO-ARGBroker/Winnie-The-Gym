@@ -14,7 +14,7 @@ import {
 export const NAV_ICON_MAP = {
   chart:        LayoutDashboard,
   people:       Users,
-  card:         CreditCard,
+  card:         CreditCard,   // 'credit' era alias duplicado — unificado en 'card'
   monitor:      MonitorPlay,
   'chart-line': LineChart,
   gear:         Settings,

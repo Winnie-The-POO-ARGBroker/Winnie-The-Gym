@@ -1,4 +1,6 @@
-export default function Input({ label, icon: Icon, className = '', ...props }) {
+import { forwardRef } from 'react'
+
+const Input = forwardRef(function Input({ label, icon: Icon, className = '', ...props }, ref) {
   return (
     <div className={`w-full ${className}`}>
       {label && (
@@ -13,10 +15,13 @@ export default function Input({ label, icon: Icon, className = '', ...props }) {
           </div>
         )}
         <input
+          ref={ref}
           className={`w-full bg-bg-base border border-subtle rounded-lg text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-colors py-2 ${Icon ? 'pl-10' : 'pl-3'} pr-3`}
           {...props}
         />
       </div>
     </div>
   )
-}
+})
+
+export default Input
