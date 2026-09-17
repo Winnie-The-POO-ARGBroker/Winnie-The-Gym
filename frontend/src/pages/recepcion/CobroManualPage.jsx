@@ -6,6 +6,7 @@ import TopBar from '../../components/layout/TopBar'
 import Card from '../../components/ui/Card'
 import Input from '../../components/ui/Input'
 import Button from '../../components/ui/Button'
+import EmptyState from '../../components/ui/EmptyState'
 import HistorialPagosCard from '../../components/pagos/HistorialPagosCard'
 import api from '../../services/api'
 import { cobrarManual } from '../../services/pagosService'
@@ -72,7 +73,7 @@ export default function CobroManualPage() {
         setSocios([])
       })
       .finally(() => {
-        setBuscando(false)
+        if (!controller.signal.aborted) setBuscando(false)
       })
     return () => controller.abort()
   }, [debouncedBusqueda])
@@ -356,11 +357,11 @@ export default function CobroManualPage() {
                 staffOnly
               />
               {!socioSeleccionado && (
-                <Card className="p-4">
-                  <p className="text-[11px] text-text-tertiary text-center">
-                    Seleccioná un socio para ver su historial de pagos
-                  </p>
-                </Card>
+                <EmptyState
+                  icon={User}
+                  title="Sin socio seleccionado"
+                  message="Seleccioná un socio para ver su historial de pagos"
+                />
               )}
             </div>
           </div>

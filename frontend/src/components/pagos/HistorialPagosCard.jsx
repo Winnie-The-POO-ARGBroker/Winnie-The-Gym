@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { CheckCircle, XCircle, Clock, Banknote, AlertTriangle } from 'lucide-react'
 import Card from '../ui/Card'
+import EmptyState from '../ui/EmptyState'
 import { listarPagos } from '../../services/pagosService'
 
 const ESTADO_CONFIG = {
@@ -96,9 +97,11 @@ export default function HistorialPagosCard({ socioId, limit = 5, staffOnly = fal
       )}
 
       {!loading && !fetchError && pagos.length === 0 && (
-        <p className="text-xs text-text-tertiary text-center py-4">
-          Sin pagos registrados
-        </p>
+        <EmptyState
+          icon={Banknote}
+          title="Sin pagos"
+          message="Sin pagos registrados"
+        />
       )}
 
       {!loading && !fetchError && pagos.length > 0 && (
