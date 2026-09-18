@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from .filters import AccessLogFilter
 from .models import AccessLog
 from .permissions import IsReceptionistOrAdmin
-from .services import has_active_membership
+from .services import has_active_membership, compute_aforo_stats
 from .serializers import (
     GenerateQRResponseSerializer,
     ScanQRSerializer,
@@ -166,3 +166,20 @@ class AccessLogListView(generics.ListAPIView):
         if is_privileged:
             return AccessLog.objects.all()
         return AccessLog.objects.filter(user=user)
+
+
+@extend_schema(
+    tags=['access'],
+    summary='Estadísticas de aforo del día actual',
+    description='Devuelve estadísticas como promedio, picos, ingresos y egresos de la última hora.',
+    responses={200: {}},
+)
+class AforoStatsView(APIView):
+    """
+    GET /api/access/stats/
+    """
+    permission_classes = [IsReceptionistOrAdmin]
+
+    def get(self, request):
+        stats = compute_aforo_stats()
+        return Response(stats, status=status.HTTP_200_OK)

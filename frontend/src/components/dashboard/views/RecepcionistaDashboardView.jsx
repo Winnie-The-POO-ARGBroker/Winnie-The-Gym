@@ -1,8 +1,30 @@
 import AforoCard from '../AforoCard'
 import MovementList from '../MovementList'
 import Button from '../../ui/Button'
+import { useAccessLogs } from '../../../hooks/queries/useDashboardData'
+import useWebSocket from '../../../hooks/useWebSocket'
 
-export default function RecepcionistaDashboardView({ navigate, mockMovements }) {
+export default function RecepcionistaDashboardView({ navigate }) {
+  const { data: logsData = [], isLoading: isLoadingLogs } = useAccessLogs(5)
+
+  const { lastMessage, isConnected } = useWebSocket('/ws/aforo/')
+  
+  const aforoActual = lastMessage?.aforo_actual ?? 0
+  const ingresosHoy = lastMessage?.ingresos_hoy ?? 0
+  const egresosHoy = lastMessage?.egresos_hoy ?? 0
+
+  const mappedMovements = logsData.map(log => {
+    const d = new Date(log.timestamp)
+    const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    return {
+      id: log.id,
+      name: log.user_nombre ? `${log.user_nombre} ${log.user_apellido || ''}`.trim() : 'Desconocido',
+      membership: log.user_plan_nombre || 'Sin plan',
+      time: timeStr,
+      type: log.access_type
+    }
+  })
+
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -44,9 +66,16 @@ export default function RecepcionistaDashboardView({ navigate, mockMovements }) 
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
-        <AforoCard current={150} max={200} entries={232} exits={76} />
-        <MovementList movements={mockMovements} />
+        <AforoCard 
+          current={aforoActual} 
+          max={200} 
+          entries={ingresosHoy} 
+          exits={egresosHoy} 
+          loading={!isConnected && !lastMessage}
+        />
+        <MovementList movements={mappedMovements} loading={isLoadingLogs} />
       </div>
     </div>
   )
 }
+

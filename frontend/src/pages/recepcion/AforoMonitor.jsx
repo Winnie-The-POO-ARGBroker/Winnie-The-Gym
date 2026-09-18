@@ -7,19 +7,46 @@ import AforoStatBar from '../../components/recepcion/AforoStatBar';
 import Badge from '../../components/ui/Badge';
 import { Wifi, Loader2 } from 'lucide-react';
 import useWebSocket from '../../hooks/useWebSocket';
+import { useAforoStats, useAccessLogs } from '../../hooks/queries/useDashboardData';
+
+function getTimeAgo(dateString) {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInMinutes = Math.floor((now - date) / 60000);
+  
+  if (diffInMinutes < 1) return 'hace un momento';
+  if (diffInMinutes === 1) return 'hace 1 minuto';
+  if (diffInMinutes < 60) return `hace ${diffInMinutes} minutos`;
+  
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours === 1) return 'hace 1 hora';
+  if (diffInHours < 24) return `hace ${diffInHours} horas`;
+  
+  const diffInDays = Math.floor(diffInHours / 24);
+  if (diffInDays === 1) return 'hace 1 día';
+  return `hace ${diffInDays} días`;
+}
 
 export default function AforoMonitor() {
   const [aforo, setAforo] = useState(0);
   const maxAforo = 200;
   
-  // As the backend currently only sends the total aforo in the message,
-  // we will keep recent events statically or clear it until the backend sends event details.
-  // For visual consistency with the mockup, we will keep the hardcoded ones initially.
-  const [recentEvents] = useState([
-    { id: 1, type: 'in', name: 'Ana González', time: 'hace 2 min' },
-    { id: 2, type: 'out', name: 'Carlos López', time: 'hace 5 min' },
-    { id: 3, type: 'in', name: 'María Pérez', time: 'hace 8 min' },
-  ]);
+  // Real stats
+  const { data: stats } = useAforoStats();
+  const { data: logsData } = useAccessLogs(5);
+  
+  const recentEvents = (logsData || []).map((log, index) => {
+    let name = '';
+    if (log.user) {
+      name = log.user.first_name ? `${log.user.first_name} ${log.user.last_name}` : log.user.email;
+    }
+    return {
+      id: log.id || index,
+      type: log.access_type === 'ENTRY' ? 'in' : 'out',
+      name: name || 'Desconocido',
+      time: getTimeAgo(log.timestamp)
+    };
+  });
 
   const { isConnected, isConnecting, lastMessage } = useWebSocket('/ws/aforo/');
 
@@ -66,13 +93,12 @@ export default function AforoMonitor() {
           <OccupancyCard aforo={aforo} maxAforo={maxAforo} />
           <RecentEventsPanel events={recentEvents} />
         </div>
-        {/* TODO: reemplazar cuando exista endpoint de stats */}
         <AforoStatBar
-          promedioHoy={undefined}
-          picoMaximo={undefined}
-          picoHora={undefined}
-          ingresoUltimaHora={undefined}
-          egresoUltimaHora={undefined}
+          promedioHoy={stats?.promedioHoy || '0'}
+          picoMaximo={stats?.picoMaximo || '0'}
+          picoHora={stats?.picoHora || '--:--'}
+          ingresoUltimaHora={stats?.ingresoUltimaHora || '0'}
+          egresoUltimaHora={stats?.egresoUltimaHora || '0'}
         />
       </div>
     </AppLayout>

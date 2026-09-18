@@ -30,7 +30,7 @@ export default function ClassSchedulePage() {
   const [selectedClass, setSelectedClass] = useState(classes[0] || null)
   const [isAttendeesModalOpen, setIsAttendeesModalOpen] = useState(false)
   const [classForModal, setClassForModal] = useState(null)
-  const [currentWeekIndex, setCurrentWeekIndex] = useState(0)
+  const [weekOffset, setWeekOffset] = useState(0)
 
   const {
     attendees,
@@ -38,12 +38,40 @@ export default function ClassSchedulePage() {
     saveAttendees,
   } = useClassAttendees(classForModal?.id)
 
-  const semanas = [
-    'Semana del 1 al 6 de Junio',
-    'Semana del 8 al 13 de Junio',
-    'Semana del 15 al 20 de Junio',
-    'Semana del 22 al 27 de Junio',
-  ]
+  // Generar fechas de la semana actual + offset
+  const today = new Date()
+  const dayOfWeek = today.getDay() === 0 ? 7 : today.getDay() // Lunes = 1, Domingo = 7
+  
+  // Lunes de la semana seleccionada
+  const monday = new Date(today)
+  monday.setDate(today.getDate() - dayOfWeek + 1 + (weekOffset * 7))
+
+  const diasSemana = [
+    { key: 'Lunes', diaNum: 1, label: 'Lunes', short: 'Lun' },
+    { key: 'Martes', diaNum: 2, label: 'Martes', short: 'Mar' },
+    { key: 'Miércoles', diaNum: 3, label: 'Miércoles', short: 'Mié' },
+    { key: 'Jueves', diaNum: 4, label: 'Jueves', short: 'Jue' },
+    { key: 'Viernes', diaNum: 5, label: 'Viernes', short: 'Vie' },
+    { key: 'Sábado', diaNum: 6, label: 'Sábado', short: 'Sáb' },
+  ].map((d, index) => {
+    const dDate = new Date(monday)
+    dDate.setDate(monday.getDate() + index)
+    const options = { day: '2-digit', month: 'short' }
+    // Ejemplo: "18 sep" -> "18 Sep"
+    let fechaStr = dDate.toLocaleDateString('es-ES', options).replace('.', '')
+    fechaStr = fechaStr.charAt(0).toUpperCase() + fechaStr.slice(1)
+    return { ...d, fecha: fechaStr }
+  })
+
+  // Sábado de la semana seleccionada
+  const saturday = new Date(monday)
+  saturday.setDate(monday.getDate() + 5)
+  const startDay = monday.getDate()
+  const endDay = saturday.getDate()
+  const monthName = saturday.toLocaleDateString('es-ES', { month: 'long' })
+  const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1)
+  
+  const weekLabel = `Semana del ${startDay} al ${endDay} de ${capitalizedMonth}`
 
   const fetchClasses = async () => {
     setIsLoading(true)
@@ -98,26 +126,24 @@ export default function ClassSchedulePage() {
     <AppLayout>
       <TopBar
         title={activeTab === 'calendario' ? 'Calendario de clases' : 'Gestión de Clases'}
-        subtitle={`${classes.length} clases programadas · ${semanas[currentWeekIndex]}`}
+        subtitle={`${classes.length} clases programadas · ${weekLabel}`}
         rightContent={
           <>
             {activeTab === 'calendario' && (
               <div className="flex items-center gap-1 bg-bg-surface border border-subtle rounded-xl p-1">
                 <button
-                  onClick={() => setCurrentWeekIndex((prev) => Math.max(0, prev - 1))}
-                  disabled={currentWeekIndex === 0}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-text-secondary hover:text-text-primary hover:bg-bg-raised disabled:opacity-40 transition-colors"
+                  onClick={() => setWeekOffset((prev) => prev - 1)}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-text-secondary hover:text-text-primary hover:bg-bg-raised transition-colors"
                 >
                   <ChevronLeft className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">Sem ant.</span>
                 </button>
                 <span className="px-2 text-xs font-bold text-text-primary">
-                  {currentWeekIndex + 1}/4
+                  {weekOffset === 0 ? 'Hoy' : weekOffset > 0 ? `+${weekOffset}` : weekOffset}
                 </span>
                 <button
-                  onClick={() => setCurrentWeekIndex((prev) => Math.min(semanas.length - 1, prev + 1))}
-                  disabled={currentWeekIndex === semanas.length - 1}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-text-secondary hover:text-text-primary hover:bg-bg-raised disabled:opacity-40 transition-colors"
+                  onClick={() => setWeekOffset((prev) => prev + 1)}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-text-secondary hover:text-text-primary hover:bg-bg-raised transition-colors"
                 >
                   <span className="hidden sm:inline">Sem sig.</span>
                   <ChevronRight className="w-3.5 h-3.5" />
@@ -177,6 +203,7 @@ export default function ClassSchedulePage() {
           ) : (
             <ClassCalendarView
               classes={classes}
+              diasSemana={diasSemana}
               onSelectClass={(cls) => {
                 setSelectedClass(cls)
                 setActiveTab('lista')
