@@ -1,5 +1,6 @@
 import Badge from '../../ui/Badge'
 import Button from '../../ui/Button'
+import Skeleton from '../../ui/Skeleton'
 import {
   useSocioMembership,
   useSocioUpcomingClasses
@@ -86,7 +87,10 @@ export default function SocioDashboardView({ navigate }) {
 
           <div className="flex flex-col gap-3 mt-4">
             {isLoadingClasses ? (
-              <p className="text-xs text-text-secondary">Cargando clases...</p>
+              <div className="flex flex-col gap-3">
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+              </div>
             ) : upcomingClasses.length === 0 ? (
               <p className="text-xs text-text-secondary">No tienes clases próximas.</p>
             ) : (

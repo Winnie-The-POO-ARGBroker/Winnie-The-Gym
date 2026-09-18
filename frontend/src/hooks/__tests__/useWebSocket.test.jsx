@@ -3,12 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import useWebSocket from '../useWebSocket'
 import useAuthStore from '../../stores/authStore'
 
-// Mock the auth store
-vi.mock('../../stores/authStore', () => ({
-  default: {
-    getState: vi.fn(),
-  },
-}))
+// We will use the real auth store and just populate it
 
 describe('useWebSocket', () => {
   let mockWebSocket
@@ -27,11 +22,11 @@ describe('useWebSocket', () => {
     }
     
     // Replace global WebSocket with mock constructor
-    originalWebSocket = global.WebSocket
-    global.WebSocket = vi.fn(() => mockWebSocket)
+    originalWebSocket = globalThis.WebSocket
+    globalThis.WebSocket = vi.fn(function() { return mockWebSocket })
     
-    // Default auth store mock
-    useAuthStore.getState.mockReturnValue({
+    // Populate real auth store
+    useAuthStore.setState({
       accessToken: 'fake-token',
       refreshAuthToken: vi.fn().mockResolvedValue(true),
       clearAuth: vi.fn(),
@@ -39,7 +34,7 @@ describe('useWebSocket', () => {
   })
 
   afterEach(() => {
-    global.WebSocket = originalWebSocket
+    globalThis.WebSocket = originalWebSocket
     vi.clearAllMocks()
     vi.useRealTimers()
   })
@@ -63,7 +58,7 @@ describe('useWebSocket', () => {
 
   it('should refresh token on 4401 rejection', async () => {
     const refreshAuthTokenMock = vi.fn().mockResolvedValue(true)
-    useAuthStore.getState.mockReturnValue({
+    useAuthStore.setState({
       accessToken: 'fake-token',
       refreshAuthToken: refreshAuthTokenMock,
       clearAuth: vi.fn(),
@@ -82,12 +77,12 @@ describe('useWebSocket', () => {
     
     // It should reconnect, but since we are mocking WebSocket, 
     // it will call the constructor again.
-    expect(global.WebSocket).toHaveBeenCalledTimes(2)
+    expect(globalThis.WebSocket).toHaveBeenCalledTimes(2)
   })
 
   it('should stop retrying on 4403 rejection', async () => {
     const refreshAuthTokenMock = vi.fn().mockResolvedValue(true)
-    useAuthStore.getState.mockReturnValue({
+    useAuthStore.setState({
       accessToken: 'fake-token',
       refreshAuthToken: refreshAuthTokenMock,
       clearAuth: vi.fn(),
