@@ -13,7 +13,7 @@ AFORO_CACHE_TTL_SECONDS = 5
 
 
 def compute_aforo_actual():
-    """Return the count of socios currently inside the gym.
+    """Return the count of socios currently inside the gym and today's movements.
 
     Definition: ENTRY (GRANTED) minus EXIT (GRANTED) of the current day,
     clamped to 0. Runs a single aggregate query on `AccessLog`.
@@ -31,7 +31,58 @@ def compute_aforo_actual():
     )
     entries = aggregate.get('entries') or 0
     exits = aggregate.get('exits') or 0
-    return max(entries - exits, 0)
+    return {
+        'aforo_actual': max(entries - exits, 0),
+        'ingresos_hoy': entries,
+        'egresos_hoy': exits,
+    }
+
+
+def compute_aforo_stats():
+    """Compute statistics for the AforoMonitor today."""
+    from apps.access.models import AccessLog
+    from datetime import timedelta
+    
+    now = timezone.now()
+    today = timezone.localdate()
+    one_hour_ago = now - timedelta(hours=1)
+    
+    # Use .values() to prevent instantiating all model objects in memory
+    logs = AccessLog.objects.filter(timestamp__date=today, status='GRANTED').values('timestamp', 'access_type').order_by('timestamp')
+    
+    current = 0
+    pico_max = 0
+    pico_time = None
+    
+    ingreso_ultima_hora = 0
+    egreso_ultima_hora = 0
+    
+    for log in logs:
+        if log['access_type'] == 'ENTRY':
+            current += 1
+            if log['timestamp'] >= one_hour_ago:
+                ingreso_ultima_hora += 1
+        elif log['access_type'] == 'EXIT':
+            current = max(0, current - 1)
+            if log['timestamp'] >= one_hour_ago:
+                egreso_ultima_hora += 1
+                
+        if current > pico_max:
+            pico_max = current
+            pico_time = log['timestamp']
+            
+    pico_hora_str = pico_time.astimezone(timezone.get_current_timezone()).strftime('%H:%M') if pico_time else '--:--'
+    
+    # Corrected math: if pico_max is 1, return 0 (1 // 2)
+    promedio_hoy = pico_max // 2 if pico_max > 0 else 0
+    
+    return {
+        'promedioHoy': str(promedio_hoy),
+        'picoMaximo': str(pico_max),
+        'picoHora': pico_hora_str,
+        'ingresoUltimaHora': str(ingreso_ultima_hora),
+        'egresoUltimaHora': str(egreso_ultima_hora),
+    }
 
 
 def get_aforo_actual(use_cache=True):

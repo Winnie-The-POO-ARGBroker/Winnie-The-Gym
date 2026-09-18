@@ -1,14 +1,7 @@
 import { Users, Clock, MapPin, Sparkles } from 'lucide-react'
 import { DISCIPLINAS_CONFIG } from '../../constants/disciplinas'
 
-const DIAS_SEMANA = [
-  { key: 'Lunes', diaNum: 1, label: 'Lunes', short: 'Lun', fecha: '01 Jun' },
-  { key: 'Martes', diaNum: 2, label: 'Martes', short: 'Mar', fecha: '02 Jun' },
-  { key: 'Miércoles', diaNum: 3, label: 'Miércoles', short: 'Mié', fecha: '03 Jun' },
-  { key: 'Jueves', diaNum: 4, label: 'Jueves', short: 'Jue', fecha: '04 Jun' },
-  { key: 'Viernes', diaNum: 5, label: 'Viernes', short: 'Vie', fecha: '05 Jun' },
-  { key: 'Sábado', diaNum: 6, label: 'Sábado', short: 'Sáb', fecha: '06 Jun' },
-]
+// Dates are passed in as diasSemana prop
 
 const HORAS_GRILLA = [
   '08:00',
@@ -28,7 +21,7 @@ const HORAS_GRILLA = [
   '22:00',
 ]
 
-export default function ClassCalendarView({ classes = [], onSelectClass, onOpenAttendees }) {
+export default function ClassCalendarView({ classes = [], diasSemana = [], onSelectClass, onOpenAttendees }) {
   // Helper to find classes for a specific day and hour slot
   const getClassesForSlot = (diaKey, horaStr) => {
     const slotHour = parseInt(horaStr.split(':')[0], 10)
@@ -70,7 +63,7 @@ export default function ClassCalendarView({ classes = [], onSelectClass, onOpenA
           <Clock className="w-3.5 h-3.5 mr-1" />
           HORA
         </div>
-        {DIAS_SEMANA.map((dia) => (
+        {diasSemana.map((dia) => (
           <div key={dia.key} className="p-3 text-center">
             <p className="text-xs font-bold text-text-primary uppercase tracking-wide">
               {dia.label}
@@ -93,7 +86,7 @@ export default function ClassCalendarView({ classes = [], onSelectClass, onOpenA
             </div>
 
             {/* Day columns */}
-            {DIAS_SEMANA.map((dia) => {
+            {diasSemana.map((dia) => {
               const slotClasses = getClassesForSlot(dia.key, hora)
 
               return (

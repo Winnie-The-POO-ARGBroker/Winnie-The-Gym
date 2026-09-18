@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import Badge from '../ui/Badge'
@@ -18,6 +19,17 @@ function BackButton({ to, onClick, label = 'Volver' }) {
 }
 
 export default function TopBar({ title, subtitle, showLive = false, showSearch = false, onScan, rightContent, backAction }) {
+  const navigate = useNavigate()
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const handleSearch = (e) => {
+    e.preventDefault()
+    if (searchQuery.trim()) {
+      navigate(`/recepcion/socios?search=${encodeURIComponent(searchQuery.trim())}`)
+      setSearchQuery('')
+    }
+  }
+
   return (
     <header className="flex items-center justify-between px-6 py-4 border-b border-strong flex-shrink-0 bg-bg-surface">
       <div className="flex items-center gap-3">
@@ -39,7 +51,7 @@ export default function TopBar({ title, subtitle, showLive = false, showSearch =
         </div>
       ) : showSearch ? (
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-bg-raised border border-strong">
+          <form onSubmit={handleSearch} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-bg-raised border border-strong">
             <svg
               width="16"
               height="16"
@@ -56,9 +68,11 @@ export default function TopBar({ title, subtitle, showLive = false, showSearch =
               type="search"
               aria-label="Buscar socio"
               placeholder="Buscar socio"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="bg-transparent text-sm text-text-primary outline-none w-32 lg:w-48 appearance-none placeholder:text-text-tertiary"
             />
-          </div>
+          </form>
           {onScan && (
             <button
               onClick={onScan}

@@ -69,9 +69,9 @@ export default function useWebSocket(path) {
         setIsConnected(false);
         setIsConnecting(false);
         
-        // Si el backend rechaza por token expirado/inválido (código 4403), intentar renovar el token
-        if (event.code === 4403) {
-          console.warn('WebSocket auth failed (4403). Attempting to refresh token...');
+        // Si el backend rechaza por token expirado/inválido (código 4401), intentar renovar el token
+        if (event.code === 4401) {
+          console.warn('WebSocket auth failed (4401). Attempting to refresh token...');
           const success = await useAuthStore.getState().refreshAuthToken();
           
           if (success) {
@@ -89,6 +89,13 @@ export default function useWebSocket(path) {
             else window.location.href = '/login';
             return;
           }
+        }
+        
+        // If forbidden (4403), stop retrying.
+        if (event.code === 4403) {
+          console.error('WebSocket connection forbidden (4403). Max permissions reached.');
+          setError(new Error('No tienes permisos para acceder a esta información en tiempo real.'));
+          return;
         }
         
         // Exponential backoff logic

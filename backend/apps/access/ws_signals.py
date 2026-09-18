@@ -33,7 +33,7 @@ def broadcast_aforo_on_access(sender, instance, created, **kwargs):
         channel_layer = get_channel_layer()
         if channel_layer is None:
             return
-        payload = {'type': 'aforo.update', 'aforo_actual': get_aforo_actual()}
+        payload = {'type': 'aforo.update', **get_aforo_actual()}
         async_to_sync(channel_layer.group_send)(AFORO_GROUP, payload)
     except Exception as exc:  # noqa: BLE001
         logger.warning('Aforo broadcast failed: %s', exc)

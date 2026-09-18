@@ -52,11 +52,25 @@ class MembresiaDetailSerializer(MembresiaSerializer):
 
 class SocioMeSerializer(serializers.ModelSerializer):
     membresia_activa = serializers.SerializerMethodField()
+    asistencias_mes = serializers.SerializerMethodField()
 
     class Meta:
         model = Socio
-        fields = ('id', 'numero_socio', 'dni', 'nombre', 'apellido', 'estado', 'membresia_activa')
+        fields = ('id', 'numero_socio', 'dni', 'nombre', 'apellido', 'estado', 'membresia_activa', 'certificado_medico_url', 'asistencias_mes')
 
     def get_membresia_activa(self, obj):
         m = obj.membresias.filter(estado='activa').order_by('-fecha_fin').first()
         return MembresiaDetailSerializer(m).data if m else None
+
+    def get_asistencias_mes(self, obj):
+        if not obj.usuario_id:
+            return 0
+        from apps.access.models import AccessLog
+        from django.utils import timezone
+        start_of_month = timezone.localdate().replace(day=1)
+        return AccessLog.objects.filter(
+            user_id=obj.usuario_id,
+            access_type='ENTRY',
+            status='GRANTED',
+            timestamp__date__gte=start_of_month
+        ).count()

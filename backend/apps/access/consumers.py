@@ -20,14 +20,18 @@ class AforoConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
         await self.accept()
         user = self.scope.get('user')
+        if user is None or not getattr(user, 'is_authenticated', False):
+            await self.close(code=4401)  # Unauthorized (needs refresh)
+            return
         if not self._is_authorized(user):
-            await self.close(code=4403)
+            await self.close(code=4403)  # Forbidden (wrong role, do not refresh)
             return
         await self.channel_layer.group_add(AFORO_GROUP, self.channel_name)
         # Send the initial snapshot immediately so the client renders on connect.
+        current_data = await self._current_aforo()
         await self.send_json({
             'type': 'aforo.snapshot',
-            'aforo_actual': await self._current_aforo(),
+            **current_data,
         })
 
     async def disconnect(self, code):
@@ -36,17 +40,16 @@ class AforoConsumer(AsyncJsonWebsocketConsumer):
     async def receive_json(self, content, **kwargs):
         """Support a manual refresh trigger from the client (defensive)."""
         if content.get('action') == 'refresh':
+            current_data = await self._current_aforo()
             await self.send_json({
                 'type': 'aforo.snapshot',
-                'aforo_actual': await self._current_aforo(),
+                **current_data,
             })
 
     async def aforo_update(self, event):
         """Handler for messages sent via `group_send(type='aforo.update', ...)`."""
-        await self.send_json({
-            'type': 'aforo.update',
-            'aforo_actual': event['aforo_actual'],
-        })
+        # event is expected to contain all keys
+        await self.send_json(event)
 
     # -----------------------------------------------------------------------
     # Helpers

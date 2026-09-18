@@ -2,18 +2,57 @@ import AforoCard from '../AforoCard'
 import MovementList from '../MovementList'
 import AlertList from '../AlertList'
 import ClassCapacityList from '../ClassCapacityList'
+import {
+  useAccessLogs,
+  useDashboardAlerts,
+  useDashboardClasses,
+  mapAccessLog
+} from '../../../hooks/queries/useDashboardData'
+import useWebSocket from '../../../hooks/useWebSocket'
+import { GYM_MAX_CAPACITY } from '../../../services/constants'
 
-export default function AdminDashboardView({ navigate, mockMovements, mockAlerts, mockClasses }) {
+export default function AdminDashboardView({ navigate }) {
+  const { data: logsData = [], isLoading: isLoadingLogs, isError: isErrorLogs } = useAccessLogs(5)
+  const { data: alertsData = [], isLoading: isLoadingAlerts, isError: isErrorAlerts } = useDashboardAlerts()
+  const { data: classesData = [], isLoading: isLoadingClasses, isError: isErrorClasses } = useDashboardClasses()
+
+  const { lastMessage, isConnected } = useWebSocket('/ws/aforo/')
+  
+  const aforoActual = lastMessage?.aforo_actual ?? 0
+  const ingresosHoy = lastMessage?.ingresos_hoy ?? 0
+  const egresosHoy = lastMessage?.egresos_hoy ?? 0
+
+  const mappedMovements = logsData.map(mapAccessLog)
+
+  const mappedAlerts = alertsData.map(mem => ({
+    id: mem.id,
+    name: mem.socio_nombre ? `${mem.socio_nombre} ${mem.socio_apellido || ''}`.trim() : 'Desconocido',
+    tag: mem.estado === 'vencida' ? 'Vencida' : 'Pendiente'
+  }))
+
+  const mappedClasses = classesData.map(c => ({
+    id: c.id,
+    name: c.nombre,
+    current: c.cupos_reservados || 0,
+    max: c.cupo_maximo
+  }))
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
       <div className="flex flex-col gap-6">
-        <AforoCard current={150} max={200} entries={232} exits={76} />
-        <MovementList movements={mockMovements} />
+        <AforoCard 
+          current={aforoActual} 
+          max={GYM_MAX_CAPACITY} 
+          entries={ingresosHoy} 
+          exits={egresosHoy} 
+          loading={!isConnected && !lastMessage}
+        />
+        {isErrorLogs ? <p className="text-danger text-sm">Error al cargar movimientos.</p> : <MovementList movements={mappedMovements} loading={isLoadingLogs} />}
       </div>
 
       <div className="flex flex-col gap-6">
-        <AlertList alerts={mockAlerts} />
-        <ClassCapacityList classes={mockClasses} />
+        {isErrorAlerts ? <p className="text-danger text-sm">Error al cargar alertas.</p> : <AlertList alerts={mappedAlerts} loading={isLoadingAlerts} />}
+        {isErrorClasses ? <p className="text-danger text-sm">Error al cargar clases.</p> : <ClassCapacityList classes={mappedClasses} loading={isLoadingClasses} />}
       </div>
     </div>
   )

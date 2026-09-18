@@ -54,7 +54,8 @@ async def test_anonymous_is_rejected():
     comm, connected = await _connect(token=None)
     assert connected
     close_code = await comm.receive_output(timeout=1)
-    assert close_code == {"type": "websocket.close", "code": 4403}
+    assert close_code == {"type": "websocket.close", "code": 4401}
+    await comm.disconnect()
 
 
 @pytest.mark.django_db(transaction=True)
@@ -68,6 +69,7 @@ async def test_socio_is_rejected():
     assert connected
     close_code = await comm.receive_output(timeout=1)
     assert close_code == {"type": "websocket.close", "code": 4403}
+    await comm.disconnect()
 
 
 @pytest.mark.django_db(transaction=True)
