@@ -17,6 +17,14 @@ class ScanQRSerializer(serializers.Serializer):
     )
 
 
+class ManualAccessSerializer(serializers.Serializer):
+    dni = serializers.CharField(required=True, max_length=20)
+    access_type = serializers.ChoiceField(
+        choices=AccessLog.ACCESS_TYPE_CHOICES,
+        default='ENTRY'
+    )
+
+
 class AccessLogSerializer(serializers.ModelSerializer):
     user_email = serializers.EmailField(source='user.email', read_only=True)
     user_name = serializers.CharField(source='user.get_full_name', read_only=True)
