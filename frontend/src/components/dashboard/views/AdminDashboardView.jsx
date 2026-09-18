@@ -5,14 +5,16 @@ import ClassCapacityList from '../ClassCapacityList'
 import {
   useAccessLogs,
   useDashboardAlerts,
-  useDashboardClasses
+  useDashboardClasses,
+  mapAccessLog
 } from '../../../hooks/queries/useDashboardData'
 import useWebSocket from '../../../hooks/useWebSocket'
+import { GYM_MAX_CAPACITY } from '../../../services/constants'
 
 export default function AdminDashboardView({ navigate }) {
-  const { data: logsData = [], isLoading: isLoadingLogs } = useAccessLogs(5)
-  const { data: alertsData = [], isLoading: isLoadingAlerts } = useDashboardAlerts()
-  const { data: classesData = [], isLoading: isLoadingClasses } = useDashboardClasses()
+  const { data: logsData = [], isLoading: isLoadingLogs, isError: isErrorLogs } = useAccessLogs(5)
+  const { data: alertsData = [], isLoading: isLoadingAlerts, isError: isErrorAlerts } = useDashboardAlerts()
+  const { data: classesData = [], isLoading: isLoadingClasses, isError: isErrorClasses } = useDashboardClasses()
 
   const { lastMessage, isConnected } = useWebSocket('/ws/aforo/')
   
@@ -20,17 +22,7 @@ export default function AdminDashboardView({ navigate }) {
   const ingresosHoy = lastMessage?.ingresos_hoy ?? 0
   const egresosHoy = lastMessage?.egresos_hoy ?? 0
 
-  const mappedMovements = logsData.map(log => {
-    const d = new Date(log.timestamp)
-    const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    return {
-      id: log.id,
-      name: log.user_nombre ? `${log.user_nombre} ${log.user_apellido || ''}`.trim() : 'Desconocido',
-      membership: log.user_plan_nombre || 'Sin plan',
-      time: timeStr,
-      type: log.access_type
-    }
-  })
+  const mappedMovements = logsData.map(mapAccessLog)
 
   const mappedAlerts = alertsData.map(mem => ({
     id: mem.id,
@@ -50,17 +42,17 @@ export default function AdminDashboardView({ navigate }) {
       <div className="flex flex-col gap-6">
         <AforoCard 
           current={aforoActual} 
-          max={200} 
+          max={GYM_MAX_CAPACITY} 
           entries={ingresosHoy} 
           exits={egresosHoy} 
           loading={!isConnected && !lastMessage}
         />
-        <MovementList movements={mappedMovements} loading={isLoadingLogs} />
+        {isErrorLogs ? <p className="text-danger text-sm">Error al cargar movimientos.</p> : <MovementList movements={mappedMovements} loading={isLoadingLogs} />}
       </div>
 
       <div className="flex flex-col gap-6">
-        <AlertList alerts={mappedAlerts} loading={isLoadingAlerts} />
-        <ClassCapacityList classes={mappedClasses} loading={isLoadingClasses} />
+        {isErrorAlerts ? <p className="text-danger text-sm">Error al cargar alertas.</p> : <AlertList alerts={mappedAlerts} loading={isLoadingAlerts} />}
+        {isErrorClasses ? <p className="text-danger text-sm">Error al cargar clases.</p> : <ClassCapacityList classes={mappedClasses} loading={isLoadingClasses} />}
       </div>
     </div>
   )

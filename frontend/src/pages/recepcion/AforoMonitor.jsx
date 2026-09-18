@@ -8,10 +8,10 @@ import Badge from '../../components/ui/Badge';
 import { Wifi, Loader2 } from 'lucide-react';
 import useWebSocket from '../../hooks/useWebSocket';
 import { useAforoStats, useAccessLogs } from '../../hooks/queries/useDashboardData';
+import { GYM_MAX_CAPACITY } from '../../services/constants';
 
-function getTimeAgo(dateString) {
+function getTimeAgo(dateString, now = new Date()) {
   const date = new Date(dateString);
-  const now = new Date();
   const diffInMinutes = Math.floor((now - date) / 60000);
   
   if (diffInMinutes < 1) return 'hace un momento';
@@ -29,7 +29,7 @@ function getTimeAgo(dateString) {
 
 export default function AforoMonitor() {
   const [aforo, setAforo] = useState(0);
-  const maxAforo = 200;
+  const maxAforo = GYM_MAX_CAPACITY;
   
   // Real stats
   const { data: stats } = useAforoStats();

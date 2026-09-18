@@ -10,7 +10,12 @@ export default function SocioDashboardView({ navigate }) {
   const { data: upcomingClasses = [], isLoading: isLoadingClasses } = useSocioUpcomingClasses()
 
   if (isLoadingMembership) {
-    return <p className="text-text-secondary text-sm">Cargando dashboard...</p>
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl animate-pulse">
+        <div className="h-64 bg-bg-surface rounded-2xl border border-subtle"></div>
+        <div className="h-64 bg-bg-surface rounded-2xl border border-subtle"></div>
+      </div>
+    )
   }
 
   const mem = membershipData?.membresia_activa

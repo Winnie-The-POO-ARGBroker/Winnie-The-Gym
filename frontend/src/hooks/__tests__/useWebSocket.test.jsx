@@ -19,6 +19,10 @@ describe('useWebSocket', () => {
     mockWebSocket = {
       send: vi.fn(),
       close: vi.fn(),
+      onopen: null,
+      onclose: null,
+      onmessage: null,
+      onerror: null,
       readyState: 1, // OPEN
     }
     
@@ -46,6 +50,8 @@ describe('useWebSocket', () => {
     expect(result.current.isConnecting).toBe(true)
     expect(result.current.isConnected).toBe(false)
     
+    await waitFor(() => expect(mockWebSocket.onopen).toBeInstanceOf(Function))
+    
     // Simulate open event
     act(() => {
       mockWebSocket.onopen()
@@ -64,6 +70,8 @@ describe('useWebSocket', () => {
     })
 
     const { result } = renderHook(() => useWebSocket('/ws/test/'))
+
+    await waitFor(() => expect(mockWebSocket.onclose).toBeInstanceOf(Function))
 
     // Simulate 4401 close event
     await act(async () => {
@@ -86,6 +94,8 @@ describe('useWebSocket', () => {
     })
 
     const { result } = renderHook(() => useWebSocket('/ws/test/'))
+
+    await waitFor(() => expect(mockWebSocket.onclose).toBeInstanceOf(Function))
 
     // Simulate 4403 close event
     await act(async () => {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Plus,
@@ -38,40 +38,42 @@ export default function ClassSchedulePage() {
     saveAttendees,
   } = useClassAttendees(classForModal?.id)
 
-  // Generar fechas de la semana actual + offset
-  const today = new Date()
-  const dayOfWeek = today.getDay() === 0 ? 7 : today.getDay() // Lunes = 1, Domingo = 7
-  
-  // Lunes de la semana seleccionada
-  const monday = new Date(today)
-  monday.setDate(today.getDate() - dayOfWeek + 1 + (weekOffset * 7))
+  const { diasSemana, weekLabel } = useMemo(() => {
+    // Generar fechas de la semana actual + offset
+    const today = new Date()
+    const dayOfWeek = today.getDay() === 0 ? 7 : today.getDay() // Lunes = 1, Domingo = 7
+    
+    // Lunes de la semana seleccionada
+    const monday = new Date(today)
+    monday.setDate(today.getDate() - dayOfWeek + 1 + (weekOffset * 7))
 
-  const diasSemana = [
-    { key: 'Lunes', diaNum: 1, label: 'Lunes', short: 'Lun' },
-    { key: 'Martes', diaNum: 2, label: 'Martes', short: 'Mar' },
-    { key: 'Miércoles', diaNum: 3, label: 'Miércoles', short: 'Mié' },
-    { key: 'Jueves', diaNum: 4, label: 'Jueves', short: 'Jue' },
-    { key: 'Viernes', diaNum: 5, label: 'Viernes', short: 'Vie' },
-    { key: 'Sábado', diaNum: 6, label: 'Sábado', short: 'Sáb' },
-  ].map((d, index) => {
-    const dDate = new Date(monday)
-    dDate.setDate(monday.getDate() + index)
-    const options = { day: '2-digit', month: 'short' }
-    // Ejemplo: "18 sep" -> "18 Sep"
-    let fechaStr = dDate.toLocaleDateString('es-ES', options).replace('.', '')
-    fechaStr = fechaStr.charAt(0).toUpperCase() + fechaStr.slice(1)
-    return { ...d, fecha: fechaStr }
-  })
+    const calculatedDiasSemana = [
+      { key: 'Lunes', diaNum: 1, label: 'Lunes', short: 'Lun' },
+      { key: 'Martes', diaNum: 2, label: 'Martes', short: 'Mar' },
+      { key: 'Miércoles', diaNum: 3, label: 'Miércoles', short: 'Mié' },
+      { key: 'Jueves', diaNum: 4, label: 'Jueves', short: 'Jue' },
+      { key: 'Viernes', diaNum: 5, label: 'Viernes', short: 'Vie' },
+      { key: 'Sábado', diaNum: 6, label: 'Sábado', short: 'Sáb' },
+    ].map((d, index) => {
+      const dDate = new Date(monday)
+      dDate.setDate(monday.getDate() + index)
+      const options = { day: '2-digit', month: 'short' }
+      let fechaStr = dDate.toLocaleDateString('es-ES', options).replace('.', '')
+      fechaStr = fechaStr.charAt(0).toUpperCase() + fechaStr.slice(1)
+      return { ...d, fecha: fechaStr }
+    })
 
-  // Sábado de la semana seleccionada
-  const saturday = new Date(monday)
-  saturday.setDate(monday.getDate() + 5)
-  const startDay = monday.getDate()
-  const endDay = saturday.getDate()
-  const monthName = saturday.toLocaleDateString('es-ES', { month: 'long' })
-  const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1)
-  
-  const weekLabel = `Semana del ${startDay} al ${endDay} de ${capitalizedMonth}`
+    // Sábado de la semana seleccionada
+    const saturday = new Date(monday)
+    saturday.setDate(monday.getDate() + 5)
+    const startDay = monday.getDate()
+    const endDay = saturday.getDate()
+    const monthName = saturday.toLocaleDateString('es-ES', { month: 'long' })
+    const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1)
+    
+    const calculatedWeekLabel = `Semana del ${startDay} al ${endDay} de ${capitalizedMonth}`
+    return { diasSemana: calculatedDiasSemana, weekLabel: calculatedWeekLabel }
+  }, [weekOffset])
 
   const fetchClasses = async () => {
     setIsLoading(true)
