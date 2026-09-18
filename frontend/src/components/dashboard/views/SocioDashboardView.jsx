@@ -17,7 +17,14 @@ export default function SocioDashboardView({ navigate }) {
   const planName = mem?.plan?.nombre || 'Sin membresía activa'
   const expiration = mem?.fecha_fin || '--'
   const hasMedicalCert = !!membershipData?.certificado_medico_url
-  const statusBadge = mem ? <Badge variant="success">Al día</Badge> : <Badge variant="danger">Vencida</Badge>
+  let statusBadge = null
+  if (!mem) {
+    statusBadge = <Badge variant="neutral">Sin membresía</Badge>
+  } else if (mem.estado === 'vencida') {
+    statusBadge = <Badge variant="danger">Vencida</Badge>
+  } else {
+    statusBadge = <Badge variant="success">Al día</Badge>
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl">

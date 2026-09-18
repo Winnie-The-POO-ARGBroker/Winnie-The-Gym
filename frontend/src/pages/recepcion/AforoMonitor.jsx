@@ -37,8 +37,8 @@ export default function AforoMonitor() {
   
   const recentEvents = (logsData || []).map((log, index) => {
     let name = '';
-    if (log.user) {
-      name = log.user.first_name ? `${log.user.first_name} ${log.user.last_name}` : log.user.email;
+    if (log.user_nombre) {
+      name = `${log.user_nombre} ${log.user_apellido || ''}`.trim();
     }
     return {
       id: log.id || index,

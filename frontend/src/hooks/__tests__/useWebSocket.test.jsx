@@ -55,7 +55,29 @@ describe('useWebSocket', () => {
     expect(result.current.isConnected).toBe(true)
   })
 
-  it('should refresh token on 4403 rejection', async () => {
+  it('should refresh token on 4401 rejection', async () => {
+    const refreshAuthTokenMock = vi.fn().mockResolvedValue(true)
+    useAuthStore.getState.mockReturnValue({
+      accessToken: 'fake-token',
+      refreshAuthToken: refreshAuthTokenMock,
+      clearAuth: vi.fn(),
+    })
+
+    const { result } = renderHook(() => useWebSocket('/ws/test/'))
+
+    // Simulate 4401 close event
+    await act(async () => {
+      await mockWebSocket.onclose({ code: 4401 })
+    })
+
+    expect(refreshAuthTokenMock).toHaveBeenCalled()
+    
+    // It should reconnect, but since we are mocking WebSocket, 
+    // it will call the constructor again.
+    expect(global.WebSocket).toHaveBeenCalledTimes(2)
+  })
+
+  it('should stop retrying on 4403 rejection', async () => {
     const refreshAuthTokenMock = vi.fn().mockResolvedValue(true)
     useAuthStore.getState.mockReturnValue({
       accessToken: 'fake-token',
@@ -70,10 +92,7 @@ describe('useWebSocket', () => {
       await mockWebSocket.onclose({ code: 4403 })
     })
 
-    expect(refreshAuthTokenMock).toHaveBeenCalled()
-    
-    // It should reconnect, but since we are mocking WebSocket, 
-    // it will call the constructor again.
-    expect(global.WebSocket).toHaveBeenCalledTimes(2)
+    expect(refreshAuthTokenMock).not.toHaveBeenCalled()
+    expect(result.current.error.message).toContain('permisos')
   })
 })
