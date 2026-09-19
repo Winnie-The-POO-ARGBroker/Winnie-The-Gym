@@ -51,7 +51,7 @@ export default function AdminSociosPage({
     ordering: orderingParam,
   })
 
-  const { create, patch, baja } = useSocioMutations()
+  const { create, patch, baja, certificado } = useSocioMutations()
 
   const socios = data?.results || (Array.isArray(data) ? data : [])
   const totalCount = data?.count ?? socios.length
@@ -87,12 +87,20 @@ export default function AdminSociosPage({
     setIsFormModalOpen(true)
   }
 
-  const handleSaveSocio = async (formData) => {
-    if (formData.id) {
-      await patch.mutateAsync({ id: formData.id, data: formData })
+  const handleSaveSocio = async (formData, certificadoFile) => {
+    let socioId = formData.id
+    if (socioId) {
+      await patch.mutateAsync({ id: socioId, data: formData })
     } else {
-      await create.mutateAsync(formData)
+      const res = await create.mutateAsync(formData)
+      socioId = res?.id
     }
+
+    // Si se seleccionó certificado médico, subirlo (HU03, RF08)
+    if (certificadoFile && socioId) {
+      await certificado.mutateAsync({ id: socioId, archivo: certificadoFile })
+    }
+
     setIsFormModalOpen(false)
     setSocioToEdit(null)
   }
@@ -413,7 +421,7 @@ export default function AdminSociosPage({
         }}
         onSave={handleSaveSocio}
         socioToEdit={socioToEdit}
-        isLoading={create.isLoading || patch.isLoading}
+        isLoading={create.isLoading || patch.isLoading || certificado.isLoading}
       />
     </AppLayout>
   )
