@@ -9,6 +9,7 @@ import {
   deleteSocio,
   darBajaSocio,
   uploadCertificado,
+  getSociosStats,
 } from '../sociosService'
 
 vi.mock('../api', () => ({
@@ -105,5 +106,14 @@ describe('sociosService', () => {
       { headers: { 'Content-Type': 'multipart/form-data' } }
     )
     expect(res.certificado_medico_url).toBe('http://example.com/cert.pdf')
+  })
+
+  it('getSociosStats solicita endpoint /members/socios/stats/', async () => {
+    const mockStats = { total: 10, activos: 7, suspendidos: 1, bajas: 2, con_certificado: 5 }
+    api.get.mockResolvedValueOnce({ data: mockStats })
+
+    const res = await getSociosStats()
+    expect(api.get).toHaveBeenCalledWith('/members/socios/stats/')
+    expect(res).toEqual(mockStats)
   })
 })

@@ -3,6 +3,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 
@@ -12,6 +13,12 @@ from .filters import SocioFilter
 from .models import Socio
 from .serializers import SocioCertificadoUploadSerializer, SocioSerializer
 from .services import dar_baja, guardar_certificado_medico
+
+
+class SocioPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
 
 
 @extend_schema_view(
@@ -25,6 +32,7 @@ from .services import dar_baja, guardar_certificado_medico
 class SocioViewSet(viewsets.ModelViewSet):
     queryset = Socio.objects.all().order_by('id')
     serializer_class = SocioSerializer
+    pagination_class = SocioPagination
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = SocioFilter
     search_fields = ['nombre', 'apellido', 'dni', 'numero_socio']
@@ -56,6 +64,24 @@ class SocioViewSet(viewsets.ModelViewSet):
 
         serializer = SocioSerializer(socio)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        tags=['members'],
+        summary='Métricas y estadísticas de socios (recep/admin)',
+        responses={200: dict},
+    )
+    @action(detail=False, methods=['get'], url_path='stats')
+    def stats(self, request):
+        total = Socio.objects.count()
+        activos = Socio.objects.filter(estado=Socio.Estado.ACTIVO).count()
+        con_certificado = Socio.objects.exclude(certificado_medico_url='').count()
+        bajas = Socio.objects.filter(estado=Socio.Estado.BAJA).count()
+        return Response({
+            'total': total,
+            'activos': activos,
+            'con_certificado': con_certificado,
+            'bajas': bajas,
+        })
 
     @extend_schema(
         tags=['members'],

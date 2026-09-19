@@ -1,7 +1,6 @@
 import { Search, X } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import useDebounce from '../../hooks/useDebounce'
-import { useEffect } from 'react'
 
 /**
  * Barra de búsqueda con debounce integrado.
@@ -20,10 +19,15 @@ export default function SearchBar({
 }) {
   const [value, setValue] = useState('')
   const debounced = useDebounce(value, delay)
+  const isFirstRender = useRef(true)
 
   useEffect(() => {
-    onSearch(debounced)
-  }, [debounced]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
+    onSearch?.(debounced)
+  }, [debounced, onSearch])
 
   function handleClear() {
     setValue('')
@@ -39,10 +43,12 @@ export default function SearchBar({
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder={placeholder}
+        aria-label={placeholder || 'Buscar'}
         className="w-full bg-bg-base border border-subtle rounded-xl text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-colors py-2.5 pl-10 pr-9"
       />
       {value && (
         <button
+          type="button"
           onClick={handleClear}
           className="absolute inset-y-0 right-0 pr-3 flex items-center text-text-tertiary hover:text-text-primary transition-colors"
           aria-label="Limpiar búsqueda"

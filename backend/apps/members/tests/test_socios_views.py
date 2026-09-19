@@ -275,3 +275,42 @@ class SocioSearchTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.data.get('results', response.data)
         self.assertEqual(len(data), 0)
+
+
+class SocioDarBajaAndStatsTests(APITestCase):
+
+    def setUp(self):
+        self.admin = make_user_factory(rol='administrador')
+        self.recep = make_user_factory(rol='recepcionista')
+        self.user_socio = make_user_factory(rol='socio')
+        self.socio = make_socio_factory(usuario=self.user_socio, estado='activo')
+
+    def test_admin_can_dar_baja(self):
+        _auth_client(self.client, self.admin)
+        res = self.client.post(_baja_url(self.socio.pk))
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.socio.refresh_from_db()
+        self.assertEqual(self.socio.estado, 'baja')
+        self.assertIsNotNone(self.socio.fecha_baja)
+
+    def test_cannot_dar_baja_already_baja(self):
+        self.socio.estado = 'baja'
+        self.socio.save()
+        _auth_client(self.client, self.admin)
+        res = self.client.post(_baja_url(self.socio.pk))
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_socio_stats_endpoint(self):
+        _auth_client(self.client, self.admin)
+        res = self.client.get(f'{SOCIOS_URL}stats/')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn('total', res.data)
+        self.assertIn('activos', res.data)
+        self.assertIn('con_certificado', res.data)
+        self.assertIn('bajas', res.data)
+
+    def test_custom_page_size_query_param(self):
+        _auth_client(self.client, self.admin)
+        res = self.client.get(SOCIOS_URL, {'page_size': 5})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn('results', res.data)

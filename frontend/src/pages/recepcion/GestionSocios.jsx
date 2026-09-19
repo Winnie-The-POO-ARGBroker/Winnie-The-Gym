@@ -5,13 +5,9 @@ import {
   Users,
   UserPlus,
   Eye,
-  FileCheck,
-  FileText,
   Check,
 } from 'lucide-react'
 import Button from '../../components/ui/Button'
-import Badge from '../../components/ui/Badge'
-import Avatar from '../../components/ui/Avatar'
 import DataTable from '../../components/ui/DataTable'
 import Pagination from '../../components/ui/Pagination'
 import SearchBar from '../../components/ui/SearchBar'
@@ -23,6 +19,7 @@ import PlanPagoCard from '../../components/recepcion/PlanPagoCard'
 import SaludCard from '../../components/recepcion/SaludCard'
 import SocioResumenSidebar from '../../components/recepcion/SocioResumenSidebar'
 import SocioDetailModal from '../../components/admin/SocioDetailModal'
+import { getSocioColumns } from '../../components/admin/socioColumns'
 import { useSociosList } from '../../hooks/queries/useSociosData'
 import { gestionSociosSchema, defaultValues } from './gestionSocios.schema'
 
@@ -31,17 +28,12 @@ export default function GestionSocios() {
 
   // ─── Estado del listado ──────────────────────────────────────────
   const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(10)
+  const pageSize = 10
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState({ estado: '', con_certificado: '' })
-  const [sortColumn, setSortColumn] = useState('nombre')
-  const [sortDirection, setSortDirection] = useState('asc')
+  const [ordering, setOrdering] = useState('nombre')
   const [socioParaDetalle, setSocioParaDetalle] = useState(null)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
-
-  const orderingParam = sortColumn
-    ? `${sortDirection === 'desc' ? '-' : ''}${sortColumn}`
-    : ''
 
   const { data, isLoading } = useSociosList({
     page,
@@ -49,7 +41,7 @@ export default function GestionSocios() {
     search,
     estado: filters.estado,
     con_certificado: filters.con_certificado,
-    ordering: orderingParam,
+    ordering,
   })
 
   const socios = data?.results || (Array.isArray(data) ? data : [])
@@ -73,100 +65,7 @@ export default function GestionSocios() {
     console.log('Form submitted:', formDataSubmitted)
   }
 
-  // Columnas para la tabla del recepcionista
-  const columns = [
-    {
-      key: 'nombre',
-      header: 'Socio',
-      sortable: true,
-      render: (row) => (
-        <div className="flex items-center gap-3">
-          <Avatar
-            name={`${row.nombre || ''} ${row.apellido || ''}`.trim() || 'Socio'}
-            size="sm"
-          />
-          <div>
-            <div className="font-semibold text-text-primary">
-              {row.nombre} {row.apellido}
-            </div>
-            <div className="text-xs text-text-secondary">
-              Nº {row.numero_socio || '—'}
-            </div>
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: 'dni',
-      header: 'DNI',
-      sortable: true,
-      render: (row) => (
-        <span className="font-mono text-xs text-text-secondary">
-          {row.dni || '—'}
-        </span>
-      ),
-    },
-    {
-      key: 'telefono',
-      header: 'Teléfono',
-      sortable: false,
-      render: (row) => (
-        <span className="text-xs text-text-secondary">
-          {row.telefono || '—'}
-        </span>
-      ),
-    },
-    {
-      key: 'estado',
-      header: 'Estado',
-      sortable: true,
-      render: (row) => {
-        const est = (row.estado || '').toLowerCase()
-        if (est === 'activo') return <Badge variant="success">Activo</Badge>
-        if (est === 'suspendido') return <Badge variant="warning">Suspendido</Badge>
-        if (est === 'baja') return <Badge variant="danger">Baja</Badge>
-        return <Badge variant="warning">{row.estado || '—'}</Badge>
-      },
-    },
-    {
-      key: 'certificado',
-      header: 'Certificado Médico',
-      sortable: false,
-      render: (row) => {
-        const tiene = !!row.certificado_medico_url
-        return tiene ? (
-          <a
-            href={row.certificado_medico_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center gap-1 text-xs text-emerald-500 hover:text-emerald-400 font-medium transition-colors"
-            title="Ver certificado médico"
-          >
-            <FileCheck className="w-3.5 h-3.5" />
-            <span>Al día</span>
-          </a>
-        ) : (
-          <span className="inline-flex items-center gap-1 text-xs text-rose-500 font-medium">
-            <FileText className="w-3.5 h-3.5 opacity-60" />
-            <span>Sin certificado</span>
-          </span>
-        )
-      },
-    },
-    {
-      key: 'created_at',
-      header: 'Fecha Alta',
-      sortable: true,
-      render: (row) => (
-        <span className="text-xs text-text-secondary">
-          {row.created_at
-            ? new Date(row.created_at).toLocaleDateString('es-AR')
-            : '—'}
-        </span>
-      ),
-    },
-  ]
+  const columns = getSocioColumns()
 
   const handleVerDetalle = (socio) => {
     setSocioParaDetalle(socio)
@@ -204,9 +103,17 @@ export default function GestionSocios() {
       />
 
       <div className="flex-1 p-6 overflow-auto flex flex-col gap-6">
-        {/* Pestañas de Navegación */}
-        <div className="flex items-center gap-2 border-b border-subtle pb-3">
+        {/* Pestañas de Navegación con soporte ARIA */}
+        <div
+          role="tablist"
+          aria-label="Pestañas de gestión de socios"
+          className="flex items-center gap-2 border-b border-subtle pb-3"
+        >
           <button
+            role="tab"
+            id="tab-listado"
+            aria-selected={activeTab === 'listado'}
+            aria-controls="panel-listado"
             onClick={() => setActiveTab('listado')}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
               activeTab === 'listado'
@@ -228,6 +135,10 @@ export default function GestionSocios() {
           </button>
 
           <button
+            role="tab"
+            id="tab-nuevo"
+            aria-selected={activeTab === 'nuevo'}
+            aria-controls="panel-nuevo"
             onClick={() => setActiveTab('nuevo')}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
               activeTab === 'nuevo'
@@ -242,7 +153,12 @@ export default function GestionSocios() {
 
         {/* ─── TAB 1: LISTADO DE SOCIOS PARA RECEPCIONISTA ─── */}
         {activeTab === 'listado' && (
-          <div className="flex flex-col gap-5">
+          <div
+            role="tabpanel"
+            id="panel-listado"
+            aria-labelledby="tab-listado"
+            className="flex flex-col gap-5"
+          >
             {/* Buscador y filtros */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
               <div className="w-full sm:w-80">
@@ -252,17 +168,16 @@ export default function GestionSocios() {
                     setSearch(val)
                     setPage(1)
                   }}
-                  defaultValue={search}
                 />
               </div>
 
               <FilterPanel
                 filters={filters}
-                onFilterChange={(f) => {
-                  setFilters(f)
+                onChange={(key, val) => {
+                  setFilters((prev) => ({ ...prev, [key]: val }))
                   setPage(1)
                 }}
-                onClearFilters={() => {
+                onClear={() => {
                   setFilters({ estado: '', con_certificado: '' })
                   setPage(1)
                 }}
@@ -274,24 +189,26 @@ export default function GestionSocios() {
               <DataTable
                 columns={columns}
                 data={socios}
-                isLoading={isLoading}
-                sortColumn={sortColumn}
-                sortDirection={sortDirection}
-                onSort={(col, dir) => {
-                  setSortColumn(col)
-                  setSortDirection(dir)
+                loading={isLoading}
+                ordering={ordering}
+                onSort={(newOrdering) => {
+                  setOrdering(newOrdering || '')
+                  setPage(1)
                 }}
-                emptyMessage="No se encontraron socios."
+                emptyTitle="Sin socios"
+                emptyMessage="No se encontraron socios con los filtros aplicados."
                 onRowClick={handleVerDetalle}
-                actions={(row) => (
+                renderActions={(row) => (
                   <div className="flex items-center gap-1 justify-end">
                     <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation()
                         handleVerDetalle(row)
                       }}
                       className="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-bg-raised transition-colors"
                       title="Ver detalle del socio"
+                      aria-label={`Ver detalle del socio ${row.nombre} ${row.apellido}`}
                     >
                       <Eye className="w-4 h-4" />
                     </button>
@@ -300,14 +217,10 @@ export default function GestionSocios() {
               />
 
               <Pagination
-                count={totalCount}
-                page={page}
+                currentPage={page}
+                totalCount={totalCount}
                 pageSize={pageSize}
                 onPageChange={setPage}
-                onPageSizeChange={(newSize) => {
-                  setPageSize(newSize)
-                  setPage(1)
-                }}
               />
             </div>
           </div>
@@ -315,7 +228,12 @@ export default function GestionSocios() {
 
         {/* ─── TAB 2: ALTA DE SOCIO EN RECEPCIÓN ─── */}
         {activeTab === 'nuevo' && (
-          <div className="flex flex-col gap-6">
+          <div
+            role="tabpanel"
+            id="panel-nuevo"
+            aria-labelledby="tab-nuevo"
+            className="flex flex-col gap-6"
+          >
             {Object.keys(errors).length > 0 && (
               <div className="p-3 rounded-xl bg-bg-raised border border-subtle">
                 {Object.values(errors).map((e, i) => (

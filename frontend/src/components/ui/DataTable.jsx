@@ -101,13 +101,27 @@ export default function DataTable({
               {columns.map((col) => {
                 const sortDir = getSortDirection(col.key)
                 const isSortable = col.sortable && onSort
+                const ariaSort = sortDir === 'asc' ? 'ascending' : sortDir === 'desc' ? 'descending' : 'none'
 
                 return (
                   <th
                     key={col.key}
                     onClick={isSortable ? () => handleSort(col.key) : undefined}
+                    onKeyDown={
+                      isSortable
+                        ? (e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault()
+                              handleSort(col.key)
+                            }
+                          }
+                        : undefined
+                    }
+                    tabIndex={isSortable ? 0 : undefined}
+                    role={isSortable ? 'button' : undefined}
+                    aria-sort={isSortable ? ariaSort : undefined}
                     className={`text-left text-xs font-semibold uppercase tracking-wider text-text-secondary px-4 py-3 ${
-                      isSortable ? 'cursor-pointer select-none hover:text-text-primary transition-colors' : ''
+                      isSortable ? 'cursor-pointer select-none hover:text-text-primary focus:outline-none focus:text-primary transition-colors' : ''
                     }`}
                   >
                     <span className="inline-flex items-center gap-1.5">

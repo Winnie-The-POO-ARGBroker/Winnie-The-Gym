@@ -18,7 +18,20 @@ const SOCIOS_URL = '/members/socios/'
  * @returns {Promise<{count, next, previous, results}>}
  */
 export function getSocios(params = {}) {
-  return api.get(SOCIOS_URL, { params }).then((r) => r.data)
+  const queryParams = { ...params }
+  if ('pageSize' in queryParams) {
+    queryParams.page_size = queryParams.pageSize
+    delete queryParams.pageSize
+  }
+  return api.get(SOCIOS_URL, { params: queryParams }).then((r) => r.data)
+}
+
+/**
+ * Obtiene métricas globales de socios (activos, suspendidos, bajas, total).
+ * @returns {Promise<{total: number, activos: number, suspendidos: number, bajas: number, con_certificado: number}>}
+ */
+export function getSociosStats() {
+  return api.get(`${SOCIOS_URL}stats/`).then((r) => r.data)
 }
 
 /**

@@ -2,8 +2,7 @@ import { useState } from 'react'
 import { FileText, Calendar, UploadCloud, CheckCircle2, AlertCircle, X } from 'lucide-react'
 import Card from '../ui/Card'
 import Input from '../ui/Input'
-
-const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024 // 5 MB (RF08)
+import { MAX_CERT_FILE_SIZE, CERT_ACCEPT_ATTR } from '../../constants/files'
 
 export default function SaludCard({
   onFileChange,
@@ -18,7 +17,7 @@ export default function SaludCard({
     if (!file) return
 
     // Validar tamaño máximo 5 MB
-    if (file.size > MAX_FILE_SIZE_BYTES) {
+    if (file.size > MAX_CERT_FILE_SIZE) {
       setFileError('El archivo supera el límite de 5 MB.')
       setSelectedFile(null)
       if (onFileChange) onFileChange(null)
@@ -38,14 +37,15 @@ export default function SaludCard({
 
   return (
     <Card className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-lg font-semibold text-text-primary">
-            Salud y Certificado Médico (RF08)
-          </h2>
-          <p className="text-xs text-text-secondary">
-            Sube el apto médico en formato PDF o imagen (máx. 5 MB)
-          </p>
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500">
+            <FileText className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-text-primary">Ficha de Salud</h3>
+            <p className="text-xs text-text-secondary">Apto médico y condiciones particulares</p>
+          </div>
         </div>
         <span className="text-xs bg-bg-raised text-text-secondary px-2 py-1 rounded-lg">
           Recomendado
@@ -77,7 +77,7 @@ export default function SaludCard({
           <div className="relative">
             <input
               type="file"
-              accept=".pdf,image/png,image/jpeg,image/webp"
+              accept={CERT_ACCEPT_ATTR}
               onChange={handleFile}
               className="w-full bg-bg-base border border-subtle rounded-xl text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-orange-500 transition-colors py-2 pl-3 pr-3 text-xs file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-500/10 file:text-orange-500 hover:file:bg-orange-500/20 cursor-pointer"
             />

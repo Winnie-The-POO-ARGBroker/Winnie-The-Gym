@@ -9,20 +9,48 @@ import {
   deleteSocio,
   darBajaSocio,
   uploadCertificado,
+  getSociosStats,
 } from '../../services/sociosService'
 
-// ─── Query keys ──────────────────────────────────────────────
-const SOCIOS_KEY = 'socios'
+// ─── Query keys estructuradas ──────────────────────────────────
+export const SOCIOS_QUERY_KEYS = {
+  all: ['socios'],
+  lists: () => ['socios', 'list'],
+  list: (params) => ['socios', 'list', params],
+  details: () => ['socios', 'detail'],
+  detail: (id) => ['socios', 'detail', id],
+  stats: () => ['socios', 'stats'],
+}
+
+/**
+ * Helper para extraer mensajes de error detallados desde DRF
+ */
+function extractErrorMessage(err, fallbackMessage) {
+  const data = err?.response?.data
+  if (!data) return fallbackMessage
+  if (typeof data === 'string') return data
+  if (data.detail) return data.detail
+  if (data.message) return data.message
+  if (data.error) return data.error
+  if (data.archivo && Array.isArray(data.archivo)) return data.archivo.join(', ')
+
+  const values = Object.values(data)
+  if (values.length > 0) {
+    const flat = values.flat().filter(Boolean)
+    if (flat.length > 0) return flat.join(', ')
+  }
+  return fallbackMessage
+}
 
 /**
  * Lista paginada de socios con filtros, búsqueda y ordenación.
  *
- * @param {Object} params — { page, search, estado, con_certificado, ordering }
+ * @param {Object} params — { page, pageSize, search, estado, con_certificado, ordering }
  * @param {Object} [options] — opciones extra de useQuery
  */
 export function useSociosList(params = {}, options = {}) {
   return useQuery({
-    queryKey: [SOCIOS_KEY, params],
+    queryKey: SOCIOS_QUERY_KEYS.list(params),
     queryFn: () => getSocios(params),
     keepPreviousData: true, // evita parpadeo al cambiar de página
     staleTime: 30_000, // 30 s de cache
@@ -37,9 +65,21 @@ export function useSociosList(params = {}, options = {}) {
  */
 export function useSocioDetail(id) {
   return useQuery({
-    queryKey: [SOCIOS_KEY, id],
+    queryKey: SOCIOS_QUERY_KEYS.detail(id),
     queryFn: () => getSocio(id),
     enabled: !!id,
+  })
+}
+
+/**
+ * Estadísticas globales de socios (total, activos, bajas, etc.).
+ */
+export function useSociosStats(options = {}) {
+  return useQuery({
+    queryKey: SOCIOS_QUERY_KEYS.stats(),
+    queryFn: getSociosStats,
+    staleTime: 60_000,
+    ...options,
   })
 }
 
@@ -50,7 +90,7 @@ export function useSocioDetail(id) {
 export function useSocioMutations() {
   const qc = useQueryClient()
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: [SOCIOS_KEY] })
+  const invalidate = () => qc.invalidateQueries({ queryKey: SOCIOS_QUERY_KEYS.all })
 
   const create = useMutation({
     mutationFn: (data) => createSocio(data),
@@ -59,11 +99,7 @@ export function useSocioMutations() {
       toast.success('Socio creado correctamente')
     },
     onError: (err) => {
-      const msg =
-        err.response?.data?.detail ||
-        Object.values(err.response?.data || {}).flat().join(', ') ||
-        'Error al crear socio'
-      toast.error(msg)
+      toast.error(extractErrorMessage(err, 'Error al crear socio'))
     },
   })
 
@@ -73,7 +109,9 @@ export function useSocioMutations() {
       invalidate()
       toast.success('Socio actualizado')
     },
-    onError: () => toast.error('Error al actualizar socio'),
+    onError: (err) => {
+      toast.error(extractErrorMessage(err, 'Error al actualizar socio'))
+    },
   })
 
   const patch = useMutation({
@@ -82,16 +120,23 @@ export function useSocioMutations() {
       invalidate()
       toast.success('Socio actualizado')
     },
-    onError: () => toast.error('Error al actualizar socio'),
+    onError: (err) => {
+      toast.error(extractErrorMessage(err, 'Error al actualizar socio'))
+    },
   })
 
+  /**
+   * @deprecated Use baja() for logical delete. Hard DELETE can cause integrity issues.
+   */
   const remove = useMutation({
     mutationFn: (id) => deleteSocio(id),
     onSuccess: () => {
       invalidate()
       toast.success('Socio eliminado')
     },
-    onError: () => toast.error('Error al eliminar socio'),
+    onError: (err) => {
+      toast.error(extractErrorMessage(err, 'Error al eliminar socio'))
+    },
   })
 
   const baja = useMutation({
@@ -101,7 +146,7 @@ export function useSocioMutations() {
       toast.success('Socio dado de baja')
     },
     onError: (err) => {
-      toast.error(err.response?.data?.detail || 'Error al dar de baja')
+      toast.error(extractErrorMessage(err, 'Error al dar de baja'))
     },
   })
 
@@ -112,11 +157,7 @@ export function useSocioMutations() {
       toast.success('Certificado médico subido correctamente')
     },
     onError: (err) => {
-      const msg =
-        err.response?.data?.archivo?.[0] ||
-        err.response?.data?.detail ||
-        'Error al subir certificado'
-      toast.error(msg)
+      toast.error(extractErrorMessage(err, 'Error al subir certificado'))
     },
   })
 

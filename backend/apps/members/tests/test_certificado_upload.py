@@ -83,3 +83,11 @@ class SubirCertificadoMedicoTests(APITestCase):
         response = self.client.post(_cert_url(self.socio.id), {'archivo': pdf}, format='multipart')
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_upload_rejects_missing_content_type(self):
+        _auth(self.client, self.admin)
+        f = SimpleUploadedFile('apto.pdf', b'%PDF-1.4 fake body', content_type='')
+
+        response = self.client.post(_cert_url(self.socio.id), {'archivo': f}, format='multipart')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

@@ -38,9 +38,9 @@ def _validate_certificado(archivo):
         })
 
     content_type = getattr(archivo, 'content_type', None)
-    if content_type and content_type not in ALLOWED_CERT_CONTENT_TYPES:
+    if not content_type or content_type not in ALLOWED_CERT_CONTENT_TYPES:
         raise ValidationError({
-            'archivo': f'Tipo de contenido no permitido ({content_type}).',
+            'archivo': f'Tipo de contenido no permitido o no especificado ({content_type}). Aceptados: application/pdf, image/jpeg, image/png.',
         })
 
 
