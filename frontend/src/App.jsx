@@ -23,7 +23,7 @@ import ClassSchedulePage from './pages/ClassSchedulePage'
 
 import AforoMonitor from './pages/recepcion/AforoMonitor'
 import GestionSocios from './pages/recepcion/GestionSocios'
-import Reportes from './pages/recepcion/Reportes'
+import ReportesPage from './pages/recepcion/ReportesPage'
 
 import AdminPlanesPage from './pages/admin/AdminPlanesPage'
 import AdminSociosPage from './pages/admin/AdminSociosPage'
@@ -108,7 +108,7 @@ export default function App() {
         } />
         <Route path="/recepcion/aforo" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><AforoMonitor /></ProtectedRoute>} />
         <Route path="/recepcion/socios" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><GestionSocios /></ProtectedRoute>} />
-        <Route path="/recepcion/reportes" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><Reportes /></ProtectedRoute>} />
+        <Route path="/recepcion/reportes" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><ReportesPage /></ProtectedRoute>} />
         <Route path="/recepcion/cobros" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><CobroManualPage /></ProtectedRoute>} />
 
         {/* Socio routes — mobile first */}

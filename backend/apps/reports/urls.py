@@ -1,12 +1,12 @@
 from django.urls import path
 
-from .views import asistencia_view, facturacion_view, morosidad_view
+from .views import AsistenciaReportView, FacturacionReportView, MorosidadReportView
 
 
 app_name = 'reports'
 
 urlpatterns = [
-    path('morosidad/', morosidad_view, name='morosidad'),
-    path('facturacion/', facturacion_view, name='facturacion'),
-    path('asistencia/', asistencia_view, name='asistencia'),
+    path('morosidad/', MorosidadReportView.as_view(), name='morosidad'),
+    path('facturacion/', FacturacionReportView.as_view(), name='facturacion'),
+    path('asistencia/', AsistenciaReportView.as_view(), name='asistencia'),
 ]
