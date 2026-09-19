@@ -22,6 +22,7 @@ from .utils import (
     generate_dynamic_qr_token,
     verify_dynamic_qr_token,
 )
+from apps.members.models import Socio
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -167,10 +168,9 @@ class ManualAccessView(APIView):
 
         User = get_user_model()
         try:
-            from apps.members.models import Socio
             socio = Socio.objects.get(dni=dni)
             user_obj = socio.usuario
-        except Exception:
+        except Socio.DoesNotExist:
             is_valid = False
             error_code = 'UNKNOWN_USER'
 

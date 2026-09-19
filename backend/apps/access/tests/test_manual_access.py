@@ -38,6 +38,9 @@ class ManualAccessViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(response.data['status'], 'DENIED')
         self.assertEqual(response.data['denial_reason'], 'UNKNOWN_USER')
+        # user name should be None or null
+        self.assertIsNone(response.data['access_log']['user_name'])
+        self.assertIsNone(response.data['access_log']['user_email'])
 
     def test_manual_access_expired_membership(self):
         self.client.force_authenticate(user=self.receptionist)
@@ -53,3 +56,34 @@ class ManualAccessViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(response.data['status'], 'DENIED')
         self.assertEqual(response.data['denial_reason'], 'MEMBERSHIP_INACTIVE')
+
+    def test_manual_access_unauthenticated(self):
+        response = self.client.post(self.url, {'dni': '30111222', 'access_type': 'ENTRY'})
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_manual_access_member_forbidden(self):
+        user_socio = make_user_factory(rol='socio')
+        self.client.force_authenticate(user=user_socio)
+        response = self.client.post(self.url, {'dni': '30111222', 'access_type': 'ENTRY'})
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_manual_access_user_suspended(self):
+        self.client.force_authenticate(user=self.receptionist)
+        user_socio = make_user_factory(rol='socio', is_active=False)
+        make_socio_factory(usuario=user_socio, estado='inactivo', dni='30111222')
+        
+        response = self.client.post(self.url, {'dni': '30111222', 'access_type': 'ENTRY'})
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data['status'], 'DENIED')
+        self.assertEqual(response.data['denial_reason'], 'USER_SUSPENDED')
+
+    def test_manual_access_empty_or_invalid_dni(self):
+        self.client.force_authenticate(user=self.receptionist)
+        response = self.client.post(self.url, {'dni': '', 'access_type': 'ENTRY'})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        
+        response = self.client.post(self.url, {'dni': '  ', 'access_type': 'ENTRY'})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        response = self.client.post(self.url, {'dni': '123', 'access_type': 'ENTRY'}) # Less than 7
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

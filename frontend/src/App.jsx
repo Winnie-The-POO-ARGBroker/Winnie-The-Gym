@@ -1,5 +1,6 @@
 import { useEffect, Suspense, lazy } from 'react'
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import { Loader2 } from 'lucide-react'
 import { Toaster } from 'sonner'
 import useThemeStore from './stores/themeStore'
 import useAuth from './hooks/useAuth'
@@ -92,7 +93,12 @@ export default function App() {
         {/* Recepcion routes */}
         <Route path="/recepcion/acceso" element={
           <ProtectedRoute roles={['administrador', 'recepcionista']}>
-            <Suspense fallback={<div>Cargando terminal...</div>}>
+            <Suspense fallback={
+              <div className="flex-1 flex flex-col items-center justify-center h-full">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                <p className="mt-4 text-text-secondary">Cargando terminal...</p>
+              </div>
+            }>
               <AccesoTerminal />
             </Suspense>
           </ProtectedRoute>

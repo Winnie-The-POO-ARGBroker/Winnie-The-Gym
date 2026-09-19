@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.core.validators import RegexValidator
 from .models import AccessLog
 
 
@@ -18,7 +19,11 @@ class ScanQRSerializer(serializers.Serializer):
 
 
 class ManualAccessSerializer(serializers.Serializer):
-    dni = serializers.CharField(required=True, max_length=20)
+    dni = serializers.CharField(
+        required=True, 
+        max_length=20,
+        validators=[RegexValidator(r'^\d{7,8}$')]
+    )
     access_type = serializers.ChoiceField(
         choices=AccessLog.ACCESS_TYPE_CHOICES,
         default='ENTRY'
@@ -26,8 +31,8 @@ class ManualAccessSerializer(serializers.Serializer):
 
 
 class AccessLogSerializer(serializers.ModelSerializer):
-    user_email = serializers.EmailField(source='user.email', read_only=True)
-    user_name = serializers.CharField(source='user.get_full_name', read_only=True)
+    user_email = serializers.EmailField(source='user.email', read_only=True, allow_null=True)
+    user_name = serializers.SerializerMethodField()
     scanned_by_email = serializers.EmailField(source='scanned_by.email', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
 
@@ -47,3 +52,8 @@ class AccessLogSerializer(serializers.ModelSerializer):
             'scanned_by',
             'scanned_by_email',
         ]
+
+    def get_user_name(self, obj):
+        if obj.user:
+            return obj.user.get_full_name()
+        return None

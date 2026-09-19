@@ -1,9 +1,19 @@
 import Button from '../ui/Button';
 import { QrCode, CheckCircle2, XCircle, AlertCircle, LogOut, Check, User } from 'lucide-react';
+import { getTimeAgo } from '../../utils/formatDate';
+
+const DENIAL_REASONS = {
+  UNKNOWN_USER: 'Usuario desconocido o DNI incorrecto',
+  USER_SUSPENDED: 'Usuario suspendido',
+  MEMBERSHIP_INACTIVE: 'Membresía inactiva o vencida',
+  REPLAY_ATTACK: 'Código QR ya fue utilizado',
+  TOKEN_EXPIRED: 'Código QR expirado',
+};
 
 export default function ValidationResult({ result, onConfirmEntry, onRegisterExit }) {
   const status = result?.status || 'idle';
   const message = result?.message || '';
+  const denialReason = result?.denialReason || result?.log?.denial_reason;
   const log = result?.log || {};
   const isError = status === 'error';
   const isSuccess = status === 'success';
@@ -46,7 +56,7 @@ export default function ValidationResult({ result, onConfirmEntry, onRegisterExi
                  'Atención'}
               </h2>
               <p className="text-text-tertiary text-sm mt-1 font-medium max-w-sm">
-                {message}
+                {isError && denialReason ? DENIAL_REASONS[denialReason] || message : message}
               </p>
             </div>
           </div>
@@ -76,7 +86,7 @@ export default function ValidationResult({ result, onConfirmEntry, onRegisterExi
             <div className="bg-bg-raised rounded-xl p-4 flex flex-col justify-between">
               <p className="text-xs text-text-secondary font-semibold mb-2 uppercase">Hora</p>
               <p className="text-sm font-medium text-text-primary px-1">
-                {log.timestamp ? new Date(log.timestamp).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '--:--'}
+                {log.timestamp ? `${new Date(log.timestamp).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} (${getTimeAgo(log.timestamp)})` : '--:--'}
               </p>
             </div>
           </div>

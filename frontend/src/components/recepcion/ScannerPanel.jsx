@@ -1,6 +1,7 @@
 import Card from '../ui/Card';
 import Button from '../ui/Button';
-import { QrCode, CreditCard, Camera } from 'lucide-react';
+import Input from '../ui/Input';
+import { Camera, CreditCard, CameraOff } from 'lucide-react';
 import { Scanner } from '@yudiel/react-qr-scanner';
 
 export default function ScannerPanel({
@@ -11,23 +12,37 @@ export default function ScannerPanel({
   onActivateCamera,
   onActivateManual,
   onScan,
+  onCameraError,
+  cameraError,
+  isPaused,
 }) {
   return (
     <Card className="flex flex-col p-6">
+      {cameraError && (
+        <div className="mb-4 bg-error-500/10 border border-error-500 text-error-500 px-4 py-3 rounded-lg flex items-center gap-3 text-sm">
+          <CameraOff className="w-5 h-5 shrink-0" />
+          <p>No se pudo acceder a la cámara. Por favor, ingrese el DNI manualmente.</p>
+        </div>
+      )}
       <div className="flex-1 bg-bg-base rounded-lg border border-subtle flex items-center justify-center relative overflow-hidden mb-6">
         {isManualMode ? (
           <div className="w-full space-y-4 px-4 z-10">
             <h3 className="text-text-primary font-medium text-center">Ingreso Manual de DNI</h3>
-            <input
+            <Input
               type="text"
               value={manualDni}
               onChange={(e) => onManualDniChange(e.target.value)}
               placeholder="Ej. 30111222"
-              className="w-full bg-bg-raised border border-primary rounded-lg text-text-primary placeholder:text-text-tertiary px-4 py-3 text-center text-xl font-bold tracking-widest focus:outline-none focus:ring-1 focus:ring-primary"
+              className="text-center text-xl font-bold tracking-widest"
+              autoFocus
             />
             <Button variant="primary" className="w-full" onClick={onValidateDni}>
               Validar DNI
             </Button>
+          </div>
+        ) : isPaused ? (
+          <div className="w-full h-full min-h-[250px] flex items-center justify-center bg-black/10">
+            <p className="text-text-tertiary animate-pulse font-medium">Validando acceso...</p>
           </div>
         ) : (
           <div className="w-full h-full min-h-[250px] relative">
@@ -37,7 +52,10 @@ export default function ScannerPanel({
                   onScan(result[0].rawValue);
                 }
               }}
-              onError={(error) => console.log(error?.message)}
+              onError={(error) => {
+                console.error("Camera error:", error);
+                if (onCameraError) onCameraError(error);
+              }}
               components={{
                 audio: false,
                 finder: false,
