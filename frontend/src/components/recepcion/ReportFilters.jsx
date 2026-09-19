@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react'
 import { Filter, Calendar, RotateCcw, ShieldAlert, Receipt, Users } from 'lucide-react'
 import Select from '../ui/Select'
 import Button from '../ui/Button'
-import { getReportPlans } from '../../services/reportsService'
+import { usePlanes } from '../../hooks/queries/usePlanes'
 
 export const CATEGORIAS = [
   { id: 'morosidad', label: 'Morosidad', icon: ShieldAlert, desc: 'Socios con membresía vencida o pendiente' },
@@ -26,25 +25,7 @@ export default function ReportFilters({
   onResetFilters,
   className = '',
 }) {
-  const [planes, setPlanes] = useState([])
-  const [loadingPlanes, setLoadingPlanes] = useState(false)
-
-  useEffect(() => {
-    let isMounted = true
-    async function fetchPlans() {
-      setLoadingPlanes(true)
-      try {
-        const data = await getReportPlans()
-        if (isMounted) setPlanes(data)
-      } finally {
-        if (isMounted) setLoadingPlanes(false)
-      }
-    }
-    fetchPlans()
-    return () => {
-      isMounted = false
-    }
-  }, [])
+  const { data: planes = [], isPending: loadingPlanes } = usePlanes()
 
   const handleChange = (key, value) => {
     if (onFilterChange) {

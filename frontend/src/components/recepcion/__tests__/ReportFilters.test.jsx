@@ -2,11 +2,14 @@ import { render, screen, fireEvent, act } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import ReportFilters, { INITIAL_FILTERS } from '../ReportFilters'
 
-vi.mock('../../../services/reportsService', () => ({
-  getReportPlans: vi.fn().mockResolvedValue([
-    { id: 1, nombre: 'Pase Libre' },
-    { id: 2, nombre: 'Musculación' },
-  ]),
+vi.mock('../../../hooks/queries/usePlanes', () => ({
+  usePlanes: () => ({
+    data: [
+      { id: 1, nombre: 'Pase Libre' },
+      { id: 2, nombre: 'Musculación' },
+    ],
+    isPending: false,
+  }),
 }))
 
 describe('ReportFilters component', () => {

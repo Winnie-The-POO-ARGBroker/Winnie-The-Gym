@@ -49,12 +49,12 @@ export default function ReportExportButtons({
         size="md"
         disabled={disabled || isBusy}
         onClick={() => onExport?.('csv')}
-        className="flex items-center gap-2 hover:border-blue-500 hover:text-blue-500 transition-colors"
+        className="flex items-center gap-2 hover:border-primary hover:text-primary transition-colors"
       >
         {downloadingFormat === 'csv' ? (
           <Loader2 className="w-4 h-4 animate-spin" />
         ) : (
-          <FileCode className="w-4 h-4 text-blue-500" />
+          <FileCode className="w-4 h-4 text-text-secondary" />
         )}
         <span>Exportar CSV</span>
       </Button>
