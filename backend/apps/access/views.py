@@ -14,6 +14,7 @@ from .services import has_active_membership, compute_aforo_stats
 from .serializers import (
     GenerateQRResponseSerializer,
     ScanQRSerializer,
+    ManualAccessSerializer,
     AccessLogSerializer,
 )
 from .tasks import log_qr_event_task
@@ -21,6 +22,7 @@ from .utils import (
     generate_dynamic_qr_token,
     verify_dynamic_qr_token,
 )
+from apps.members.models import Socio
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -124,6 +126,86 @@ class ScanQRView(APIView):
         log_qr_event_task.delay(mongo_payload)
 
         # 6. Responder
+        response_data = {
+            "status": access_status,
+            "message": "Acceso permitido" if is_valid else f"Acceso denegado: {denial_reason}",
+            "denial_reason": denial_reason,
+            "access_log": AccessLogSerializer(access_log).data,
+        }
+
+        response_status = status.HTTP_200_OK if is_valid else status.HTTP_403_FORBIDDEN
+        return Response(response_data, status=response_status)
+
+
+@extend_schema(
+    tags=['access'],
+    summary='Validar acceso por DNI (recep/admin)',
+    description=(
+        'Procesa el acceso manual ingresando el DNI en la terminal de recepción. '
+        'Busca al socio, valida su membresía y registra el evento.'
+    ),
+    request=ManualAccessSerializer,
+    responses={200: AccessLogSerializer, 403: AccessLogSerializer, 400: None},
+)
+class ManualAccessView(APIView):
+    """
+    POST /api/access/manual/
+    """
+    permission_classes = [IsReceptionistOrAdmin]
+
+    def post(self, request):
+        serializer = ManualAccessSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        dni = serializer.validated_data['dni']
+        access_type = serializer.validated_data['access_type']
+        scanned_by_user = request.user
+
+        is_valid = True
+        error_code = None
+        user_obj = None
+
+        User = get_user_model()
+        try:
+            socio = Socio.objects.get(dni=dni)
+            user_obj = socio.usuario
+        except Socio.DoesNotExist:
+            is_valid = False
+            error_code = 'UNKNOWN_USER'
+
+        if is_valid and user_obj:
+            if not user_obj.is_active:
+                is_valid = False
+                error_code = 'USER_SUSPENDED'
+            elif not has_active_membership(user_obj):
+                is_valid = False
+                error_code = 'MEMBERSHIP_INACTIVE'
+
+        access_status = 'GRANTED' if is_valid else 'DENIED'
+        denial_reason = error_code if not is_valid else None
+
+        access_log = AccessLog.objects.create(
+            user=user_obj,
+            access_type=access_type,
+            status=access_status,
+            denial_reason=denial_reason,
+            qr_jti=None,
+            scanned_by=scanned_by_user,
+        )
+
+        mongo_payload = {
+            "postgres_access_log_id": access_log.id,
+            "timestamp": timezone.now().isoformat(),
+            "access_type": access_type,
+            "status": access_status,
+            "denial_reason": denial_reason,
+            "user_id": user_obj.id if user_obj else None,
+            "scanned_by_id": scanned_by_user.id if scanned_by_user else None,
+            "qr_jti": None,
+        }
+        log_qr_event_task.delay(mongo_payload)
+
         response_data = {
             "status": access_status,
             "message": "Acceso permitido" if is_valid else f"Acceso denegado: {denial_reason}",
