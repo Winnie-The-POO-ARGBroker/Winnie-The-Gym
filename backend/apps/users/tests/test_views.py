@@ -1,3 +1,4 @@
+from django.test import override_settings
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -167,3 +168,48 @@ class CustomJWTSerializerTests(APITestCase):
         self.assertTrue(user_data.get('is_profile_complete'))
         self.assertIn('nombre', user_data)
         self.assertIn('apellido', user_data)
+
+
+@override_settings(DEBUG=True)
+class DevLoginTests(APITestCase):
+    DEV_LOGIN_URL = '/api/auth/dev-login/'
+
+    def test_dev_login_admin_generates_valid_jwt(self):
+        response = self.client.post(self.DEV_LOGIN_URL, {'rol': 'administrador'})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('access', response.data)
+        self.assertIn('refresh', response.data)
+        self.assertEqual(response.data['user']['rol'], 'administrador')
+        self.assertEqual(response.data['user']['email'], 'admin@winniegym.com')
+
+    def test_dev_login_recepcionista_generates_valid_jwt(self):
+        response = self.client.post(self.DEV_LOGIN_URL, {'rol': 'recepcionista'})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['user']['rol'], 'recepcionista')
+        self.assertEqual(response.data['user']['email'], 'recepcionista@winniegym.com')
+
+    def test_dev_login_invalid_rol_returns_400(self):
+        response = self.client.post(self.DEV_LOGIN_URL, {'rol': 'superhacker'})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertNotIn('access', response.data)
+
+    def test_dev_login_promotes_existing_admin_flags(self):
+        from apps.users.models import User
+        user, _ = User.objects.get_or_create(
+            email='admin@winniegym.com',
+            defaults={'rol': 'administrador', 'username': 'admin@winniegym.com', 'is_superuser': False},
+        )
+        user.is_superuser = False
+        user.save()
+
+        response = self.client.post(self.DEV_LOGIN_URL, {'rol': 'administrador'})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        user.refresh_from_db()
+        self.assertTrue(user.is_superuser)
+        self.assertTrue(user.is_staff)
+
+    @override_settings(DEBUG=False)
+    def test_dev_login_returns_403_in_production(self):
+        response = self.client.post(self.DEV_LOGIN_URL, {'rol': 'administrador'})
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertNotIn('access', response.data)

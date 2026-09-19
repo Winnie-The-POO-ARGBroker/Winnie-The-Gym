@@ -16,6 +16,7 @@ export default function SocioFormModal({
     apellido: '',
     dni: '',
     telefono: '',
+    email: '',
     estado: 'activo',
     observaciones: '',
   })
@@ -32,6 +33,7 @@ export default function SocioFormModal({
         apellido: socioToEdit.apellido || '',
         dni: socioToEdit.dni || '',
         telefono: socioToEdit.telefono || '',
+        email: socioToEdit.email || '',
         estado: socioToEdit.estado || 'activo',
         observaciones: socioToEdit.observaciones || '',
       })
@@ -41,6 +43,7 @@ export default function SocioFormModal({
         apellido: '',
         dni: '',
         telefono: '',
+        email: '',
         estado: 'activo',
         observaciones: '',
       })
@@ -76,6 +79,10 @@ export default function SocioFormModal({
       telefono: formData.telefono?.trim() || '',
       estado: formData.estado,
       observaciones: formData.observaciones?.trim() || '',
+    }
+
+    if (formData.email?.trim()) {
+      payload.email = formData.email.trim()
     }
 
     if (isEditing) {
@@ -186,20 +193,36 @@ export default function SocioFormModal({
           </div>
         </div>
 
-        {/* Estado */}
-        <div>
-          <label className="block text-xs font-medium text-text-secondary mb-1">
-            Estado
-          </label>
-          <select
-            value={formData.estado}
-            onChange={(e) => handleChange('estado', e.target.value)}
-            className="w-full px-3 py-2 rounded-xl text-sm bg-bg-raised border border-subtle text-text-primary focus:outline-none focus:border-orange-500 transition-colors cursor-pointer"
-          >
-            <option value="activo">Activo</option>
-            <option value="suspendido">Suspendido</option>
-            <option value="baja">Baja</option>
-          </select>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Email (opcional) */}
+          <div>
+            <label className="block text-xs font-medium text-text-secondary mb-1">
+              Email (opcional)
+            </label>
+            <input
+              type="email"
+              value={formData.email}
+              onChange={(e) => handleChange('email', e.target.value)}
+              placeholder="Ej. socio@correo.com"
+              className="w-full px-3 py-2 rounded-xl text-sm bg-bg-raised border border-subtle text-text-primary focus:outline-none focus:border-orange-500 transition-colors"
+            />
+          </div>
+
+          {/* Estado */}
+          <div>
+            <label className="block text-xs font-medium text-text-secondary mb-1">
+              Estado
+            </label>
+            <select
+              value={formData.estado}
+              onChange={(e) => handleChange('estado', e.target.value)}
+              className="w-full px-3 py-2 rounded-xl text-sm bg-bg-raised border border-subtle text-text-primary focus:outline-none focus:border-orange-500 transition-colors cursor-pointer"
+            >
+              <option value="activo">Activo</option>
+              <option value="suspendido">Suspendido</option>
+              <option value="baja">Baja</option>
+            </select>
+          </div>
         </div>
 
         {/* Observaciones */}
