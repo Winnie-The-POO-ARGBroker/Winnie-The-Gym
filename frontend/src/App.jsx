@@ -26,12 +26,13 @@ import GestionSocios from './pages/recepcion/GestionSocios'
 import Reportes from './pages/recepcion/Reportes'
 
 import AdminPlanesPage from './pages/admin/AdminPlanesPage'
+import AdminSociosPage from './pages/admin/AdminSociosPage'
 import CheckoutPage from './pages/socio/CheckoutPage'
 import CobroManualPage from './pages/recepcion/CobroManualPage'
 
 const AccesoTerminal = lazy(() => import('./pages/recepcion/AccesoTerminal'))
 
-const COMING_SOON_PATHS = ['/socios', '/reportes', '/configuracion']
+const COMING_SOON_PATHS = ['/reportes', '/configuracion']
 
 function RoleBasedClasesRedirect() {
   const { user } = useAuth()
@@ -90,6 +91,12 @@ export default function App() {
         <Route path="/admin/planes" element={
           <ProtectedRoute roles={['administrador', 'recepcionista']}><AdminPlanesPage /></ProtectedRoute>
         } />
+
+        {/* Admin socios */}
+        <Route path="/admin/socios" element={
+          <ProtectedRoute roles={['administrador']}><AdminSociosPage /></ProtectedRoute>
+        } />
+        <Route path="/socios" element={<Navigate to="/admin/socios" replace />} />
 
         {/* Recepcion routes */}
         <Route path="/recepcion/acceso" element={

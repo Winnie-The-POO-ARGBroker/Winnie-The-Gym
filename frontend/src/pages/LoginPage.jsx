@@ -84,86 +84,86 @@ export default function LoginPage() {
           </button>
 
           {import.meta.env.DEV && <>
-          {/* Divider */}
-          <div className="flex items-center gap-3">
-            <div className="flex-1 h-px" style={{ backgroundColor: 'var(--color-border-subtle)' }} />
-            <span className="text-xs whitespace-nowrap text-text-secondary">
-              o acceso rápido demo
-            </span>
-            <div className="flex-1 h-px" style={{ backgroundColor: 'var(--color-border-subtle)' }} />
-          </div>
+            {/* Divider */}
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-px" style={{ backgroundColor: 'var(--color-border-subtle)' }} />
+              <span className="text-xs whitespace-nowrap text-text-secondary">
+                o acceso rápido demo
+              </span>
+              <div className="flex-1 h-px" style={{ backgroundColor: 'var(--color-border-subtle)' }} />
+            </div>
 
-          {/* Quick Demo Logins */}
-          <div className="flex flex-col gap-2">
-            <Button
-              variant="primary"
-              onClick={() => {
-                setAuth({
-                  access: 'mock-access-token-admin',
-                  refresh: 'mock-refresh-token',
-                  user: {
-                    id: 1,
-                    email: 'admin@winniegym.com',
-                    nombre: 'Rodrigo',
-                    apellido: 'Valdez',
-                    rol: 'administrador',
-                    is_profile_complete: true,
-                  },
-                })
-                navigate('/dashboard')
-                toast.success('Sesión iniciada como Administrador')
-              }}
-              className="w-full gap-2 shadow-md shadow-orange-500/20 hover:scale-[1.02] active:scale-[0.98]"
-            >
-              👑 Ingresar como Administrador
-            </Button>
-
-            <div className="grid grid-cols-2 gap-2">
-              <button
+            {/* Quick Demo Logins */}
+            <div className="flex flex-col gap-2">
+              <Button
+                variant="primary"
                 onClick={() => {
                   setAuth({
-                    access: 'mock-access-token-recep',
+                    access: 'mock-access-token-admin',
                     refresh: 'mock-refresh-token',
                     user: {
-                      id: 2,
-                      email: 'recep@winniegym.com',
-                      nombre: 'Magali',
-                      apellido: 'Bechis',
-                      rol: 'recepcionista',
+                      id: 1,
+                      email: 'admin@winniegym.com',
+                      nombre: 'Rodrigo',
+                      apellido: 'Valdez',
+                      rol: 'administrador',
                       is_profile_complete: true,
                     },
                   })
                   navigate('/dashboard')
-                  toast.success('Sesión iniciada como Recepcionista')
+                  toast.success('Sesión iniciada como Administrador')
                 }}
-                className="py-2 px-3 rounded-xl bg-bg-raised hover:bg-bg-surface border border-subtle text-text-primary text-xs font-semibold transition-colors"
+                className="w-full gap-2 shadow-md shadow-orange-500/20 hover:scale-[1.02] active:scale-[0.98]"
               >
-                📋 Recepcionista
-              </button>
+                👑 Ingresar como Administrador
+              </Button>
 
-              <button
-                onClick={() => {
-                  setAuth({
-                    access: 'mock-access-token-socio',
-                    refresh: 'mock-refresh-token',
-                    user: {
-                      id: 3,
-                      email: 'socio@winniegym.com',
-                      nombre: 'Martín',
-                      apellido: 'Bossi',
-                      rol: 'socio',
-                      is_profile_complete: true,
-                    },
-                  })
-                  navigate('/socio/credencial')
-                  toast.success('Sesión iniciada como Socio')
-                }}
-                className="py-2 px-3 rounded-xl bg-bg-raised hover:bg-bg-surface border border-subtle text-text-primary text-xs font-semibold transition-colors"
-              >
-                💳 Socio (Portal)
-              </button>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => {
+                    setAuth({
+                      access: 'mock-access-token-recep',
+                      refresh: 'mock-refresh-token',
+                      user: {
+                        id: 2,
+                        email: 'recep@winniegym.com',
+                        nombre: 'Magali',
+                        apellido: 'Bechis',
+                        rol: 'recepcionista',
+                        is_profile_complete: true,
+                      },
+                    })
+                    navigate('/dashboard')
+                    toast.success('Sesión iniciada como Recepcionista')
+                  }}
+                  className="py-2 px-3 rounded-xl bg-bg-raised hover:bg-bg-surface border border-subtle text-text-primary text-xs font-semibold transition-colors"
+                >
+                  📋 Recepcionista
+                </button>
+
+                <button
+                  onClick={() => {
+                    setAuth({
+                      access: 'mock-access-token-socio',
+                      refresh: 'mock-refresh-token',
+                      user: {
+                        id: 3,
+                        email: 'socio@winniegym.com',
+                        nombre: 'Martín',
+                        apellido: 'Bossi',
+                        rol: 'socio',
+                        is_profile_complete: true,
+                      },
+                    })
+                    navigate('/socio/credencial')
+                    toast.success('Sesión iniciada como Socio')
+                  }}
+                  className="py-2 px-3 rounded-xl bg-bg-raised hover:bg-bg-surface border border-subtle text-text-primary text-xs font-semibold transition-colors"
+                >
+                  💳 Socio (Portal)
+                </button>
+              </div>
             </div>
-          </div>
           </>}
         </div>
       </div>

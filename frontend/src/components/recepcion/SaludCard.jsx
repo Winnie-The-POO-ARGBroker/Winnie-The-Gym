@@ -1,34 +1,127 @@
-import Card from '../ui/Card';
-import Input from '../ui/Input';
-import { FileText, Calendar } from 'lucide-react';
+import { useState } from 'react'
+import { FileText, Calendar, UploadCloud, CheckCircle2, AlertCircle, X } from 'lucide-react'
+import Card from '../ui/Card'
+import Input from '../ui/Input'
+import { MAX_CERT_FILE_SIZE, CERT_ACCEPT_ATTR } from '../../constants/files'
 
-export default function SaludCard({ onFileChange, onChange }) {
+export default function SaludCard({
+  onFileChange,
+  onChange,
+  currentCertificateUrl = null,
+}) {
+  const [selectedFile, setSelectedFile] = useState(null)
+  const [fileError, setFileError] = useState(null)
+
+  const handleFile = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validar tamaño máximo 5 MB
+    if (file.size > MAX_CERT_FILE_SIZE) {
+      setFileError('El archivo supera el límite de 5 MB.')
+      setSelectedFile(null)
+      if (onFileChange) onFileChange(null)
+      return
+    }
+
+    setFileError(null)
+    setSelectedFile(file)
+    if (onFileChange) onFileChange(file)
+  }
+
+  const handleRemoveFile = () => {
+    setSelectedFile(null)
+    setFileError(null)
+    if (onFileChange) onFileChange(null)
+  }
+
   return (
     <Card className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-lg font-semibold text-text-primary">Salud (opcional)</h2>
-        <span className="text-xs bg-bg-raised text-text-secondary px-2 py-1 rounded">Recomendado</span>
-      </div>
-
-      <div className="grid grid-cols-2 gap-5 mb-5">
-        <div className="w-full">
-          <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">APTO MÉDICO</label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <FileText className="h-5 w-5 text-text-tertiary" />
-            </div>
-            <input
-              type="file"
-              accept=".pdf,image/*"
-              onChange={e => onFileChange(e.target.files?.[0])}
-              className="w-full bg-bg-base border border-subtle rounded-lg text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-colors py-2 pl-10 pr-3 file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-bg-surface file:text-text-primary hover:file:bg-bg-raised cursor-pointer"
-            />
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500">
+            <FileText className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-text-primary">Ficha de Salud</h3>
+            <p className="text-xs text-text-secondary">Apto médico y condiciones particulares</p>
           </div>
         </div>
-        <Input label="VENCE" placeholder="dd/mm/aaaa" icon={Calendar} onChange={e => onChange('venceMedico', e.target.value)} />
+        <span className="text-xs bg-bg-raised text-text-secondary px-2 py-1 rounded-lg">
+          Recomendado
+        </span>
       </div>
 
-      <Input label="OBSERVACIONES / LESIONES" placeholder="Sin observaciones" onChange={e => onChange('observaciones', e.target.value)} />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+        <div className="w-full">
+          <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
+            Apto Médico
+          </label>
+
+          {currentCertificateUrl && !selectedFile && (
+            <div className="mb-2 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between text-xs">
+              <span className="flex items-center gap-1.5 text-emerald-500 font-medium">
+                <CheckCircle2 className="w-4 h-4" /> Certificado registrado
+              </span>
+              <a
+                href={currentCertificateUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-emerald-400"
+              >
+                Ver actual
+              </a>
+            </div>
+          )}
+
+          <div className="relative">
+            <input
+              type="file"
+              accept={CERT_ACCEPT_ATTR}
+              onChange={handleFile}
+              className="w-full bg-bg-base border border-subtle rounded-xl text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-orange-500 transition-colors py-2 pl-3 pr-3 text-xs file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-500/10 file:text-orange-500 hover:file:bg-orange-500/20 cursor-pointer"
+            />
+          </div>
+
+          {selectedFile && (
+            <div className="mt-2 flex items-center justify-between text-xs p-2 rounded-lg bg-bg-raised border border-subtle">
+              <span className="truncate max-w-[200px] text-text-primary">
+                📄 {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+              </span>
+              <button
+                type="button"
+                onClick={handleRemoveFile}
+                className="text-text-secondary hover:text-rose-500"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
+          {fileError && (
+            <p className="text-xs text-rose-500 mt-1 flex items-center gap-1">
+              <AlertCircle className="w-3 h-3" /> {fileError}
+            </p>
+          )}
+        </div>
+
+        {onChange && (
+          <Input
+            label="VENCE"
+            placeholder="dd/mm/aaaa"
+            icon={Calendar}
+            onChange={(e) => onChange('venceMedico', e.target.value)}
+          />
+        )}
+      </div>
+
+      {onChange && (
+        <Input
+          label="OBSERVACIONES / LESIONES"
+          placeholder="Sin observaciones"
+          onChange={(e) => onChange('observaciones', e.target.value)}
+        />
+      )}
     </Card>
-  );
+  )
 }
