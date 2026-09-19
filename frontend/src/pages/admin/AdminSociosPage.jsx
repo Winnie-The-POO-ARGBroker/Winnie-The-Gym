@@ -20,12 +20,11 @@ import DataTable from '../../components/ui/DataTable'
 import Pagination from '../../components/ui/Pagination'
 import SearchBar from '../../components/ui/SearchBar'
 import FilterPanel from '../../components/ui/FilterPanel'
+import SocioFormModal from '../../components/admin/SocioFormModal'
 import { useSociosList, useSocioMutations } from '../../hooks/queries/useSociosData'
 
 export default function AdminSociosPage({
-  onNuevoSocio,
   onVerDetalle,
-  onEditarSocio,
 }) {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
@@ -34,6 +33,8 @@ export default function AdminSociosPage({
   const [sortColumn, setSortColumn] = useState('created_at')
   const [sortDirection, setSortDirection] = useState('desc')
   const [socioABajar, setSocioABajar] = useState(null)
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false)
+  const [socioToEdit, setSocioToEdit] = useState(null)
 
   // Calcular parámetro ordering para DRF
   const orderingParam = sortColumn
@@ -50,7 +51,7 @@ export default function AdminSociosPage({
     ordering: orderingParam,
   })
 
-  const { baja } = useSocioMutations()
+  const { create, patch, baja } = useSocioMutations()
 
   const socios = data?.results || (Array.isArray(data) ? data : [])
   const totalCount = data?.count ?? socios.length
@@ -74,6 +75,26 @@ export default function AdminSociosPage({
   const handleSort = (column, direction) => {
     setSortColumn(column)
     setSortDirection(direction)
+  }
+
+  const handleAbrirNuevo = () => {
+    setSocioToEdit(null)
+    setIsFormModalOpen(true)
+  }
+
+  const handleAbrirEditar = (socio) => {
+    setSocioToEdit(socio)
+    setIsFormModalOpen(true)
+  }
+
+  const handleSaveSocio = async (formData) => {
+    if (formData.id) {
+      await patch.mutateAsync({ id: formData.id, data: formData })
+    } else {
+      await create.mutateAsync(formData)
+    }
+    setIsFormModalOpen(false)
+    setSocioToEdit(null)
   }
 
   const handleConfirmarBaja = async () => {
@@ -185,7 +206,7 @@ export default function AdminSociosPage({
           <Button
             variant="primary"
             className="gap-2 shadow-md shadow-orange-500/20"
-            onClick={() => onNuevoSocio && onNuevoSocio()}
+            onClick={handleAbrirNuevo}
           >
             <Plus className="w-4 h-4" /> Nuevo Socio
           </Button>
@@ -297,18 +318,16 @@ export default function AdminSociosPage({
                   </button>
                 )}
 
-                {onEditarSocio && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onEditarSocio(row)
-                    }}
-                    className="p-1.5 rounded-lg text-text-secondary hover:text-orange-500 hover:bg-bg-raised transition-colors"
-                    title="Editar socio"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                )}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleAbrirEditar(row)
+                  }}
+                  className="p-1.5 rounded-lg text-text-secondary hover:text-orange-500 hover:bg-bg-raised transition-colors"
+                  title="Editar socio"
+                >
+                  <Edit2 className="w-4 h-4" />
+                </button>
 
                 {row.estado !== 'baja' && (
                   <button
@@ -385,6 +404,17 @@ export default function AdminSociosPage({
           </div>
         </div>
       )}
+      {/* Modal de alta / edición de socio */}
+      <SocioFormModal
+        isOpen={isFormModalOpen}
+        onClose={() => {
+          setIsFormModalOpen(false)
+          setSocioToEdit(null)
+        }}
+        onSave={handleSaveSocio}
+        socioToEdit={socioToEdit}
+        isLoading={create.isLoading || patch.isLoading}
+      />
     </AppLayout>
   )
 }
