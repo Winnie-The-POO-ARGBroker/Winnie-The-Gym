@@ -1,14 +1,29 @@
+from datetime import date
+
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from .models import Socio
 
+User = get_user_model()
+
 
 class SocioSerializer(serializers.ModelSerializer):
+    usuario = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(),
+        required=False,
+    )
+    email = serializers.EmailField(
+        write_only=True,
+        required=False,
+    )
+
     class Meta:
         model = Socio
         fields = (
             'id',
             'usuario',
+            'email',
             'numero_socio',
             'nombre',
             'apellido',
@@ -21,6 +36,32 @@ class SocioSerializer(serializers.ModelSerializer):
             'created_at',
         )
         read_only_fields = ('numero_socio', 'certificado_medico_url', 'created_at')
+
+    def create(self, validated_data):
+        email = validated_data.pop('email', None)
+        usuario = validated_data.get('usuario')
+        if not usuario:
+            dni = validated_data.get('dni')
+            user_email = email or f'socio_{dni}@winniegym.com'
+            usuario, _ = User.objects.get_or_create(
+                email=user_email,
+                defaults={
+                    'username': user_email,
+                    'rol': User.Rol.SOCIO,
+                },
+            )
+            validated_data['usuario'] = usuario
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        validated_data.pop('email', None)
+        nuevo_estado = validated_data.get('estado')
+        if nuevo_estado:
+            if nuevo_estado == Socio.Estado.BAJA and instance.estado != Socio.Estado.BAJA:
+                validated_data['fecha_baja'] = date.today()
+            elif nuevo_estado != Socio.Estado.BAJA and instance.estado == Socio.Estado.BAJA:
+                validated_data['fecha_baja'] = None
+        return super().update(instance, validated_data)
 
 
 class SocioCertificadoUploadSerializer(serializers.Serializer):

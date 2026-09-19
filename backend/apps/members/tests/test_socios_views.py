@@ -162,6 +162,45 @@ class SocioRetrieveUpdateTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['numero_socio'], original_numero)
 
+    def test_create_socio_without_usuario_auto_creates_user(self):
+        admin = make_user_factory(rol='administrador')
+        _auth_client(self.client, admin)
+
+        payload = {
+            'dni': '77889900',
+            'nombre': 'Lautaro',
+            'apellido': 'Gomez',
+            'telefono': '5491122334455',
+            'email': 'lautaro.gomez@test.com',
+        }
+        response = self.client.post(SOCIOS_URL, payload)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['dni'], '77889900')
+        self.assertRegex(response.data['numero_socio'], r'^S-\d{5}$')
+
+        from apps.users.models import User
+        created_user = User.objects.get(email='lautaro.gomez@test.com')
+        self.assertEqual(created_user.rol, User.Rol.SOCIO)
+        self.assertEqual(created_user.socio.dni, '77889900')
+
+    def test_partial_update_estado_baja_sets_fecha_baja_and_revert(self):
+        admin = make_user_factory(rol='administrador')
+        user = make_user_factory()
+        socio = make_socio_factory(usuario=user, estado='activo')
+        _auth_client(self.client, admin)
+
+        # Update to baja
+        res = self.client.patch(_detail_url(socio.pk), {'estado': 'baja'})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data['estado'], 'baja')
+        self.assertEqual(res.data['fecha_baja'], datetime.date.today().isoformat())
+
+        # Revert to activo
+        res2 = self.client.patch(_detail_url(socio.pk), {'estado': 'activo'})
+        self.assertEqual(res2.status_code, status.HTTP_200_OK)
+        self.assertEqual(res2.data['estado'], 'activo')
+        self.assertIsNone(res2.data['fecha_baja'])
+
 
 class SocioDarBajaTests(APITestCase):
 
