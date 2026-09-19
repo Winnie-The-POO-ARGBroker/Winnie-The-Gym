@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, Suspense, lazy } from 'react'
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import useThemeStore from './stores/themeStore'
@@ -19,7 +19,6 @@ import AttendancePage from './pages/AttendancePage'
 import CreateClassPage from './pages/CreateClassPage'
 import ClassSchedulePage from './pages/ClassSchedulePage'
 
-import AccesoTerminal from './pages/recepcion/AccesoTerminal'
 import AforoMonitor from './pages/recepcion/AforoMonitor'
 import GestionSocios from './pages/recepcion/GestionSocios'
 import Reportes from './pages/recepcion/Reportes'
@@ -27,6 +26,8 @@ import Reportes from './pages/recepcion/Reportes'
 import AdminPlanesPage from './pages/admin/AdminPlanesPage'
 import CheckoutPage from './pages/socio/CheckoutPage'
 import CobroManualPage from './pages/recepcion/CobroManualPage'
+
+const AccesoTerminal = lazy(() => import('./pages/recepcion/AccesoTerminal'))
 
 const COMING_SOON_PATHS = ['/socios', '/reportes', '/configuracion']
 
@@ -89,7 +90,13 @@ export default function App() {
         } />
 
         {/* Recepcion routes */}
-        <Route path="/recepcion/acceso" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><AccesoTerminal /></ProtectedRoute>} />
+        <Route path="/recepcion/acceso" element={
+          <ProtectedRoute roles={['administrador', 'recepcionista']}>
+            <Suspense fallback={<div>Cargando terminal...</div>}>
+              <AccesoTerminal />
+            </Suspense>
+          </ProtectedRoute>
+        } />
         <Route path="/recepcion/aforo" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><AforoMonitor /></ProtectedRoute>} />
         <Route path="/recepcion/socios" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><GestionSocios /></ProtectedRoute>} />
         <Route path="/recepcion/reportes" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><Reportes /></ProtectedRoute>} />

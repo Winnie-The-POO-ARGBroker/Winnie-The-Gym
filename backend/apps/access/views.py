@@ -167,12 +167,9 @@ class ManualAccessView(APIView):
 
         User = get_user_model()
         try:
-            # En la DB, el DNI suele estar en perfil/socio, pero en este proyecto DNI puede estar en Socio.
-            # Veamos cómo encontrar al usuario. Asumimos que User tiene profile o el socio tiene DNI.
-            # En views.py de members, el DNI está en Socio.
             from apps.members.models import Socio
             socio = Socio.objects.get(dni=dni)
-            user_obj = socio.user
+            user_obj = socio.usuario
         except Exception:
             is_valid = False
             error_code = 'UNKNOWN_USER'
