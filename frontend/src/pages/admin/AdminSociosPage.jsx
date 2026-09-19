@@ -21,11 +21,10 @@ import Pagination from '../../components/ui/Pagination'
 import SearchBar from '../../components/ui/SearchBar'
 import FilterPanel from '../../components/ui/FilterPanel'
 import SocioFormModal from '../../components/admin/SocioFormModal'
+import SocioDetailModal from '../../components/admin/SocioDetailModal'
 import { useSociosList, useSocioMutations } from '../../hooks/queries/useSociosData'
 
-export default function AdminSociosPage({
-  onVerDetalle,
-}) {
+export default function AdminSociosPage() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [search, setSearch] = useState('')
@@ -35,6 +34,8 @@ export default function AdminSociosPage({
   const [socioABajar, setSocioABajar] = useState(null)
   const [isFormModalOpen, setIsFormModalOpen] = useState(false)
   const [socioToEdit, setSocioToEdit] = useState(null)
+  const [socioParaDetalle, setSocioParaDetalle] = useState(null)
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
 
   // Calcular parámetro ordering para DRF
   const orderingParam = sortColumn
@@ -85,6 +86,11 @@ export default function AdminSociosPage({
   const handleAbrirEditar = (socio) => {
     setSocioToEdit(socio)
     setIsFormModalOpen(true)
+  }
+
+  const handleVerDetalle = (socio) => {
+    setSocioParaDetalle(socio)
+    setIsDetailModalOpen(true)
   }
 
   const handleSaveSocio = async (formData, certificadoFile) => {
@@ -310,21 +316,19 @@ export default function AdminSociosPage({
                 ? 'No se encontraron socios que coincidan con la búsqueda o filtros.'
                 : 'No hay socios registrados en el gimnasio todavía.'
             }
-            onRowClick={(row) => onVerDetalle && onVerDetalle(row)}
+            onRowClick={handleVerDetalle}
             actions={(row) => (
               <div className="flex items-center gap-1 justify-end">
-                {onVerDetalle && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onVerDetalle(row)
-                    }}
-                    className="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-bg-raised transition-colors"
-                    title="Ver detalle"
-                  >
-                    <Eye className="w-4 h-4" />
-                  </button>
-                )}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleVerDetalle(row)
+                  }}
+                  className="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-bg-raised transition-colors"
+                  title="Ver detalle"
+                >
+                  <Eye className="w-4 h-4" />
+                </button>
 
                 <button
                   onClick={(e) => {
@@ -422,6 +426,20 @@ export default function AdminSociosPage({
         onSave={handleSaveSocio}
         socioToEdit={socioToEdit}
         isLoading={create.isLoading || patch.isLoading || certificado.isLoading}
+      />
+      {/* Modal de visualización de detalle */}
+      <SocioDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={() => {
+          setIsDetailModalOpen(false)
+          setSocioParaDetalle(null)
+        }}
+        socio={socioParaDetalle}
+        onEditar={(socio) => {
+          setIsDetailModalOpen(false)
+          setSocioParaDetalle(null)
+          handleAbrirEditar(socio)
+        }}
       />
     </AppLayout>
   )
