@@ -98,7 +98,9 @@ class ScanQRView(APIView):
                 error_code = 'MEMBERSHIP_INACTIVE'
 
         # 3. Determinar estado final
-        access_status = 'GRANTED' if is_valid else 'DENIED'
+        access_status = (
+            AccessLog.AccessStatus.GRANTED if is_valid else AccessLog.AccessStatus.DENIED
+        )
         denial_reason = error_code if not is_valid else None
 
         # 4. Persistir log relacional en PostgreSQL
@@ -182,7 +184,9 @@ class ManualAccessView(APIView):
                 is_valid = False
                 error_code = 'MEMBERSHIP_INACTIVE'
 
-        access_status = 'GRANTED' if is_valid else 'DENIED'
+        access_status = (
+            AccessLog.AccessStatus.GRANTED if is_valid else AccessLog.AccessStatus.DENIED
+        )
         denial_reason = error_code if not is_valid else None
 
         access_log = AccessLog.objects.create(

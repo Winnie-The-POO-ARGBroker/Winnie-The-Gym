@@ -1,4 +1,4 @@
-import { FileText, FileSpreadsheet, FileCode, Loader2 } from 'lucide-react'
+import { FileText, FileSpreadsheet, FileCode } from 'lucide-react'
 import Button from '../ui/Button'
 
 export default function ReportExportButtons({
@@ -15,15 +15,13 @@ export default function ReportExportButtons({
       <Button
         variant="primary"
         size="md"
+        loading={downloadingFormat === 'pdf'}
         disabled={disabled || isBusy}
         onClick={() => onExport?.('pdf')}
+        aria-label="Exportar PDF"
         className="flex items-center gap-2 font-semibold shadow-sm"
       >
-        {downloadingFormat === 'pdf' ? (
-          <Loader2 className="w-4 h-4 animate-spin" />
-        ) : (
-          <FileText className="w-4 h-4" />
-        )}
+        <FileText className="w-4 h-4" />
         <span>Exportar PDF</span>
       </Button>
 
@@ -31,15 +29,13 @@ export default function ReportExportButtons({
       <Button
         variant="secondary"
         size="md"
+        loading={downloadingFormat === 'xlsx'}
         disabled={disabled || isBusy}
         onClick={() => onExport?.('xlsx')}
+        aria-label="Exportar Excel"
         className="flex items-center gap-2 hover:border-success-500 hover:text-success-500 transition-colors"
       >
-        {downloadingFormat === 'xlsx' ? (
-          <Loader2 className="w-4 h-4 animate-spin" />
-        ) : (
-          <FileSpreadsheet className="w-4 h-4 text-success-500" />
-        )}
+        <FileSpreadsheet className="w-4 h-4 text-success-500" />
         <span>Exportar Excel</span>
       </Button>
 
@@ -47,15 +43,13 @@ export default function ReportExportButtons({
       <Button
         variant="secondary"
         size="md"
+        loading={downloadingFormat === 'csv'}
         disabled={disabled || isBusy}
         onClick={() => onExport?.('csv')}
+        aria-label="Exportar CSV"
         className="flex items-center gap-2 hover:border-primary hover:text-primary transition-colors"
       >
-        {downloadingFormat === 'csv' ? (
-          <Loader2 className="w-4 h-4 animate-spin" />
-        ) : (
-          <FileCode className="w-4 h-4 text-text-secondary" />
-        )}
+        <FileCode className="w-4 h-4 text-text-secondary" />
         <span>Exportar CSV</span>
       </Button>
     </div>

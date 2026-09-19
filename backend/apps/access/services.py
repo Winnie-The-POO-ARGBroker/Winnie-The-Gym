@@ -23,10 +23,10 @@ def compute_aforo_actual():
     today = timezone.localdate()
     aggregate = (
         AccessLog.objects
-        .filter(timestamp__date=today, status='GRANTED')
+        .filter(timestamp__date=today, status=AccessLog.AccessStatus.GRANTED)
         .aggregate(
-            entries=Count('id', filter=Q(access_type='ENTRY')),
-            exits=Count('id', filter=Q(access_type='EXIT')),
+            entries=Count('id', filter=Q(access_type=AccessLog.AccessType.ENTRY)),
+            exits=Count('id', filter=Q(access_type=AccessLog.AccessType.EXIT)),
         )
     )
     entries = aggregate.get('entries') or 0
@@ -48,7 +48,10 @@ def compute_aforo_stats():
     one_hour_ago = now - timedelta(hours=1)
     
     # Use .values() to prevent instantiating all model objects in memory
-    logs = AccessLog.objects.filter(timestamp__date=today, status='GRANTED').values('timestamp', 'access_type').order_by('timestamp')
+    logs = AccessLog.objects.filter(
+        timestamp__date=today,
+        status=AccessLog.AccessStatus.GRANTED
+    ).values('timestamp', 'access_type').order_by('timestamp')
     
     current = 0
     pico_max = 0
@@ -58,11 +61,11 @@ def compute_aforo_stats():
     egreso_ultima_hora = 0
     
     for log in logs:
-        if log['access_type'] == 'ENTRY':
+        if log['access_type'] == AccessLog.AccessType.ENTRY:
             current += 1
             if log['timestamp'] >= one_hour_ago:
                 ingreso_ultima_hora += 1
-        elif log['access_type'] == 'EXIT':
+        elif log['access_type'] == AccessLog.AccessType.EXIT:
             current = max(0, current - 1)
             if log['timestamp'] >= one_hour_ago:
                 egreso_ultima_hora += 1

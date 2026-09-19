@@ -22,6 +22,11 @@ class AccessLog(models.Model):
         USER_SUSPENDED = 'USER_SUSPENDED', 'Usuario suspendido'
         UNKNOWN_USER = 'UNKNOWN_USER', 'Usuario no registrado'
 
+    # Aliases de compatibilidad — no eliminar
+    ACCESS_TYPE_CHOICES = AccessType.choices
+    STATUS_CHOICES = AccessStatus.choices
+    DENIAL_REASON_CHOICES = DenialReason.choices
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -78,4 +83,5 @@ class AccessLog(models.Model):
     def __str__(self):
         status_display = self.get_status_display()
         user_display = self.user.email if self.user else "Anon/Desconocido"
-        return f"[{self.timestamp.strftime('%Y-%m-%d %H:%M:%S')}] {user_display} - {status_display}"
+        ts = self.timestamp.strftime('%Y-%m-%d %H:%M:%S') if hasattr(self.timestamp, 'strftime') else str(self.timestamp)
+        return f"[{ts}] {user_display} - {status_display}"

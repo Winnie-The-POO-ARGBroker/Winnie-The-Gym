@@ -54,18 +54,18 @@ def send_access_notification_email(user, access_log) -> bool:
         return False
 
     user_name = escape(user.first_name or user.email)
-    status_str = "permitido" if access_log.status == 'GRANTED' else "DENEGADO"
+    status_str = "permitido" if access_log.status == AccessLog.AccessStatus.GRANTED else "DENEGADO"
     subject = f"Aviso de acceso {status_str} - Winnie Gym"
     from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'Winnie Gym <noreply@winniegym.com>')
     to_email = [user.email]
 
-    reason_info = f"<p style='color: red;'>Motivo de rechazo: {escape(access_log.get_denial_reason_display() or '')}</p>" if access_log.status == 'DENIED' else ""
+    reason_info = f"<p style='color: red;'>Motivo de rechazo: {escape(access_log.get_denial_reason_display() or '')}</p>" if access_log.status == AccessLog.AccessStatus.DENIED else ""
 
     text_content = f"Hola {user_name},\n\nSe ha registrado un intento de ingreso ({access_log.status}) a las {access_log.timestamp.strftime('%H:%M:%S del %Y-%m-%d')}.\n"
 
     html_content = f"""
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
-        <h3 style="color: {'#10B981' if access_log.status == 'GRANTED' else '#EF4444'};">Registro de Acceso ({escape(access_log.get_status_display())})</h3>
+        <h3 style="color: {'#10B981' if access_log.status == AccessLog.AccessStatus.GRANTED else '#EF4444'};">Registro de Acceso ({escape(access_log.get_status_display())})</h3>
         <p>Hola <strong>{user_name}</strong>,</p>
         <p>Se registró un ingreso a las <strong>{access_log.timestamp.strftime('%H:%M:%S')}</strong> del día <strong>{access_log.timestamp.strftime('%d/%m/%Y')}</strong>.</p>
         {reason_info}

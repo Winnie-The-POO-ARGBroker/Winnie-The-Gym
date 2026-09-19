@@ -137,6 +137,10 @@ export async function getReportPlans() {
     const response = await api.get('/memberships/planes/')
     return response.data?.results || response.data || []
   } catch (error) {
+    const status = error.response?.status
+    if (status === 401 || status === 403) {
+      throw error
+    }
     console.error('Error fetching plans for report filter:', error)
     return []
   }
@@ -153,7 +157,7 @@ export async function exportReport(tipo, filters = {}, formato = 'csv') {
       estado: filters.estado,
       plan_id: filters.plan_id,
     })
-  } else if (normalizedTipo === 'facturacion' || normalizedTipo === 'ingresos') {
+  } else if (normalizedTipo === 'facturacion') {
     return exportFacturacion({
       formato,
       mes: filters.mes,

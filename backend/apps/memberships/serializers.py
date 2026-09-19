@@ -70,7 +70,7 @@ class SocioMeSerializer(serializers.ModelSerializer):
         start_of_month = timezone.localdate().replace(day=1)
         return AccessLog.objects.filter(
             user_id=obj.usuario_id,
-            access_type='ENTRY',
-            status='GRANTED',
+            access_type=AccessLog.AccessType.ENTRY,
+            status=AccessLog.AccessStatus.GRANTED,
             timestamp__date__gte=start_of_month
         ).count()

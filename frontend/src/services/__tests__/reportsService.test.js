@@ -146,7 +146,7 @@ describe('reportsService', () => {
       await exportReport('morosidad', { estado: 'vencida' }, 'csv')
       expect(api.get).toHaveBeenCalledWith('/reportes/morosidad/', expect.any(Object))
 
-      await exportReport('ingresos', { mes: '2026-09' }, 'pdf')
+      await exportReport('facturacion', { mes: '2026-09' }, 'pdf')
       expect(api.get).toHaveBeenCalledWith('/reportes/facturacion/', expect.any(Object))
 
       await exportReport('asistencia', { fecha_desde: '2026-09-01' }, 'xlsx')
@@ -168,10 +168,17 @@ describe('reportsService', () => {
       expect(planes).toEqual(mockPlanes)
     })
 
-    it('returns empty array on failure', async () => {
+    it('returns empty array on network failure', async () => {
       api.get.mockRejectedValueOnce(new Error('Network error'))
       const planes = await getReportPlans()
       expect(planes).toEqual([])
+    })
+
+    it('propagates 401/403 auth error upstream', async () => {
+      const authError = new Error('Unauthorized')
+      authError.response = { status: 401 }
+      api.get.mockRejectedValueOnce(authError)
+      await expect(getReportPlans()).rejects.toThrow('Unauthorized')
     })
   })
 })

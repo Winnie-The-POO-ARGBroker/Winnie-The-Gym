@@ -14,7 +14,7 @@ class ScanQRSerializer(serializers.Serializer):
     qr_token = serializers.CharField(required=True)
     access_type = serializers.ChoiceField(
         choices=AccessLog.AccessType.choices,
-        default='ENTRY'
+        default=AccessLog.AccessType.ENTRY
     )
 
 
@@ -25,9 +25,10 @@ class ManualAccessSerializer(serializers.Serializer):
         validators=[RegexValidator(r'^\d{7,8}$')]
     )
     access_type = serializers.ChoiceField(
-        choices=AccessLog.ACCESS_TYPE_CHOICES,
-        default='ENTRY'
+        choices=AccessLog.AccessType.choices,
+        default=AccessLog.AccessType.ENTRY
     )
+
 
 
 class AccessLogSerializer(serializers.ModelSerializer):

@@ -1,6 +1,5 @@
 import { useEffect, Suspense, lazy } from 'react'
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
-import { Loader2 } from 'lucide-react'
 import { Toaster } from 'sonner'
 import useThemeStore from './stores/themeStore'
 import Skeleton from './components/ui/Skeleton'
@@ -32,7 +31,7 @@ import CobroManualPage from './pages/recepcion/CobroManualPage'
 
 const AccesoTerminal = lazy(() => import('./pages/recepcion/AccesoTerminal'))
 
-const COMING_SOON_PATHS = ['/reportes', '/configuracion']
+const COMING_SOON_PATHS = ['/configuracion']
 
 function RoleBasedClasesRedirect() {
   const { user } = useAuth()
@@ -109,6 +108,8 @@ export default function App() {
         <Route path="/recepcion/aforo" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><AforoMonitor /></ProtectedRoute>} />
         <Route path="/recepcion/socios" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><GestionSocios /></ProtectedRoute>} />
         <Route path="/recepcion/reportes" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><ReportesPage /></ProtectedRoute>} />
+        <Route path="/admin/reportes" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><ReportesPage /></ProtectedRoute>} />
+        <Route path="/reportes" element={<Navigate to="/admin/reportes" replace />} />
         <Route path="/recepcion/cobros" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><CobroManualPage /></ProtectedRoute>} />
 
         {/* Socio routes — mobile first */}

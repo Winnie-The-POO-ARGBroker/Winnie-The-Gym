@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, act } from '@testing-library/react'
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import ReportFilters, { INITIAL_FILTERS } from '../ReportFilters'
 
 vi.mock('../../../hooks/queries/usePlanes', () => ({
@@ -13,6 +13,15 @@ vi.mock('../../../hooks/queries/usePlanes', () => ({
 }))
 
 describe('ReportFilters component', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-09-15T12:00:00.000Z'))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('renders category options and header', async () => {
     await act(async () => {
       render(<ReportFilters filters={INITIAL_FILTERS} onFilterChange={vi.fn()} />)
@@ -119,8 +128,9 @@ describe('ReportFilters component', () => {
 
     expect(handleFilterChange).toHaveBeenCalledWith(
       expect.objectContaining({
-        fecha_desde: expect.any(String),
-        fecha_hasta: expect.any(String),
+        fecha_desde: '2026-09-15',
+        fecha_hasta: '2026-09-15',
+        mes: '2026-09',
       })
     )
   })

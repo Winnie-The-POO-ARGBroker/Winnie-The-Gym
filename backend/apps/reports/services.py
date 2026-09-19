@@ -126,15 +126,17 @@ def _active_plan_via_user(user):
 
 def build_asistencia(fecha_desde=None, fecha_hasta=None):
     tz = timezone.get_current_timezone()
-    qs = AccessLog.objects.select_related('user', 'user__socio').filter(status='GRANTED')
+    qs = AccessLog.objects.select_related('user', 'user__socio').filter(
+        status=AccessLog.AccessStatus.GRANTED
+    )
 
     if fecha_desde:
         qs = qs.filter(timestamp__date__gte=fecha_desde)
     if fecha_hasta:
         qs = qs.filter(timestamp__date__lte=fecha_hasta)
 
-    ingresos = list(qs.filter(access_type='ENTRY').order_by('timestamp'))
-    egresos = list(qs.filter(access_type='EXIT').order_by('timestamp'))
+    ingresos = list(qs.filter(access_type=AccessLog.AccessType.ENTRY).order_by('timestamp'))
+    egresos = list(qs.filter(access_type=AccessLog.AccessType.EXIT).order_by('timestamp'))
 
     rows = []
     consumed_exit_ids = set()

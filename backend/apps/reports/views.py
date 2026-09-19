@@ -86,7 +86,3 @@ class AsistenciaReportView(APIView):
         return export(fmt, slug='asistencia', title='Reporte de Asistencia', headers=headers, rows=rows)
 
 
-# Aliases for backward compatibility
-morosidad_view = MorosidadReportView.as_view()
-facturacion_view = FacturacionReportView.as_view()
-asistencia_view = AsistenciaReportView.as_view()
