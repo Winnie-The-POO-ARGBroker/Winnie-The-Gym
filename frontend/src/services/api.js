@@ -48,6 +48,12 @@ api.interceptors.response.use(
     const originalRequest = error.config
     const url = originalRequest?.url ?? ''
     const isAuthEndpoint = url.includes('/auth/token')
+    const currentToken = useAuthStore.getState().accessToken
+
+    // En desarrollo con botones de demo (mock tokens), no cerrar sesión por 401
+    if (currentToken?.startsWith('mock-')) {
+      return Promise.reject(error)
+    }
 
     if (error.response?.status === 401 && !isAuthEndpoint && !originalRequest._retry) {
       if (isRefreshing) {

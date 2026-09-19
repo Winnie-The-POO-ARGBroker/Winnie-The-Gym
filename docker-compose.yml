@@ -114,6 +114,8 @@ services:
       - /app/node_modules
     ports:
       - "5173:5173"
+    env_file:
+      - ./frontend/.env
     environment:
       - VITE_API_URL=/api
     depends_on:
