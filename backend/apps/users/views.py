@@ -6,7 +6,7 @@ from dj_rest_auth.registration.views import SocialLoginView
 from dj_rest_auth.views import PasswordResetView as BasePasswordResetView
 from django.conf import settings
 from django.shortcuts import get_object_or_404
-from rest_framework import generics, permissions, status
+from rest_framework import generics, permissions, status, views
 from rest_framework.response import Response
 
 from apps.members.models import Socio
@@ -72,3 +72,90 @@ class CompleteProfileView(generics.CreateAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         return super().create(request, *args, **kwargs)
+
+
+DEV_LOGIN_ALLOWLIST = {
+    'administrador': 'admin@winniegym.com',
+    'recepcionista': 'recepcionista@winniegym.com',
+    'socio': 'socio@winniegym.com',
+}
+
+
+class DevLoginView(views.APIView):
+    """SOLO USAR EN DEV, GATED POR DEBUG=True. NUNCA HABILITAR EN PRODUCCIÓN.
+
+    Dev-only authentication helper to issue genuine SimpleJWT tokens in local development.
+    Accepts ONLY allowed roles ('administrador', 'recepcionista', 'socio') mapped to a fixed
+    allowlist of dev fixture accounts. Does NOT accept arbitrary email inputs.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        if not settings.DEBUG:
+            return Response(
+                {'detail': 'Dev login endpoint is disabled in production.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        from rest_framework_simplejwt.tokens import RefreshToken
+        from .models import User
+
+        rol = request.data.get('rol')
+        if rol not in DEV_LOGIN_ALLOWLIST:
+            return Response(
+                {
+                    'detail': f"Rol inválido para dev-login. Roles permitidos: {list(DEV_LOGIN_ALLOWLIST.keys())}"
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        email = DEV_LOGIN_ALLOWLIST[rol]
+
+        user, created = User.objects.get_or_create(
+            email=email,
+            defaults={
+                'rol': rol,
+                'username': email,
+                'is_staff': (rol == 'administrador'),
+                'is_superuser': (rol == 'administrador'),
+            },
+        )
+
+        if not created:
+            updated = False
+            if rol == 'administrador':
+                if not user.is_staff or not user.is_superuser:
+                    user.is_staff = True
+                    user.is_superuser = True
+                    updated = True
+            if user.rol != rol:
+                user.rol = rol
+                updated = True
+            if updated:
+                user.save()
+
+        refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
+        refresh_token = str(refresh)
+
+        nombre = 'Admin'
+        apellido = 'Gym'
+        if hasattr(user, 'socio'):
+            nombre = user.socio.nombre
+            apellido = user.socio.apellido
+        elif rol == 'recepcionista':
+            nombre = 'Recepcionista'
+            apellido = 'Gym'
+
+        return Response({
+            'access': access_token,
+            'refresh': refresh_token,
+            'user': {
+                'id': user.id,
+                'email': user.email,
+                'rol': user.rol,
+                'nombre': nombre,
+                'apellido': apellido,
+                'is_profile_complete': user.is_profile_complete,
+            },
+        }, status=status.HTTP_200_OK)

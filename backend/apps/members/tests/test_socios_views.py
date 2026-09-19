@@ -162,6 +162,95 @@ class SocioRetrieveUpdateTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['numero_socio'], original_numero)
 
+    def test_create_socio_without_usuario_auto_creates_user(self):
+        admin = make_user_factory(rol='administrador')
+        _auth_client(self.client, admin)
+
+        payload = {
+            'dni': '77889900',
+            'nombre': 'Lautaro',
+            'apellido': 'Gomez',
+            'telefono': '5491122334455',
+            'email': 'lautaro.gomez@test.com',
+        }
+        response = self.client.post(SOCIOS_URL, payload)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['dni'], '77889900')
+        self.assertRegex(response.data['numero_socio'], r'^S-\d{5}$')
+
+        from apps.users.models import User
+        created_user = User.objects.get(email='lautaro.gomez@test.com')
+        self.assertEqual(created_user.rol, User.Rol.SOCIO)
+        self.assertEqual(created_user.socio.dni, '77889900')
+
+    def test_create_socio_duplicate_dni_returns_400(self):
+        admin = make_user_factory(rol='administrador')
+        _auth_client(self.client, admin)
+
+        payload = {
+            'dni': '55667788',
+            'nombre': 'Carlos',
+            'apellido': 'Perez',
+            'telefono': '5491122334455',
+        }
+        res1 = self.client.post(SOCIOS_URL, payload)
+        self.assertEqual(res1.status_code, status.HTTP_201_CREATED)
+
+        # Attempt to create another socio with identical DNI
+        res2 = self.client.post(SOCIOS_URL, payload)
+        self.assertEqual(res2.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('dni', res2.data)
+
+    def test_create_socio_with_staff_email_returns_400(self):
+        admin = make_user_factory(rol='administrador', email='staff.recep@winniegym.com')
+        _auth_client(self.client, admin)
+
+        payload = {
+            'dni': '99887766',
+            'nombre': 'Marina',
+            'apellido': 'Lopez',
+            'telefono': '5491122334455',
+            'email': 'staff.recep@winniegym.com',
+        }
+        response = self.client.post(SOCIOS_URL, payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('email', response.data)
+
+    def test_socio_model_save_syncs_fecha_baja_invariant(self):
+        user = make_user_factory()
+        socio = make_socio_factory(usuario=user, estado='activo')
+        self.assertIsNone(socio.fecha_baja)
+
+        # Mutate directly on model
+        socio.estado = 'baja'
+        socio.save()
+        socio.refresh_from_db()
+        self.assertEqual(socio.fecha_baja, datetime.date.today())
+
+        # Reactivate on model
+        socio.estado = 'activo'
+        socio.save()
+        socio.refresh_from_db()
+        self.assertIsNone(socio.fecha_baja)
+
+    def test_partial_update_estado_baja_sets_fecha_baja_and_revert(self):
+        admin = make_user_factory(rol='administrador')
+        user = make_user_factory()
+        socio = make_socio_factory(usuario=user, estado='activo')
+        _auth_client(self.client, admin)
+
+        # Update to baja
+        res = self.client.patch(_detail_url(socio.pk), {'estado': 'baja'})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data['estado'], 'baja')
+        self.assertEqual(res.data['fecha_baja'], datetime.date.today().isoformat())
+
+        # Revert to activo
+        res2 = self.client.patch(_detail_url(socio.pk), {'estado': 'activo'})
+        self.assertEqual(res2.status_code, status.HTTP_200_OK)
+        self.assertEqual(res2.data['estado'], 'activo')
+        self.assertIsNone(res2.data['fecha_baja'])
+
 
 class SocioDarBajaTests(APITestCase):
 
