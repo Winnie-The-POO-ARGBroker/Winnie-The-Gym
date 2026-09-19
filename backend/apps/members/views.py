@@ -2,7 +2,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.filters import SearchFilter
+from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 
@@ -25,10 +25,10 @@ from .services import dar_baja, guardar_certificado_medico
 class SocioViewSet(viewsets.ModelViewSet):
     queryset = Socio.objects.all().order_by('id')
     serializer_class = SocioSerializer
-    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = SocioFilter
     search_fields = ['nombre', 'apellido', 'dni', 'numero_socio']
-    ordering_fields = ['apellido', 'nombre', 'numero_socio', 'created_at']
+    ordering_fields = ['apellido', 'nombre', 'numero_socio', 'created_at', 'estado', 'dni']
     ordering = ['numero_socio']
 
     def get_permissions(self):
