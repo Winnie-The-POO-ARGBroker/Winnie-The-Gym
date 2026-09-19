@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { Toaster } from 'sonner'
 import useThemeStore from './stores/themeStore'
+import Skeleton from './components/ui/Skeleton'
 import useAuth from './hooks/useAuth'
 import { setApiNavigator } from './services/api'
 import LoginPage from './pages/LoginPage'
@@ -93,12 +94,7 @@ export default function App() {
         {/* Recepcion routes */}
         <Route path="/recepcion/acceso" element={
           <ProtectedRoute roles={['administrador', 'recepcionista']}>
-            <Suspense fallback={
-              <div className="flex-1 flex flex-col items-center justify-center h-full">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                <p className="mt-4 text-text-secondary">Cargando terminal...</p>
-              </div>
-            }>
+            <Suspense fallback={<Skeleton className="h-64 w-full" />}>
               <AccesoTerminal />
             </Suspense>
           </ProtectedRoute>
