@@ -1,6 +1,6 @@
 import api from './api'
 
-const SOCIOS_URL = '/socios/'
+const SOCIOS_URL = '/members/socios/'
 
 /**
  * Servicio para interactuar con la API de socios.
