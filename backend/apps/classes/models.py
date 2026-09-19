@@ -73,6 +73,7 @@ class InscripcionClase(models.Model):
     asistio = models.BooleanField(default=False)
     en_espera = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f'{self.socio} en {self.clase}'
@@ -81,3 +82,4 @@ class InscripcionClase(models.Model):
         verbose_name = 'Inscripción a Clase'
         verbose_name_plural = 'Inscripciones a Clases'
         unique_together = ('clase', 'socio')
+        ordering = ['-created_at']

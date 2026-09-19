@@ -13,7 +13,7 @@ class GenerateQRResponseSerializer(serializers.Serializer):
 class ScanQRSerializer(serializers.Serializer):
     qr_token = serializers.CharField(required=True)
     access_type = serializers.ChoiceField(
-        choices=AccessLog.ACCESS_TYPE_CHOICES,
+        choices=AccessLog.AccessType.choices,
         default='ENTRY'
     )
 
