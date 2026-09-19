@@ -74,8 +74,20 @@ class CompleteProfileView(generics.CreateAPIView):
         return super().create(request, *args, **kwargs)
 
 
+DEV_LOGIN_ALLOWLIST = {
+    'administrador': 'admin@winniegym.com',
+    'recepcionista': 'recepcionista@winniegym.com',
+    'socio': 'socio@winniegym.com',
+}
+
+
 class DevLoginView(views.APIView):
-    """Dev-only authentication helper to issue genuine SimpleJWT tokens in local development."""
+    """SOLO USAR EN DEV, GATED POR DEBUG=True. NUNCA HABILITAR EN PRODUCCIÓN.
+
+    Dev-only authentication helper to issue genuine SimpleJWT tokens in local development.
+    Accepts ONLY allowed roles ('administrador', 'recepcionista', 'socio') mapped to a fixed
+    allowlist of dev fixture accounts. Does NOT accept arbitrary email inputs.
+    """
     permission_classes = [permissions.AllowAny]
 
     def post(self, request, *args, **kwargs):
@@ -88,18 +100,18 @@ class DevLoginView(views.APIView):
         from rest_framework_simplejwt.tokens import RefreshToken
         from .models import User
 
-        rol = request.data.get('rol', 'administrador')
-        email = request.data.get('email')
+        rol = request.data.get('rol')
+        if rol not in DEV_LOGIN_ALLOWLIST:
+            return Response(
+                {
+                    'detail': f"Rol inválido para dev-login. Roles permitidos: {list(DEV_LOGIN_ALLOWLIST.keys())}"
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-        if not email:
-            if rol == 'administrador':
-                email = 'admin@winniegym.com'
-            elif rol == 'recepcionista':
-                email = 'recepcionista@winniegym.com'
-            else:
-                email = 'socio@winniegym.com'
+        email = DEV_LOGIN_ALLOWLIST[rol]
 
-        user, _ = User.objects.get_or_create(
+        user, created = User.objects.get_or_create(
             email=email,
             defaults={
                 'rol': rol,
@@ -108,6 +120,19 @@ class DevLoginView(views.APIView):
                 'is_superuser': (rol == 'administrador'),
             },
         )
+
+        if not created:
+            updated = False
+            if rol == 'administrador':
+                if not user.is_staff or not user.is_superuser:
+                    user.is_staff = True
+                    user.is_superuser = True
+                    updated = True
+            if user.rol != rol:
+                user.rol = rol
+                updated = True
+            if updated:
+                user.save()
 
         refresh = RefreshToken.for_user(user)
         access_token = str(refresh.access_token)

@@ -183,6 +183,56 @@ class SocioRetrieveUpdateTests(APITestCase):
         self.assertEqual(created_user.rol, User.Rol.SOCIO)
         self.assertEqual(created_user.socio.dni, '77889900')
 
+    def test_create_socio_duplicate_dni_returns_400(self):
+        admin = make_user_factory(rol='administrador')
+        _auth_client(self.client, admin)
+
+        payload = {
+            'dni': '55667788',
+            'nombre': 'Carlos',
+            'apellido': 'Perez',
+            'telefono': '5491122334455',
+        }
+        res1 = self.client.post(SOCIOS_URL, payload)
+        self.assertEqual(res1.status_code, status.HTTP_201_CREATED)
+
+        # Attempt to create another socio with identical DNI
+        res2 = self.client.post(SOCIOS_URL, payload)
+        self.assertEqual(res2.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('dni', res2.data)
+
+    def test_create_socio_with_staff_email_returns_400(self):
+        admin = make_user_factory(rol='administrador', email='staff.recep@winniegym.com')
+        _auth_client(self.client, admin)
+
+        payload = {
+            'dni': '99887766',
+            'nombre': 'Marina',
+            'apellido': 'Lopez',
+            'telefono': '5491122334455',
+            'email': 'staff.recep@winniegym.com',
+        }
+        response = self.client.post(SOCIOS_URL, payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('email', response.data)
+
+    def test_socio_model_save_syncs_fecha_baja_invariant(self):
+        user = make_user_factory()
+        socio = make_socio_factory(usuario=user, estado='activo')
+        self.assertIsNone(socio.fecha_baja)
+
+        # Mutate directly on model
+        socio.estado = 'baja'
+        socio.save()
+        socio.refresh_from_db()
+        self.assertEqual(socio.fecha_baja, datetime.date.today())
+
+        # Reactivate on model
+        socio.estado = 'activo'
+        socio.save()
+        socio.refresh_from_db()
+        self.assertIsNone(socio.fecha_baja)
+
     def test_partial_update_estado_baja_sets_fecha_baja_and_revert(self):
         admin = make_user_factory(rol='administrador')
         user = make_user_factory()

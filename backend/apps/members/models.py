@@ -1,3 +1,5 @@
+from datetime import date
+
 from django.conf import settings
 from django.db import connection, models
 
@@ -32,6 +34,13 @@ class Socio(models.Model):
                 cursor.execute("SELECT nextval('socio_numero_seq')")
                 n = cursor.fetchone()[0]
             self.numero_socio = f'S-{n:05d}'
+
+        if self.estado == self.Estado.BAJA:
+            if not self.fecha_baja:
+                self.fecha_baja = date.today()
+        else:
+            self.fecha_baja = None
+
         super().save(*args, **kwargs)
 
     def __str__(self):

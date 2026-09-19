@@ -36,28 +36,12 @@ export default function LoginPage() {
         navigate('/dashboard')
       }
       toast.success(`Sesión iniciada como ${res.data.user.rol}`)
-    } catch {
-      // Fallback local si la API estuviera inaccesible
-      const fallbackEmail =
-        rol === 'administrador'
-          ? 'admin@winniegym.com'
-          : rol === 'recepcionista'
-          ? 'recepcionista@winniegym.com'
-          : 'socio@winniegym.com'
-      setAuth({
-        access: `mock-access-token-${rol}`,
-        refresh: 'mock-refresh-token',
-        user: {
-          id: 1,
-          email: fallbackEmail,
-          nombre: rol === 'administrador' ? 'Rodrigo' : rol === 'recepcionista' ? 'Magali' : 'Martín',
-          apellido: rol === 'administrador' ? 'Valdez' : rol === 'recepcionista' ? 'Bechis' : 'Bossi',
-          rol,
-          is_profile_complete: true,
-        },
-      })
-      navigate(rol === 'socio' ? '/socio/credencial' : '/dashboard')
-      toast.success(`Sesión demo iniciada como ${rol}`)
+    } catch (err) {
+      const errorMsg =
+        err.response?.data?.detail ||
+        'El login de dev no está disponible (solo en modo desarrollo)'
+      toast.error(errorMsg)
+      console.error('Dev login error:', err)
     } finally {
       setLoadingRol(null)
     }
