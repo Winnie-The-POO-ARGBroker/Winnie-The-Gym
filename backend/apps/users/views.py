@@ -11,6 +11,7 @@ from rest_framework.response import Response
 
 from apps.members.models import Socio
 from .serializers import ProfileCompleteSerializer, ProfileSerializer
+from .services import get_or_create_user_by_role
 
 
 logger = logging.getLogger(__name__)
@@ -98,7 +99,6 @@ class DevLoginView(views.APIView):
             )
 
         from rest_framework_simplejwt.tokens import RefreshToken
-        from .models import User
 
         rol = request.data.get('rol')
         if rol not in DEV_LOGIN_ALLOWLIST:
@@ -110,29 +110,7 @@ class DevLoginView(views.APIView):
             )
 
         email = DEV_LOGIN_ALLOWLIST[rol]
-
-        user, created = User.objects.get_or_create(
-            email=email,
-            defaults={
-                'rol': rol,
-                'username': email,
-                'is_staff': (rol == 'administrador'),
-                'is_superuser': (rol == 'administrador'),
-            },
-        )
-
-        if not created:
-            updated = False
-            if rol == 'administrador':
-                if not user.is_staff or not user.is_superuser:
-                    user.is_staff = True
-                    user.is_superuser = True
-                    updated = True
-            if user.rol != rol:
-                user.rol = rol
-                updated = True
-            if updated:
-                user.save()
+        user, created = get_or_create_user_by_role(email, rol)
 
         refresh = RefreshToken.for_user(user)
         access_token = str(refresh.access_token)

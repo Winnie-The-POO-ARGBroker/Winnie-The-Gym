@@ -51,6 +51,16 @@ class MembresiaDetailSerializer(MembresiaSerializer):
 
 
 class SocioMeSerializer(serializers.ModelSerializer):
+    """Read-only view of the authenticated socio's own profile.
+
+    Placement note: this serializer lives in ``apps.memberships`` rather than
+    ``apps.members`` because it must embed a full ``MembresiaDetailSerializer``
+    (which itself nests ``PlanMembresiaSerializer``). Placing it in
+    ``apps.members`` would create a circular import: ``apps.members`` →
+    ``apps.memberships`` → ``apps.members``. The memberships app already
+    imports from members, so the dependency only works in one direction.
+    """
+
     membresia_activa = serializers.SerializerMethodField()
     asistencias_mes = serializers.SerializerMethodField()
 

@@ -27,7 +27,6 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     # Third party
     'rest_framework',
-    'rest_framework.authtoken',
     'corsheaders',
     'django_filters',
     'drf_spectacular',
@@ -212,6 +211,9 @@ REST_AUTH = {
     'JWT_AUTH_HTTPONLY': False,
     'USER_DETAILS_SERIALIZER': 'apps.users.serializers.UserDetailsSerializer',
     'JWT_SERIALIZER': 'apps.users.serializers.CustomJWTSerializer',
+    # JWT-only auth: disable the default token model so dj-rest-auth does not
+    # require rest_framework.authtoken in INSTALLED_APPS.
+    'TOKEN_MODEL': None,
 }
 
 AUTH_USER_MODEL = 'users.User'

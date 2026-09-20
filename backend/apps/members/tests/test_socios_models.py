@@ -6,7 +6,7 @@ from apps.members.models import Socio
 from conftest import make_socio_factory, make_user_factory
 
 
-class SocioTextChoicesTest(TestCase):
+class SocioTextChoicesTests(TestCase):
 
     def test_estado_textchoices_activo_value(self):
         from apps.members.models import Socio
@@ -25,7 +25,7 @@ class SocioTextChoicesTest(TestCase):
         self.assertEqual(Socio._meta.ordering, ['numero_socio'])
 
 
-class SocioLifecycleFieldsTest(TestCase):
+class SocioLifecycleFieldsTests(TestCase):
 
     def test_numero_socio_auto_assigned_on_save(self):
         user = make_user_factory()

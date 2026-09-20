@@ -135,7 +135,7 @@ def verify_dynamic_qr_token(qr_token_str: str, consume: bool = True) -> tuple[bo
 
         return True, None, payload
 
-    except Exception as e:
-        logger.error(f"Error al decodificar token QR: {e}")
+    except Exception:
+        logger.error("Error al decodificar token QR", exc_info=True)
         return False, 'INVALID_SIGNATURE', None
 

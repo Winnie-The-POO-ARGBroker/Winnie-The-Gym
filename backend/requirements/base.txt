@@ -1,14 +1,13 @@
-Django==5.0.6
+Django==5.1.4
 djangorestframework==3.15.2
 djangorestframework-simplejwt==5.3.1
-django-allauth[socialaccount]==0.61.1
+django-allauth[socialaccount]==0.63.6
 dj-rest-auth[with_social]==6.0.0
 django-cors-headers==4.4.0
 django-filter==24.3
 drf-spectacular==0.27.2
 psycopg2-binary==2.9.9
 python-decouple==3.8
-Pillow==10.4.0
 channels==4.1.0
 channels-redis==4.2.0
 daphne==4.1.2
@@ -24,6 +23,5 @@ python-json-logger==2.0.7
 whitenoise==6.7.0
 django-storages[s3]==1.14.4
 boto3==1.35.24
-honcho==2.0.0
 certifi==2024.8.30
 python-magic==0.4.27
