@@ -4,7 +4,6 @@ import {
   Search,
   Check,
   X as XIcon,
-  Users,
   ExternalLink,
   Save,
 } from 'lucide-react'

@@ -4,6 +4,13 @@ from django.db import models
 
 class AccessLog(models.Model):
 
+    # NOTE — case convention decision (deferred):
+    # AccessType and AccessStatus use UPPERCASE DB values while Socio/Membresia
+    # Estado fields use lowercase. Normalizing to lowercase here would require a
+    # data migration on a hot table and coordinated frontend/Celery updates.
+    # Decision: keep UPPERCASE for transactional access-log semantics and revisit
+    # in a dedicated migration PR once the test suite has full coverage of the
+    # access flow. Track: create a follow-up issue before the v1.0 release.
     class AccessType(models.TextChoices):
         ENTRY = 'ENTRY', 'Ingreso'
         EXIT = 'EXIT', 'Egreso'
@@ -21,11 +28,6 @@ class AccessLog(models.Model):
         NO_MEMBERSHIP = 'NO_MEMBERSHIP', 'Socio sin membresía registrada'
         USER_SUSPENDED = 'USER_SUSPENDED', 'Usuario suspendido'
         UNKNOWN_USER = 'UNKNOWN_USER', 'Usuario no registrado'
-
-    # Aliases de compatibilidad — no eliminar
-    ACCESS_TYPE_CHOICES = AccessType.choices
-    STATUS_CHOICES = AccessStatus.choices
-    DENIAL_REASON_CHOICES = DenialReason.choices
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,

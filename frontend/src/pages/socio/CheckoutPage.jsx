@@ -1,12 +1,11 @@
-import { useState, useEffect } from 'react'
-import { toast } from 'sonner'
+import { useState } from 'react'
 import { CreditCard, CheckCircle, ShieldCheck, Zap } from 'lucide-react'
 import MemberLayout from '../../components/layout/MemberLayout'
 import Card from '../../components/ui/Card'
 import EmptyState from '../../components/ui/EmptyState'
 import Button from '../../components/ui/Button'
-import api from '../../services/api'
-import { crearPreferencia, resolverInitPoint } from '../../services/pagosService'
+import { usePlanesQuery } from '../../hooks/queries/usePlanesAdmin'
+import { useCrearPreferenciaMutation } from '../../hooks/queries/usePagos'
 
 // Íconos de beneficios por plan (genérico si el backend no los tiene)
 const BENEFIT_ICONS = [Zap, CheckCircle, ShieldCheck]
@@ -74,42 +73,18 @@ function PlanCard({ plan, onPagar, loading }) {
 }
 
 export default function CheckoutPage() {
-  const [planes, setPlanes] = useState([])
-  const [isLoadingPlanes, setIsLoadingPlanes] = useState(true)
   const [loadingPlanId, setLoadingPlanId] = useState(null)
 
-  useEffect(() => {
-    const fetchPlanes = async () => {
-      try {
-        const res = await api.get('/memberships/planes/', { params: { activo: true } })
-        const data = res.data.results ?? res.data
-        setPlanes(data.filter((p) => p.activo))
-      } catch {
-        toast.error('No se pudieron cargar los planes. Intentá más tarde.')
-      } finally {
-        setIsLoadingPlanes(false)
-      }
-    }
-    fetchPlanes()
-  }, [])
+  const { data: allPlanes = [], isLoading: isLoadingPlanes } = usePlanesQuery()
+  const planes = allPlanes.filter((p) => p.activo)
 
-  const handlePagar = async (plan) => {
+  const crearPreferencia = useCrearPreferenciaMutation()
+
+  const handlePagar = (plan) => {
     setLoadingPlanId(plan.id)
-    try {
-      const preferencia = await crearPreferencia(plan.id)
-      const url = resolverInitPoint(preferencia)
-      if (!url) {
-        toast.error('No se obtuvo una URL de pago válida. Contactá a recepción.')
-        return
-      }
-      // Redirigir al Checkout Pro de MercadoPago
-      window.location.href = url
-    } catch (err) {
-      const detalle = err?.response?.data?.detail ?? 'Error al iniciar el pago. Intentá nuevamente.'
-      toast.error(detalle)
-    } finally {
-      setLoadingPlanId(null)
-    }
+    crearPreferencia.mutate(plan.id, {
+      onSettled: () => setLoadingPlanId(null),
+    })
   }
 
   return (

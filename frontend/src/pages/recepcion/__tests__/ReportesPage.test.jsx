@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, act } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import ReportesPage from '../ReportesPage'
 import * as reportsService from '../../../services/reportsService'
 
@@ -16,6 +17,25 @@ vi.mock('../../../hooks/queries/usePlanes', () => ({
   }),
 }))
 
+vi.mock('../../../hooks/queries/useReportes', () => ({
+  useReportMetrics: vi.fn(() => ({
+    data: {
+      ingresosMesFormatted: '$ 0',
+      vsAnteriorFormatted: '+0%',
+      chartPath: 'M 0,80 L 100,70',
+      asistenciaBars: [10, 10, 10, 10, 10, 10, 10],
+      morososCount: 0,
+      adeudadoFormatted: '$ 0',
+      morosidadTasa: '0%',
+      morosidadPct: 0,
+      activasCount: '0',
+      porVencerCount: 0,
+      nuevasMesCount: 0,
+    },
+    isLoading: false,
+  })),
+}))
+
 vi.mock('../../../hooks/useAuth', () => ({
   default: () => ({
     user: { rol: 'recepcionista', nombre: 'Test User', email: 'test@gym.test' },
@@ -27,6 +47,17 @@ vi.mock('../../../hooks/useAuth', () => ({
   }),
 }))
 
+function renderWithProviders(ui) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  })
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>{ui}</MemoryRouter>
+    </QueryClientProvider>
+  )
+}
+
 describe('ReportesPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -34,11 +65,7 @@ describe('ReportesPage', () => {
 
   it('renders top bar, export buttons, tabs, and filters', async () => {
     await act(async () => {
-      render(
-        <MemoryRouter>
-          <ReportesPage />
-        </MemoryRouter>
-      )
+      renderWithProviders(<ReportesPage />)
     })
 
     expect(screen.getByRole('heading', { name: /reportes/i })).toBeInTheDocument()
@@ -51,11 +78,7 @@ describe('ReportesPage', () => {
 
   it('triggers exportReport when clicking PDF export button', async () => {
     await act(async () => {
-      render(
-        <MemoryRouter>
-          <ReportesPage />
-        </MemoryRouter>
-      )
+      renderWithProviders(<ReportesPage />)
     })
 
     const pdfBtn = screen.getByRole('button', { name: /exportar pdf/i })
@@ -72,11 +95,7 @@ describe('ReportesPage', () => {
 
   it('triggers exportReport when clicking Excel export button', async () => {
     await act(async () => {
-      render(
-        <MemoryRouter>
-          <ReportesPage />
-        </MemoryRouter>
-      )
+      renderWithProviders(<ReportesPage />)
     })
 
     const excelBtn = screen.getByRole('button', { name: /exportar excel/i })
@@ -93,11 +112,7 @@ describe('ReportesPage', () => {
 
   it('switches tabs and updates active category', async () => {
     await act(async () => {
-      render(
-        <MemoryRouter>
-          <ReportesPage />
-        </MemoryRouter>
-      )
+      renderWithProviders(<ReportesPage />)
     })
 
     const asistenciaTab = screen.getByRole('button', { name: /^asistencia$/i })

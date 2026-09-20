@@ -18,9 +18,11 @@ function createWrapper() {
       queries: { retry: false },
     },
   })
-  return ({ children }) => (
+  const Wrapper = ({ children }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   )
+  Wrapper.displayName = 'TestWrapper'
+  return Wrapper
 }
 
 describe('useSociosData hooks', () => {

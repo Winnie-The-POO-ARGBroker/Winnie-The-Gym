@@ -1,3 +1,5 @@
+from unittest.mock import MagicMock, patch
+
 from django.test import override_settings
 from django.urls import reverse
 from rest_framework import status
@@ -9,6 +11,7 @@ from conftest import make_socio_factory, make_user_factory
 
 COMPLETE_PROFILE_URL = reverse('users:complete-profile')
 PROFILE_URL = reverse('users:profile')
+GOOGLE_LOGIN_URL = reverse('users:google-login')
 LOGIN_URL = '/api/auth/login/'
 
 
@@ -17,14 +20,72 @@ def _auth_client(client, user):
     client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
 
 
+class GoogleLoginViewTests(APITestCase):
+    """Tests for GoogleLoginView.
+
+    The Google OAuth adapter makes real network calls to exchange the
+    authorization code for user info.  We therefore test:
+      - Input validation (no token, empty token) — fails before any adapter call
+      - Endpoint existence + method routing (GET must return 405)
+
+    Full happy-path tests belong in integration/e2e suites that can provide
+    a real or sandboxed Google token.
+    """
+
+    def test_missing_token_returns_400(self):
+        """No access_token field at all — serializer validation rejects it."""
+        response = self.client.post(GOOGLE_LOGIN_URL, {}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_empty_token_returns_400(self):
+        """Empty string access_token — serializer validation rejects it."""
+        response = self.client.post(GOOGLE_LOGIN_URL, {'access_token': ''}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_get_method_not_allowed(self):
+        """GoogleLoginView is POST-only; GET must return 405."""
+        response = self.client.get(GOOGLE_LOGIN_URL)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_url_is_registered(self):
+        """The google-login URL must resolve to the expected view."""
+        from django.urls import resolve
+        match = resolve(GOOGLE_LOGIN_URL)
+        self.assertEqual(match.view_name, 'users:google-login')
+
+
 class CompleteProfileViewTests(APITestCase):
 
     def test_unauthenticated_returns_401(self):
         response = self.client.post(COMPLETE_PROFILE_URL, {})
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_admin_returns_403(self):
+        user = make_user_factory(rol='administrador')
+        _auth_client(self.client, user)
+        response = self.client.post(COMPLETE_PROFILE_URL, {
+            'dni': '99999901',
+            'nombre': 'Admin',
+            'apellido': 'Test',
+            'telefono': '123',
+        })
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn('detail', response.data)
+
+    def test_recepcionista_returns_403(self):
+        user = make_user_factory(rol='recepcionista')
+        _auth_client(self.client, user)
+        response = self.client.post(COMPLETE_PROFILE_URL, {
+            'dni': '99999902',
+            'nombre': 'Recep',
+            'apellido': 'Test',
+            'telefono': '123',
+        })
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn('detail', response.data)
+
     def test_already_complete_returns_400(self):
-        user = make_user_factory()
+        user = make_user_factory(rol='socio')
         make_socio_factory(usuario=user)
         _auth_client(self.client, user)
 
@@ -39,7 +100,7 @@ class CompleteProfileViewTests(APITestCase):
         self.assertIn('detail', response.data)
 
     def test_missing_required_fields_returns_400(self):
-        user = make_user_factory()
+        user = make_user_factory(rol='socio')
         _auth_client(self.client, user)
 
         response = self.client.post(COMPLETE_PROFILE_URL, {})
@@ -51,10 +112,10 @@ class CompleteProfileViewTests(APITestCase):
         self.assertIn('telefono', response.data)
 
     def test_duplicate_dni_returns_400(self):
-        existing_user = make_user_factory(email='other@example.com')
+        existing_user = make_user_factory(email='other@example.com', rol='socio')
         make_socio_factory(usuario=existing_user, dni='11111111')
 
-        user = make_user_factory()
+        user = make_user_factory(rol='socio')
         _auth_client(self.client, user)
 
         response = self.client.post(COMPLETE_PROFILE_URL, {
@@ -68,7 +129,7 @@ class CompleteProfileViewTests(APITestCase):
         self.assertIn('dni', response.data)
 
     def test_valid_request_creates_socio_and_returns_201(self):
-        user = make_user_factory()
+        user = make_user_factory(rol='socio')
         _auth_client(self.client, user)
 
         response = self.client.post(COMPLETE_PROFILE_URL, {
@@ -213,3 +274,25 @@ class DevLoginTests(APITestCase):
         response = self.client.post(self.DEV_LOGIN_URL, {'rol': 'administrador'})
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertNotIn('access', response.data)
+
+
+class TokenBlacklistMigrationSanityTests(APITestCase):
+    """Sanity check: verify that token_blacklist tables were migrated.
+
+    If migrations were not applied (e.g. a deploy skipped RUN_MIGRATIONS=1),
+    any query against these models raises django.db.OperationalError.
+    This test catches that failure early — before a real logout attempt would.
+    """
+
+    def test_token_blacklist_tables_migrated(self):
+        from rest_framework_simplejwt.token_blacklist.models import (
+            BlacklistedToken,
+            OutstandingToken,
+        )
+
+        # If migrations did not run, these will raise OperationalError.
+        blacklisted_count = BlacklistedToken.objects.count()
+        outstanding_count = OutstandingToken.objects.count()
+
+        self.assertGreaterEqual(blacklisted_count, 0)
+        self.assertGreaterEqual(outstanding_count, 0)

@@ -8,6 +8,11 @@ export default defineConfig({
     globals: true,
     setupFiles: './setupTests.js',
     forbidOnly: true,
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'lcov', 'html'],
+      reportsDirectory: './coverage',
+    },
   },
   server: {
     host: true,

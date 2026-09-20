@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FileText, Calendar, UploadCloud, CheckCircle2, AlertCircle, X } from 'lucide-react'
+import { FileText, Calendar, CheckCircle2, AlertCircle, X } from 'lucide-react'
 import Card from '../ui/Card'
 import Input from '../ui/Input'
 import { MAX_CERT_FILE_SIZE, CERT_ACCEPT_ATTR } from '../../constants/files'
@@ -59,8 +59,8 @@ export default function SaludCard({
           </label>
 
           {currentCertificateUrl && !selectedFile && (
-            <div className="mb-2 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between text-xs">
-              <span className="flex items-center gap-1.5 text-emerald-500 font-medium">
+            <div className="mb-2 p-2.5 rounded-xl bg-success-500/10 border border-success-500/20 flex items-center justify-between text-xs">
+              <span className="flex items-center gap-1.5 text-success-500 font-medium">
                 <CheckCircle2 className="w-4 h-4" /> Certificado registrado
               </span>
               <a
@@ -91,7 +91,7 @@ export default function SaludCard({
               <button
                 type="button"
                 onClick={handleRemoveFile}
-                className="text-text-secondary hover:text-rose-500"
+                className="text-text-secondary hover:text-error-500"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -99,7 +99,7 @@ export default function SaludCard({
           )}
 
           {fileError && (
-            <p className="text-xs text-rose-500 mt-1 flex items-center gap-1">
+            <p className="text-xs text-error-500 mt-1 flex items-center gap-1">
               <AlertCircle className="w-3 h-3" /> {fileError}
             </p>
           )}

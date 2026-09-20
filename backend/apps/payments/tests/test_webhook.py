@@ -143,6 +143,9 @@ class WebhookSignatureUnitTests(APITestCase):
         with override_settings(MP_WEBHOOK_SECRET=SECRET):
             self.assertFalse(verify_webhook_signature('ts=1,v1=beef', 'r1', 'PAY-Z'))
 
-    def test_secret_absent_disables_enforcement(self):
+    def test_secret_absent_raises_improperly_configured(self):
+        """Empty MP_WEBHOOK_SECRET must raise ImproperlyConfigured (fail-closed)."""
+        from django.core.exceptions import ImproperlyConfigured
         with override_settings(MP_WEBHOOK_SECRET=''):
-            self.assertTrue(verify_webhook_signature('anything', 'r1', 'PAY-Z'))
+            with self.assertRaises(ImproperlyConfigured):
+                verify_webhook_signature('anything', 'r1', 'PAY-Z')

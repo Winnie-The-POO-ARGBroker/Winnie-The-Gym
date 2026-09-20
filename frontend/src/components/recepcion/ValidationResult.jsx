@@ -1,5 +1,5 @@
 import Button from '../ui/Button';
-import { QrCode, CheckCircle2, XCircle, AlertCircle, LogOut, Check, User } from 'lucide-react';
+import { QrCode, CheckCircle2, XCircle, AlertCircle, Check, User } from 'lucide-react';
 import { getTimeAgo } from '../../utils/formatDate';
 
 const DENIAL_REASONS = {
@@ -10,7 +10,7 @@ const DENIAL_REASONS = {
   TOKEN_EXPIRED: 'Código QR expirado',
 };
 
-export default function ValidationResult({ result, onConfirmEntry, onRegisterExit }) {
+export default function ValidationResult({ result, onConfirmEntry, onRegisterExit: _onRegisterExit }) {
   const status = result?.status || 'idle';
   const message = result?.message || '';
   const denialReason = result?.denialReason || result?.log?.denial_reason;
@@ -67,7 +67,9 @@ export default function ValidationResult({ result, onConfirmEntry, onRegisterExi
                 <User className="w-8 h-8 text-text-tertiary" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-text-primary">{log.user_name || 'Desconocido'}</h3>
+                <h3 className="text-xl font-bold text-text-primary">
+                  {log.user_nombre ? `${log.user_nombre} ${log.user_apellido || ''}`.trim() : 'Desconocido'}
+                </h3>
                 <p className="text-text-tertiary text-sm mt-1">{log.user_email || 'Sin datos'}</p>
               </div>
             </div>

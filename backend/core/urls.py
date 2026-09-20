@@ -96,18 +96,21 @@ def health(request):
         status = 'ok'
         http_status = 200
 
+    checks_output = {}
+    for name, (ok, err) in checks.items():
+        entry = {
+            'ok': ok,
+            'critical': name in CRITICAL_CHECKS,
+        }
+        if settings.DEBUG:
+            entry['error'] = err
+        checks_output[name] = entry
+
     body = {
         'status': status,
         'service': 'winnie-the-gym-api',
-        'version': '0.1.0',
-        'checks': {
-            name: {
-                'ok': ok,
-                'error': err,
-                'critical': name in CRITICAL_CHECKS,
-            }
-            for name, (ok, err) in checks.items()
-        },
+        'version': '1.0.0',
+        'checks': checks_output,
     }
     return JsonResponse(body, status=http_status)
 
@@ -123,9 +126,6 @@ def password_reset_confirm_redirect(request, uidb64, token):
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/health/', health),
-    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
-    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
-    path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
     path('api/auth/', include(('apps.users.urls', 'users'), namespace='users')),
     # Override dj-rest-auth's PasswordResetView with our tolerant variant BEFORE
     # including the rest of the auth routes so this pattern wins the match.
@@ -149,4 +149,9 @@ urlpatterns = [
 ]
 
 if settings.DEBUG:
+    urlpatterns += [
+        path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+        path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+        path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+    ]
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

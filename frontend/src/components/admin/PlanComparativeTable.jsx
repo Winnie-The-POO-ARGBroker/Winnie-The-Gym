@@ -1,6 +1,6 @@
-import { Check, Minus, Plus } from 'lucide-react'
+import { Check, Minus } from 'lucide-react'
 
-export default function PlanComparativeTable({ planes = [], onCreateNew }) {
+export default function PlanComparativeTable({ planes = [], onCreateNew: _onCreateNew }) {
   const formatPrice = (price) => {
     return new Intl.NumberFormat('es-AR', {
       style: 'currency',

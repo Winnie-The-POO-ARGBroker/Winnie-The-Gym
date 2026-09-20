@@ -1,7 +1,8 @@
 ---
 name: "🐛 Bug Report"
 about: "Reportar un comportamiento incorrecto"
-labels: bug
+labels: ["bug"]
+assignees: []
 ---
 
 ## Tema / Pantalla

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { IdCard } from 'lucide-react'
@@ -13,24 +13,20 @@ import QRFullscreenModal from '../../components/socio/QRFullscreenModal'
 import EmptyState from '../../components/ui/EmptyState'
 import api from '../../services/api'
 import useAuth from '../../hooks/useAuth'
+import { useSocioMembresiaMe } from '../../hooks/queries/useMembresias'
 
 export default function CredencialDigitalPage() {
   const { user } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
-  const [member, setMember] = useState(null)
   const [qrData, setQrData] = useState(null)
   const [timeLeft, setTimeLeft] = useState(30)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
 
-  // Capturar el resultado del pago en el primer render con useState lazy.
-  // Usar useState (en lugar de leer searchParams en cada render) evita el race
-  // condition de React StrictMode (double-invoke): el valor se fija una vez y
-  // el effect se ejecuta con el valor correcto aunque corra dos veces en dev.
+  // Capture pago result on first render (avoids StrictMode race condition)
   const [pagoResultado] = useState(() => searchParams.get('pago'))
 
-  // Limpiar el query param de la URL una vez leído para evitar que persista al recargar.
+  // Clean the query param once read
   useEffect(() => {
     if (pagoResultado) {
       setSearchParams((prev) => {
@@ -40,32 +36,25 @@ export default function CredencialDigitalPage() {
     }
   }, [pagoResultado, setSearchParams])
 
-  // Obtener perfil del socio
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const res = await api.get('/memberships/me/')
-        const data = res.data
-        // Mapear los datos de la API a la estructura que espera la UI
-        setMember({
-          ...data,
-          socioNumero: data.numero_socio,
-          sedeHabitual: 'Sede Central', // Hardcoded por ahora
-          membresia: data.membresia_activa ? {
-            ...data.membresia_activa,
-            planNombre: data.membresia_activa.plan?.nombre,
-            fechaVencimiento: data.membresia_activa.fecha_fin,
-          } : null
-        })
-      } catch (error) {
-        console.error('Error fetching member profile:', error)
-        toast.error('Error al cargar perfil')
-      } finally {
-        setIsLoading(false)
-      }
+  // Fetch socio membership via React Query
+  const { data: rawProfile, isLoading } = useSocioMembresiaMe()
+
+  // Map API data to the shape the UI components expect
+  const member = useMemo(() => {
+    if (!rawProfile) return null
+    return {
+      ...rawProfile,
+      socioNumero: rawProfile.numero_socio,
+      sedeHabitual: 'Sede Central',
+      membresia: rawProfile.membresia_activa
+        ? {
+            ...rawProfile.membresia_activa,
+            planNombre: rawProfile.membresia_activa.plan?.nombre,
+            fechaVencimiento: rawProfile.membresia_activa.fecha_fin,
+          }
+        : null,
     }
-    fetchProfile()
-  }, [])
+  }, [rawProfile])
 
   const refreshQR = useCallback(async (manual = false) => {
     setIsRefreshing(true)

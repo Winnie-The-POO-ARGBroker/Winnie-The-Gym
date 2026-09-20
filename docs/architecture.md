@@ -171,5 +171,6 @@ Costo total: $0 en tiers gratuitos.
 - TTL indexes limpian docs > 90 días automáticamente
 
 ### Redis
-- Se usa para 3 cosas: **broker Celery**, **channel layer WS**, **cache**
-- Bases lógicas separadas: `/1` (Celery broker), `/2` (Celery backend), `/1` (Django cache)
+- Se usa para 4 cosas: **broker Celery**, **result backend Celery**, **channel layer WS**, **cache**
+- Bases lógicas separadas: `/0` (Celery broker), `/3` (Celery result backend), `/1` (Django cache), `/2` (Channel Layer)
+- En Upstash (single-DB mode) todas las claves van a `/0`; la separación por DB es solo para entornos locales.

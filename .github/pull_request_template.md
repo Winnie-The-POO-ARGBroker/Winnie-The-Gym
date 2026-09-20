@@ -10,7 +10,10 @@
 - [ ] 🧪 Tests (`test`)
 
 ## Issues relacionadas
-<!-- Ej: Closes #12, Relates to #8 -->
+<!-- Closes #XX (cierra automáticamente el issue al mergear) -->
+<!-- Related to #XX (vinculado pero no cierra) -->
+Closes #
+Related to #
 
 ## Checklist
 - [ ] El PR apunta a `develop` (no a `main`)

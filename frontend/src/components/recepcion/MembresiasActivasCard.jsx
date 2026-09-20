@@ -15,7 +15,7 @@ export default function MembresiasActivasCard({ activas, porVencer, nuevasMes })
         </div>
         <div>
           <p className="text-xs text-text-secondary font-semibold mb-1 uppercase">Nuevas/Mes</p>
-          <p className="text-2xl font-bold text-blue-500">+{nuevasMes}</p>
+          <p className="text-2xl font-bold text-info-500">+{nuevasMes}</p>
         </div>
       </div>
     </Card>

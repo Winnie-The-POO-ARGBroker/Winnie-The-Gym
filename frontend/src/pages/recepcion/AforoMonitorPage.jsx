@@ -8,12 +8,12 @@ import Badge from '../../components/ui/Badge';
 import { Wifi, Loader2 } from 'lucide-react';
 import useWebSocket from '../../hooks/useWebSocket';
 import { useAforoStats, useAccessLogs } from '../../hooks/queries/useDashboardData';
-import { GYM_MAX_CAPACITY } from '../../services/constants';
+import { GYM_MAX_CAPACITY } from '../../constants/pagination';
 import { getTimeAgo } from '../../utils/formatDate';
 
 
 
-export default function AforoMonitor() {
+export default function AforoMonitorPage() {
   const [aforo, setAforo] = useState(0);
   const maxAforo = GYM_MAX_CAPACITY;
   

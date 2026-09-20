@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Plus,
@@ -16,21 +16,19 @@ import ClassListDetailView from '../components/classes/ClassListDetailView'
 import ClassAttendeesModal from '../components/classes/ClassAttendeesModal'
 import EmptyState from '../components/ui/EmptyState'
 import Button from '../components/ui/Button'
-import { useClassAttendees } from '../hooks/useClassAttendees'
-import api from '../services/api'
-import { ALL_RECORDS_PAGE_SIZE } from '../services/constants'
-
-const IS_DEV = import.meta.env.DEV
+import { useClasesList, useClasesMutations } from '../hooks/queries/useClases'
+import { useClassAttendees } from '../hooks/queries/useClassAttendees'
 
 export default function ClassSchedulePage() {
   const navigate = useNavigate()
-  const [classes, setClasses] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('calendario') // 'calendario' | 'lista'
-  const [selectedClass, setSelectedClass] = useState(classes[0] || null)
+  const [selectedClass, setSelectedClass] = useState(null)
   const [isAttendeesModalOpen, setIsAttendeesModalOpen] = useState(false)
   const [classForModal, setClassForModal] = useState(null)
   const [weekOffset, setWeekOffset] = useState(0)
+
+  const { data: classes = [], isLoading } = useClasesList()
+  const { remove: deleteClase } = useClasesMutations()
 
   const {
     attendees,
@@ -75,27 +73,6 @@ export default function ClassSchedulePage() {
     return { diasSemana: calculatedDiasSemana, weekLabel: calculatedWeekLabel }
   }, [weekOffset])
 
-  const fetchClasses = async () => {
-    setIsLoading(true)
-    try {
-      const response = await api.get('/classes/clases/', { params: { page_size: ALL_RECORDS_PAGE_SIZE } })
-      const classData = response.data.results || response.data
-      setClasses(classData)
-      if (classData.length > 0 && !selectedClass) {
-        setSelectedClass(classData[0])
-      }
-    } catch (error) {
-      toast.error('Error al cargar las clases')
-      console.error(error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchClasses()
-  }, [])
-
   const handleOpenAttendees = (cls) => {
     setClassForModal(cls)
     setIsAttendeesModalOpen(true)
@@ -109,19 +86,16 @@ export default function ClassSchedulePage() {
     navigate(`/admin/clases/crear?id=${cls.id}`)
   }
 
-  const handleDeleteClass = async (cls) => {
-    try {
-      await api.delete(`/classes/clases/${cls.id}/`)
-      const updated = classes.filter((c) => c.id !== cls.id)
-      setClasses(updated)
-      if (selectedClass?.id === cls.id) {
-        setSelectedClass(updated[0] || null)
-      }
-      toast.info(`Clase "${cls.nombre}" eliminada correctamente`)
-    } catch (error) {
-      toast.error('Error al eliminar la clase')
-      console.error(error)
-    }
+  const handleDeleteClass = (cls) => {
+    deleteClase.mutate(cls.id, {
+      onSuccess: () => {
+        if (selectedClass?.id === cls.id) setSelectedClass(null)
+        toast.info(`Clase "${cls.nombre}" eliminada correctamente`)
+      },
+      onError: () => {
+        toast.error('Error al eliminar la clase')
+      },
+    })
   }
 
   return (

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import api from '../../services/api'
-import { ALL_RECORDS_PAGE_SIZE } from '../../services/constants'
+import { ALL_RECORDS_PAGE_SIZE } from '../../constants/pagination'
 
 export const mapAccessLog = (log) => {
   const d = new Date(log.timestamp)

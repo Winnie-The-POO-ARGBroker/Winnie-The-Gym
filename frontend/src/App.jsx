@@ -7,6 +7,8 @@ import useAuth from './hooks/useAuth'
 import { setApiNavigator } from './services/api'
 import LoginPage from './pages/LoginPage'
 import AuthCallback from './pages/AuthCallback'
+import ForgotPasswordPage from './pages/ForgotPasswordPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 import DashboardPage from './pages/DashboardPage'
 import ProfilePage from './pages/ProfilePage'
 import NotFoundPage from './pages/NotFoundPage'
@@ -20,8 +22,8 @@ import AttendancePage from './pages/AttendancePage'
 import CreateClassPage from './pages/CreateClassPage'
 import ClassSchedulePage from './pages/ClassSchedulePage'
 
-import AforoMonitor from './pages/recepcion/AforoMonitor'
-import GestionSocios from './pages/recepcion/GestionSocios'
+import AforoMonitorPage from './pages/recepcion/AforoMonitorPage'
+import GestionSociosPage from './pages/recepcion/GestionSociosPage'
 import ReportesPage from './pages/recepcion/ReportesPage'
 
 import AdminPlanesPage from './pages/admin/AdminPlanesPage'
@@ -29,7 +31,7 @@ import AdminSociosPage from './pages/admin/AdminSociosPage'
 import CheckoutPage from './pages/socio/CheckoutPage'
 import CobroManualPage from './pages/recepcion/CobroManualPage'
 
-const AccesoTerminal = lazy(() => import('./pages/recepcion/AccesoTerminal'))
+const AccesoTerminalPage = lazy(() => import('./pages/recepcion/AccesoTerminalPage'))
 
 const COMING_SOON_PATHS = ['/configuracion']
 
@@ -60,6 +62,8 @@ export default function App() {
         <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/completar-perfil" element={<CompleteProfileRoute />} />
+        <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
+        <Route path="/reset-password/:uid/:token" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
 
         {/* Protected */}
         <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
@@ -101,12 +105,12 @@ export default function App() {
         <Route path="/recepcion/acceso" element={
           <ProtectedRoute roles={['administrador', 'recepcionista']}>
             <Suspense fallback={<Skeleton className="h-64 w-full" />}>
-              <AccesoTerminal />
+              <AccesoTerminalPage />
             </Suspense>
           </ProtectedRoute>
         } />
-        <Route path="/recepcion/aforo" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><AforoMonitor /></ProtectedRoute>} />
-        <Route path="/recepcion/socios" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><GestionSocios /></ProtectedRoute>} />
+        <Route path="/recepcion/aforo" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><AforoMonitorPage /></ProtectedRoute>} />
+        <Route path="/recepcion/socios" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><GestionSociosPage /></ProtectedRoute>} />
         <Route path="/recepcion/reportes" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><ReportesPage /></ProtectedRoute>} />
         <Route path="/admin/reportes" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><ReportesPage /></ProtectedRoute>} />
         <Route path="/reportes" element={<Navigate to="/admin/reportes" replace />} />

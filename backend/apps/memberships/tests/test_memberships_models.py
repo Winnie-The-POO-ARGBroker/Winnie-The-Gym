@@ -3,7 +3,7 @@ from django.test import TestCase
 from apps.memberships.models import Membresia, PlanMembresia
 
 
-class MembresiaTextChoicesTest(TestCase):
+class MembresiaTextChoicesTests(TestCase):
 
     def test_estado_textchoices_activa_value(self):
         self.assertEqual(Membresia.Estado.ACTIVA, 'activa')
@@ -24,7 +24,7 @@ class MembresiaTextChoicesTest(TestCase):
         self.assertEqual(Membresia._meta.ordering, ['-fecha_inicio'])
 
 
-class PlanMembresiaMetaOrderingTest(TestCase):
+class PlanMembresiaMetaOrderingTests(TestCase):
 
     def test_meta_ordering_is_nombre(self):
         self.assertEqual(PlanMembresia._meta.ordering, ['nombre'])

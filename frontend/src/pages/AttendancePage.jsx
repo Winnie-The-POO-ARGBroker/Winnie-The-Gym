@@ -1,14 +1,9 @@
-import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Check,
   X as XIcon,
   Download,
   Users,
-  Clock,
-  UserCheck,
-  UserX,
-  Sparkles,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import AppLayout from '../components/layout/AppLayout'
@@ -17,44 +12,25 @@ import Avatar from '../components/ui/Avatar'
 import Button from '../components/ui/Button'
 import EmptyState from '../components/ui/EmptyState'
 import Skeleton from '../components/ui/Skeleton'
-import api from '../services/api'
-import { useClassAttendees } from '../hooks/useClassAttendees'
-
-const IS_DEV = import.meta.env.DEV
+import { useClaseDetail } from '../hooks/queries/useClases'
+import { useClassAttendees } from '../hooks/queries/useClassAttendees'
 
 export default function AttendancePage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const classId = searchParams.get('id')
 
-  const [classInfo, setClassInfo] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const { data: classInfo, isLoading: loading } = useClaseDetail(classId)
   const { attendees, toggleStatus, fetchAttendees } = useClassAttendees(classId)
   
   // Real waiting list should come from `en_espera`
   const waitingList = attendees.filter(a => a.en_espera)
   const confirmedAttendees = attendees.filter(a => !a.en_espera)
 
-  const fetchClassInfo = async () => {
-    try {
-      const res = await api.get(`/classes/clases/${classId}/`)
-      setClassInfo(res.data)
-    } catch (err) {
-      console.error('Error fetching class info:', err)
-      toast.error('Error al cargar la clase')
-    } finally {
-      setLoading(false)
-    }
+  if (!classId) {
+    toast.error('Clase no encontrada')
+    navigate('/admin/clases')
   }
-
-  useEffect(() => {
-    if (!classId) {
-      toast.error('Clase no encontrada')
-      navigate('/admin/clases')
-      return
-    }
-    fetchClassInfo()
-  }, [classId, navigate])
 
   const handlePromoteFromWaitingList = async (waitingPerson) => {
     try {
@@ -155,7 +131,7 @@ export default function AttendancePage() {
                 <span className="text-sm font-bold text-text-primary">
                   Inscriptos
                 </span>
-                <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-blue-500/10 text-blue-500 border border-blue-500/20 flex items-center gap-1.5">
+                <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-info-500/10 text-info-500 border border-info-500/20 flex items-center gap-1.5">
                   <Users className="w-3.5 h-3.5" />
                   {totalInscriptos} / {cls?.cupo_maximo || 20}
                 </span>
@@ -348,7 +324,7 @@ export default function AttendancePage() {
 
                       <button
                         onClick={() => handlePromoteFromWaitingList(person)}
-                        className="px-3 py-1.5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold shadow-sm transition-colors whitespace-nowrap"
+                        className="px-3 py-1.5 rounded-lg bg-info-500 hover:bg-info-600 text-white text-xs font-bold shadow-sm transition-colors whitespace-nowrap"
                       >
                         Habilitar
                       </button>

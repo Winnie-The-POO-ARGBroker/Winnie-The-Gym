@@ -46,7 +46,7 @@ class StructuredLoggingTests(TestCase):
         self.assertIn('timestamp', parsed)
 
 
-class LocustfileStaticCheckTest(TestCase):
+class LocustfileStaticCheckTests(TestCase):
     """Locust scenarios must contain the expected user classes.
 
     We avoid `import` because locust monkey-patches gevent at module load and

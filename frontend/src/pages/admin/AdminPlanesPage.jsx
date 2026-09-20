@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { Plus, Copy, LayoutGrid, Table, Check, AlertCircle, CreditCard } from 'lucide-react'
+import { useState } from 'react'
+import { Plus, Copy, LayoutGrid, Table, CreditCard } from 'lucide-react'
 import { toast } from 'sonner'
 import AppLayout from '../../components/layout/AppLayout'
 import TopBar from '../../components/layout/TopBar'
@@ -9,88 +9,33 @@ import PlanComparativeTable from '../../components/admin/PlanComparativeTable'
 import PlanFormModal from '../../components/admin/PlanFormModal'
 import EmptyState from '../../components/ui/EmptyState'
 import Button from '../../components/ui/Button'
-import api from '../../services/api'
-
-const IS_DEV = import.meta.env.DEV
+import { usePlanesMutations, usePlanesQuery } from '../../hooks/queries/usePlanesAdmin'
 
 export default function AdminPlanesPage() {
-  const [planes, setPlanes] = useState([])
-  const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('tarjetas') // 'tarjetas' | 'comparativa'
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalMode, setModalMode] = useState({ planToEdit: null, isDuplicate: false })
-  const [selectedPlanForDuplicate, setSelectedPlanForDuplicate] = useState(null)
 
-  const fetchPlanes = async () => {
-    try {
-      const response = await api.get('/memberships/planes/')
-      setPlanes(response.data.results || response.data)
-    } catch (error) {
-      console.error('Error fetching planes:', error)
-      toast.error('Error al cargar planes')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchPlanes()
-  }, [])
+  const { data: planes = [], isLoading: loading } = usePlanesQuery()
+  const { savePlan, deletePlan, toggleActive } = usePlanesMutations()
 
   const activePlansCount = planes.filter((p) => p.activo).length
   const totalSocios = planes.reduce((acc, p) => acc + (p.socios_activos || 0), 0)
 
-  // Handle Save (Create or Edit)
-  const handleSavePlan = async (planData) => {
-    try {
-      if (planData.id) {
-        // Edit
-        await api.patch(`/memberships/planes/${planData.id}/`, planData)
-        toast.success(`Plan "${planData.nombre}" actualizado con éxito`)
-      } else {
-        // Create
-        await api.post('/memberships/planes/', {
-          ...planData,
-          activo: true
-        })
-        toast.success(`Plan "${planData.nombre}" creado exitosamente`)
-      }
-      fetchPlanes()
-    } catch (error) {
-      console.error('Error saving plan:', error)
-      toast.error('Error al guardar el plan')
-    }
+  const handleSavePlan = (planData) => {
+    savePlan.mutate(planData, { onSuccess: () => setIsModalOpen(false) })
   }
 
-  // Handle Delete
-  const handleDeletePlan = async (plan) => {
+  const handleDeletePlan = (plan) => {
     if (planes.length <= 1) {
       toast.error('Debe existir al menos un plan activo en el sistema')
       return
     }
-    try {
-      await api.delete(`/memberships/planes/${plan.id}/`)
-      toast.info(`Plan "${plan.nombre}" eliminado`)
-      fetchPlanes()
-    } catch (error) {
-      console.error('Error deleting plan:', error)
-      toast.error('Error al eliminar el plan')
-    }
+    deletePlan.mutate(plan)
   }
 
-  // Handle Archive / Toggle Active
-  const handleArchivePlan = async (plan) => {
-    try {
-      await api.patch(`/memberships/planes/${plan.id}/`, { activo: !plan.activo })
-      toast.success(`Plan "${plan.nombre}" ${plan.activo ? 'archivado' : 'activado'}`)
-      fetchPlanes()
-    } catch (error) {
-      console.error('Error toggling plan:', error)
-      toast.error('Error al archivar/activar el plan')
-    }
-  }
+  const handleArchivePlan = (plan) => toggleActive.mutate(plan)
 
-  // Quick duplicate trigger
   const handleOpenDuplicate = () => {
     const planToClone = planes.find((p) => p.es_popular) || planes[0] || {}
     setModalMode({ planToEdit: planToClone, isDuplicate: true })
@@ -152,7 +97,7 @@ export default function AdminPlanesPage() {
       <div className="w-full flex-1 flex flex-col p-6 md:p-10 gap-7 overflow-y-auto max-w-[1840px] mx-auto transition-all animate-fadeIn">
         {/* TAB 1: PANTALLA 1 FIGMA (Tarjetas de Planes + Distribución de Socios) */}
         {activeTab === 'tarjetas' && (
-          !IS_DEV && planes.length === 0 ? (
+          !loading && planes.length === 0 ? (
             <EmptyState
               icon={CreditCard}
               title="No hay planes disponibles"
@@ -188,7 +133,7 @@ export default function AdminPlanesPage() {
 
         {/* TAB 2: PANTALLA 2 FIGMA (Comparativa de Planes) */}
         {activeTab === 'comparativa' && (
-          !IS_DEV && planes.length === 0 ? (
+          !loading && planes.length === 0 ? (
             <EmptyState
               icon={CreditCard}
               title="No hay planes disponibles"

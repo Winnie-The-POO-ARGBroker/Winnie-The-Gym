@@ -5,7 +5,7 @@ from django.test import TestCase
 from apps.classes.models import Clase
 
 
-class ClaseTextChoicesTest(TestCase):
+class ClaseTextChoicesTests(TestCase):
 
     def test_dia_lunes_is_lowercase(self):
         self.assertEqual(Clase.Dia.LUNES, 'lunes')
@@ -56,7 +56,7 @@ class ClaseTextChoicesTest(TestCase):
         self.assertIn(clase.dia, valid_values)
 
 
-class HoraTimeFieldTest(TestCase):
+class HoraTimeFieldTests(TestCase):
 
     def test_hora_is_timefield(self):
         field = Clase._meta.get_field('hora')

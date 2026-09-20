@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useAuth from '../hooks/useAuth'
 import AppLayout from '../components/layout/AppLayout'
@@ -38,9 +37,7 @@ export default function DashboardPage() {
         )}
 
         {effectiveRole === 'administrador' && (
-          <AdminDashboardView
-            navigate={navigate}
-          />
+          <AdminDashboardView />
         )}
 
         {effectiveRole === 'recepcionista' && (

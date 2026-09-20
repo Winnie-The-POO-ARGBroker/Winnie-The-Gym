@@ -69,6 +69,15 @@ SUPABASE_STORAGE_PUBLIC_URL_BASE = config(
     default='',  # ej: https://<project-ref>.supabase.co/storage/v1/object/public
 )
 
+# Override the base MEDIA_URL ("/media/") with the Supabase public URL root so
+# the Django setting reflects reality in production. Note: django-storages
+# overrides `.url()` per-field through SupabaseMediaStorage.url(), so the
+# actual signed/public URLs returned by file fields are always correct
+# regardless of this setting. Setting MEDIA_URL truthfully here avoids
+# misleading log output and any direct references to settings.MEDIA_URL in
+# admin or third-party packages.
+MEDIA_URL = config('SUPABASE_STORAGE_PUBLIC_URL_BASE', default='')
+
 
 # ---------------------------------------------------------------------------
 # Logging — force JSON in prod (dev may override with LOG_FORMAT=plain)

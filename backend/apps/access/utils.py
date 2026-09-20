@@ -78,9 +78,22 @@ def verify_and_consume_token(jti: str, ttl: int = None) -> tuple[bool, str | Non
             return False, 'REPLAY_ATTACK'
         return True, None
     except Exception as e:
-        logger.error(f"Redis indisponible durante verificación anti-replay de QR (jti={jti}): {e}")
-        # Política Fail Open degradada: permitir el paso sin tirar excepción si Redis cae
-        return True, "REDIS_UNAVAILABLE"
+        fail_open = getattr(settings, 'ACCESS_ANTIREPLAY_FAIL_OPEN', False)
+        if fail_open:
+            logger.critical(
+                "Redis unavailable during QR anti-replay check (jti=%s) — "
+                "ACCESS_ANTIREPLAY_FAIL_OPEN=True, allowing access (degraded mode).",
+                jti,
+                exc_info=True,
+            )
+            return True, 'REDIS_UNAVAILABLE'
+        logger.error(
+            "Redis unavailable during QR anti-replay check (jti=%s) — "
+            "ACCESS_ANTIREPLAY_FAIL_OPEN=False, denying access (fail-closed).",
+            jti,
+            exc_info=True,
+        )
+        return False, 'REDIS_UNAVAILABLE'
 
 
 def verify_dynamic_qr_token(qr_token_str: str, consume: bool = True) -> tuple[bool, str | None, dict | None]:
@@ -122,7 +135,7 @@ def verify_dynamic_qr_token(qr_token_str: str, consume: bool = True) -> tuple[bo
 
         return True, None, payload
 
-    except Exception as e:
-        logger.error(f"Error al decodificar token QR: {e}")
+    except Exception:
+        logger.error("Error al decodificar token QR", exc_info=True)
         return False, 'INVALID_SIGNATURE', None
 

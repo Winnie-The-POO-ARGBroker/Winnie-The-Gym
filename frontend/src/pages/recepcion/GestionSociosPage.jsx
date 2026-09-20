@@ -19,11 +19,11 @@ import PlanPagoCard from '../../components/recepcion/PlanPagoCard'
 import SaludCard from '../../components/recepcion/SaludCard'
 import SocioResumenSidebar from '../../components/recepcion/SocioResumenSidebar'
 import SocioDetailModal from '../../components/admin/SocioDetailModal'
-import { getSocioColumns } from '../../components/admin/socioColumns'
-import { useSociosList } from '../../hooks/queries/useSociosData'
+import { getSocioColumns } from '../../components/admin/SocioColumns'
+import { useSociosList, useSocioMutations } from '../../hooks/queries/useSociosData'
 import { gestionSociosSchema, defaultValues } from './gestionSocios.schema'
 
-export default function GestionSocios() {
+export default function GestionSociosPage() {
   const [activeTab, setActiveTab] = useState('listado') // 'listado' | 'nuevo'
 
   // ─── Estado del listado ──────────────────────────────────────────
@@ -52,6 +52,7 @@ export default function GestionSocios() {
     handleSubmit,
     watch,
     setValue,
+    reset,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(gestionSociosSchema),
@@ -61,8 +62,16 @@ export default function GestionSocios() {
   const formData = watch()
   const onChange = (field, value) => setValue(field, value)
 
-  const onSubmit = (formDataSubmitted) => {
-    console.log('Form submitted:', formDataSubmitted)
+  const { create } = useSocioMutations()
+
+  const onSubmit = async (data) => {
+    try {
+      await create.mutateAsync(data)
+      reset()
+      setActiveTab('listado')
+    } catch {
+      // toast.error is already handled by useSocioMutations onError
+    }
   }
 
   const columns = getSocioColumns()
@@ -237,7 +246,7 @@ export default function GestionSocios() {
             {Object.keys(errors).length > 0 && (
               <div className="p-3 rounded-xl bg-bg-raised border border-subtle">
                 {Object.values(errors).map((e, i) => (
-                  <p key={i} className="text-xs text-rose-500">
+                  <p key={i} className="text-xs text-error-500">
                     {e.message}
                   </p>
                 ))}

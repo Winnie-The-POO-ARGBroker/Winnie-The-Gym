@@ -1,7 +1,8 @@
 ---
 name: "✨ Feature Request"
 about: "Nueva funcionalidad o mejora"
-labels: feature
+labels: ["feature"]
+assignees: []
 ---
 
 ## Descripción

@@ -1,7 +1,12 @@
 import logging
+import ssl as _ssl
+import sys as _sys
 from datetime import timedelta
 from pathlib import Path
+from urllib.parse import urlparse, urlunparse as _urlunparse
+
 from decouple import config
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -22,7 +27,6 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     # Third party
     'rest_framework',
-    'rest_framework.authtoken',
     'corsheaders',
     'django_filters',
     'drf_spectacular',
@@ -34,6 +38,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.google',
     'dj_rest_auth',
     'dj_rest_auth.registration',
+    'rest_framework_simplejwt.token_blacklist',
     # Apps
     'apps.common',
     'apps.users',
@@ -197,7 +202,7 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': False,
+    'BLACKLIST_AFTER_ROTATION': True,
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
@@ -206,6 +211,9 @@ REST_AUTH = {
     'JWT_AUTH_HTTPONLY': False,
     'USER_DETAILS_SERIALIZER': 'apps.users.serializers.UserDetailsSerializer',
     'JWT_SERIALIZER': 'apps.users.serializers.CustomJWTSerializer',
+    # JWT-only auth: disable the default token model so dj-rest-auth does not
+    # require rest_framework.authtoken in INSTALLED_APPS.
+    'TOKEN_MODEL': None,
 }
 
 AUTH_USER_MODEL = 'users.User'
@@ -278,7 +286,6 @@ if not _REDIS_URL:
 
 # Strip any trailing / and any existing DB number so `_redis_url_for(db)`
 # below can compose cleanly.
-from urllib.parse import urlparse, urlunparse as _urlunparse  # noqa: E402
 _parsed_redis = urlparse(_REDIS_URL)
 _REDIS_URL = _urlunparse(_parsed_redis._replace(path='')).rstrip('/')
 
@@ -328,7 +335,6 @@ CELERY_RESULT_BACKEND = _normalize_rediss(_force_single_db(config('CELERY_RESULT
 # is to declare the SSL options as dicts. Kombu (broker) and celery.backends
 # .redis (result backend) each have their own setting.
 if CELERY_BROKER_URL.startswith('rediss://'):
-    import ssl as _ssl
     CELERY_BROKER_USE_SSL = {'ssl_cert_reqs': _ssl.CERT_REQUIRED}
     CELERY_REDIS_BACKEND_USE_SSL = {'ssl_cert_reqs': _ssl.CERT_REQUIRED}
 
@@ -338,8 +344,6 @@ CELERY_TASK_SOFT_TIME_LIMIT = 45
 CELERY_TASK_ALWAYS_EAGER = config('CELERY_TASK_ALWAYS_EAGER', cast=bool, default=False)
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
-
-from django.core.exceptions import ImproperlyConfigured
 
 QR_SECRET_KEY = config('QR_SECRET_KEY', default=None)
 if not QR_SECRET_KEY:
@@ -369,7 +373,6 @@ CACHES = {
     }
 }
 if _CACHE_URL.startswith('rediss://'):
-    import ssl as _ssl
     CACHES['default']['OPTIONS'] = {'ssl_cert_reqs': _ssl.CERT_REQUIRED}
 
 MONGODB = {

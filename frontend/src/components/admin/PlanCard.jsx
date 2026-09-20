@@ -1,6 +1,6 @@
 import { Edit2, Archive, Trash2, Check, X, Sparkles } from 'lucide-react'
 
-export default function PlanCard({ plan, onEdit, onArchive, onDelete, onDuplicate }) {
+export default function PlanCard({ plan, onEdit, onArchive, onDelete, onDuplicate: _onDuplicate }) {
   const isPopular = plan.es_popular
 
   const formatPrice = (price) => {

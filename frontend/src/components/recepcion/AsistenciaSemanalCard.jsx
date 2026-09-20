@@ -16,7 +16,7 @@ export default function AsistenciaSemanalCard({ bars, labels = DEFAULT_LABELS, o
               onClick={() => onExport('pdf')}
               className="text-xs px-2 py-1 rounded bg-bg-base border border-subtle hover:border-primary text-text-secondary hover:text-primary transition-colors flex items-center gap-1 font-medium"
             >
-              <FileText className="w-3.5 h-3.5 text-blue-500" />
+              <FileText className="w-3.5 h-3.5 text-info-500" />
               <span>PDF</span>
             </button>
             <button
@@ -45,7 +45,7 @@ export default function AsistenciaSemanalCard({ bars, labels = DEFAULT_LABELS, o
         {bars.map((height, i) => (
           <div key={i} className="flex-1 flex flex-col items-center gap-3">
             <div
-              className="w-full bg-blue-500 rounded-t-sm"
+              className="w-full bg-info-500 rounded-t-sm"
               style={{ height: `${height}%` }}
             ></div>
           </div>
