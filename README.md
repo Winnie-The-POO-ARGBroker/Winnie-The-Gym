@@ -509,7 +509,7 @@ Antes de abrir un PR o una Issue, revisá los templates y convenciones del equip
 | [📌 Template Tarea](.github/ISSUE_TEMPLATE/task.md) | Para tareas técnicas y chores |
 | [🌿 Estrategia de Branching](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/Estrategia-de-Branching) | Naming de ramas y convenciones de commits |
 
-> Todos los PRs deben apuntar a `develop` y pasar revisión de **@MrForii** antes del merge.
+> Todos los PRs deben apuntar a `develop` y pasar revisión de al menos uno de **@MrForii** o **@Franco-Arce** antes del merge (two-approver model definido en `.github/CODEOWNERS`).
 
 <h2 align='center'>🎯 Nuestra Wiki</h2>
 

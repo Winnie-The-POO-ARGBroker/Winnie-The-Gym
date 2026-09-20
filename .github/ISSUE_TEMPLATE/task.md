@@ -1,7 +1,8 @@
 ---
 name: "📋 Tarea"
 about: "Tarea técnica, chore o deuda técnica"
-labels: chore
+labels: ["chore"]
+assignees: []
 ---
 
 ## Objetivo

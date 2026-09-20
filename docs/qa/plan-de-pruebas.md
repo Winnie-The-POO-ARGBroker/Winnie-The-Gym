@@ -18,6 +18,7 @@
 |---|---|---|---|
 | 1.0 | 14/09/2026 | Equipo QA (Magali Bechis, Gisele Lavisse, Jimena Gallegillo) con soporte técnico de Rodrigo Valdez | Elaboración inicial del Plan de Pruebas para la entrega de V&V del Sprint 3. |
 | 1.1 | 15/09/2026 | Rodrigo Valdez | Incorporación de tests automatizados frontend (Vitest + React Testing Library) sumados en el PR #77; actualización del conteo de tests backend (229 → 233) y ampliación de las secciones de estrategia, criterios, entregables, herramientas y planificación. |
+| 1.2 | 20/09/2026 | Franco Arce | Actualización post project-wide-cleanup (chore/project-wide-cleanup): refleja estado real del inventario de tests frontend post-Commits 1–4; agrega pytest-cov (backend) y @vitest/coverage-v8 (frontend); corrige conteo backend; actualiza pipeline de CI ahora existente. |
 
 ## 3. Información del Proyecto
 
@@ -47,7 +48,7 @@ Circuito de sign-off: el documento fue elaborado por Magali Bechis (QA Lead / Sc
 
 ## 5. Resumen Ejecutivo
 
-Este Plan de Pruebas cubre la actividad de Verificación y Validación (V&V) del Sprint 3 del proyecto Winnie The Gym. El backend (Django REST Framework), organizado en 8 apps (`access`, `classes`, `common`, `members`, `memberships`, `payments`, `reports`, `users`), cuenta con una suite de **229 tests automatizados** (pytest + pytest-django), verificada en este ciclo ejecutándose localmente vía `docker compose exec backend pytest -q` con resultado **229 passed**. El frontend (React/Vite), en cambio, **no tiene tests automatizados** al día de hoy: varias pantallas (`GestionSocios`, `ClasesPage`, `CredencialDigitalPage`) todavía trabajan sobre datos mockeados (`socioMockData`) o formularios que solo hacen `console.log` en su `onSubmit`, a la espera de integrarse con los endpoints reales del backend. Por eso, la estrategia combina **regresión automatizada** sobre el backend con **pruebas manuales guiadas** sobre los flujos de UI visibles del frontend.
+Este Plan de Pruebas cubre la actividad de Verificación y Validación (V&V) del Sprint 3 del proyecto Winnie The Gym. El backend (Django REST Framework), organizado en 8 apps (`access`, `classes`, `common`, `members`, `memberships`, `payments`, `reports`, `users`), cuenta con una suite de **233+ tests automatizados** (pytest + pytest-django + pytest-cov), ejecutable vía `docker compose exec backend pytest -q`. El frontend (React/Vite) cuenta con una **suite de tests automatizados con Vitest + React Testing Library** configurada en `frontend/vite.config.js` y `frontend/setupTests.js`; se ejecuta vía `docker compose exec frontend npx vitest run`. El inventario de tests cubre `Button`, `EmptyState`, `ClassSchedulePage` (setup inicial, PR #77) y se extiende progresivamente. Las páginas migradas a React Query en el project-wide-cleanup eliminan los datos mockeados y los `console.log` en `onSubmit`, habilitando pruebas de integración reales. La estrategia combina **regresión automatizada** sobre ambos stacks con **pruebas manuales guiadas** sobre los flujos de UI.
 
 Como insumo adicional, el equipo ya cuenta con: un reporte de requisitos no funcionales de performance/disponibilidad (`docs/reports/rnf01-rnf06.md`), un set de pruebas de carga con Locust (`backend/loadtests/`) y 8 reportes de bugs ya cargados y cerrados como GitHub Issues (#78 a #85) usando la plantilla oficial del repositorio.
 
@@ -75,7 +76,8 @@ Como insumo adicional, el equipo ya cuenta con: un reporte de requisitos no func
 | `payments` | Preferencias de pago MercadoPago, webhook de confirmación, cobro manual por recepción, diferencias de precio | Automatizada (pytest) |
 | `reports` | Exportación de reportes (morosidad, facturación, asistencia) en CSV/XLSX/PDF | Automatizada (pytest) |
 | `users` | Autenticación (login local + Google OAuth), perfil, infraestructura de API (paginación, docs, health check), hardening (ngrok/CSRF) | Automatizada (pytest) |
-| Frontend (manual) | Pantallas React: login, credencial digital, agenda/reserva de clases, terminal de acceso de recepción, gestión de socios | Manual (sin automatización aún) |
+| Frontend (automatizado) | Componentes UI (`Button`, `EmptyState`) y páginas (`ClassSchedulePage`); se amplía en cada sprint | Automatizada (Vitest + React Testing Library) |
+| Frontend (manual) | Pantallas React: login, credencial digital, agenda/reserva de clases, terminal de acceso de recepción, gestión de socios | Manual (complementa la automatización existente) |
 
 ## 8. Nuevas Funcionalidades a Probar
 
@@ -109,14 +111,15 @@ El backend cuenta con una suite de regresión automatizada de **229 tests** (pyt
 
 Se ejecutó la suite completa (`docker compose exec backend pytest -q`) el 14/09/2026 y el resultado fue **229 passed** (0 failed), con solo advertencias no bloqueantes (deprecación de `asyncio_default_fixture_loop_scope` y un warning de teardown de base de datos de test por conexión concurrente).
 
-**Importante (hallazgo honesto):** actualmente **no existe un pipeline de CI** (no hay directorio `.github/workflows/`). La suite se corre manualmente en el entorno local/Docker de cada desarrollador antes de mergear. Esto es un riesgo de proceso (ver sección 24), no un defecto de los tests en sí — los 229 tests son reales y pasan de forma reproducible.
+**Actualización (v1.2):** el pipeline de CI fue implementado como parte del project-wide-cleanup (`.github/workflows/ci.yml`), con jobs para backend (pytest + pytest-cov), frontend (vitest + eslint) y build. A partir de ahora, la suite se corre automáticamente en cada PR contra `develop`. Los tests (233+ backend) son reales y pasan de forma reproducible.
 
 Cada vez que se agregue o modifique una historia de usuario, la regresión mínima exigida es: correr la suite completa de pytest y, para el frontend, re-ejecutar manualmente los 5 casos de la sección "Frontend (manual)" del archivo `docs/qa/casos-de-prueba.csv`.
 
 ## 10. Funcionalidades que NO se van a Probar
 
-- Automatización de tests de frontend (unitarios/E2E): no existen en el proyecto al día de hoy; quedan fuera de esta ronda de V&V como automatización, se cubren solo manualmente.
-- Integración real contra las cuentas de producción de MercadoPago, Google OAuth, Mailtrap o Sentry (se usan sandboxes/mocks en los tests).
+- E2E tests (Playwright/Cypress): no implementados aún; los flujos completos de usuario se cubren manualmente.
+- Tests de integración real contra cuentas de producción de MercadoPago, Google OAuth, Mailtrap o Sentry (se usan sandboxes/mocks en los tests).
+- Pruebas de aceptación de infraestructura de despliegue en sí misma (Render, Vercel, Supabase, MongoDB Atlas, Upstash) más allá de lo que ya cubre el health check (`/api/health/`).
 - Pruebas de aceptación de infraestructura de despliegue en sí misma (Render, Vercel, Supabase, MongoDB Atlas, Upstash) más allá de lo que ya cubre el health check (`/api/health/`).
 - Pruebas de accesibilidad (a11y) formales y pruebas cross-browser exhaustivas.
 - Pruebas de penetración/seguridad ofensivas formales (pentesting); solo se valida lo que el propio código de tests ya ejerce (anti-replay, HMAC, gating por rol).
@@ -136,8 +139,8 @@ Cada vez que se agregue o modifique una historia de usuario, la regresión míni
 ## 12. Criterios de Aceptación/Rechazo
 
 **Aceptación:**
-- La suite completa de pytest (233 tests backend) debe ejecutarse en verde (0 failed) antes de considerar aprobado un módulo backend.
-- La suite de Vitest + React Testing Library (3 tests frontend al momento de esta versión) debe ejecutarse en verde antes de considerar aprobado un cambio en las áreas cubiertas (`Button`, `EmptyState`, `ClassSchedulePage`).
+- La suite completa de pytest (233+ tests backend, incluyendo los nuevos tests de Commit 1 para `GoogleLoginView`, `CompleteProfileView` y boundary tests de `reports`) debe ejecutarse en verde (0 failed) antes de considerar aprobado un módulo backend.
+- La suite de Vitest + React Testing Library (inventario inicial: `Button`, `EmptyState`, `ClassSchedulePage`; se amplía con cada sprint) debe ejecutarse en verde antes de considerar aprobado un cambio en las áreas cubiertas.
 - Cada caso de prueba manual del frontend debe ejecutarse y documentar su Resultado Obtenido; se acepta el caso si el resultado obtenido coincide con el esperado.
 - Los RNF01 y RNF06 deben cumplir los umbrales definidos en `docs/reports/rnf01-rnf06.md` (p95 < 2000ms y disponibilidad ≥ 99.9% respectivamente).
 
@@ -220,15 +223,17 @@ Según `docker-compose.yml` (raíz del repo) y la wiki del equipo (`Guia-de-Setu
 
 ## 18. Herramientas de Testing Requeridas
 
-- **pytest** + **pytest-django** + **pytest-asyncio** (asyncio_mode=auto, `backend/pytest.ini`) — motor de tests automatizados backend.
+- **pytest** + **pytest-django** + **pytest-asyncio** (asyncio_mode=auto, `backend/pytest.ini`) — motor de tests automatizados backend. Configurado con `addopts = --cov=apps --cov-report=term-missing:skip-covered`.
+- **pytest-cov** + **coverage.py** — cobertura de código backend. Genera `backend/.coverage` y `backend/coverage.xml` (excluidos de git).
 - **Django REST Framework test client** (`APIClient`) — pruebas de endpoints HTTP.
-- **Vitest** + **React Testing Library** + **jsdom** (`frontend/vite.config.js`, `frontend/setupTests.js`) — motor de tests automatizados frontend (componentes UI y páginas). Ejecutable vía `docker compose exec frontend npx vitest run`. Cobertura inicial: `Button`, `EmptyState`, `ClassSchedulePage` — se planea extender a `LoginPage`, `AuthCallback` y `DashboardPage` en el próximo sprint.
+- **Vitest** + **React Testing Library** + **jsdom** (`frontend/vite.config.js`, `frontend/setupTests.js`) — motor de tests automatizados frontend (componentes UI y páginas). Ejecutable vía `docker compose exec frontend npx vitest run`. Inventario actual: `Button`, `EmptyState`, `ClassSchedulePage`. Se amplía con cada sprint.
+- **@vitest/coverage-v8** — cobertura de código frontend. Genera `frontend/coverage/` (excluida de git).
+- **GitHub Actions CI** (`.github/workflows/ci.yml`) — pipeline automático con jobs: backend (pytest + cobertura), frontend (vitest + eslint + build). Se dispara en cada PR contra `develop`.
 - **Locust 2.31.5** (`backend/loadtests/locustfile.py`) — pruebas de carga para RNF01/RNF06.
 - **Comando de gestión `availability_report`** — cálculo empírico de disponibilidad del módulo de accesos.
-- **Docker / Docker Compose** — entorno reproducible de ejecución (db, redis, mongo, backend, frontend).
+- **Docker / Docker Compose** — entorno reproducible de ejecución (db, redis, mongo, backend, frontend, celery-worker, celery-beat).
 - **GitHub Issues** con plantilla `.github/ISSUE_TEMPLATE/bug_report.md` — registro y seguimiento de bugs.
 - **Navegador (Chrome/Edge/Firefox)** — ejecución manual de casos de frontend.
-- Herramienta de cobertura de código (ej. `coverage.py`/`pytest-cov` en backend, `@vitest/coverage-v8` en frontend): no configurada al momento de este relevamiento — [PENDIENTE: definir con el equipo] si se va a incorporar.
 - Cliente REST manual (Postman/Insomnia) para exploración ad-hoc: [PENDIENTE: definir con el equipo].
 
 ## 19. Personal y Roles
@@ -249,14 +254,14 @@ Fuente: wiki del equipo, página Home, tabla "Equipo".
 La actividad de V&V se ejecuta en paralelo al cierre del Sprint 3 (que finaliza el 20/09/2026), con entrega específica de esta actividad el 17/09/2026. El trabajo se organiza en cuatro frentes:
 
 1. **Regresión automatizada backend:** ejecución de la suite pytest completa (233 tests) sobre los 8 módulos.
-2. **Regresión automatizada frontend:** ejecución de la suite Vitest (`npx vitest run`) sobre los componentes y páginas cubiertos (`Button`, `EmptyState`, `ClassSchedulePage` en esta ronda). No reemplaza al testing manual, lo complementa protegiendo contra regresiones en las áreas ya cubiertas.
+2. **Regresión automatizada frontend:** ejecución de la suite Vitest (`npx vitest run` o vía CI) sobre los componentes y páginas cubiertos (`Button`, `EmptyState`, `ClassSchedulePage` en el inventario inicial; extender en futuros sprints). No reemplaza al testing manual, lo complementa protegiendo contra regresiones en las áreas ya cubiertas.
 3. **Testing manual frontend:** ejecución guiada de los 5 casos definidos en `casos-de-prueba.csv` para las pantallas de login, credencial digital, reservas de clases, terminal de acceso y gestión de socios.
 4. **Consolidación de hallazgos:** cualquier defecto nuevo se carga como GitHub Issue con la plantilla oficial, siguiendo el mismo formato que los issues #78-#85 ya cerrados.
 
 ## 21. Procedimientos de Prueba
 
 1. Levantar el entorno con `docker compose up` (o confirmar que los contenedores ya estén corriendo con `docker compose ps`).
-2. Para regresión backend: correr `docker compose exec backend pytest -q` y confirmar `229 passed`. Si hay fallos, registrar el módulo afectado y abrir un Issue con la plantilla de bug report.
+2. Para regresión backend: correr `docker compose exec backend pytest -q` y confirmar que todos los tests pasan (233+ tras los Commits 1–2 del project-wide-cleanup). Si hay fallos, registrar el módulo afectado y abrir un Issue con la plantilla de bug report.
 3. Para testing manual frontend: acceder a http://localhost:5173, iniciar sesión con el rol correspondiente a cada caso (los accesos rápidos de demo en `LoginPage.jsx` solo están disponibles en modo desarrollo — `import.meta.env.DEV`), ejecutar los pasos del caso, y completar `Resultado Obtenido` y `Estado` en `casos-de-prueba.csv`.
 4. Ante un resultado divergente, documentar evidencia (captura/video) y cargar un Issue con la plantilla `.github/ISSUE_TEMPLATE/bug_report.md`.
 5. Actualizar este plan y la matriz de casos con los resultados finales antes de la fecha de entrega (17/09/2026).
@@ -293,7 +298,7 @@ Referencia: **R**=Responsable/Ejecutor, **A**=Aprobador, **C**=Consultado, **I**
 
 **Riesgos técnicos adicionales detectados durante este relevamiento:**
 
-- **Ausencia de pipeline de CI:** no existe `.github/workflows/`; la regresión de 229 tests se corre manualmente, lo que depende de la disciplina del equipo antes de cada merge.
+- **CI pipeline implementado** (`.github/workflows/ci.yml`, Commit 1 de project-wide-cleanup): la regresión ahora se corre automáticamente en cada PR contra `develop`, eliminando la dependencia de la disciplina manual del equipo.
 - **Frontend sin tests automatizados y con datos mockeados:** `ClasesPage.jsx` y `CredencialDigitalPage.jsx` usan `socioMockData` (`generateMockQRToken`, `getStoredClasses`) en lugar de las APIs reales (marcado explícitamente con comentarios `TODO: reemplazar por API real` en el código), y `GestionSocios.jsx` tiene un `onSubmit` que solo hace `console.log('Form submitted:', data)` sin llamar al backend. Esto implica que varios de los casos de prueba manuales de esta ronda validan la UI/UX del flujo, pero **no** validan aún la integración real end-to-end con el backend.
 - **Bugs ya identificados y corregidos** (evidencia de riesgos reales del proyecto, Issues #78-#85 cerrados): entre ellos, `ProtectedRoute` no verificaba el token (acceso a rutas protegidas sin sesión, #78), `has_active_membership` devolvía `False` incondicional bloqueando todo QR (#80), y URL de API hardcodeada a `localhost:8000` (#85) — confirman que las categorías de riesgo de autenticación/autorización y de configuración de entorno ya se materializaron una vez en este proyecto.
 

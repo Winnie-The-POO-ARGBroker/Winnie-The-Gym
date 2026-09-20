@@ -8,7 +8,8 @@ Versionado según [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-_Sin cambios pendientes al día de la fecha._
+### En progreso
+- **project-wide-cleanup** (branch `chore/project-wide-cleanup`, 4 commits atómicos): security hardening + CI + backend refactor + frontend React Query migration + DevOps hygiene. PR por abrirse cuando el equipo lo indique.
 
 ---
 
