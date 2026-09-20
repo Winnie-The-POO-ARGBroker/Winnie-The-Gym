@@ -1,8 +1,6 @@
 import { useState, useMemo } from 'react'
-import { toast } from 'sonner'
 import { Calendar } from 'lucide-react'
 import MemberLayout from '../../components/layout/MemberLayout'
-import Badge from '../../components/ui/Badge'
 import Button from '../../components/ui/Button'
 import Card from '../../components/ui/Card'
 import FilterButton from '../../components/ui/FilterButton'
@@ -10,20 +8,43 @@ import ClassCard from '../../components/socio/ClassCard'
 import EmptyState from '../../components/ui/EmptyState'
 import { CATEGORIAS_CLASES } from '../../constants/clases'
 import { generateDaysAgenda } from '../../utils/agenda'
+import { useClasesList } from '../../hooks/queries/useClases'
+import { useInscripcionesMutations } from '../../hooks/queries/useInscripciones'
 
 const DIAS_AGENDA = generateDaysAgenda()
-import api from '../../services/api'
-import { ALL_RECORDS_PAGE_SIZE } from '../../services/constants'
-import { useEffect, useCallback } from 'react'
 
-const IS_DEV = import.meta.env.DEV
+/** Map a YYYY-MM-DD date string to its lowercase Spanish weekday name. */
+function getDiaParam(dateStr) {
+  const d = new Date(`${dateStr}T00:00:00`)
+  const diasMap = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado']
+  return diasMap[d.getDay()]
+}
+
+/** Convert a raw API class object to the shape ClassCard expects. */
+function mapClase(c) {
+  const [h, m] = c.hora.split(':').map(Number)
+  const dateObj = new Date()
+  dateObj.setHours(h, m + c.duracion_min, 0)
+  const horaFin = `${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}`
+  return {
+    id: c.id,
+    fecha: undefined,
+    nombre: c.nombre,
+    categoria: c.categoria,
+    instructor: c.instructor,
+    instructorAvatar: '',
+    horaInicio: c.hora.substring(0, 5),
+    horaFin,
+    duracionMin: c.duracion_min,
+    sala: c.sala,
+    cuposTotales: c.cupo_maximo,
+    cuposReservados: c.cupos_reservados,
+    isBooked: c.user_inscrito,
+    descripcion: c.descripcion,
+  }
+}
 
 export default function ClasesPage() {
-  // Catálogo de clases con persistencia local simulada
-  // TODO: reemplazar por API real -> GET /api/classes/
-  const [classesList, setClassesList] = useState([])
-  const [isLoading, setIsLoading] = useState(false)
-  
   // Filtros interactivos con fecha de hoy por defecto
   const [selectedDay, setSelectedDay] = useState(
     () => new Date().toISOString().split('T')[0]
@@ -33,149 +54,43 @@ export default function ClasesPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [activeTab, setActiveTab] = useState('catalogo') // 'catalogo' | 'mis_reservas'
 
-  // Fetch clases with backend filters
-  const fetchClasses = useCallback(async () => {
-    setIsLoading(true)
-    try {
-      // Map selectedDay to weekday (lunes, martes...)
-      const d = new Date(`${selectedDay}T00:00:00`)
-      const diasMap = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado']
-      const diaParam = diasMap[d.getDay()]
+  // Build query params for catalog tab
+  const catalogParams = useMemo(() => {
+    const params = { dia: getDiaParam(selectedDay) }
+    if (selectedCategory !== 'todas') params.categoria = selectedCategory
+    if (searchQuery.trim()) params.search = searchQuery
+    if (selectedTurno === 'manana') params.hora_hasta = '11:59:59'
+    if (selectedTurno === 'tarde') params.hora_desde = '12:00:00'
+    return params
+  }, [selectedDay, selectedCategory, searchQuery, selectedTurno])
 
-      const params = {
-        dia: diaParam,
-      }
-      if (selectedCategory !== 'todas') params.categoria = selectedCategory
-      if (searchQuery.trim()) params.search = searchQuery
+  // Catalog query — only active when catalog tab is shown
+  const { data: rawCatalog = [], isFetching: loadingCatalog } = useClasesList(catalogParams, {
+    enabled: activeTab === 'catalogo',
+  })
 
-      if (selectedTurno === 'manana') params.hora_hasta = '11:59:59'
-      if (selectedTurno === 'tarde') params.hora_desde = '12:00:00'
+  // All-classes query for mis_reservas — only active on that tab
+  const { data: rawAll = [], isFetching: loadingAll } = useClasesList({}, {
+    enabled: activeTab === 'mis_reservas',
+  })
 
-      const res = await api.get('/classes/clases/', { params })
-      const formattedClasses = res.data.results.map((c) => {
-        // Calculate horaFin
-        const [h, m] = c.hora.split(':').map(Number)
-        const dateObj = new Date()
-        dateObj.setHours(h, m + c.duracion_min, 0)
-        const horaFin = `${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}`
-        
-        return {
-          id: c.id,
-          fecha: undefined,
-          nombre: c.nombre,
-          categoria: c.categoria,
-          instructor: c.instructor,
-          instructorAvatar: '',
-          horaInicio: c.hora.substring(0, 5),
-          horaFin: horaFin,
-          duracionMin: c.duracion_min,
-          sala: c.sala,
-          cuposTotales: c.cupo_maximo,
-          cuposReservados: c.cupos_reservados,
-          isBooked: c.user_inscrito,
-          descripcion: c.descripcion,
-        }
-      })
-      setClassesList(formattedClasses)
-    } catch (error) {
-      toast.error('Error al cargar clases')
-      console.error(error)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [selectedDay, selectedCategory, selectedTurno, searchQuery])
+  const { inscribir, cancelar } = useInscripcionesMutations()
 
-  useEffect(() => {
-    // Only fetch if catalog tab is active, or initially
-    if (activeTab === 'catalogo') {
-      const timeoutId = setTimeout(() => {
-        fetchClasses()
-      }, 300)
-      return () => clearTimeout(timeoutId)
-    }
-  }, [fetchClasses, activeTab])
+  const isLoading = activeTab === 'catalogo' ? loadingCatalog : loadingAll
 
-  // Mis reservas
-  const fetchMyBookings = useCallback(async () => {
-    setIsLoading(true)
-    try {
-      // We do not have a dedicated endpoint for my bookings yet, so we get all classes where user is enrolled.
-      // This is a temporary workaround until an endpoint is made. We can fetch all and filter or use the API if it supports it.
-      // But since we want to list active bookings, we'll fetch them without day/category filters for now.
-      const res = await api.get('/classes/clases/', { params: { page_size: ALL_RECORDS_PAGE_SIZE } }) 
-      const myBooks = res.data.results
-        .filter(c => c.user_inscrito)
-        .map(c => {
-          const [h, m] = c.hora.split(':').map(Number)
-          const dateObj = new Date()
-          dateObj.setHours(h, m + c.duracion_min, 0)
-          const horaFin = `${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}`
+  // Map raw API data to ClassCard shape
+  const filteredClasses = useMemo(
+    () => (activeTab === 'catalogo' ? rawCatalog : rawAll.filter((c) => c.user_inscrito)).map(mapClase),
+    [activeTab, rawCatalog, rawAll]
+  )
 
-          return {
-            id: c.id,
-            fecha: undefined, 
-            nombre: c.nombre,
-            categoria: c.categoria,
-            instructor: c.instructor,
-            instructorAvatar: '',
-            horaInicio: c.hora.substring(0, 5),
-            horaFin: horaFin,
-            duracionMin: c.duracion_min,
-            sala: c.sala,
-            cuposTotales: c.cupo_maximo,
-            cuposReservados: c.cupos_reservados,
-            isBooked: true,
-            descripcion: c.descripcion,
-          }
-        })
-      setClassesList(myBooks)
-    } catch (error) {
-      toast.error('Error al cargar tus reservas')
-      console.error(error)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
+  const myBookings = useMemo(
+    () => rawAll.filter((c) => c.user_inscrito).map(mapClase),
+    [rawAll]
+  )
 
-  useEffect(() => {
-    if (activeTab === 'mis_reservas') {
-      fetchMyBookings()
-    }
-  }, [fetchMyBookings, activeTab])
-
-  // Clases reservadas por el socio (para el contador del tab)
-  const myBookings = useMemo(() => {
-    return classesList.filter((c) => c.isBooked)
-  }, [classesList])
-
-  // Filtrado de clases para el catálogo ya lo hace el backend!
-  const filteredClasses = classesList
-
-  // Acción de reservar cupo
-  const handleBookClass = async (classId) => {
-    try {
-      await api.post(`/classes/clases/${classId}/inscribir/`)
-      toast.success('¡Cupo reservado con éxito!')
-      if (activeTab === 'catalogo') fetchClasses()
-      else fetchMyBookings()
-    } catch (error) {
-      toast.error(error.response?.data?.detail || 'Error al reservar la clase')
-      console.error(error)
-    }
-  }
-
-  // Acción de cancelar reserva
-  const handleCancelBooking = async (classId) => {
-    try {
-      await api.post(`/classes/clases/${classId}/cancelar/`)
-      toast.info('Reserva cancelada correctamente')
-      if (activeTab === 'catalogo') fetchClasses()
-      else fetchMyBookings()
-    } catch (error) {
-      toast.error(error.response?.data?.detail || 'Error al cancelar reserva')
-      console.error(error)
-    }
-  }
+  const handleBookClass = (classId) => inscribir.mutate(classId)
+  const handleCancelBooking = (classId) => cancelar.mutate(classId)
 
   // Info del día seleccionado
   const currentDayInfo = DIAS_AGENDA.find((d) => d.id === selectedDay)
@@ -344,7 +259,7 @@ export default function ClasesPage() {
                   title="Cargando clases..."
                   message="Por favor esperá unos segundos."
                 />
-              ) : !IS_DEV && classesList.length === 0 ? (
+              ) : filteredClasses.length === 0 && !searchQuery && selectedCategory === 'todas' ? (
                 <EmptyState
                   icon={Calendar}
                   title="No hay clases programadas"

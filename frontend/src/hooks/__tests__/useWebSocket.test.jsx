@@ -64,7 +64,7 @@ describe('useWebSocket', () => {
       clearAuth: vi.fn(),
     })
 
-    const { result } = renderHook(() => useWebSocket('/ws/test/'))
+    renderHook(() => useWebSocket('/ws/test/'))
 
     await waitFor(() => expect(mockWebSocket.onclose).toBeInstanceOf(Function))
 

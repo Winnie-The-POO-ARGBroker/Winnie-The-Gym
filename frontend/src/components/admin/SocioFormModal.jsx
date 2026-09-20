@@ -116,7 +116,7 @@ export default function SocioFormModal({
           {/* Nombre */}
           <div>
             <label className="block text-xs font-medium text-text-secondary mb-1">
-              Nombre <span className="text-rose-500">*</span>
+              Nombre <span className="text-error-500">*</span>
             </label>
             <input
               type="text"
@@ -124,11 +124,11 @@ export default function SocioFormModal({
               onChange={(e) => handleChange('nombre', e.target.value)}
               placeholder="Ej. Juan"
               className={`w-full px-3 py-2 rounded-xl text-sm bg-bg-raised border ${
-                errors.nombre ? 'border-rose-500' : 'border-subtle'
+                errors.nombre ? 'border-error-500' : 'border-subtle'
               } text-text-primary focus:outline-none focus:border-orange-500 transition-colors`}
             />
             {errors.nombre && (
-              <p className="text-xs text-rose-500 mt-1 flex items-center gap-1">
+              <p className="text-xs text-error-500 mt-1 flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" /> {errors.nombre}
               </p>
             )}
@@ -137,7 +137,7 @@ export default function SocioFormModal({
           {/* Apellido */}
           <div>
             <label className="block text-xs font-medium text-text-secondary mb-1">
-              Apellido <span className="text-rose-500">*</span>
+              Apellido <span className="text-error-500">*</span>
             </label>
             <input
               type="text"
@@ -145,11 +145,11 @@ export default function SocioFormModal({
               onChange={(e) => handleChange('apellido', e.target.value)}
               placeholder="Ej. Pérez"
               className={`w-full px-3 py-2 rounded-xl text-sm bg-bg-raised border ${
-                errors.apellido ? 'border-rose-500' : 'border-subtle'
+                errors.apellido ? 'border-error-500' : 'border-subtle'
               } text-text-primary focus:outline-none focus:border-orange-500 transition-colors`}
             />
             {errors.apellido && (
-              <p className="text-xs text-rose-500 mt-1 flex items-center gap-1">
+              <p className="text-xs text-error-500 mt-1 flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" /> {errors.apellido}
               </p>
             )}
@@ -160,7 +160,7 @@ export default function SocioFormModal({
           {/* DNI */}
           <div>
             <label className="block text-xs font-medium text-text-secondary mb-1">
-              DNI <span className="text-rose-500">*</span>
+              DNI <span className="text-error-500">*</span>
             </label>
             <input
               type="text"
@@ -168,11 +168,11 @@ export default function SocioFormModal({
               onChange={(e) => handleChange('dni', e.target.value.replace(/\D/g, ''))}
               placeholder="Ej. 38450123"
               className={`w-full px-3 py-2 rounded-xl text-sm bg-bg-raised border ${
-                errors.dni ? 'border-rose-500' : 'border-subtle'
+                errors.dni ? 'border-error-500' : 'border-subtle'
               } text-text-primary focus:outline-none focus:border-orange-500 transition-colors`}
             />
             {errors.dni && (
-              <p className="text-xs text-rose-500 mt-1 flex items-center gap-1">
+              <p className="text-xs text-error-500 mt-1 flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" /> {errors.dni}
               </p>
             )}
@@ -252,7 +252,7 @@ export default function SocioFormModal({
           </div>
 
           {isEditing && socioToEdit?.certificado_medico_url && !certificadoFile && (
-            <div className="flex items-center justify-between text-xs p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-500">
+            <div className="flex items-center justify-between text-xs p-2 rounded-lg bg-success-500/10 border border-success-500/20 text-success-500">
               <span className="flex items-center gap-1">
                 <CheckCircle2 className="w-3.5 h-3.5" /> Posee certificado médico cargado
               </span>
@@ -285,13 +285,13 @@ export default function SocioFormModal({
           />
 
           {certificadoFile && (
-            <p className="text-xs text-emerald-500 flex items-center gap-1">
+            <p className="text-xs text-success-500 flex items-center gap-1">
               <CheckCircle2 className="w-3 h-3" /> Seleccionado: {certificadoFile.name} ({(certificadoFile.size / 1024 / 1024).toFixed(2)} MB)
             </p>
           )}
 
           {fileError && (
-            <p className="text-xs text-rose-500 flex items-center gap-1">
+            <p className="text-xs text-error-500 flex items-center gap-1">
               <AlertCircle className="w-3 h-3" /> {fileError}
             </p>
           )}

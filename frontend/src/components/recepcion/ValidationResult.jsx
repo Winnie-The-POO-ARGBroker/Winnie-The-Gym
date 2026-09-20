@@ -1,5 +1,5 @@
 import Button from '../ui/Button';
-import { QrCode, CheckCircle2, XCircle, AlertCircle, LogOut, Check, User } from 'lucide-react';
+import { QrCode, CheckCircle2, XCircle, AlertCircle, Check, User } from 'lucide-react';
 import { getTimeAgo } from '../../utils/formatDate';
 
 const DENIAL_REASONS = {
@@ -10,7 +10,7 @@ const DENIAL_REASONS = {
   TOKEN_EXPIRED: 'Código QR expirado',
 };
 
-export default function ValidationResult({ result, onConfirmEntry, onRegisterExit }) {
+export default function ValidationResult({ result, onConfirmEntry, onRegisterExit: _onRegisterExit }) {
   const status = result?.status || 'idle';
   const message = result?.message || '';
   const denialReason = result?.denialReason || result?.log?.denial_reason;

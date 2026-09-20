@@ -1,8 +1,7 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { vi } from 'vitest';
-import AccesoTerminal from '../AccesoTerminal';
-import { manualAccess, scanQR } from '../../../services/accessService';
-import useWebSocket from '../../../hooks/useWebSocket';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import AccesoTerminalPage from '../AccesoTerminalPage';
+import { manualAccess } from '../../../services/accessService';
 
 // Mocks
 vi.mock('../../../services/accessService', () => ({
@@ -37,11 +36,10 @@ vi.mock('@yudiel/react-qr-scanner', () => ({
 describe('AccesoTerminal', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.resetAllMocks();
   });
 
   it('renders aforo from websocket', () => {
-    render(<AccesoTerminal />);
+    render(<AccesoTerminalPage />);
     expect(screen.getByText(/Aforo 150\/200/)).toBeInTheDocument();
   });
 
@@ -57,7 +55,7 @@ describe('AccesoTerminal', () => {
       }
     });
 
-    render(<AccesoTerminal />);
+    render(<AccesoTerminalPage />);
     
     // Switch to manual mode
     fireEvent.click(screen.getByRole('button', { name: /DNI manual/i }));
@@ -93,7 +91,7 @@ describe('AccesoTerminal', () => {
       }
     });
 
-    render(<AccesoTerminal />);
+    render(<AccesoTerminalPage />);
     
     // Switch to manual mode
     fireEvent.click(screen.getByRole('button', { name: /DNI manual/i }));
@@ -113,7 +111,7 @@ describe('AccesoTerminal', () => {
   it('handles network error fallback', async () => {
     manualAccess.mockRejectedValueOnce(new Error('Network Error'));
 
-    render(<AccesoTerminal />);
+    render(<AccesoTerminalPage />);
     
     // Switch to manual mode
     fireEvent.click(screen.getByRole('button', { name: /DNI manual/i }));

@@ -209,7 +209,7 @@ export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = nu
                 <Sparkles className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-sm font-bold text-text-primary">Destacar como "POPULAR"</p>
+                <p className="text-sm font-bold text-text-primary">Destacar como &quot;POPULAR&quot;</p>
                 <p className="text-xs text-text-secondary">
                   Aparecerá con borde naranja brillante y etiqueta en el portal de membresías
                 </p>

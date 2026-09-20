@@ -3,7 +3,7 @@ import MovementList from '../MovementList'
 import Button from '../../ui/Button'
 import { useAccessLogs, mapAccessLog } from '../../../hooks/queries/useDashboardData'
 import useWebSocket from '../../../hooks/useWebSocket'
-import { GYM_MAX_CAPACITY } from '../../../services/constants'
+import { GYM_MAX_CAPACITY } from '../../../constants/pagination'
 
 export default function RecepcionistaDashboardView({ navigate }) {
   const { data: logsData = [], isLoading: isLoadingLogs, isError: isErrorLogs } = useAccessLogs(5)

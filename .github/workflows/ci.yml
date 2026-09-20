@@ -117,15 +117,10 @@ jobs:
         run: npm ci
 
       - name: Lint
-        # Pre-existing lint issues from develop are tracked and fixed in the
-        # frontend refactor commit. Allow failures here so CI is not blocked
-        # before that commit lands; remove `|| true` once lint is clean.
-        run: npm run lint || true
+        run: npm run lint
 
       - name: Run tests
-        # 4 pre-existing AccesoTerminal WebSocket tests fail on develop.
-        # They are fixed in the frontend refactor commit; remove `|| true` then.
-        run: npx vitest run || true
+        run: npx vitest run
 
       - name: Build
         run: npm run build

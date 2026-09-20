@@ -20,8 +20,8 @@ import AttendancePage from './pages/AttendancePage'
 import CreateClassPage from './pages/CreateClassPage'
 import ClassSchedulePage from './pages/ClassSchedulePage'
 
-import AforoMonitor from './pages/recepcion/AforoMonitor'
-import GestionSocios from './pages/recepcion/GestionSocios'
+import AforoMonitorPage from './pages/recepcion/AforoMonitorPage'
+import GestionSociosPage from './pages/recepcion/GestionSociosPage'
 import ReportesPage from './pages/recepcion/ReportesPage'
 
 import AdminPlanesPage from './pages/admin/AdminPlanesPage'
@@ -29,7 +29,7 @@ import AdminSociosPage from './pages/admin/AdminSociosPage'
 import CheckoutPage from './pages/socio/CheckoutPage'
 import CobroManualPage from './pages/recepcion/CobroManualPage'
 
-const AccesoTerminal = lazy(() => import('./pages/recepcion/AccesoTerminal'))
+const AccesoTerminalPage = lazy(() => import('./pages/recepcion/AccesoTerminalPage'))
 
 const COMING_SOON_PATHS = ['/configuracion']
 
@@ -101,12 +101,12 @@ export default function App() {
         <Route path="/recepcion/acceso" element={
           <ProtectedRoute roles={['administrador', 'recepcionista']}>
             <Suspense fallback={<Skeleton className="h-64 w-full" />}>
-              <AccesoTerminal />
+              <AccesoTerminalPage />
             </Suspense>
           </ProtectedRoute>
         } />
-        <Route path="/recepcion/aforo" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><AforoMonitor /></ProtectedRoute>} />
-        <Route path="/recepcion/socios" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><GestionSocios /></ProtectedRoute>} />
+        <Route path="/recepcion/aforo" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><AforoMonitorPage /></ProtectedRoute>} />
+        <Route path="/recepcion/socios" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><GestionSociosPage /></ProtectedRoute>} />
         <Route path="/recepcion/reportes" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><ReportesPage /></ProtectedRoute>} />
         <Route path="/admin/reportes" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><ReportesPage /></ProtectedRoute>} />
         <Route path="/reportes" element={<Navigate to="/admin/reportes" replace />} />

@@ -17,7 +17,8 @@ export function useClassAttendees(classId) {
 
   useEffect(() => {
     fetchAttendees()
-  }, [classId])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [classId]) // fetchAttendees is stable within component scope; classId is the real trigger
 
   const toggleStatus = async (attendeeId, newStatus) => {
     // newStatus is conceptually 'presente' | 'ausente' in UI,

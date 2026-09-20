@@ -57,7 +57,7 @@ export default function LoginPage() {
           <h2 className="text-4xl font-bold text-white leading-tight">
             Tu gimnasio,<br />sin el caos.
           </h2>
-          <p className="text-base leading-relaxed text-neutral-400">
+          <p className="text-base leading-relaxed text-text-tertiary">
             Socios, clases y accesos en tiempo real. Todo desde un solo lugar, para que te enfoques en lo que importa.
           </p>
         </div>

@@ -20,7 +20,7 @@ import FilterPanel from '../../components/ui/FilterPanel'
 import Modal from '../../components/ui/Modal'
 import SocioFormModal from '../../components/admin/SocioFormModal'
 import SocioDetailModal from '../../components/admin/SocioDetailModal'
-import { getSocioColumns } from '../../components/admin/socioColumns'
+import { getSocioColumns } from '../../components/admin/SocioColumns'
 import { useSociosList, useSociosStats, useSocioMutations } from '../../hooks/queries/useSociosData'
 
 export default function AdminSociosPage() {
@@ -89,7 +89,7 @@ export default function AdminSociosPage() {
       let socioId = formData.id
       if (socioId) {
         // Omitir id del cuerpo de PATCH para mantener contrato limpio con DRF
-        const { id, ...dataToPatch } = formData
+        const { id: _id, ...dataToPatch } = formData
         await patch.mutateAsync({ id: socioId, data: dataToPatch })
       } else {
         const res = await create.mutateAsync(formData)
@@ -153,7 +153,7 @@ export default function AdminSociosPage() {
           </div>
 
           <div className="p-4 rounded-2xl bg-bg-surface border border-subtle flex items-center gap-4 shadow-sm">
-            <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+            <div className="w-12 h-12 rounded-xl bg-success-500/10 flex items-center justify-center text-success-500">
               <UserCheck className="w-6 h-6" />
             </div>
             <div>
@@ -165,7 +165,7 @@ export default function AdminSociosPage() {
           </div>
 
           <div className="p-4 rounded-2xl bg-bg-surface border border-subtle flex items-center gap-4 shadow-sm">
-            <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500">
+            <div className="w-12 h-12 rounded-xl bg-info-500/10 flex items-center justify-center text-info-500">
               <FileCheck className="w-6 h-6" />
             </div>
             <div>
@@ -177,7 +177,7 @@ export default function AdminSociosPage() {
           </div>
 
           <div className="p-4 rounded-2xl bg-bg-surface border border-subtle flex items-center gap-4 shadow-sm">
-            <div className="w-12 h-12 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-500">
+            <div className="w-12 h-12 rounded-xl bg-error-500/10 flex items-center justify-center text-error-500">
               <UserX className="w-6 h-6" />
             </div>
             <div>
@@ -258,7 +258,7 @@ export default function AdminSociosPage() {
                       e.stopPropagation()
                       setSocioABajar(row)
                     }}
-                    className="p-1.5 rounded-lg text-text-secondary hover:text-rose-500 hover:bg-bg-raised transition-colors"
+                    className="p-1.5 rounded-lg text-text-secondary hover:text-error-500 hover:bg-bg-raised transition-colors"
                     title="Dar de baja socio"
                     aria-label={`Dar de baja a ${row.nombre} ${row.apellido}`}
                   >
@@ -285,7 +285,7 @@ export default function AdminSociosPage() {
         maxWidth="max-w-md"
         title="Dar de baja socio"
         description='Esta acción cambiará el estado del socio a "baja".'
-        icon={<AlertTriangle className="w-5 h-5 text-rose-500" />}
+        icon={<AlertTriangle className="w-5 h-5 text-error-500" />}
       >
         <p className="text-sm text-text-secondary mb-4">
           ¿Estás seguro de que deseas dar de baja al socio{' '}

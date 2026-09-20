@@ -3,7 +3,7 @@ import Input from '../ui/Input';
 import Select from '../ui/Select';
 import { Calendar } from 'lucide-react';
 
-export default function PlanPagoCard({ formData, onChange }) {
+export default function PlanPagoCard({ formData: _formData, onChange: _onChange }) {
   return (
     <Card className="p-6">
       <h2 className="text-lg font-semibold text-text-primary mb-6">Plan y pago</h2>

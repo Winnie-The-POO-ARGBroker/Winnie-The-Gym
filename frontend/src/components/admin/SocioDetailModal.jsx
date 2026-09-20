@@ -86,7 +86,7 @@ export default function SocioDetailModal({
         <div className="grid grid-cols-2 gap-3">
           <div className="p-3 rounded-xl bg-bg-raised border border-subtle flex flex-col gap-1">
             <span className="text-[11px] font-medium text-text-secondary flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 text-blue-500" /> Fecha de Alta
+              <Calendar className="w-3.5 h-3.5 text-info-500" /> Fecha de Alta
             </span>
             <span className="text-sm text-text-primary">
               {socio.created_at
@@ -101,7 +101,7 @@ export default function SocioDetailModal({
 
           <div className="p-3 rounded-xl bg-bg-raised border border-subtle flex flex-col gap-1">
             <span className="text-[11px] font-medium text-text-secondary flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-rose-500" /> Fecha de Baja
+              <Clock className="w-3.5 h-3.5 text-error-500" /> Fecha de Baja
             </span>
             <span className="text-sm text-text-primary">
               {socio.fecha_baja
@@ -121,7 +121,7 @@ export default function SocioDetailModal({
             Certificado Médico (Apto Físico)
           </span>
           {tieneCertificado ? (
-            <div className="flex items-center justify-between p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-500">
+            <div className="flex items-center justify-between p-2.5 rounded-lg bg-success-500/10 border border-success-500/20 text-success-500">
               <div className="flex items-center gap-2 text-xs font-medium">
                 <FileCheck className="w-4 h-4" />
                 <span>Certificado vigente cargado</span>
@@ -136,7 +136,7 @@ export default function SocioDetailModal({
               </a>
             </div>
           ) : (
-            <div className="flex items-center gap-2 p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs font-medium">
+            <div className="flex items-center gap-2 p-2.5 rounded-lg bg-error-500/10 border border-error-500/20 text-error-500 text-xs font-medium">
               <FileX className="w-4 h-4" />
               <span>No posee certificado médico cargado en el sistema</span>
             </div>

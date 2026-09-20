@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { toast } from 'sonner';
 import AppLayout from '../../components/layout/AppLayout';
 import TopBar from '../../components/layout/TopBar';
@@ -10,7 +10,7 @@ import useWebSocket from '../../hooks/useWebSocket';
 const SCAN_RESULT_DISPLAY_MS = 8000;
 const SCAN_DEBOUNCE_MS = 5000;
 
-export default function AccesoTerminal() {
+export default function AccesoTerminalPage() {
   const [scanResult, setScanResult] = useState(null); // null o { status, message, log, denialReason }
   const [isProcessing, setIsProcessing] = useState(false);
   const [isManualMode, setIsManualMode] = useState(false);

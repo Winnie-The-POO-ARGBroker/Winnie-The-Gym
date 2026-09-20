@@ -1,4 +1,4 @@
-import { Users, Clock, MapPin, Sparkles } from 'lucide-react'
+import { Users, Clock, MapPin } from 'lucide-react'
 import { DISCIPLINAS_CONFIG } from '../../constants/disciplinas'
 
 // Dates are passed in as diasSemana prop

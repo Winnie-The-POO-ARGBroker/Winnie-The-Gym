@@ -9,8 +9,9 @@ import Button from '../../components/ui/Button'
 import EmptyState from '../../components/ui/EmptyState'
 import HistorialPagosCard from '../../components/pagos/HistorialPagosCard'
 import api from '../../services/api'
-import { cobrarManual } from '../../services/pagosService'
 import useDebounce from '../../hooks/useDebounce'
+import { usePlanesQuery } from '../../hooks/queries/usePlanesAdmin'
+import { useCobrarManualMutation } from '../../hooks/queries/usePagos'
 
 export default function CobroManualPage() {
   // ── Búsqueda de socio ──
@@ -23,33 +24,31 @@ export default function CobroManualPage() {
   const [activoIdx, setActivoIdx] = useState(-1)
 
   // ── Planes ──
-  const [planes, setPlanes] = useState([])
   const [planId, setPlanId] = useState('')
 
   // ── Formulario ──
   const [monto, setMonto] = useState('')
   const [observacion, setObservacion] = useState('')
-  const [guardando, setGuardando] = useState(false)
 
   // Ref al input de búsqueda para devolver el foco después de seleccionar con teclado
   const inputRef = useRef(null)
 
-  // Cargar planes al montar
-  useEffect(() => {
-    api.get('/memberships/planes/', { params: { activo: true } })
-      .then((res) => {
-        const data = res.data.results ?? res.data
-        const activos = data.filter((p) => p.activo)
-        setPlanes(activos)
-      })
-      .catch(() => toast.error('No se pudieron cargar los planes'))
-  }, [])
+  // React Query: planes activos
+  const { data: allPlanes = [] } = usePlanesQuery()
+  const planes = allPlanes.filter((p) => p.activo)
+
+  // React Query: cobro manual mutation
+  const cobrarManual = useCobrarManualMutation()
+  const guardando = cobrarManual.isPending
 
   // Prefill monto cuando cambia el plan seleccionado
-  useEffect(() => {
-    const plan = planes.find((p) => String(p.id) === String(planId))
-    if (plan) setMonto(String(plan.precio))
-  }, [planId, planes])
+  const planActual = planes.find((p) => String(p.id) === String(planId))
+  // Keep monto in sync when planId changes
+  const prevPlanRef = useRef(planId)
+  if (prevPlanRef.current !== planId) {
+    prevPlanRef.current = planId
+    if (planActual) setMonto(String(planActual.precio))
+  }
 
   // Búsqueda de socios con debounce + AbortController
   useEffect(() => {
@@ -113,35 +112,30 @@ export default function CobroManualPage() {
     }
   }, [socios, activoIdx, seleccionarSocio])
 
-  const handleSubmit = useCallback(async (e) => {
+  const handleSubmit = useCallback((e) => {
     e.preventDefault()
     if (!socioSeleccionado) return toast.error('Seleccioná un socio')
     if (!planId) return toast.error('Seleccioná un plan')
     if (!monto || isNaN(Number(monto)) || Number(monto) <= 0) return toast.error('Ingresá un monto válido')
 
-    setGuardando(true)
-    try {
-      await cobrarManual({
+    cobrarManual.mutate(
+      {
         socio_id: socioSeleccionado.id,
         plan_id: Number(planId),
         monto: Number(monto),
         observacion,
-      })
-      toast.success(`Cobro registrado: $${Number(monto).toLocaleString('es-AR')} — ${socioSeleccionado.nombre} ${socioSeleccionado.apellido}`)
-      // Limpiar formulario
-      setPlanId('')
-      setMonto('')
-      setObservacion('')
-      limpiarSocio()
-    } catch (err) {
-      const detalle = err?.response?.data?.detail ?? 'Error al registrar el cobro'
-      toast.error(detalle)
-    } finally {
-      setGuardando(false)
-    }
-  }, [socioSeleccionado, planId, monto, observacion, limpiarSocio])
-
-  const planActual = planes.find((p) => String(p.id) === String(planId))
+      },
+      {
+        onSuccess: () => {
+          toast.success(`Cobro registrado: $${Number(monto).toLocaleString('es-AR')} — ${socioSeleccionado.nombre} ${socioSeleccionado.apellido}`)
+          setPlanId('')
+          setMonto('')
+          setObservacion('')
+          limpiarSocio()
+        },
+      }
+    )
+  }, [socioSeleccionado, planId, monto, observacion, limpiarSocio, cobrarManual])
 
   const listboxId = 'busqueda-socio-listbox'
   const dropdownAbierto = socios.length > 0 && !socioSeleccionado

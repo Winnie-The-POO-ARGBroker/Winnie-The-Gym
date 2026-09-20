@@ -4,12 +4,9 @@ import {
   Clock,
   MapPin,
   User,
-  Calendar,
   CheckCircle2,
   Edit2,
   Trash2,
-  Sparkles,
-  ShieldAlert,
 } from 'lucide-react'
 import { DISCIPLINAS_CONFIG } from '../../constants/disciplinas'
 import Button from '../ui/Button'

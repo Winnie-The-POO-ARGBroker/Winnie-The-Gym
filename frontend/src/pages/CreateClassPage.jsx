@@ -1,41 +1,24 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import {
-  Check,
-  Eye,
-  Calendar,
-  Clock,
-  MapPin,
-  User,
-  Users,
-  Copy,
-  Save,
-  Sparkles,
-} from 'lucide-react'
-
-const IS_DEV = import.meta.env.DEV
+import { Check, Eye, Copy } from 'lucide-react'
 import { toast } from 'sonner'
 import AppLayout from '../components/layout/AppLayout'
 import TopBar from '../components/layout/TopBar'
 import Button from '../components/ui/Button'
 import { DISCIPLINAS_CONFIG } from '../constants/disciplinas'
+import { DIAS_SEMANA, RECURRENCIA_DIAS } from '../constants/clases'
+import { useClaseDetail, useClasesMutations } from '../hooks/queries/useClases'
 import api from '../services/api'
 
-const DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
-const RECURRENCIA_DIAS = [
-  { key: 'L', label: 'L' },
-  { key: 'M', label: 'M' },
-  { key: 'X', label: 'X' },
-  { key: 'J', label: 'J' },
-  { key: 'V', label: 'V' },
-  { key: 'S', label: 'S' },
-  { key: 'D', label: 'D' },
-]
+const IS_DEV = import.meta.env.DEV
 
 export default function CreateClassPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const editId = searchParams.get('id')
+
+  const { create: createClase, update: updateClase } = useClasesMutations()
+  const { data: existingClass } = useClaseDetail(editId)
 
   const [formData, setFormData] = useState({
     nombre: 'Funcional Intensivo',
@@ -55,24 +38,17 @@ export default function CreateClassPage() {
     planes_habilitados: ['Premium', 'Gold'],
   })
 
+  // Populate form when editing an existing class
   useEffect(() => {
-    if (editId) {
-      const fetchClass = async () => {
-        try {
-          const res = await api.get(`/classes/clases/${editId}/`)
-          const existing = res.data
-          setFormData({
-            ...existing,
-            dia: existing.dia ? existing.dia.charAt(0).toUpperCase() + existing.dia.slice(1) : 'Lunes',
-          })
-        } catch (error) {
-          toast.error('Error al cargar la clase')
-          console.error(error)
-        }
-      }
-      fetchClass()
+    if (existingClass) {
+      setFormData({
+        ...existingClass,
+        dia: existingClass.dia
+          ? existingClass.dia.charAt(0).toUpperCase() + existingClass.dia.slice(1)
+          : 'Lunes',
+      })
     }
-  }, [editId])
+  }, [existingClass])
 
   const currentCfg =
     DISCIPLINAS_CONFIG[formData.categoria] || DISCIPLINAS_CONFIG.funcional
@@ -102,42 +78,41 @@ export default function CreateClassPage() {
     }))
   }
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     if (e) e.preventDefault()
     if (!formData.nombre.trim()) {
       toast.error('El nombre de la clase es obligatorio')
       return
     }
 
-    try {
-      const normalizeDay = (d) => d.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-      
-      let finalDia = formData.dia
-      if (formData.dias_recurrencia && formData.dias_recurrencia.length > 0) {
-        const reverseDiasMap = { 'L': 'Lunes', 'M': 'Martes', 'X': 'Miércoles', 'J': 'Jueves', 'V': 'Viernes', 'S': 'Sábado', 'D': 'Domingo' }
-        finalDia = reverseDiasMap[formData.dias_recurrencia[0]]
-      }
+    // Strip diacritics for the backend `dia` field
+    const normalizeDay = (d) =>
+      d.toLowerCase().normalize('NFD').replace(/\p{M}/gu, '')
 
-      const payload = {
-        ...formData,
-        dia: normalizeDay(finalDia),
-        duracion_min: Number(formData.duracion_min),
-        cupo_maximo: Number(formData.cupo_maximo),
-        lista_espera_max: Number(formData.lista_espera_max),
-        cancelacion_horas: Number(formData.cancelacion_horas),
+    let finalDia = formData.dia
+    if (formData.dias_recurrencia && formData.dias_recurrencia.length > 0) {
+      const reverseDiasMap = {
+        L: 'Lunes', M: 'Martes', X: 'Miércoles',
+        J: 'Jueves', V: 'Viernes', S: 'Sábado', D: 'Domingo',
       }
+      finalDia = reverseDiasMap[formData.dias_recurrencia[0]]
+    }
 
-      if (editId) {
-        await api.put(`/classes/clases/${editId}/`, payload)
-        toast.success(`Clase "${formData.nombre}" actualizada con éxito`)
-      } else {
-        await api.post('/classes/clases/', payload)
-        toast.success(`Clase "${formData.nombre}" publicada correctamente`)
-      }
-      navigate('/admin/clases')
-    } catch (error) {
-      toast.error('Error al guardar la clase')
-      console.error(error)
+    const payload = {
+      ...formData,
+      dia: normalizeDay(finalDia),
+      duracion_min: Number(formData.duracion_min),
+      cupo_maximo: Number(formData.cupo_maximo),
+      lista_espera_max: Number(formData.lista_espera_max),
+      cancelacion_horas: Number(formData.cancelacion_horas),
+    }
+
+    const onSuccess = () => navigate('/admin/clases')
+
+    if (editId) {
+      updateClase.mutate({ id: editId, data: payload }, { onSuccess })
+    } else {
+      createClase.mutate(payload, { onSuccess })
     }
   }
 
@@ -251,7 +226,7 @@ export default function CreateClassPage() {
             </div>
 
             {/* 2. Horario y Lugar */}
-            <div className="bg-bg-surface rounded-2xl p-6 border border-subtle border-l-4 border-l-blue-500 shadow-sm space-y-5">
+            <div className="bg-bg-surface rounded-2xl p-6 border border-subtle border-l-4 border-l-info-500 shadow-sm space-y-5">
               <h2 className="text-base font-bold text-text-primary">
                 Horario y lugar
               </h2>
@@ -266,7 +241,7 @@ export default function CreateClassPage() {
                     onChange={(e) => setFormData({ ...formData, dia: e.target.value })}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus:border-orange-500 transition-colors"
                   >
-                    {DIAS.map((d) => (
+                    {DIAS_SEMANA.map((d) => (
                       <option key={d} value={d}>
                         {d}
                       </option>
@@ -361,7 +336,7 @@ export default function CreateClassPage() {
             </div>
 
             {/* 3. Cupos y Reservas */}
-            <div className="bg-bg-surface rounded-2xl p-6 border border-subtle border-l-4 border-l-green-500 shadow-sm space-y-5">
+            <div className="bg-bg-surface rounded-2xl p-6 border border-subtle border-l-4 border-l-success-500 shadow-sm space-y-5">
               <h2 className="text-base font-bold text-text-primary">
                 Cupos y reservas
               </h2>
