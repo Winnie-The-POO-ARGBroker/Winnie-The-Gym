@@ -12,7 +12,7 @@ import {
 import useWebSocket from '../../../hooks/useWebSocket'
 import { GYM_MAX_CAPACITY } from '../../../constants/pagination'
 
-export default function AdminDashboardView({ navigate: _navigate }) {
+export default function AdminDashboardView() {
   const { data: logsData = [], isLoading: isLoadingLogs, isError: isErrorLogs } = useAccessLogs(5)
   const { data: alertsData = [], isLoading: isLoadingAlerts, isError: isErrorAlerts } = useDashboardAlerts()
   const { data: classesData = [], isLoading: isLoadingClasses, isError: isErrorClasses } = useDashboardClasses()

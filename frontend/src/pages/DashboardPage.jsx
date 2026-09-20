@@ -37,9 +37,7 @@ export default function DashboardPage() {
         )}
 
         {effectiveRole === 'administrador' && (
-          <AdminDashboardView
-            navigate={navigate}
-          />
+          <AdminDashboardView />
         )}
 
         {effectiveRole === 'recepcionista' && (

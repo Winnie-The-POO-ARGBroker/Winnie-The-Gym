@@ -16,7 +16,7 @@ import { useReportMetrics } from '../../hooks/queries/useReportes'
 const DEFAULT_METRICS = {
   ingresosMesFormatted: '$ 0',
   vsAnteriorFormatted: '+0%',
-  chartPoints: 'M 0,80 L 100,70 L 200,60 L 300,50 L 400,30',
+  chartPath: 'M 0,80 L 100,70 L 200,60 L 300,50 L 400,30',
   asistenciaBars: [10, 10, 10, 10, 10, 10, 10],
   morososCount: 0,
   adeudadoFormatted: '$ 0',
@@ -140,7 +140,7 @@ export default function ReportesPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {(activeTab === 'Resumen' || activeTab === 'Ingresos') && (
               <EvolucionIngresosCard
-                chartPoints={metrics.chartPoints}
+                chartPoints={metrics.chartPath}
                 estesMes={metrics.ingresosMesFormatted}
                 vsAnterior={metrics.vsAnteriorFormatted}
                 onExport={(fmt) => handleExport(fmt, 'facturacion')}

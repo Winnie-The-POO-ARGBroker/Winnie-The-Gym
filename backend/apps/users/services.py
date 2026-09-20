@@ -48,27 +48,3 @@ def get_or_create_user_by_role(email: str, rol: str, extra_fields: dict | None =
             user.save()
 
     return user, created
-
-
-def promote_to_role(user, rol: str) -> None:
-    """Promote an existing user to the given role.
-
-    Adjusts ``is_staff`` and ``is_superuser`` flags to match role semantics.
-    Saves the user if any field changed.
-    """
-    is_admin = rol == 'administrador'
-    changed = False
-
-    if user.rol != rol:
-        user.rol = rol
-        changed = True
-    if user.is_staff != is_admin:
-        user.is_staff = is_admin
-        changed = True
-    if user.is_superuser != is_admin:
-        user.is_superuser = is_admin
-        changed = True
-
-    if changed:
-        user.save(update_fields=['rol', 'is_staff', 'is_superuser'])
-        logger.info("User %s promoted to role '%s'", user.email, rol)

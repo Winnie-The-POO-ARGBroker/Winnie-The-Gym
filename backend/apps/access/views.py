@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from .filters import AccessLogFilter
 from .models import AccessLog
 from .permissions import IsReceptionistOrAdmin
-from .services import has_active_membership, compute_aforo_stats
+from .services import has_active_membership, get_aforo_stats
 from .serializers import (
     GenerateQRResponseSerializer,
     ScanQRSerializer,
@@ -249,9 +249,16 @@ class AccessLogListView(generics.ListAPIView):
         user = self.request.user
         is_privileged = user.rol in ('administrador', 'recepcionista') or user.is_staff
 
+        base_qs = AccessLog.objects.select_related(
+            'user__socio',
+            'scanned_by',
+        ).prefetch_related(
+            'user__socio__membresias__plan',
+        )
+
         if is_privileged:
-            return AccessLog.objects.all()
-        return AccessLog.objects.filter(user=user)
+            return base_qs
+        return base_qs.filter(user=user)
 
 
 @extend_schema(
@@ -267,5 +274,5 @@ class AforoStatsView(APIView):
     permission_classes = [IsReceptionistOrAdmin]
 
     def get(self, request):
-        stats = compute_aforo_stats()
+        stats = get_aforo_stats()  # use cached wrapper (30s TTL)
         return Response(stats, status=status.HTTP_200_OK)

@@ -104,7 +104,8 @@ export function useReportMetrics() {
       return {
         ingresosMesFormatted: `$ ${ingresosMesActual.toLocaleString('es-AR')}`,
         vsAnteriorFormatted: vsAnterior,
-        chartPoints: 'M 0,70 L 60,65 L 130,50 L 200,60 L 270,40 L 340,45 L 400,25',
+        // TODO: compute real chart points from ingresos data — placeholder until backend endpoint exists
+        chartPath: 'M 0,70 L 60,65 L 130,50 L 200,60 L 270,40 L 340,45 L 400,25',
         asistenciaBars,
         morososCount: morosos,
         adeudadoFormatted: `$ ${adeudadoTotal.toLocaleString('es-AR')}`,

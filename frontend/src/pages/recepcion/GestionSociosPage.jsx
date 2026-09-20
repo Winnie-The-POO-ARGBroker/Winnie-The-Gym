@@ -20,7 +20,7 @@ import SaludCard from '../../components/recepcion/SaludCard'
 import SocioResumenSidebar from '../../components/recepcion/SocioResumenSidebar'
 import SocioDetailModal from '../../components/admin/SocioDetailModal'
 import { getSocioColumns } from '../../components/admin/SocioColumns'
-import { useSociosList } from '../../hooks/queries/useSociosData'
+import { useSociosList, useSocioMutations } from '../../hooks/queries/useSociosData'
 import { gestionSociosSchema, defaultValues } from './gestionSocios.schema'
 
 export default function GestionSociosPage() {
@@ -52,6 +52,7 @@ export default function GestionSociosPage() {
     handleSubmit,
     watch,
     setValue,
+    reset,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(gestionSociosSchema),
@@ -61,8 +62,16 @@ export default function GestionSociosPage() {
   const formData = watch()
   const onChange = (field, value) => setValue(field, value)
 
-  const onSubmit = (_formData) => {
-    // TODO: wire up form submission to API
+  const { create } = useSocioMutations()
+
+  const onSubmit = async (data) => {
+    try {
+      await create.mutateAsync(data)
+      reset()
+      setActiveTab('listado')
+    } catch {
+      // toast.error is already handled by useSocioMutations onError
+    }
   }
 
   const columns = getSocioColumns()

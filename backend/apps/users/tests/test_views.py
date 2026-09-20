@@ -274,3 +274,25 @@ class DevLoginTests(APITestCase):
         response = self.client.post(self.DEV_LOGIN_URL, {'rol': 'administrador'})
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertNotIn('access', response.data)
+
+
+class TokenBlacklistMigrationSanityTests(APITestCase):
+    """Sanity check: verify that token_blacklist tables were migrated.
+
+    If migrations were not applied (e.g. a deploy skipped RUN_MIGRATIONS=1),
+    any query against these models raises django.db.OperationalError.
+    This test catches that failure early — before a real logout attempt would.
+    """
+
+    def test_token_blacklist_tables_migrated(self):
+        from rest_framework_simplejwt.token_blacklist.models import (
+            BlacklistedToken,
+            OutstandingToken,
+        )
+
+        # If migrations did not run, these will raise OperationalError.
+        blacklisted_count = BlacklistedToken.objects.count()
+        outstanding_count = OutstandingToken.objects.count()
+
+        self.assertGreaterEqual(blacklisted_count, 0)
+        self.assertGreaterEqual(outstanding_count, 0)

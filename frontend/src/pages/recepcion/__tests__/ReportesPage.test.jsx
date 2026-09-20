@@ -22,7 +22,7 @@ vi.mock('../../../hooks/queries/useReportes', () => ({
     data: {
       ingresosMesFormatted: '$ 0',
       vsAnteriorFormatted: '+0%',
-      chartPoints: 'M 0,80 L 100,70',
+      chartPath: 'M 0,80 L 100,70',
       asistenciaBars: [10, 10, 10, 10, 10, 10, 10],
       morososCount: 0,
       adeudadoFormatted: '$ 0',
