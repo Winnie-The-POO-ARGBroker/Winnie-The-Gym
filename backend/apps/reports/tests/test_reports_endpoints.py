@@ -63,6 +63,21 @@ class MorosidadReportTests(APITestCase):
         response = self.client.get(MOROSIDAD_URL)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+    def test_unauthenticated_cannot_access_report(self):
+        self.client.credentials()  # clear credentials
+        for url in [MOROSIDAD_URL, FACTURACION_URL, ASISTENCIA_URL]:
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_recepcionista_can_access_report(self):
+        recep = make_user_factory(email='recep@rep.test', rol='recepcionista')
+        _auth(self.client, recep)
+        for url in [MOROSIDAD_URL, FACTURACION_URL, ASISTENCIA_URL]:
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+
 
 class FacturacionReportTests(APITestCase):
 
@@ -120,10 +135,14 @@ class AsistenciaReportTests(APITestCase):
 
     def test_csv_includes_permanence_when_entry_and_exit_paired(self):
         entry = AccessLog.objects.create(
-            user=self.socio_user, access_type='ENTRY', status='GRANTED',
+            user=self.socio_user,
+            access_type=AccessLog.AccessType.ENTRY,
+            status=AccessLog.AccessStatus.GRANTED,
         )
         exit_log = AccessLog.objects.create(
-            user=self.socio_user, access_type='EXIT', status='GRANTED',
+            user=self.socio_user,
+            access_type=AccessLog.AccessType.EXIT,
+            status=AccessLog.AccessStatus.GRANTED,
         )
         exit_log.timestamp = entry.timestamp + timedelta(minutes=45)
         exit_log.save(update_fields=['timestamp'])
@@ -136,7 +155,11 @@ class AsistenciaReportTests(APITestCase):
         self.assertIn('45', body)  # permanencia_minutos
 
     def test_csv_leaves_permanencia_blank_when_no_exit_matches(self):
-        AccessLog.objects.create(user=self.socio_user, access_type='ENTRY', status='GRANTED')
+        AccessLog.objects.create(
+            user=self.socio_user,
+            access_type=AccessLog.AccessType.ENTRY,
+            status=AccessLog.AccessStatus.GRANTED,
+        )
 
         response = self.client.get(f'{ASISTENCIA_URL}?formato=csv')
         body = response.content.decode('utf-8')

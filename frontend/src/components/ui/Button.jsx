@@ -22,6 +22,7 @@ export default function Button({
   className = '',
   onClick,
   children,
+  ...rest
 }) {
   return (
     <button
@@ -29,6 +30,7 @@ export default function Button({
       disabled={disabled || loading}
       onClick={onClick}
       className={`${BASE} ${VARIANTS[variant] ?? VARIANTS.primary} ${SIZES[size] ?? SIZES.md} ${className}`}
+      {...rest}
     >
       {loading ? 'Cargando...' : children}
     </button>

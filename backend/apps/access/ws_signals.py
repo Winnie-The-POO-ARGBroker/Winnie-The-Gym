@@ -22,9 +22,9 @@ logger = logging.getLogger(__name__)
 def broadcast_aforo_on_access(sender, instance, created, **kwargs):
     if not created:
         return
-    if instance.status != 'GRANTED':
+    if instance.status != AccessLog.AccessStatus.GRANTED:
         return
-    if instance.access_type not in ('ENTRY', 'EXIT'):
+    if instance.access_type not in (AccessLog.AccessType.ENTRY, AccessLog.AccessType.EXIT):
         return
 
     invalidate_aforo_cache()

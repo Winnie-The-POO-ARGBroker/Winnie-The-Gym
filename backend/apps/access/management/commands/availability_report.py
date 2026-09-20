@@ -40,14 +40,14 @@ class Command(BaseCommand):
 
         qs = AccessLog.objects.filter(timestamp__gte=since)
         totals = qs.aggregate(
-            granted=Count('id', filter=Q(status='GRANTED')),
+            granted=Count('id', filter=Q(status=AccessLog.AccessStatus.GRANTED)),
             denied_infra=Count(
                 'id',
-                filter=Q(status='DENIED', denial_reason__in=INFRA_DENIAL_REASONS),
+                filter=Q(status=AccessLog.AccessStatus.DENIED, denial_reason__in=INFRA_DENIAL_REASONS),
             ),
             denied_business=Count(
                 'id',
-                filter=Q(status='DENIED') & ~Q(denial_reason__in=INFRA_DENIAL_REASONS),
+                filter=Q(status=AccessLog.AccessStatus.DENIED) & ~Q(denial_reason__in=INFRA_DENIAL_REASONS),
             ),
         )
         granted = totals['granted'] or 0
