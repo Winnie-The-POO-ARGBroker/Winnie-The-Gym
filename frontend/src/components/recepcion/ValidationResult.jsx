@@ -67,7 +67,9 @@ export default function ValidationResult({ result, onConfirmEntry, onRegisterExi
                 <User className="w-8 h-8 text-text-tertiary" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-text-primary">{log.user_name || 'Desconocido'}</h3>
+                <h3 className="text-xl font-bold text-text-primary">
+                  {log.user_nombre ? `${log.user_nombre} ${log.user_apellido || ''}`.trim() : 'Desconocido'}
+                </h3>
                 <p className="text-text-tertiary text-sm mt-1">{log.user_email || 'Sin datos'}</p>
               </div>
             </div>

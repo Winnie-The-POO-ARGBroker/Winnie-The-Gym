@@ -50,7 +50,8 @@ describe('AccesoTerminal', () => {
       denial_reason: null,
       access_log: {
         access_type: 'ENTRY',
-        user_name: 'Juan Perez',
+        user_nombre: 'Juan',
+        user_apellido: 'Perez',
         timestamp: new Date().toISOString()
       }
     });
@@ -84,7 +85,8 @@ describe('AccesoTerminal', () => {
           denial_reason: 'MEMBERSHIP_INACTIVE',
           access_log: {
             access_type: 'ENTRY',
-            user_name: 'Ana Lopez',
+            user_nombre: 'Ana',
+            user_apellido: 'Lopez',
             timestamp: new Date().toISOString()
           }
         }

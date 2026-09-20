@@ -60,8 +60,32 @@ class CompleteProfileViewTests(APITestCase):
         response = self.client.post(COMPLETE_PROFILE_URL, {})
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_admin_returns_403(self):
+        user = make_user_factory(rol='administrador')
+        _auth_client(self.client, user)
+        response = self.client.post(COMPLETE_PROFILE_URL, {
+            'dni': '99999901',
+            'nombre': 'Admin',
+            'apellido': 'Test',
+            'telefono': '123',
+        })
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn('detail', response.data)
+
+    def test_recepcionista_returns_403(self):
+        user = make_user_factory(rol='recepcionista')
+        _auth_client(self.client, user)
+        response = self.client.post(COMPLETE_PROFILE_URL, {
+            'dni': '99999902',
+            'nombre': 'Recep',
+            'apellido': 'Test',
+            'telefono': '123',
+        })
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn('detail', response.data)
+
     def test_already_complete_returns_400(self):
-        user = make_user_factory()
+        user = make_user_factory(rol='socio')
         make_socio_factory(usuario=user)
         _auth_client(self.client, user)
 
@@ -76,7 +100,7 @@ class CompleteProfileViewTests(APITestCase):
         self.assertIn('detail', response.data)
 
     def test_missing_required_fields_returns_400(self):
-        user = make_user_factory()
+        user = make_user_factory(rol='socio')
         _auth_client(self.client, user)
 
         response = self.client.post(COMPLETE_PROFILE_URL, {})
@@ -88,10 +112,10 @@ class CompleteProfileViewTests(APITestCase):
         self.assertIn('telefono', response.data)
 
     def test_duplicate_dni_returns_400(self):
-        existing_user = make_user_factory(email='other@example.com')
+        existing_user = make_user_factory(email='other@example.com', rol='socio')
         make_socio_factory(usuario=existing_user, dni='11111111')
 
-        user = make_user_factory()
+        user = make_user_factory(rol='socio')
         _auth_client(self.client, user)
 
         response = self.client.post(COMPLETE_PROFILE_URL, {
@@ -105,7 +129,7 @@ class CompleteProfileViewTests(APITestCase):
         self.assertIn('dni', response.data)
 
     def test_valid_request_creates_socio_and_returns_201(self):
-        user = make_user_factory()
+        user = make_user_factory(rol='socio')
         _auth_client(self.client, user)
 
         response = self.client.post(COMPLETE_PROFILE_URL, {

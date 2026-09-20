@@ -6,7 +6,8 @@ import {
   useAccessLogs,
   useDashboardAlerts,
   useDashboardClasses,
-  mapAccessLog
+  mapAccessLog,
+  useAforoStats
 } from '../../../hooks/queries/useDashboardData'
 import useWebSocket from '../../../hooks/useWebSocket'
 import { GYM_MAX_CAPACITY } from '../../../constants/pagination'
@@ -16,11 +17,12 @@ export default function AdminDashboardView({ navigate: _navigate }) {
   const { data: alertsData = [], isLoading: isLoadingAlerts, isError: isErrorAlerts } = useDashboardAlerts()
   const { data: classesData = [], isLoading: isLoadingClasses, isError: isErrorClasses } = useDashboardClasses()
 
-  const { lastMessage, isConnected } = useWebSocket('/ws/aforo/')
-  
-  const aforoActual = lastMessage?.aforo_actual ?? 0
-  const ingresosHoy = lastMessage?.ingresos_hoy ?? 0
-  const egresosHoy = lastMessage?.egresos_hoy ?? 0
+  const { lastMessage, isConnecting } = useWebSocket('/ws/aforo/')
+  const { data: restStats } = useAforoStats()
+
+  const aforoActual = lastMessage?.aforo_actual ?? restStats?.aforo_actual ?? 0
+  const ingresosHoy = lastMessage?.ingresos_hoy ?? restStats?.ingresos_hoy ?? 0
+  const egresosHoy = lastMessage?.egresos_hoy ?? restStats?.egresos_hoy ?? 0
 
   const mappedMovements = logsData.map(mapAccessLog)
 
@@ -45,7 +47,7 @@ export default function AdminDashboardView({ navigate: _navigate }) {
           max={GYM_MAX_CAPACITY} 
           entries={ingresosHoy} 
           exits={egresosHoy} 
-          loading={!isConnected && !lastMessage}
+          loading={isConnecting && !lastMessage && restStats === undefined}
         />
         {isErrorLogs ? <p className="text-danger text-sm">Error al cargar movimientos.</p> : <MovementList movements={mappedMovements} loading={isLoadingLogs} />}
       </div>

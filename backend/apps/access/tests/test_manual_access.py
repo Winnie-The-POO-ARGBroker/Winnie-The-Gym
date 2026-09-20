@@ -34,12 +34,13 @@ class ManualAccessViewTests(APITestCase):
     def test_manual_access_invalid_dni(self):
         self.client.force_authenticate(user=self.receptionist)
         response = self.client.post(self.url, {'dni': '99999999', 'access_type': 'ENTRY'})
-        
+
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(response.data['status'], 'DENIED')
         self.assertEqual(response.data['denial_reason'], 'UNKNOWN_USER')
-        # user name should be None or null
-        self.assertIsNone(response.data['access_log']['user_name'])
+        # user fields should be None when user is unknown
+        self.assertIsNone(response.data['access_log']['user_nombre'])
+        self.assertIsNone(response.data['access_log']['user_apellido'])
         self.assertIsNone(response.data['access_log']['user_email'])
 
     def test_manual_access_expired_membership(self):
@@ -81,9 +82,32 @@ class ManualAccessViewTests(APITestCase):
         self.client.force_authenticate(user=self.receptionist)
         response = self.client.post(self.url, {'dni': '', 'access_type': 'ENTRY'})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        
+
         response = self.client.post(self.url, {'dni': '  ', 'access_type': 'ENTRY'})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
         response = self.client.post(self.url, {'dni': '123', 'access_type': 'ENTRY'}) # Less than 7
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_access_log_serializer_exposes_socio_nombre_apellido(self):
+        """AccessLogSerializer must return user_nombre and user_apellido from Socio, not User."""
+        self.client.force_authenticate(user=self.receptionist)
+
+        user_socio = make_user_factory(rol='socio')
+        socio = make_socio_factory(
+            usuario=user_socio,
+            estado='activo',
+            dni='40111333',
+            nombre='Carlos',
+            apellido='Gomez',
+        )
+        plan = make_plan_factory()
+        today = datetime.date.today()
+        make_membresia_factory(socio, plan, fecha_fin=today + datetime.timedelta(days=10))
+
+        response = self.client.post(self.url, {'dni': '40111333', 'access_type': 'ENTRY'})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        access_log_data = response.data['access_log']
+        self.assertEqual(access_log_data['user_nombre'], 'Carlos')
+        self.assertEqual(access_log_data['user_apellido'], 'Gomez')

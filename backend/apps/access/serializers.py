@@ -33,7 +33,9 @@ class ManualAccessSerializer(serializers.Serializer):
 
 class AccessLogSerializer(serializers.ModelSerializer):
     user_email = serializers.EmailField(source='user.email', read_only=True, allow_null=True)
-    user_name = serializers.SerializerMethodField()
+    user_nombre = serializers.SerializerMethodField()
+    user_apellido = serializers.SerializerMethodField()
+    user_plan_nombre = serializers.SerializerMethodField()
     scanned_by_email = serializers.EmailField(source='scanned_by.email', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
 
@@ -44,7 +46,9 @@ class AccessLogSerializer(serializers.ModelSerializer):
             'timestamp',
             'user',
             'user_email',
-            'user_name',
+            'user_nombre',
+            'user_apellido',
+            'user_plan_nombre',
             'access_type',
             'status',
             'status_display',
@@ -54,7 +58,23 @@ class AccessLogSerializer(serializers.ModelSerializer):
             'scanned_by_email',
         ]
 
-    def get_user_name(self, obj):
-        if obj.user:
-            return obj.user.get_full_name()
-        return None
+    def get_user_nombre(self, obj):
+        if not obj.user:
+            return None
+        socio = getattr(obj.user, 'socio', None)
+        return socio.nombre if socio else None
+
+    def get_user_apellido(self, obj):
+        if not obj.user:
+            return None
+        socio = getattr(obj.user, 'socio', None)
+        return socio.apellido if socio else None
+
+    def get_user_plan_nombre(self, obj):
+        if not obj.user:
+            return None
+        socio = getattr(obj.user, 'socio', None)
+        if not socio:
+            return None
+        membresia = socio.membresias.filter(estado='activa').first()
+        return membresia.plan.nombre if membresia else None

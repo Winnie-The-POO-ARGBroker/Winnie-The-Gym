@@ -67,6 +67,11 @@ class CompleteProfileView(generics.CreateAPIView):
     serializer_class = ProfileCompleteSerializer
 
     def create(self, request, *args, **kwargs):
+        if request.user.rol != 'socio':
+            return Response(
+                {'detail': 'Solo los socios pueden completar el perfil de socio.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         if request.user.is_profile_complete:
             return Response(
                 {'detail': 'Profile already complete.'},
