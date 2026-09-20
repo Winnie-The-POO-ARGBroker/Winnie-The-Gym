@@ -1,3 +1,5 @@
+from unittest.mock import MagicMock, patch
+
 from django.test import override_settings
 from django.urls import reverse
 from rest_framework import status
@@ -9,12 +11,47 @@ from conftest import make_socio_factory, make_user_factory
 
 COMPLETE_PROFILE_URL = reverse('users:complete-profile')
 PROFILE_URL = reverse('users:profile')
+GOOGLE_LOGIN_URL = reverse('users:google-login')
 LOGIN_URL = '/api/auth/login/'
 
 
 def _auth_client(client, user):
     token = RefreshToken.for_user(user).access_token
     client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
+
+
+class GoogleLoginViewTests(APITestCase):
+    """Tests for GoogleLoginView.
+
+    The Google OAuth adapter makes real network calls to exchange the
+    authorization code for user info.  We therefore test:
+      - Input validation (no token, empty token) — fails before any adapter call
+      - Endpoint existence + method routing (GET must return 405)
+
+    Full happy-path tests belong in integration/e2e suites that can provide
+    a real or sandboxed Google token.
+    """
+
+    def test_missing_token_returns_400(self):
+        """No access_token field at all — serializer validation rejects it."""
+        response = self.client.post(GOOGLE_LOGIN_URL, {}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_empty_token_returns_400(self):
+        """Empty string access_token — serializer validation rejects it."""
+        response = self.client.post(GOOGLE_LOGIN_URL, {'access_token': ''}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_get_method_not_allowed(self):
+        """GoogleLoginView is POST-only; GET must return 405."""
+        response = self.client.get(GOOGLE_LOGIN_URL)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_url_is_registered(self):
+        """The google-login URL must resolve to the expected view."""
+        from django.urls import resolve
+        match = resolve(GOOGLE_LOGIN_URL)
+        self.assertEqual(match.view_name, 'users:google-login')
 
 
 class CompleteProfileViewTests(APITestCase):

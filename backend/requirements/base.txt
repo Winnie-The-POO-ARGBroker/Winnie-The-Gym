@@ -26,3 +26,4 @@ django-storages[s3]==1.14.4
 boto3==1.35.24
 honcho==2.0.0
 certifi==2024.8.30
+python-magic==0.4.27

@@ -51,7 +51,10 @@ class SubirCertificadoMedicoTests(APITestCase):
 
     def test_admin_uploads_image_successfully(self):
         _auth(self.client, self.admin)
-        img = SimpleUploadedFile('apto.jpg', b'fakejpgbytes', content_type='image/jpeg')
+        # Minimal valid JPEG header (SOI + APP0 marker) so magic-byte sniffing
+        # recognises the file as image/jpeg rather than rejecting it.
+        jpeg_header = b'\xff\xd8\xff\xe0' + b'\x00' * 20
+        img = SimpleUploadedFile('apto.jpg', jpeg_header, content_type='image/jpeg')
 
         response = self.client.post(_cert_url(self.socio.id), {'archivo': img}, format='multipart')
 

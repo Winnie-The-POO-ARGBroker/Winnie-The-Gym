@@ -1,6 +1,7 @@
 import os
 from datetime import date
 
+import magic
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.utils.text import slugify
@@ -41,6 +42,14 @@ def _validate_certificado(archivo):
     if not content_type or content_type not in ALLOWED_CERT_CONTENT_TYPES:
         raise ValidationError({
             'archivo': f'Tipo de contenido no permitido o no especificado ({content_type}). Aceptados: application/pdf, image/jpeg, image/png.',
+        })
+
+    # Magic-byte sniffing: verify the actual file content matches the declared type.
+    mime_detected = magic.from_buffer(archivo.read(2048), mime=True)
+    archivo.seek(0)
+    if mime_detected not in ALLOWED_CERT_CONTENT_TYPES:
+        raise ValidationError({
+            'archivo': f'El contenido real del archivo ({mime_detected}) no coincide con los tipos permitidos.',
         })
 
 

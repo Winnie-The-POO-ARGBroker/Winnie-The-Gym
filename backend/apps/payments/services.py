@@ -206,11 +206,18 @@ STATUS_MAP = {
 
 
 def verify_webhook_signature(x_signature, x_request_id, data_id):
-    """Validate MercadoPago's HMAC-SHA256 signature (v1)."""
+    """Validate MercadoPago's HMAC-SHA256 signature (v1).
+
+    Raises ImproperlyConfigured at call time if MP_WEBHOOK_SECRET is not set,
+    so webhook requests are never silently accepted without a verified signature.
+    """
+    from django.core.exceptions import ImproperlyConfigured
     secret = getattr(settings, 'MP_WEBHOOK_SECRET', '') or ''
     if not secret:
-        # No secret configured — signature enforcement disabled (dev fallback).
-        return True
+        raise ImproperlyConfigured(
+            "MP_WEBHOOK_SECRET is required for webhook signature verification. "
+            "Set it in your .env file. Without it all webhook calls are rejected."
+        )
 
     if not x_signature or not x_request_id or not data_id:
         return False
