@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useGoogleLogin } from '@react-oauth/google'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import useAuth from '../hooks/useAuth'
 import WinnieLogo from '../components/ui/WinnieLogo'
 import Button from '../components/ui/Button'
 import api from '../services/api'
+import EmailPasswordForm from '../components/auth/EmailPasswordForm'
 
 export default function LoginPage() {
   const { setAuth } = useAuth()
@@ -111,6 +112,26 @@ export default function LoginPage() {
             </svg>
             Continuar con Google
           </button>
+
+          {/* Divider */}
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-px" style={{ backgroundColor: 'var(--color-border-subtle)' }} />
+            <span className="text-xs whitespace-nowrap text-text-secondary">
+              o continuá con
+            </span>
+            <div className="flex-1 h-px" style={{ backgroundColor: 'var(--color-border-subtle)' }} />
+          </div>
+
+          {/* Email / password login */}
+          <EmailPasswordForm />
+
+          {/* Forgot password link */}
+          <Link
+            to="/forgot-password"
+            className="text-sm text-text-secondary hover:text-text-primary text-center transition-colors -mt-4"
+          >
+            ¿Olvidaste tu contraseña?
+          </Link>
 
           {import.meta.env.DEV && <>
             {/* Divider */}
