@@ -403,3 +403,47 @@ class SocioDarBajaAndStatsTests(APITestCase):
         res = self.client.get(SOCIOS_URL, {'page_size': 5})
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertIn('results', res.data)
+
+
+class SocioCreateActivationEmailTests(APITestCase):
+    """REQ-1.3 — admin-crea-socio con email real → activation email dispatched."""
+
+    def test_create_socio_with_real_email_triggers_activation(self):
+        """When admin creates socio with a real email, activation email is dispatched."""
+        from unittest.mock import patch
+        admin = make_user_factory(rol='administrador')
+        _auth_client(self.client, admin)
+
+        # Patch at the source where the function lives
+        with patch('apps.users.services.send_activation_email') as mock_email:
+            payload = {
+                'email': 'newmember@real.test',
+                'dni': '77665544',
+                'nombre': 'Real',
+                'apellido': 'Email',
+                'telefono': '5491100000099',
+            }
+            response = self.client.post(SOCIOS_URL, payload)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        mock_email.assert_called_once()
+
+    def test_create_socio_without_email_uses_synthetic_no_activation(self):
+        """When socio is created without email (synthetic), no activation email sent."""
+        from unittest.mock import patch
+        admin = make_user_factory(rol='administrador')
+        _auth_client(self.client, admin)
+
+        # Patch at the source where the function lives
+        with patch('apps.users.services.send_activation_email') as mock_email:
+            payload = {
+                'dni': '44556677',
+                'nombre': 'Sin',
+                'apellido': 'Email',
+                'telefono': '5491100000088',
+            }
+            response = self.client.post(SOCIOS_URL, payload)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        # Synthetic email → activation should NOT be dispatched
+        mock_email.assert_not_called()

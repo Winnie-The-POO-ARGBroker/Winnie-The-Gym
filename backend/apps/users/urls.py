@@ -5,7 +5,12 @@ from django.urls import path
 
 app_name = 'users'
 
-from .views import CompleteProfileView, DevLoginView, GoogleLoginView, ProfileView
+from .views import (
+    CompleteProfileView,
+    DevLoginView,
+    GoogleLoginView,
+    ProfileView,
+)
 
 urlpatterns = [
     path('google/', GoogleLoginView.as_view(), name='google-login'),

@@ -16,6 +16,7 @@ const NAV_BY_ROLE = {
     { label: 'Membresías',        path: '/membresias',         icon: 'card' },
     { label: 'Clases',            path: '/admin/clases',       icon: 'calendar' },
     { label: 'Socios',            path: '/admin/socios',       icon: 'people' },
+    { label: 'Usuarios',          path: '/admin/usuarios',     icon: 'people' },
     { label: 'Reportes',          path: '/admin/reportes',     icon: 'chart-line' },
     { divider: true, label: 'Control & Recepción' },
     { label: 'Acceso QR',         path: '/recepcion/acceso',   icon: 'scan' },

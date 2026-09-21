@@ -28,6 +28,7 @@ import ReportesPage from './pages/recepcion/ReportesPage'
 
 import AdminPlanesPage from './pages/admin/AdminPlanesPage'
 import AdminSociosPage from './pages/admin/AdminSociosPage'
+import AdminUsuariosPage from './pages/admin/AdminUsuariosPage'
 import CheckoutPage from './pages/socio/CheckoutPage'
 import CobroManualPage from './pages/recepcion/CobroManualPage'
 
@@ -98,6 +99,11 @@ export default function App() {
         {/* Admin socios */}
         <Route path="/admin/socios" element={
           <ProtectedRoute roles={['administrador']}><AdminSociosPage /></ProtectedRoute>
+        } />
+
+        {/* Admin usuarios (staff management) */}
+        <Route path="/admin/usuarios" element={
+          <ProtectedRoute roles={['administrador']}><AdminUsuariosPage /></ProtectedRoute>
         } />
         <Route path="/socios" element={<Navigate to="/admin/socios" replace />} />
 

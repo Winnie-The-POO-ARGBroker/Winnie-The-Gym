@@ -47,3 +47,6 @@ Thumbs.db
 .atl/workflow/
 backend_logs.txt
 *.log
+
+# Planning artifacts local (speckit) — no se trackean
+speckit/

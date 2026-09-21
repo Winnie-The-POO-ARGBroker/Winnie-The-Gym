@@ -140,6 +140,7 @@ urlpatterns = [
         password_reset_confirm_redirect,
         name='password_reset_confirm',
     ),
+    path('api/users/', include(('apps.users.staff_urls', 'users_mgmt'), namespace='users_mgmt')),
     path('api/access/', include(('apps.access.urls', 'access'), namespace='access')),
     path('api/members/', include(('apps.members.urls', 'members'), namespace='members')),
     path('api/memberships/', include(('apps.memberships.urls', 'memberships'), namespace='memberships')),
