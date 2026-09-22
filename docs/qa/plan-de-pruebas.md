@@ -262,7 +262,7 @@ La actividad de V&V se ejecuta en paralelo al cierre del Sprint 3 (que finaliza 
 
 1. Levantar el entorno con `docker compose up` (o confirmar que los contenedores ya estén corriendo con `docker compose ps`).
 2. Para regresión backend: correr `docker compose exec backend pytest -q` y confirmar que todos los tests pasan (233+ tras los Commits 1–2 del project-wide-cleanup). Si hay fallos, registrar el módulo afectado y abrir un Issue con la plantilla de bug report.
-3. Para testing manual frontend: acceder a http://localhost:5173, iniciar sesión con el rol correspondiente a cada caso (los accesos rápidos de demo en `LoginPage.jsx` solo están disponibles en modo desarrollo — `import.meta.env.DEV`), ejecutar los pasos del caso, y completar `Resultado Obtenido` y `Estado` en `casos-de-prueba.csv`.
+3. Para testing manual frontend: acceder a http://localhost:5173, iniciar sesión con el rol correspondiente a cada caso. Para bootstrap de usuarios de desarrollo, correr `docker compose exec backend python manage.py seed_demo_users` (crea 1 admin, 1 recepcionista y 3 socios con `Demo1234!` como contraseña). Los socios pueden auto-registrarse vía `/registro`. Ejecutar los pasos del caso y completar `Resultado Obtenido` y `Estado` en `casos-de-prueba.csv`.
 4. Ante un resultado divergente, documentar evidencia (captura/video) y cargar un Issue con la plantilla `.github/ISSUE_TEMPLATE/bug_report.md`.
 5. Actualizar este plan y la matriz de casos con los resultados finales antes de la fecha de entrega (17/09/2026).
 

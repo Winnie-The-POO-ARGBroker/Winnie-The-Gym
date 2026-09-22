@@ -1,18 +1,9 @@
-import { useState } from 'react'
 import { useGoogleLogin } from '@react-oauth/google'
-import { useNavigate, Link } from 'react-router-dom'
-import { toast } from 'sonner'
-import useAuth from '../hooks/useAuth'
+import { Link } from 'react-router-dom'
 import WinnieLogo from '../components/ui/WinnieLogo'
-import Button from '../components/ui/Button'
-import api from '../services/api'
 import EmailPasswordForm from '../components/auth/EmailPasswordForm'
 
 export default function LoginPage() {
-  const { setAuth } = useAuth()
-  const navigate = useNavigate()
-  const [loadingRol, setLoadingRol] = useState(null)
-
   // auth-code flow with same-tab redirect. Avoids the "Failed to open popup"
   // error caused by Chrome's third-party cookie restrictions on the implicit
   // popup flow. Token exchange happens in AuthCallback + backend.
@@ -21,32 +12,6 @@ export default function LoginPage() {
     ux_mode: 'redirect',
     redirect_uri: `${window.location.origin}/auth/callback`,
   })
-
-  const handleDevLogin = async (rol) => {
-    setLoadingRol(rol)
-    try {
-      const res = await api.post('/auth/dev-login/', { rol })
-      setAuth({
-        access: res.data.access,
-        refresh: res.data.refresh,
-        user: res.data.user,
-      })
-      if (rol === 'socio') {
-        navigate('/socio/credencial')
-      } else {
-        navigate('/dashboard')
-      }
-      toast.success(`Sesión iniciada como ${res.data.user.rol}`)
-    } catch (err) {
-      const errorMsg =
-        err.response?.data?.detail ||
-        'El login de dev no está disponible (solo en modo desarrollo)'
-      toast.error(errorMsg)
-      console.error('Dev login error:', err)
-    } finally {
-      setLoadingRol(null)
-    }
-  }
 
   return (
     <div className="min-h-screen flex bg-bg-base">
@@ -147,48 +112,6 @@ export default function LoginPage() {
             ¿No tenés cuenta? Crear cuenta
           </Link>
 
-          {import.meta.env.DEV && <>
-            {/* Divider */}
-            <div className="flex items-center gap-3">
-              <div className="flex-1 h-px" style={{ backgroundColor: 'var(--color-border-subtle)' }} />
-              <span className="text-xs whitespace-nowrap text-text-secondary">
-                o acceso rápido demo
-              </span>
-              <div className="flex-1 h-px" style={{ backgroundColor: 'var(--color-border-subtle)' }} />
-            </div>
-
-            {/* Quick Demo Logins */}
-            <div className="flex flex-col gap-2">
-              <Button
-                variant="primary"
-                onClick={() => handleDevLogin('administrador')}
-                loading={loadingRol === 'administrador'}
-                className="w-full gap-2 shadow-md shadow-orange-500/20 hover:scale-[1.02] active:scale-[0.98]"
-              >
-                👑 Ingresar como Administrador
-              </Button>
-
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  disabled={loadingRol !== null}
-                  onClick={() => handleDevLogin('recepcionista')}
-                  className="py-2 px-3 rounded-xl bg-bg-raised hover:bg-bg-surface border border-subtle text-text-primary text-xs font-semibold transition-colors disabled:opacity-50"
-                >
-                  {loadingRol === 'recepcionista' ? 'Ingresando...' : '📋 Recepcionista'}
-                </button>
-
-                <button
-                  type="button"
-                  disabled={loadingRol !== null}
-                  onClick={() => handleDevLogin('socio')}
-                  className="py-2 px-3 rounded-xl bg-bg-raised hover:bg-bg-surface border border-subtle text-text-primary text-xs font-semibold transition-colors disabled:opacity-50"
-                >
-                  {loadingRol === 'socio' ? 'Ingresando...' : '💳 Socio (Portal)'}
-                </button>
-              </div>
-            </div>
-          </>}
         </div>
       </div>
     </div>
