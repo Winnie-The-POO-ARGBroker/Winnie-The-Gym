@@ -29,6 +29,7 @@ export default defineConfig({
         'coverage/**',
         '**/tailwind.config.js',
         '**/postcss.config.js',
+        'src/test/**',
       ],
     },
   },
