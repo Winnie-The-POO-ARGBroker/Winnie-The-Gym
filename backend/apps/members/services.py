@@ -1,3 +1,4 @@
+import logging
 import os
 from datetime import date
 
@@ -7,6 +8,8 @@ from django.core.files.storage import default_storage
 from django.utils.text import slugify
 from rest_framework.exceptions import ValidationError
 
+logger = logging.getLogger(__name__)
+
 
 ALLOWED_CERT_EXTENSIONS = {'.pdf', '.jpg', '.jpeg', '.png'}
 ALLOWED_CERT_CONTENT_TYPES = {
@@ -15,6 +18,31 @@ ALLOWED_CERT_CONTENT_TYPES = {
     'image/png',
 }
 MAX_CERT_SIZE_BYTES = 5 * 1024 * 1024
+
+
+def dispatch_activation_email_for_socio(usuario) -> None:
+    """Trigger a set-password activation email for a socio's user account.
+
+    Only dispatches if the user has a real email address (not a synthetic
+    ``socio_<dni>@winniegym.com`` placeholder). Delegates to the users-app
+    service to keep cross-app coupling minimal.
+    """
+    if not usuario or not usuario.email:
+        return
+
+    is_synthetic = usuario.email.endswith('@winniegym.com') and usuario.email.startswith('socio_')
+    if is_synthetic:
+        logger.warning(
+            'dispatch_activation_email_for_socio: synthetic email %s, skipping',
+            usuario.email,
+        )
+        return
+
+    try:
+        from apps.users.services import send_activation_email
+        send_activation_email(usuario)
+    except Exception as exc:
+        logger.warning('dispatch_activation_email_for_socio failed for %s: %s', usuario.email, exc)
 
 
 def dar_baja(socio):

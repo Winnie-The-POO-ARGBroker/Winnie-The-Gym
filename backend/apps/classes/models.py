@@ -43,6 +43,8 @@ class Clase(models.Model):
     recurrencia = models.CharField(max_length=100, default='Semanal - L/M/V')
     dias_recurrencia = models.JSONField(default=list, blank=True)
     estado = models.CharField(max_length=20, choices=Estado.choices, default=Estado.ACTIVA)
+    fecha_cancelacion = models.DateTimeField(null=True, blank=True)
+    motivo_cancelacion = models.TextField(blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

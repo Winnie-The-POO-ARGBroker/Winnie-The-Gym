@@ -14,6 +14,7 @@ import TopBar from '../components/layout/TopBar'
 import ClassCalendarView from '../components/classes/ClassCalendarView'
 import ClassListDetailView from '../components/classes/ClassListDetailView'
 import ClassAttendeesModal from '../components/classes/ClassAttendeesModal'
+import CancelarClaseModal from '../components/classes/CancelarClaseModal'
 import EmptyState from '../components/ui/EmptyState'
 import Button from '../components/ui/Button'
 import { useClasesList, useClasesMutations } from '../hooks/queries/useClases'
@@ -26,9 +27,11 @@ export default function ClassSchedulePage() {
   const [isAttendeesModalOpen, setIsAttendeesModalOpen] = useState(false)
   const [classForModal, setClassForModal] = useState(null)
   const [weekOffset, setWeekOffset] = useState(0)
+  const [cancelarModalOpen, setCancelarModalOpen] = useState(false)
+  const [claseParaCancelar, setClaseParaCancelar] = useState(null)
 
   const { data: classes = [], isLoading } = useClasesList()
-  const { remove: deleteClase } = useClasesMutations()
+  const { cancelar: cancelarClase } = useClasesMutations()
 
   const {
     attendees,
@@ -87,15 +90,25 @@ export default function ClassSchedulePage() {
   }
 
   const handleDeleteClass = (cls) => {
-    deleteClase.mutate(cls.id, {
-      onSuccess: () => {
-        if (selectedClass?.id === cls.id) setSelectedClass(null)
-        toast.info(`Clase "${cls.nombre}" eliminada correctamente`)
+    // Open soft-cancel modal instead of hard-deleting
+    setClaseParaCancelar(cls)
+    setCancelarModalOpen(true)
+  }
+
+  const handleConfirmCancelar = (motivo) => {
+    cancelarClase.mutate(
+      { id: claseParaCancelar.id, motivo },
+      {
+        onSuccess: () => {
+          if (selectedClass?.id === claseParaCancelar.id) setSelectedClass(null)
+          setCancelarModalOpen(false)
+          setClaseParaCancelar(null)
+        },
+        onError: () => {
+          // toast handled inside useClasesMutations
+        },
       },
-      onError: () => {
-        toast.error('Error al eliminar la clase')
-      },
-    })
+    )
   }
 
   return (
@@ -227,6 +240,18 @@ export default function ClassSchedulePage() {
             toast.success('Asistencia guardada con éxito')
             setIsAttendeesModalOpen(false)
           }}
+        />
+
+        {/* Modal de Cancelar Clase */}
+        <CancelarClaseModal
+          isOpen={cancelarModalOpen}
+          onClose={() => {
+            setCancelarModalOpen(false)
+            setClaseParaCancelar(null)
+          }}
+          clase={claseParaCancelar}
+          onConfirm={handleConfirmCancelar}
+          loading={cancelarClase.isPending}
         />
       </div>
     </AppLayout>

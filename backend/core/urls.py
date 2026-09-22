@@ -140,12 +140,14 @@ urlpatterns = [
         password_reset_confirm_redirect,
         name='password_reset_confirm',
     ),
+    path('api/users/', include(('apps.users.staff_urls', 'users_mgmt'), namespace='users_mgmt')),
     path('api/access/', include(('apps.access.urls', 'access'), namespace='access')),
     path('api/members/', include(('apps.members.urls', 'members'), namespace='members')),
     path('api/memberships/', include(('apps.memberships.urls', 'memberships'), namespace='memberships')),
     path('api/classes/', include(('apps.classes.urls', 'classes'), namespace='classes')),
     path('api/payments/', include(('apps.payments.urls', 'payments'), namespace='payments')),
     path('api/reportes/', include(('apps.reports.urls', 'reports'), namespace='reports')),
+    path('api/config/', include(('apps.common.urls', 'config'), namespace='config')),
 ]
 
 if settings.DEBUG:

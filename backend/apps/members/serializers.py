@@ -3,6 +3,7 @@ from django.db import IntegrityError
 from rest_framework import serializers
 
 from .models import Socio
+from .services import dispatch_activation_email_for_socio
 
 User = get_user_model()
 
@@ -76,7 +77,10 @@ class SocioSerializer(serializers.ModelSerializer):
                         {'dni': 'Ya existe un socio con este DNI o email.'}
                     )
                 validated_data['usuario'] = usuario
-                return super().create(validated_data)
+                socio = super().create(validated_data)
+                # REQ-1.3: dispatch activation email so the socio can set a password
+                dispatch_activation_email_for_socio(usuario)
+                return socio
             except IntegrityError:
                 raise serializers.ValidationError(
                     {'email': 'Este email ya está asociado a otro socio.'}

@@ -56,9 +56,10 @@ class LocustfileStaticCheckTests(TestCase):
 
     def test_locustfile_declares_expected_user_classes(self):
         import ast
-        from pathlib import Path
 
-        source = Path('/app/loadtests/locustfile.py').read_text()
+        from django.conf import settings
+
+        source = (settings.BASE_DIR / 'loadtests' / 'locustfile.py').read_text()
         tree = ast.parse(source)
         class_names = {node.name for node in ast.walk(tree) if isinstance(node, ast.ClassDef)}
         for expected in ('SocioUser', 'RecepcionistaUser', 'AdminUser'):

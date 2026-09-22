@@ -4,6 +4,7 @@ import logging
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, OpenApiTypes, extend_schema, extend_schema_view
 from rest_framework import mixins, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -38,7 +39,20 @@ class PagoViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
     ordering = ['-created_at']
 
     def get_permissions(self):
+        if self.action == 'mis_pagos':
+            return [IsSocio()]
         return [IsReceptionistOrAdmin()]
+
+    @action(detail=False, methods=['get'], url_path='mis-pagos', url_name='mis-pagos')
+    def mis_pagos(self, request):
+        """Return the authenticated socio's own payment history, paginated."""
+        pagos = Pago.objects.filter(socio__usuario=request.user).order_by('-created_at')
+        page = self.paginate_queryset(pagos)
+        if page is not None:
+            serializer = PagoSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = PagoSerializer(pagos, many=True)
+        return Response(serializer.data)
 
 
 @extend_schema_view(

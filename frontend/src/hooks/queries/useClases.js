@@ -93,5 +93,17 @@ export function useClasesMutations() {
     },
   })
 
-  return { create, update, remove }
+  const cancelar = useMutation({
+    mutationFn: ({ id, motivo }) =>
+      api.post(`/classes/clases/${id}/cancelar-clase/`, { motivo }).then((r) => r.data),
+    onSuccess: () => {
+      invalidate()
+      toast.success('Clase cancelada correctamente.')
+    },
+    onError: (err) => {
+      toast.error(extractErrorMessage(err, 'Error al cancelar la clase'))
+    },
+  })
+
+  return { create, update, remove, cancelar }
 }

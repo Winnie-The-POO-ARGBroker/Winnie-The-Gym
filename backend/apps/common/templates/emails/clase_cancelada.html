@@ -1,0 +1,38 @@
+{% extends "emails/_base.html" %}
+
+{% block subject %}Clase cancelada — {{ brand_name }}{% endblock %}
+
+{% block content %}
+  <p style="font-size: 16px; margin: 0 0 12px;">
+    Hola <strong>{{ nombre }} {{ apellido }}</strong>,
+  </p>
+
+  <p style="margin: 0 0 16px; line-height: 1.6;">
+    Te informamos que la clase a la que estabas inscripto/a ha sido <strong>cancelada</strong>:
+  </p>
+
+  <div style="background: #fef3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 16px; margin: 0 0 16px;">
+    <p style="margin: 0 0 6px; font-weight: bold; font-size: 16px;">{{ clase_nombre }}</p>
+    <p style="margin: 0; color: #6b5c2a; font-size: 14px;">
+      {{ clase_dia }} a las {{ clase_hora }}
+    </p>
+  </div>
+
+  <p style="margin: 0 0 8px; font-size: 14px; color: #5a5249;">
+    <strong>Motivo de cancelación:</strong>
+  </p>
+  <p style="margin: 0 0 20px; font-size: 14px; color: #5a5249; font-style: italic;">
+    "{{ motivo }}"
+  </p>
+
+  {% if fecha_cancelacion %}
+  <p style="margin: 0 0 20px; font-size: 12px; color: #8a7f6b;">
+    Cancelada el {{ fecha_cancelacion }}.
+  </p>
+  {% endif %}
+
+  <p style="margin: 0; font-size: 14px; line-height: 1.6;">
+    Si tenés dudas o necesitás más información, no dudes en contactarnos.
+    ¡Disculpá los inconvenientes!
+  </p>
+{% endblock %}

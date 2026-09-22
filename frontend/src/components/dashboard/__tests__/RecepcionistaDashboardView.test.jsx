@@ -19,8 +19,8 @@ vi.mock('../../../hooks/useWebSocket', () => ({
   }),
 }))
 
-vi.mock('../../../constants/pagination', () => ({
-  GYM_MAX_CAPACITY: 200,
+vi.mock('../../../hooks/queries/useGymConfig', () => ({
+  useGymConfig: () => ({ data: { aforo_maximo: 200 } }),
 }))
 
 describe('RecepcionistaDashboardView — Aforo REST fallback', () => {

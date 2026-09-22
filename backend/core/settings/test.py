@@ -1,4 +1,8 @@
-from .base import *
+from .development import *
+
+# Django test client uses HTTP_HOST='testserver' by default; keep the ngrok
+# wildcards inherited from development so infra hardening tests still pass.
+ALLOWED_HOSTS = ALLOWED_HOSTS + ['testserver']
 
 CACHES = {
     "default": {

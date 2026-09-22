@@ -103,7 +103,8 @@ class ClaseCreateTests(APITestCase):
         self.assertEqual(response.data['nombre'], 'Funcional Intensivo')
         self.assertEqual(response.data['cupo_maximo'], 20)
 
-    def test_create_clase_recep_403(self):
+    def test_create_clase_recep_201(self):
+        # REQ-2.3: recepcionista can now create classes (permission updated in Bug 2.3 fix)
         recep = make_user_factory(rol='recepcionista')
         _auth_client(self.client, recep)
 
@@ -111,9 +112,10 @@ class ClaseCreateTests(APITestCase):
             'nombre': 'Spinning Pro',
             'categoria': 'spinning',
             'cupo_maximo': 20,
+            'estado': 'activa',
         }
         response = self.client.post(CLASES_URL, payload, format='json')
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_create_clase_socio_403(self):
         socio = make_user_factory(rol='socio')
@@ -157,7 +159,8 @@ class ClaseRetrieveUpdateTests(APITestCase):
         self.assertEqual(response.data['cupo_maximo'], 25)
         self.assertEqual(response.data['instructor'], 'Sofia L.')
 
-    def test_patch_clase_recep_403(self):
+    def test_patch_clase_recep_200(self):
+        # REQ-2.3: recepcionista can now update classes (permission updated in Bug 2.3 fix)
         recep = make_user_factory(rol='recepcionista')
         clase = _make_clase()
         _auth_client(self.client, recep)
@@ -167,7 +170,7 @@ class ClaseRetrieveUpdateTests(APITestCase):
             {'cupo_maximo': 30},
             format='json',
         )
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
 class ClaseDeleteTests(APITestCase):

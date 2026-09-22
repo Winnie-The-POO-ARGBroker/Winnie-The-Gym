@@ -6,6 +6,28 @@ from rest_framework.exceptions import ValidationError
 from .models import Clase, InscripcionClase
 
 
+def cancelar_clase(clase, motivo, actor=None):
+    """Soft-cancel a Clase.
+
+    Sets the class to 'cancelada' state with a timestamp and reason.
+    The post_save signal in apps.classes.signals fires after this, enqueueing
+    cancellation emails to all enrolled socios.
+
+    Raises:
+        ValidationError: if the class is already cancelled or if the motivo
+                         is fewer than 10 characters.
+    """
+    if clase.estado == Clase.Estado.CANCELADA:
+        raise ValidationError({'detail': 'La clase ya está cancelada.'})
+    if len((motivo or '').strip()) < 10:
+        raise ValidationError({'motivo': 'El motivo debe tener al menos 10 caracteres.'})
+
+    clase.estado = Clase.Estado.CANCELADA
+    clase.fecha_cancelacion = timezone.now()
+    clase.motivo_cancelacion = motivo.strip()
+    clase.save(update_fields=['estado', 'fecha_cancelacion', 'motivo_cancelacion'])
+
+
 DIA_TO_WEEKDAY = {
     Clase.Dia.LUNES: 0,
     Clase.Dia.MARTES: 1,

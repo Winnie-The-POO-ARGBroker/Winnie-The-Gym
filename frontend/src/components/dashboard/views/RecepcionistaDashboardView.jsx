@@ -3,13 +3,14 @@ import MovementList from '../MovementList'
 import Button from '../../ui/Button'
 import { useAccessLogs, mapAccessLog, useAforoStats } from '../../../hooks/queries/useDashboardData'
 import useWebSocket from '../../../hooks/useWebSocket'
-import { GYM_MAX_CAPACITY } from '../../../constants/pagination'
+import { useGymConfig } from '../../../hooks/queries/useGymConfig'
 
 export default function RecepcionistaDashboardView({ navigate }) {
   const { data: logsData = [], isLoading: isLoadingLogs, isError: isErrorLogs } = useAccessLogs(5)
 
   const { lastMessage, isConnecting } = useWebSocket('/ws/aforo/')
   const { data: restStats } = useAforoStats()
+  const { data: gymConfig } = useGymConfig()
 
   const aforoActual = lastMessage?.aforo_actual ?? restStats?.aforo_actual ?? 0
   const ingresosHoy = lastMessage?.ingresos_hoy ?? restStats?.ingresos_hoy ?? 0
@@ -58,11 +59,11 @@ export default function RecepcionistaDashboardView({ navigate }) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
-        <AforoCard 
-          current={aforoActual} 
-          max={GYM_MAX_CAPACITY} 
-          entries={ingresosHoy} 
-          exits={egresosHoy} 
+        <AforoCard
+          current={aforoActual}
+          max={gymConfig?.aforo_maximo ?? 200}
+          entries={ingresosHoy}
+          exits={egresosHoy}
           loading={isConnecting && !lastMessage && restStats === undefined}
         />
         {isErrorLogs ? <p className="text-danger text-sm">Error al cargar movimientos.</p> : <MovementList movements={mappedMovements} loading={isLoadingLogs} />}

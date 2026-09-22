@@ -18,6 +18,7 @@ from .serializers import (
     ClaseSerializer,
     InscripcionClaseSerializer,
 )
+from .services import cancelar_clase as service_cancelar_clase
 from .services import cancelar_inscripcion, inscribir_socio
 
 
@@ -52,9 +53,18 @@ class ClaseViewSet(viewsets.ModelViewSet):
     ordering_fields = ['nombre', 'hora', 'dia', 'cupo_maximo', 'created_at']
     ordering = ['id']
 
+    def get_queryset(self):
+        qs = Clase.objects.all().order_by('id')
+        incluir = self.request.query_params.get('incluir_canceladas', 'false').lower()
+        if incluir != 'true':
+            qs = qs.exclude(estado=Clase.Estado.CANCELADA)
+        return qs
+
     def get_permissions(self):
-        if self.action in ('create', 'update', 'partial_update', 'destroy'):
+        if self.action == 'destroy':
             return [IsAdminOnly()]
+        if self.action in ('create', 'update', 'partial_update', 'cancelar_clase'):
+            return [IsReceptionistOrAdmin()]
         if self.action in ('inscribir', 'cancelar'):
             return [IsSocio()]
         return [permissions.IsAuthenticated()]
@@ -113,6 +123,25 @@ class ClaseViewSet(viewsets.ModelViewSet):
             },
             status=status.HTTP_200_OK,
         )
+
+    @extend_schema(
+        tags=['classes'],
+        summary='Cancelar una clase (staff) — soft cancel con notificación (REQ-3.4)',
+        request={'application/json': {'type': 'object', 'properties': {'motivo': {'type': 'string', 'minLength': 10}}}},
+        responses={200: {'type': 'object', 'properties': {'detail': {'type': 'string'}}}},
+    )
+    @action(
+        detail=True,
+        methods=['post'],
+        url_path='cancelar-clase',
+        url_name='cancelar-clase',
+        permission_classes=[IsReceptionistOrAdmin],
+    )
+    def cancelar_clase(self, request, pk=None):
+        clase = self.get_object()
+        motivo = request.data.get('motivo', '')
+        service_cancelar_clase(clase, motivo, actor=request.user)
+        return Response({'detail': 'Clase cancelada correctamente.'}, status=status.HTTP_200_OK)
 
 
 @extend_schema_view(

@@ -1,6 +1,27 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { crearPreferencia, resolverInitPoint, cobrarManual } from '../../services/pagosService'
+import api from '../../services/api'
+
+// ─── Queries ───────────────────────────────────────────────────────────────────
+
+export const PAGOS_POR_SOCIO_KEY = (socioId) => ['pagos', 'porSocio', socioId]
+
+/**
+ * Fetch pagos for a specific socio (admin/recep use — for SocioDetailModal).
+ */
+export function usePagosPorSocio(socioId, options = {}) {
+  return useQuery({
+    queryKey: PAGOS_POR_SOCIO_KEY(socioId),
+    queryFn: async () => {
+      const res = await api.get('/payments/pagos/', { params: { socio_id: socioId } })
+      return res.data?.results ?? res.data ?? []
+    },
+    enabled: !!socioId,
+    retry: 1,
+    ...options,
+  })
+}
 
 // ─── Mutations ─────────────────────────────────────────────────────────────────
 

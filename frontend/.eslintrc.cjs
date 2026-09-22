@@ -7,7 +7,7 @@ module.exports = {
     'plugin:react/jsx-runtime',
     'plugin:react-hooks/recommended',
   ],
-  ignorePatterns: ['dist', '.eslintrc.cjs'],
+  ignorePatterns: ['dist', '.eslintrc.cjs', 'coverage'],
   parserOptions: { ecmaVersion: 'latest', sourceType: 'module' },
   settings: { react: { version: '18.3' } },
   plugins: ['react', 'react-hooks'],
@@ -16,4 +16,11 @@ module.exports = {
     'react-hooks/exhaustive-deps': 'warn',
     'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
   },
+  overrides: [
+    {
+      files: ['**/*.test.{js,jsx}', '**/__tests__/**/*.{js,jsx}'],
+      env: { jest: true },
+      globals: { vi: 'readonly' },
+    },
+  ],
 }

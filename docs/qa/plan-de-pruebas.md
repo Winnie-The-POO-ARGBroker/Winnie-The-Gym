@@ -262,7 +262,7 @@ La actividad de V&V se ejecuta en paralelo al cierre del Sprint 3 (que finaliza 
 
 1. Levantar el entorno con `docker compose up` (o confirmar que los contenedores ya estén corriendo con `docker compose ps`).
 2. Para regresión backend: correr `docker compose exec backend pytest -q` y confirmar que todos los tests pasan (233+ tras los Commits 1–2 del project-wide-cleanup). Si hay fallos, registrar el módulo afectado y abrir un Issue con la plantilla de bug report.
-3. Para testing manual frontend: acceder a http://localhost:5173, iniciar sesión con el rol correspondiente a cada caso (los accesos rápidos de demo en `LoginPage.jsx` solo están disponibles en modo desarrollo — `import.meta.env.DEV`), ejecutar los pasos del caso, y completar `Resultado Obtenido` y `Estado` en `casos-de-prueba.csv`.
+3. Para testing manual frontend: acceder a http://localhost:5173, iniciar sesión con el rol correspondiente a cada caso. Para bootstrap de usuarios de desarrollo, correr `docker compose exec backend python manage.py seed_demo_users` (crea 1 admin, 1 recepcionista y 3 socios con `Demo1234!` como contraseña). Los socios pueden auto-registrarse vía `/registro`. Ejecutar los pasos del caso y completar `Resultado Obtenido` y `Estado` en `casos-de-prueba.csv`.
 4. Ante un resultado divergente, documentar evidencia (captura/video) y cargar un Issue con la plantilla `.github/ISSUE_TEMPLATE/bug_report.md`.
 5. Actualizar este plan y la matriz de casos con los resultados finales antes de la fecha de entrega (17/09/2026).
 
@@ -340,3 +340,129 @@ Referencia: **R**=Responsable/Ejecutor, **A**=Aprobador, **C**=Consultado, **I**
 | **RACI** | Responsable, Aprobador, Consultado, Informado — matriz de responsabilidades. |
 | **Locust** | Herramienta de pruebas de carga usada para validar RNF01/RNF06. |
 | **Aprobado / Rechazado** | Estado de un caso de prueba tras su ejecución, según coincida o no el resultado obtenido con el esperado. |
+
+## 27. Flujos E2E de Sprint Close
+
+Esta sección documenta tres flujos de extremo a extremo que un evaluador puede reproducir manualmente en un entorno local con `docker compose up` y `python manage.py seed_demo_users` ejecutado para disponer de usuarios demo (`Demo1234!`).
+
+---
+
+### Flujo E2E-01 — Nuevo socio self-service (CP-E2E-01)
+
+**Descripción:** Un visitante no autenticado se registra de forma autónoma, sube su certificado médico, realiza el pago vía MercadoPago sandbox y valida su acceso en la terminal de recepción.
+
+**Pre-condiciones:**
+- Entorno Docker Compose levantado y saludable (`/api/health/` devuelve 200).
+- MercadoPago sandbox configurado en el backend (variables `MP_ACCESS_TOKEN`, `MP_PUBLIC_KEY`).
+- Email no registrado previamente en la base de datos.
+
+**Pasos:**
+
+| # | Acción | URL / Elemento | Resultado Esperado |
+|---|---|---|---|
+| 1 | Abrir navegador incógnito | — | Sin sesión activa |
+| 2 | Navegar a la página de registro | `/registro` | Formulario con 7 campos visibles (email, contraseña, confirmar contraseña, nombre, apellido, DNI, teléfono) |
+| 3 | Completar el formulario con datos válidos y enviar | Botón "Crear cuenta" | Toast de éxito + redirección automática a `/dashboard` |
+| 4 | Verificar creación de sesión | Barra lateral o header | Nombre del socio visible; rol `socio` |
+| 5 | Navegar al perfil | `/perfil` | Sección "Certificado médico" visible con botón "Subir certificado" |
+| 6 | Subir un archivo PDF/JPG válido (< 5 MB) | Input de archivo | Toast de éxito; thumbnail del archivo aparece en la UI |
+| 7 | Navegar al checkout | `/socio/checkout` | Planes disponibles con precios; botón "Pagar con MercadoPago" |
+| 8 | Seleccionar un plan y confirmar el pago | Botón de pago | Redirección a MercadoPago sandbox |
+| 9 | Completar el pago sandbox usando una tarjeta de prueba (ej. Visa 4509953566233704) | Formulario MP | Redirección de vuelta al frontend con status de aprobado |
+| 10 | Verificar credencial digital | `/socio/credencial` | QR dinámico visible; estado `ACTIVA` |
+| 11 | Abrir terminal de recepción en otra pestaña/ventana | `/recepcion/acceso` | Terminal con escáner QR o input de DNI |
+| 12 | Escanear el QR del socio o ingresar su DNI manualmente | Input o cámara | Badge `ACCESO CONCEDIDO` (GRANTED); registro de ingreso en historial |
+
+**Resultado Esperado Global:** El socio puede completar el ciclo completo de incorporación sin asistencia del personal.
+
+**Screenshot placeholders:**
+- [ ] `/registro` con formulario completo
+- [ ] Toast de éxito post-registro
+- [ ] Sección certificado médico en `/perfil`
+- [ ] QR válido en `/socio/credencial`
+- [ ] Terminal recepción con GRANTED
+
+---
+
+### Flujo E2E-02 — Cobro manual + validación de acceso (CP-E2E-02)
+
+**Descripción:** Una recepcionista registra un cobro manual para un socio existente y luego el socio verifica que su credencial y el historial de pagos están actualizados.
+
+**Pre-condiciones:**
+- Usuarios demo disponibles (`seed_demo_users` ejecutado).
+- Recepcionista: `recepcion@winnie.local` / `Demo1234!`.
+- Socio: `socio.vencido@winnie.local` / `Demo1234!` (membresía vencida, para que el cobro sea relevante).
+
+**Pasos:**
+
+| # | Acción | URL / Elemento | Resultado Esperado |
+|---|---|---|---|
+| 1 | Login como recepcionista | `/login` | Dashboard de recepción visible |
+| 2 | Navegar a cobros manuales | `/recepcion/cobros` | Buscador de socios + listado de planes |
+| 3 | Buscar al socio por nombre o DNI | Campo de búsqueda | Resultado del socio en la lista |
+| 4 | Seleccionar el socio | Click en el resultado | Detalle del socio cargado; si tiene membresía activa, aparece banner de advertencia |
+| 5 | Seleccionar un plan | Selector de planes | Plan seleccionado; precio visible |
+| 6 | Registrar el cobro | Botón "Registrar cobro" | Toast de éxito; pago registrado en el sistema |
+| 7 | Cerrar sesión de recepcionista | Botón de logout | Redirección a `/login` |
+| 8 | Login como el socio | `/login` | Dashboard del socio |
+| 9 | Verificar credencial actualizada | `/socio/credencial` | QR activo; fecha de vencimiento correspondiente al nuevo plan |
+| 10 | Verificar historial de pagos | `/socio/pagos` | El cobro recién registrado aparece en la tabla con estado `aprobado` |
+
+**Resultado Esperado Global:** El flujo de cobro manual es operativo y reflejado en tiempo real en la vista del socio.
+
+**Screenshot placeholders:**
+- [ ] Cobros en `/recepcion/cobros` con socio seleccionado
+- [ ] Toast de éxito post-cobro
+- [ ] Credencial del socio con nueva membresía activa
+- [ ] Historial de pagos en `/socio/pagos`
+
+---
+
+### Flujo E2E-03 — Admin end-to-end (CP-E2E-03)
+
+**Descripción:** Un administrador realiza el ciclo completo de alta de personal, creación de plan, alta de socio, cobro y revisión de reportes y configuración.
+
+**Pre-condiciones:**
+- Admin: `admin@winnie.local` / `Demo1234!`.
+- Mailtrap (o similar) configurado para capturar emails de activación.
+
+**Pasos:**
+
+| # | Acción | URL / Elemento | Resultado Esperado |
+|---|---|---|---|
+| 1 | Login como admin | `/login` | Dashboard de administración |
+| 2 | Navegar a gestión de usuarios | `/admin/usuarios` | Tabla de staff con botón "Crear staff" |
+| 3 | Crear un nuevo recepcionista (email nuevo, nombre, apellido) | Modal "Crear staff" | Toast de éxito; nuevo recepcionista aparece en la tabla; email de activación enviado a Mailtrap |
+| 4 | Navegar a planes | `/admin/planes` | Lista de planes existentes |
+| 5 | Crear un nuevo plan (nombre, precio, duración entre 30-365 días) | Botón "Nuevo plan" | Toast de éxito; plan aparece en la tabla |
+| 6 | Intentar crear plan con duración inválida (ej. 15 días) | Campo duración | Error inline: "La duración debe estar entre 30 y 365 días" |
+| 7 | Navegar a socios | `/admin/socios` | Lista de socios |
+| 8 | Crear un nuevo socio con email y subir certificado médico | Botón "Nuevo socio" + formulario | Toast de éxito; socio creado; email de activación enviado |
+| 9 | Abrir el detalle del socio recién creado | Click en la fila | Modal con 3 tabs: "Datos", "Membresías", "Pagos" |
+| 10 | Tab "Membresías" → verificar estado inicial (sin membresía) | Tab Membresías | Empty state "Sin membresías registradas" |
+| 11 | Navegar a cobros y registrar el pago del plan al socio | `/recepcion/cobros` | Cobro registrado exitosamente |
+| 12 | Volver al detalle del socio → Tab "Pagos" | Modal socio | El pago aparece en la lista |
+| 13 | Navegar a reportes | `/admin/reportes` o `/recepcion/reportes` | Filtros de período y tipo de reporte |
+| 14 | Exportar reporte de morosidad en PDF | Botón "Exportar PDF" | Archivo PDF descargado con los datos de socios con deuda |
+| 15 | Navegar a configuración | `/admin/configuracion` | Formulario con aforo máximo, horarios y teléfono |
+| 16 | Modificar el aforo máximo (ej. 150) | Campo "Aforo máximo" + guardar | Toast de éxito |
+| 17 | Verificar que `AforoCard` en el dashboard refleja el nuevo aforo | `/dashboard` | AforoCard muestra el nuevo máximo (150) |
+
+**Resultado Esperado Global:** El administrador puede gestionar personal, planes, socios, cobros, reportes y configuración del gimnasio en un solo ciclo de sesión.
+
+**Screenshot placeholders:**
+- [ ] Modal de creación de staff en `/admin/usuarios`
+- [ ] Creación de plan con validación de duración inválida
+- [ ] SocioDetailModal con 3 tabs
+- [ ] Reporte de morosidad exportado (PDF)
+- [ ] AforoCard con nuevo aforo máximo
+
+---
+
+### Notas de ejecución
+
+- Los tres flujos son reproducibles de forma independiente.
+- Orden recomendado para una pasada integral: E2E-01 → E2E-02 → E2E-03.
+- Para flujos que requieren MercadoPago sandbox, usar las [tarjetas de prueba de MercadoPago](https://www.mercadopago.com.ar/developers/es/docs/checkout-pro/additional-content/your-integrations/test/cards).
+- Los emails de activación se capturan en Mailtrap (o el SMTP sandbox configurado en las variables de entorno de desarrollo).
+- Cualquier desviación del resultado esperado debe documentarse como un GitHub Issue con la plantilla `.github/ISSUE_TEMPLATE/bug_report.md`.

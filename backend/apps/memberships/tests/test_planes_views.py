@@ -107,12 +107,13 @@ class PlanCreateTests(APITestCase):
         self.assertIn('precio', response.data)
 
     def test_create_plan_invalid_duracion_400(self):
+        # REQ-2.4: duracion_dias validated as range [30, 365]; values outside range are rejected
         admin = make_user_factory(rol='administrador')
         _auth_client(self.client, admin)
 
         payload = {
             'nombre': 'Plan Invalido',
-            'duracion_dias': 60,
+            'duracion_dias': 10,  # below minimum of 30
             'precio': '5000.00',
             'clases_asignadas': 0,
             'activo': True,

@@ -1,16 +1,19 @@
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
+import { FileCheck, FileX, Lock, Upload } from 'lucide-react'
 import AppLayout from '../components/layout/AppLayout'
 import TopBar from '../components/layout/TopBar'
 import Avatar from '../components/ui/Avatar'
 import Badge from '../components/ui/Badge'
 import Button from '../components/ui/Button'
 import Skeleton from '../components/ui/Skeleton'
+import ChangePasswordModal from '../components/auth/ChangePasswordModal'
 import useAuth from '../hooks/useAuth'
 import { useProfile, useUpdateProfile } from '../hooks/queries/useProfile'
+import api from '../services/api'
 
 const schema = z.object({
   nombre: z.string().min(2, 'Mínimo 2 caracteres'),
@@ -26,8 +29,11 @@ const rolBadgeVariant = {
 
 export default function ProfilePage() {
   const { user, setAuth, accessToken, refreshToken } = useAuth()
-  const { data: profile, isPending: loading } = useProfile()
+  const { data: profile, isPending: loading, refetch: refetchProfile } = useProfile()
   const updateProfile = useUpdateProfile()
+  const [isChangePwdOpen, setIsChangePwdOpen] = useState(false)
+  const [uploadingCert, setUploadingCert] = useState(false)
+  const certInputRef = useRef(null)
 
   const {
     register,
@@ -62,6 +68,31 @@ export default function ProfilePage() {
           : data?.detail) ||
         'No se pudo guardar. Intentá de nuevo.'
       toast.error(message)
+    }
+  }
+
+  const handleCertUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file || !profile?.id) return
+    setUploadingCert(true)
+    const formData = new FormData()
+    formData.append('archivo', file)
+    try {
+      await api.post(`/members/socios/${profile.id}/certificado-medico/`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      toast.success('Certificado médico actualizado.')
+      refetchProfile()
+    } catch (err) {
+      const data = err?.response?.data
+      const message =
+        data && typeof data === 'object'
+          ? Object.values(data).flat().join(' ')
+          : (data?.detail ?? 'No se pudo subir el certificado.')
+      toast.error(message)
+    } finally {
+      setUploadingCert(false)
+      if (certInputRef.current) certInputRef.current.value = ''
     }
   }
 
@@ -124,6 +155,72 @@ export default function ProfilePage() {
               </div>
             </div>
           </div>
+
+          {/* Certificado médico — only for socios */}
+          {rol === 'socio' && (
+            <div className="rounded-2xl p-6 flex flex-col gap-4 bg-bg-surface border border-subtle">
+              <h3 className="text-base font-semibold text-text-primary">Certificado médico</h3>
+
+              {profile?.certificado_medico_url ? (
+                <div className="flex items-center justify-between p-3 rounded-xl bg-success-500/10 border border-success-500/20 text-success-500">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <FileCheck className="w-4 h-4" />
+                    <span>Certificado cargado</span>
+                  </div>
+                  <a
+                    href={profile.certificado_medico_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-semibold underline"
+                  >
+                    Ver archivo
+                  </a>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-error-500/10 border border-error-500/20 text-error-500 text-sm font-medium">
+                  <FileX className="w-4 h-4" />
+                  <span>No hay certificado cargado</span>
+                </div>
+              )}
+
+              <input
+                ref={certInputRef}
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                className="hidden"
+                onChange={handleCertUpload}
+                data-testid="cert-file-input"
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                loading={uploadingCert}
+                onClick={() => certInputRef.current?.click()}
+                className="gap-2 w-fit"
+              >
+                <Upload className="w-4 h-4" />
+                {profile?.certificado_medico_url ? 'Reemplazar certificado' : 'Subir certificado'}
+              </Button>
+            </div>
+          )}
+
+          {/* Security — change password */}
+          <div className="rounded-2xl p-6 flex flex-col gap-4 bg-bg-surface border border-subtle">
+            <h3 className="text-base font-semibold text-text-primary">Seguridad</h3>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => setIsChangePwdOpen(true)}
+              className="gap-2 w-fit"
+            >
+              <Lock className="w-4 h-4" />
+              Cambiar contraseña
+            </Button>
+          </div>
+
+          <ChangePasswordModal isOpen={isChangePwdOpen} onClose={() => setIsChangePwdOpen(false)} />
 
           {/* Edit form */}
           <div className="rounded-2xl p-6 flex flex-col gap-5 bg-bg-surface border border-subtle">

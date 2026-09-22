@@ -1,8 +1,20 @@
 import { useState, useEffect } from 'react'
 import { X, Plus, Trash2, Check, Sparkles } from 'lucide-react'
+import { z } from 'zod'
 import Button from '../ui/Button'
 
+const planSchema = z.object({
+  nombre: z.string().min(1, 'El nombre es requerido'),
+  precio: z.coerce.number({ invalid_type_error: 'El precio debe ser un número' }).min(0, 'El precio no puede ser negativo'),
+  duracion_dias: z.coerce
+    .number({ invalid_type_error: 'La duración debe ser un número' })
+    .int('La duración debe ser un número entero')
+    .min(30, 'La duración debe estar entre 30 y 365 días')
+    .max(365, 'La duración debe estar entre 30 y 365 días'),
+})
+
 export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = null, isDuplicate = false }) {
+  const [errors, setErrors] = useState({})
   const [formData, setFormData] = useState({
     nombre: '',
     subtitulo: '',
@@ -28,6 +40,7 @@ export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = nu
   })
 
   useEffect(() => {
+    setErrors({})
     if (planToEdit) {
       setFormData({
         ...planToEdit,
@@ -85,8 +98,25 @@ export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = nu
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (!formData.nombre.trim()) return
-    if (!formData.precio) return
+    setErrors({})
+
+    const result = planSchema.safeParse({
+      nombre: formData.nombre,
+      precio: formData.precio,
+      duracion_dias: formData.duracion_dias,
+    })
+
+    if (!result.success) {
+      const fieldErrors = {}
+      for (const issue of result.error.issues) {
+        const field = issue.path[0]
+        if (field && !fieldErrors[field]) {
+          fieldErrors[field] = issue.message
+        }
+      }
+      setErrors(fieldErrors)
+      return
+    }
 
     onSave({
       ...formData,
@@ -133,8 +163,11 @@ export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = nu
                 placeholder="Ej. Black, Funcional Plus..."
                 value={formData.nombre}
                 onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus:border-orange-500 transition-colors"
+                className={`w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border text-text-primary text-sm focus:outline-none transition-colors ${errors.nombre ? 'border-error-500 focus:border-error-500' : 'border-subtle focus:border-orange-500'}`}
               />
+              {errors.nombre && (
+                <p className="mt-1 text-xs text-error-500">{errors.nombre}</p>
+              )}
             </div>
 
             <div>
@@ -165,8 +198,11 @@ export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = nu
                 placeholder="12000"
                 value={formData.precio}
                 onChange={(e) => setFormData({ ...formData, precio: e.target.value })}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm font-semibold focus:outline-none focus:border-orange-500 transition-colors"
+                className={`w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border text-text-primary text-sm font-semibold focus:outline-none transition-colors ${errors.precio ? 'border-error-500 focus:border-error-500' : 'border-subtle focus:border-orange-500'}`}
               />
+              {errors.precio && (
+                <p className="mt-1 text-xs text-error-500">{errors.precio}</p>
+              )}
             </div>
 
             <div>
@@ -176,13 +212,16 @@ export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = nu
               <select
                 value={formData.duracion_dias}
                 onChange={(e) => setFormData({ ...formData, duracion_dias: Number(e.target.value) })}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus:border-orange-500 transition-colors"
+                className={`w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border text-text-primary text-sm focus:outline-none transition-colors ${errors.duracion_dias ? 'border-error-500 focus:border-error-500' : 'border-subtle focus:border-orange-500'}`}
               >
                 <option value={30}>30 días (Mensual)</option>
                 <option value={90}>90 días (Trimestral)</option>
                 <option value={180}>180 días (Semestral)</option>
                 <option value={365}>365 días (Anual)</option>
               </select>
+              {errors.duracion_dias && (
+                <p className="mt-1 text-xs text-error-500">{errors.duracion_dias}</p>
+              )}
             </div>
 
             <div>

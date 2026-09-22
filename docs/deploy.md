@@ -203,6 +203,22 @@ Sin DSN, el código no envía nada (opt-in explícito).
 
 ---
 
+## 🧪 Bootstrap de usuarios de desarrollo
+
+Para entornos locales (`DEBUG=True`), crear los usuarios de prueba con:
+
+```bash
+docker compose exec backend python manage.py seed_demo_users
+# Crea: admin@winniegym.com, recepcionista@winniegym.com y 3 socios
+# Password por defecto: Demo1234! (overrideable con env DEMO_USER_PASSWORD)
+# Es idempotente — puede correrse múltiples veces sin duplicar registros
+```
+
+Los socios pueden auto-registrarse vía el formulario público en `/registro`.
+El endpoint de login rápido de desarrollo fue eliminado en su totalidad; no existe en ningún entorno.
+
+---
+
 ## ✅ Checklist final post-deploy
 
 - [ ] `GET https://<render>/api/health/` → `200` con los 3 probes en OK
