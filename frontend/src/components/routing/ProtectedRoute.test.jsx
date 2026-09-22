@@ -52,14 +52,38 @@ describe('ProtectedRoute', () => {
     expect(screen.getByText('Protected Content')).toBeInTheDocument()
   })
 
-  // ── 3. Profile incomplete → redirects to /completar-perfil ───────────────
-  it('redirects to /completar-perfil when profile is incomplete', () => {
+  // ── 3. Profile incomplete for SOCIO → redirects to /completar-perfil ───────
+  it('redirects socio to /completar-perfil when profile is incomplete', () => {
+    useAuth.mockReturnValue({
+      accessToken: 'tok',
+      user: { rol: 'socio', is_profile_complete: false },
+    })
+    renderProtected(<div>Protected Content</div>)
+    expect(screen.getByText('CompletarPerfil')).toBeInTheDocument()
+  })
+
+  // ── 3b. REGRESSION: admin with is_profile_complete=false must NOT redirect ──
+  // Walkthtrough 2026-09-22 surfaced that admin@winnie.local has
+  // is_profile_complete=false because the model checks for a Socio record.
+  // Staff roles (administrador, recepcionista) never have Socio records.
+  // The ProtectedRoute must exempt staff roles from this redirect.
+  it('renders children for admin even when is_profile_complete is false', () => {
     useAuth.mockReturnValue({
       accessToken: 'tok',
       user: { rol: 'administrador', is_profile_complete: false },
     })
-    renderProtected(<div>Protected Content</div>)
-    expect(screen.getByText('CompletarPerfil')).toBeInTheDocument()
+    renderProtected(<div>Admin Dashboard</div>)
+    expect(screen.getByText('Admin Dashboard')).toBeInTheDocument()
+  })
+
+  // ── 3c. REGRESSION: recepcionista with is_profile_complete=false must NOT redirect
+  it('renders children for recepcionista even when is_profile_complete is false', () => {
+    useAuth.mockReturnValue({
+      accessToken: 'tok',
+      user: { rol: 'recepcionista', is_profile_complete: false },
+    })
+    renderProtected(<div>Recepcion Dashboard</div>)
+    expect(screen.getByText('Recepcion Dashboard')).toBeInTheDocument()
   })
 
   // ── 4. Socio accessing admin-only route → redirects to /socio/credencial ──
