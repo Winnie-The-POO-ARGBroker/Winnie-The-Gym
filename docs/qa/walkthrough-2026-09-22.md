@@ -296,3 +296,76 @@ if (user && !user.is_profile_complete && !STAFF_ROLES.includes(user.rol)) {
 | Socio activo | PASS | `/dashboard`, `/perfil`, `/socio/credencial`, `/socio/clases`, `/socio/checkout`, `/socio/pagos` | PASS | PASS | **PASS** |
 | Socio vencido | PASS | `/dashboard`, `/socio/checkout`, `/socio/clases` | PASS | DEFER (no browser) | **DEFER** |
 | Socio nuevo | PASS | `/dashboard` | PASS | DEFER (no browser; scenario not exercisable) | **DEFER** |
+
+---
+
+## Browser walkthrough addendum — 2026-09-22 (orchestrator + Chrome MCP)
+
+### Context
+
+The initial walkthrough above was executed by a sub-agent whose tool scope did not include `chrome-devtools-mcp` (only `Read/Edit/Write/Grep/Bash/engram`). It therefore fell back to API-level checks and static source inspection. This addendum re-runs the walkthrough from the orchestrator, which does have Chrome MCP tools in scope, using a real Chromium instance driven by the Chrome DevTools Protocol. It replaces the "no browser" DEFER markers with visual evidence and confirms the redirect fix (`67ac4d5`) in the browser.
+
+### Environment
+
+- **Runner**: orchestrator (main Claude Code session) with `mcp__chrome-devtools__*` tools loaded
+- **Browser**: Chromium via chrome-devtools-mcp — `about:blank` at start, single-tab session
+- **Frontend**: http://localhost:5173 (Docker `winnie-the-gym-frontend-1`)
+- **Backend**: http://localhost:8000 (Docker `winnie-the-gym-backend-1`)
+- **Fix under validation**: commit `67ac4d5` (formerly `a9a4a23`, message amended) — `ProtectedRoute` exempts `administrador` and `recepcionista` from the `/completar-perfil` redirect
+- **Screenshots**: `docs/qa/screenshots/2026-09-22/` (24 PNG files, full-page)
+
+### Per-role browser results
+
+| Role | Email | Landing route | Redirect bug? | Routes screenshotted | Console errors | Verdict |
+|------|-------|---------------|---------------|----------------------|----------------|---------|
+| Public | (no login) | `/login` (auto-redirect from `/`) | n/a | 1 (`00-public-login.png`) | none | **PASS** |
+| Admin | `admin@winnie.local` | `/dashboard` | **NO** (fix confirmed) | 7 (`01`–`07`) | none (only React Router v6→v7 future-flag warnings) | **PASS** |
+| Recepcionista | `recepcion@winnie.local` | `/dashboard` | **NO** (fix confirmed) | 6 (`10`–`15`) | none | **PASS** |
+| Socio activo | `socio.activo@winnie.local` | `/socio/credencial` | n/a | 6 (`20`–`25`) | none | **PASS** |
+| Socio vencido | `socio.vencido@winnie.local` | `/socio/credencial` | n/a | 3 (`30`–`32`) | none | **PASS** (DEFER-1 resolved) |
+| Socio nuevo | `socio.nuevo@winnie.local` | `/socio/credencial` | n/a | 1 (`40`) | none | **PASS with seed caveat** (DEFER-2 documented) |
+
+### DEFER resolutions
+
+**DEFER-1 — Expired-membership UI (socio.vencido)**
+Resolved. Diana Vencida (S-00008) lands at `/socio/credencial` and the page renders a prominent banner "**MEMBRESÍA VENCIDA — No tienes un plan activo. Acercate a recepción para contratar uno.**" plus a status pill "**ACCESO BLOQUEADO — Membresía vencida**". The plan area shows "**Sin Plan**". Screenshot: `30-socio-vencido-credencial.png`. The `/socio/checkout` route correctly presents the renewal flow with 4 plans and MercadoPago buttons (screenshot `32-socio-vencido-checkout.png`).
+
+**DEFER-2 — Socio-nuevo first-login flow**
+Not a code bug — a **seed-data limitation**. The seed command creates `socio.nuevo@winnie.local` with a full `Socio` record (S-00009, DNI 33333333, name "Eduardo Nuevo"), so `is_profile_complete` returns `true` (because `hasattr(self, 'socio')` is `true`) and the `/completar-perfil` redirect never fires. Eduardo lands at `/socio/credencial` with the same "MEMBRESÍA VENCIDA" state as Diana. To actually exercise the first-login → `/completar-perfil` flow one must register a genuinely new user through `/registro` (or modify the seed to omit the Socio record for `socio.nuevo`). Documented, not blocking.
+
+### Redirect-fix confirmation
+
+The critical finding from the earlier walkthrough (staff redirected to `/completar-perfil`) is **no longer reproducible** in the browser:
+
+- Admin (`admin@winnie.local`) logs in, lands directly at `/dashboard`, sees the full admin sidebar (Dashboard, Membresías, Clases, Socios, Usuarios, Reportes, Acceso QR, Aforo, Cobros manuales, Mi Credencial view, Reserva Clases view, Configuración), and successfully navigates all 7 admin routes without any redirect. Screenshot evidence: `01-admin-dashboard.png` through `07-admin-reportes.png`.
+- Recepcionista (`recepcion@winnie.local`) same behavior — lands at `/dashboard`, sees the recepcion sidebar (Dashboard, Clases, Acceso, Aforo, Socios, Cobros, Reportes), successfully navigates 6 routes. Screenshots: `10-recepcion-dashboard.png` through `15-recepcion-clases.png`.
+
+### Route note
+
+The old walkthrough listed `/admin/planes` for admin. The current SPA also exposes `/membresias` which server-redirects to `/admin/planes`. Both resolve to the same page.
+
+### Console health
+
+Aggregated across all 24 route visits: **zero errors**. Only warnings observed are React Router v6→v7 future-flag advisories (`v7_startTransition`, `v7_relativeSplatPath`) — non-blocking, upstream migration guidance.
+
+### Updated per-role coverage table (post-browser)
+
+| Role | Login | Routes visited (browser) | Backend API | Frontend routing | Overall verdict |
+|------|-------|--------------------------|-------------|------------------|-----------------|
+| Public (no login) | n/a | `/login` | PASS | PASS | **PASS** |
+| Admin | PASS | `/dashboard`, `/admin/usuarios`, `/admin/socios`, `/admin/planes`, `/admin/clases`, `/configuracion`, `/admin/reportes` | PASS | **PASS** (fix confirmed) | **PASS** |
+| Recepcionista | PASS | `/dashboard`, `/recepcion/aforo`, `/recepcion/socios`, `/recepcion/acceso`, `/recepcion/cobros`, `/admin/clases` | PASS | **PASS** (fix confirmed) | **PASS** |
+| Socio activo | PASS | `/socio/credencial`, `/dashboard`, `/socio/clases`, `/socio/pagos`, `/socio/checkout`, `/perfil` | PASS | PASS | **PASS** |
+| Socio vencido | PASS | `/socio/credencial`, `/socio/clases`, `/socio/checkout` | PASS | **PASS** (DEFER-1 resolved) | **PASS** |
+| Socio nuevo | PASS | `/socio/credencial` | PASS | **PASS** (DEFER-2 = seed-data caveat, documented) | **PASS with seed caveat** |
+
+### New findings
+
+- **No new critical bugs**. The redirect fix works as designed. No regressions introduced by the coverage-uplift commits (`aa53c3f`, `ff9923f`, `5cf8582`).
+- **Seed hygiene follow-up (non-blocking)**: consider a second "genuinely new" seed user without a Socio record so the first-login `/completar-perfil` flow becomes exercisable in future walkthroughs.
+
+### Files produced
+
+- 24 full-page screenshots under `docs/qa/screenshots/2026-09-22/`
+- This addendum section (this file, appended after the original per-role coverage table)
+
