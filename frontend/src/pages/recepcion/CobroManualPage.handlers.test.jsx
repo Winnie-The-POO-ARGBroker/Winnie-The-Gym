@@ -62,7 +62,6 @@ vi.mock('sonner', () => ({
   toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn() },
 }))
 
-import { toast } from 'sonner'
 import api from '../../services/api'
 
 function renderPage() {

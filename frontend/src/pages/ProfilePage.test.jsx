@@ -8,7 +8,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { screen, waitFor, fireEvent } from '@testing-library/react'
 import ProfilePage from './ProfilePage'
-import { renderWithProviders, seedAuthStore, resetAllStores, makeAuthedUser } from '../test/test-utils'
+import { renderWithProviders, resetAllStores, makeAuthedUser } from '../test/test-utils'
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 

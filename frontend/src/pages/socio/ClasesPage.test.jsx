@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import ClasesPage from './ClasesPage'
 
@@ -99,17 +99,6 @@ const CLASES_MOCK = [
     descripcion: 'Yoga relax',
   },
 ]
-
-function setupMocks({ catalog = CLASES_MOCK, all = [], isFetching = false } = {}) {
-  useClasesList
-    .mockReturnValueOnce({ data: catalog, isFetching })  // catalog call
-    .mockReturnValueOnce({ data: all, isFetching })       // all call (mis_reservas)
-
-  useInscripcionesMutations.mockReturnValue({
-    inscribir: { mutate: mockInscribir, isPending: false },
-    cancelar: { mutate: mockCancelar, isPending: false },
-  })
-}
 
 function renderPage() {
   return render(

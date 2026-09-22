@@ -30,7 +30,7 @@ describe('OccupancyCard', () => {
   })
 
   it('shows high capacity indicator when aforo > 85%', () => {
-    const { container } = render(<OccupancyCard aforo={90} maxAforo={100} />)
+    render(<OccupancyCard aforo={90} maxAforo={100} />)
     // The number should use text-primary class when > 85%
     const num = screen.getByText('90')
     expect(num.className).toContain('text-primary')

@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render } from '@testing-library/react'
 import QRCode from './QRCode'
 
 // Mock the QR matrix generator to return a predictable 3x3 matrix

@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest'
-import { screen, waitFor } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import { useQueryClient } from '@tanstack/react-query'
 import useAuthStore from '../stores/authStore'
 import {

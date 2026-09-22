@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { screen, fireEvent } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import MemberLayout from './MemberLayout'
 import { renderWithProviders, resetAllStores } from '../../test/test-utils'
 
