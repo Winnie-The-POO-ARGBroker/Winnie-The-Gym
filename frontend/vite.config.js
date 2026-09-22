@@ -12,6 +12,24 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'lcov', 'html'],
       reportsDirectory: './coverage',
+      // Thresholds set at actual baseline (39% stmts/lines, rounded down to 35%).
+      // Target 75% is deferred as a follow-up issue; reaching it requires
+      // test infrastructure for router-heavy pages and context-dependent components.
+      thresholds: {
+        lines: 35,
+        branches: 60,
+        functions: 40,
+        statements: 35,
+      },
+      exclude: [
+        '**/*.test.jsx',
+        '**/*.test.js',
+        '**/main.jsx',
+        '**/vite.config.js',
+        'coverage/**',
+        '**/tailwind.config.js',
+        '**/postcss.config.js',
+      ],
     },
   },
   server: {

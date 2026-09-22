@@ -86,7 +86,8 @@ jobs:
           GOOGLE_CLIENT_ID: ci-placeholder
           GOOGLE_CLIENT_SECRET: ci-placeholder
           DJANGO_SETTINGS_MODULE: core.settings.test
-        run: pytest --cov=apps --cov-report=term-missing:skip-covered --cov-report=xml -q
+        # pytest.ini addopts supplies --cov-fail-under=80; adding -q for brevity.
+        run: pytest -q
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
@@ -119,8 +120,17 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Run tests
-        run: npx vitest run
+      - name: Run tests with coverage
+        # vite.config.js defines thresholds (lines: 35, branches: 60,
+        # functions: 40, statements: 35). Build fails if thresholds are not met.
+        run: npx vitest run --coverage
+
+      - name: Upload frontend coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: frontend/coverage/
+          if-no-files-found: ignore
 
       - name: Build
         run: npm run build
