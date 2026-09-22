@@ -8,9 +8,10 @@ import ClassSchedulePage from '../ClassSchedulePage'
 vi.mock('../../hooks/queries/useClases', () => ({
   useClasesList: vi.fn(() => ({ data: [], isLoading: false })),
   useClasesMutations: vi.fn(() => ({
-    createClase: { mutate: vi.fn(), isPending: false },
-    updateClase: { mutate: vi.fn(), isPending: false },
-    deleteClase: { mutate: vi.fn(), isPending: false },
+    create: { mutate: vi.fn(), isPending: false },
+    update: { mutate: vi.fn(), isPending: false },
+    remove: { mutate: vi.fn(), isPending: false },
+    cancelar: { mutate: vi.fn(), isPending: false },
   })),
 }))
 

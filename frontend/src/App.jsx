@@ -30,12 +30,14 @@ import ReportesPage from './pages/recepcion/ReportesPage'
 import AdminPlanesPage from './pages/admin/AdminPlanesPage'
 import AdminSociosPage from './pages/admin/AdminSociosPage'
 import AdminUsuariosPage from './pages/admin/AdminUsuariosPage'
+import AdminConfiguracionPage from './pages/admin/AdminConfiguracionPage'
 import CheckoutPage from './pages/socio/CheckoutPage'
+import HistorialPagosPage from './pages/socio/HistorialPagosPage'
 import CobroManualPage from './pages/recepcion/CobroManualPage'
 
 const AccesoTerminalPage = lazy(() => import('./pages/recepcion/AccesoTerminalPage'))
 
-const COMING_SOON_PATHS = ['/configuracion']
+const COMING_SOON_PATHS = []
 
 function RoleBasedClasesRedirect() {
   const { user } = useAuth()
@@ -128,7 +130,12 @@ export default function App() {
         <Route path="/socio/credencial" element={<ProtectedRoute roles={['administrador', 'socio']}><CredencialDigitalPage /></ProtectedRoute>} />
         <Route path="/socio/clases" element={<ProtectedRoute roles={['administrador', 'socio']}><ClasesPage /></ProtectedRoute>} />
         <Route path="/socio/checkout" element={<ProtectedRoute roles={['socio']}><CheckoutPage /></ProtectedRoute>} />
+        <Route path="/socio/pagos" element={<ProtectedRoute roles={['socio']}><HistorialPagosPage /></ProtectedRoute>} />
         <Route path="/socio" element={<ProtectedRoute roles={['administrador', 'socio']}><Navigate to="/socio/credencial" replace /></ProtectedRoute>} />
+
+        {/* Admin configuracion */}
+        <Route path="/configuracion" element={<ProtectedRoute roles={['administrador']}><AdminConfiguracionPage /></ProtectedRoute>} />
+        <Route path="/admin/configuracion" element={<ProtectedRoute roles={['administrador']}><AdminConfiguracionPage /></ProtectedRoute>} />
 
         {/* Sidebar routes — protected, coming soon */}
         {COMING_SOON_PATHS.map((path) => (

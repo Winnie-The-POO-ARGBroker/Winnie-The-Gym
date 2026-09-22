@@ -8,14 +8,15 @@ import Badge from '../../components/ui/Badge';
 import { Wifi, Loader2 } from 'lucide-react';
 import useWebSocket from '../../hooks/useWebSocket';
 import { useAforoStats, useAccessLogs } from '../../hooks/queries/useDashboardData';
-import { GYM_MAX_CAPACITY } from '../../constants/pagination';
+import { useGymConfig } from '../../hooks/queries/useGymConfig';
 import { getTimeAgo } from '../../utils/formatDate';
 
 
 
 export default function AforoMonitorPage() {
   const [aforo, setAforo] = useState(0);
-  const maxAforo = GYM_MAX_CAPACITY;
+  const { data: gymConfig } = useGymConfig();
+  const maxAforo = gymConfig?.aforo_maximo ?? 200;
   
   // Real stats
   const { data: stats } = useAforoStats();

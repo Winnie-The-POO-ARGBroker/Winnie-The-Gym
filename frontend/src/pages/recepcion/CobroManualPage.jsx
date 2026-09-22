@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { toast } from 'sonner'
-import { Search, CreditCard, User, FileText } from 'lucide-react'
+import { Search, CreditCard, User, FileText, AlertTriangle } from 'lucide-react'
 import AppLayout from '../../components/layout/AppLayout'
 import TopBar from '../../components/layout/TopBar'
 import Card from '../../components/ui/Card'
@@ -12,6 +12,7 @@ import api from '../../services/api'
 import useDebounce from '../../hooks/useDebounce'
 import { usePlanesQuery } from '../../hooks/queries/usePlanesAdmin'
 import { useCobrarManualMutation } from '../../hooks/queries/usePagos'
+import { useMembresiaActivaDeSocio } from '../../hooks/queries/useMembresias'
 
 export default function CobroManualPage() {
   // ── Búsqueda de socio ──
@@ -40,6 +41,9 @@ export default function CobroManualPage() {
   // React Query: cobro manual mutation
   const cobrarManual = useCobrarManualMutation()
   const guardando = cobrarManual.isPending
+
+  // React Query: active membership of selected socio (for warning banner)
+  const { data: membresiaActiva } = useMembresiaActivaDeSocio(socioSeleccionado?.id ?? null)
 
   // Prefill monto cuando cambia el plan seleccionado
   const planActual = planes.find((p) => String(p.id) === String(planId))
@@ -243,6 +247,24 @@ export default function CobroManualPage() {
                   >
                     Cambiar
                   </button>
+                </div>
+              )}
+
+              {/* Warning banner — active membership */}
+              {socioSeleccionado && membresiaActiva && (
+                <div
+                  role="alert"
+                  className="flex items-start gap-3 p-3 rounded-lg border bg-yellow-50 border-yellow-300 text-yellow-800 dark:bg-yellow-500/10 dark:border-yellow-500/30 dark:text-yellow-300"
+                  data-testid="membresia-activa-warning"
+                >
+                  <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <p className="text-xs leading-relaxed">
+                    <span className="font-semibold">Este socio ya tiene una membresía activa</span>
+                    {membresiaActiva.fecha_fin && (
+                      <> hasta el <span className="font-semibold">{new Date(membresiaActiva.fecha_fin).toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' })}</span></>
+                    )}
+                    . El cobro extenderá desde esa fecha.
+                  </p>
                 </div>
               )}
             </Card>

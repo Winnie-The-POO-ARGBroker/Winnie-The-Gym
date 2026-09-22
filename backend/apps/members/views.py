@@ -10,6 +10,7 @@ from rest_framework.response import Response
 from apps.access.permissions import IsAdminOnly, IsReceptionistOrAdmin
 
 from .filters import SocioFilter
+from .permissions import IsAdminOrOwnSocio
 from .models import Socio
 from .serializers import SocioCertificadoUploadSerializer, SocioSerializer
 from .services import dar_baja, guardar_certificado_medico
@@ -42,6 +43,8 @@ class SocioViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ('create', 'update', 'partial_update', 'destroy', 'dar_baja'):
             return [IsAdminOnly()]
+        if self.action == 'subir_certificado':
+            return [IsAdminOrOwnSocio()]
         return [IsReceptionistOrAdmin()]
 
     @extend_schema(
