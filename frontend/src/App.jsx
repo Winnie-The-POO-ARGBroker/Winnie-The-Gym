@@ -6,6 +6,7 @@ import Skeleton from './components/ui/Skeleton'
 import useAuth from './hooks/useAuth'
 import { setApiNavigator } from './services/api'
 import LoginPage from './pages/LoginPage'
+import RegisterPage from './pages/RegisterPage'
 import AuthCallback from './pages/AuthCallback'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
@@ -61,6 +62,7 @@ export default function App() {
       <Routes>
         {/* Public only — redirect to /dashboard if already logged in */}
         <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+        <Route path="/registro" element={<PublicRoute><RegisterPage /></PublicRoute>} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/completar-perfil" element={<CompleteProfileRoute />} />
         <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />

@@ -133,6 +133,20 @@ export default function LoginPage() {
             ¿Olvidaste tu contraseña?
           </Link>
 
+          {/* Register link */}
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-px" style={{ backgroundColor: 'var(--color-border-subtle)' }} />
+            <span className="text-xs whitespace-nowrap text-text-secondary">o</span>
+            <div className="flex-1 h-px" style={{ backgroundColor: 'var(--color-border-subtle)' }} />
+          </div>
+
+          <Link
+            to="/registro"
+            className="text-sm text-text-secondary hover:text-text-primary text-center transition-colors"
+          >
+            ¿No tenés cuenta? Crear cuenta
+          </Link>
+
           {import.meta.env.DEV && <>
             {/* Divider */}
             <div className="flex items-center gap-3">
