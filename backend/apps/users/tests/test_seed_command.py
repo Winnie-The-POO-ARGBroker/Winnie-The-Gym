@@ -20,14 +20,14 @@ from apps.users.models import User
 class SeedDemoUsersCommandTests(TestCase):
 
     @override_settings(DEBUG=True)
-    def test_creates_five_demo_users(self):
-        """Running the command once creates exactly 5 demo users."""
+    def test_creates_six_demo_users(self):
+        """Running the command once creates exactly 6 demo users."""
         out = StringIO()
         call_command('seed_demo_users', stdout=out)
 
         self.assertEqual(
             User.objects.filter(email__endswith='@winnie.local').count(),
-            5,
+            6,
         )
 
     @override_settings(DEBUG=True)
@@ -112,7 +112,26 @@ class SeedDemoUsersCommandTests(TestCase):
 
         self.assertEqual(
             User.objects.filter(email__endswith='@winnie.local').count(),
-            5,
+            6,
+        )
+
+    @override_settings(DEBUG=True)
+    def test_socio_pendiente_has_no_socio_record(self):
+        """socio.pendiente is a socio-role user with NO linked Socio record.
+
+        This makes is_profile_complete return False for that user, so the
+        first-login /completar-perfil redirect can be exercised end-to-end
+        (resolves DEFER-2 from the frontend-coverage-and-walkthrough SDD).
+        """
+        call_command('seed_demo_users', stdout=StringIO())
+
+        user = User.objects.get(email='socio.pendiente@winnie.local')
+        self.assertEqual(user.rol, 'socio')
+        self.assertFalse(user.is_staff)
+        self.assertFalse(user.is_superuser)
+        self.assertFalse(
+            Socio.objects.filter(usuario=user).exists(),
+            'socio.pendiente must have NO Socio record so is_profile_complete=False',
         )
 
     @override_settings(DEBUG=False)

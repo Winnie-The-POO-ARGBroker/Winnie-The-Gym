@@ -1,15 +1,17 @@
 """Management command: seed_demo_users.
 
-Creates 5 deterministic demo users for development purposes.
+Creates 6 deterministic demo users for development purposes.
 Idempotent: safe to run multiple times, will not create duplicates.
 Aborts if DEBUG=False to prevent accidental prod execution.
 
 Users created:
-  1. admin@winnie.local          — administrador (superuser)
-  2. recepcion@winnie.local      — recepcionista
-  3. socio.activo@winnie.local   — socio + Membresia activa
-  4. socio.vencido@winnie.local  — socio + Membresia vencida
-  5. socio.nuevo@winnie.local    — socio sin membresia
+  1. admin@winnie.local             — administrador (superuser)
+  2. recepcion@winnie.local         — recepcionista
+  3. socio.activo@winnie.local      — socio + Socio record + Membresia activa
+  4. socio.vencido@winnie.local     — socio + Socio record + Membresia vencida
+  5. socio.nuevo@winnie.local       — socio + Socio record (sin membresia)
+  6. socio.pendiente@winnie.local   — socio SIN Socio record (is_profile_complete=False
+                                      so /completar-perfil first-login flow is exercisable)
 """
 import os
 from datetime import date, timedelta
@@ -73,6 +75,16 @@ DEMO_USERS = [
             'dni': '33333333',
             'telefono': '5491100000033',
         },
+        'membresia': None,
+    },
+    {
+        # No 'socio' key on purpose: user exists but has no Socio record,
+        # so is_profile_complete returns False and the ProtectedRoute
+        # redirects to /completar-perfil on first login.
+        'email': 'socio.pendiente@winnie.local',
+        'rol': 'socio',
+        'is_staff': False,
+        'is_superuser': False,
         'membresia': None,
     },
 ]
