@@ -5,19 +5,25 @@ from rest_framework import serializers
 from apps.members.models import Socio
 from .models import Membresia, PlanMembresia
 
-VALID_DURACION_DIAS = (30, 365)
+DURACION_DIAS_MIN = 30
+DURACION_DIAS_MAX = 365
 WRITABLE_ESTADO_VALUES = ('activa', 'vencida', 'suspendida', 'cancelada')
 
 
 class PlanMembresiaSerializer(serializers.ModelSerializer):
+    socios_activos = serializers.SerializerMethodField()
+
     class Meta:
         model = PlanMembresia
-        fields = ('id', 'nombre', 'duracion_dias', 'precio', 'clases_asignadas', 'activo')
+        fields = ('id', 'nombre', 'duracion_dias', 'precio', 'clases_asignadas', 'activo', 'es_popular', 'socios_activos')
+
+    def get_socios_activos(self, obj):
+        return obj.membresias.filter(estado='activa').count()
 
     def validate_duracion_dias(self, value):
-        if value not in VALID_DURACION_DIAS:
+        if value < DURACION_DIAS_MIN or value > DURACION_DIAS_MAX:
             raise serializers.ValidationError(
-                f'duracion_dias debe ser uno de {VALID_DURACION_DIAS}.'
+                f'La duración debe estar entre {DURACION_DIAS_MIN} y {DURACION_DIAS_MAX} días.',
             )
         return value
 

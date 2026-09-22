@@ -25,6 +25,7 @@ class InscripcionClaseSerializer(serializers.ModelSerializer):
 class ClaseSerializer(serializers.ModelSerializer):
     cupos_reservados = serializers.IntegerField(read_only=True)
     user_inscrito = serializers.SerializerMethodField()
+    instructor_nombre = serializers.SerializerMethodField()
 
     class Meta:
         model = Clase
@@ -38,6 +39,7 @@ class ClaseSerializer(serializers.ModelSerializer):
             'duracion_min',
             'sala',
             'instructor',
+            'instructor_nombre',
             'cupo_maximo',
             'cupos_reservados',
             'lista_espera_max',
@@ -50,6 +52,10 @@ class ClaseSerializer(serializers.ModelSerializer):
             'updated_at',
             'user_inscrito',
         )
+
+    def get_instructor_nombre(self, obj):
+        """Alias for ``instructor`` field for frontend consumers expecting this key name."""
+        return obj.instructor
 
     def get_user_inscrito(self, obj):
         request = self.context.get('request')

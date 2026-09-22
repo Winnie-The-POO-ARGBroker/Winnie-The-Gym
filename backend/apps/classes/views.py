@@ -53,8 +53,10 @@ class ClaseViewSet(viewsets.ModelViewSet):
     ordering = ['id']
 
     def get_permissions(self):
-        if self.action in ('create', 'update', 'partial_update', 'destroy'):
+        if self.action == 'destroy':
             return [IsAdminOnly()]
+        if self.action in ('create', 'update', 'partial_update'):
+            return [IsReceptionistOrAdmin()]
         if self.action in ('inscribir', 'cancelar'):
             return [IsSocio()]
         return [permissions.IsAuthenticated()]

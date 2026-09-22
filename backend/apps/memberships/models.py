@@ -11,6 +11,7 @@ class PlanMembresia(models.Model):
     precio = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal('0'))])
     clases_asignadas = models.PositiveIntegerField(default=0)
     activo = models.BooleanField(default=True)
+    es_popular = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
