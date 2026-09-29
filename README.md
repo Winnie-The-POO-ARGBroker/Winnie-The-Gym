@@ -481,6 +481,7 @@ Una Historia de Usuario se considera **Terminada** cuando cumple:
 
 | Versión | Fecha | Descripción | Autor |
 |:---:|:---:|:---|:---:|
+| [v0.10.0](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/CHANGELOG#v0100---2026-09-22) | 2026-09-22 | Cierre de sprint 3: coverage 82%, walkthrough integral, fix staff-redirect y ciclo SDD completo | @MrForii · @Franco-Arce |
 | [v1.0.0](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/CHANGELOG#100--2026-09-15) | 2026-09-15 | Google OAuth prod fix (auth-code flow) + UI cleanup (sidebar unificado, Vitest setup) | @MrForii · @MagaBechis |
 | [v0.12.0](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/CHANGELOG#0120--2026-09-11) | 2026-09-11 | Deploy productivo — Render + Vercel + Supabase + Upstash + Atlas + 10 hotfixes de TLS/config | @Franco-Arce |
 | [v0.11.0](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/CHANGELOG#0110--2026-09-11) | 2026-09-11 | MER + auditoría Mongo + WebSocket aforo real + observabilidad (Locust, Sentry, availability report) | @Franco-Arce |
