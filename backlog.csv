@@ -1,0 +1,33 @@
+,Historias de usuario y criterios de aceptación,,,,,,,,,,
+,(Product Backlog),,,,,,,,,,
+,,,,,,,,,,,
+,,Enunciado de la historia,,,Criterios de aceptación,,,,,,
+,Identificador (ID) de la historia,Rol,Característica / Funcionalidad,Razón / Resultado,Número (#) de escenario,Criterio de aceptación (Título),Contexto,Evento,Resultado / Comportamiento esperado,Prioridad,Dependencia
+,US01,Usuario,"Quiero iniciar sesión mediante credenciales locales o Google OAuth
+",Para acceder al panel correspondiente según mi rol,1,Acceso con credenciales válidas,El usuario se encuentra en la pantalla de inicio de sesión    ,"Cuando ingresa usuario y contraseña válidos y presiona ""Ingresar""",El sistema autentica al usuario y lo redirige al dashboard correspondiente,ALTA,Sin dependencia
+-,,,,,2,Acceso mediante Google OAuth,"El usuario selecciona ""Continuar con Google""",Cuando completa la autenticación en Google,El sistema inicia sesión y asigna el rol correspondiente,,
+,,,,,3,Credenciales incorrectas,El usuario ingresa datos inválidos,"Cuando presiona ""Ingresar""",El sistema muestra un mensaje de error y no permite el acceso,,
+,US02,Como administrador,"Quiero crear, modificar y dar de baja planes de membresía",Para definir la oferta comercial del gimnasio,1,Registro de plan,El administrador accede al módulo de membresías,"Cuando selecciona ""Nuevo Plan""",El sistema muestra el formulario de creación,ALTA,US01
+,,,,,2,Validación de datos,El administrador completa el formulario,Cuando intenta guardar con campos vacíos o precio negativo,El sistema muestra errores de validación,,
+---,,,,,3,Alta exitosa,El administrador completa correctamente los datos,"Cuando presiona ""Guardar""",El sistema registra el plan con estado Activo,,
+,US03,Como recepcionista,Quiero registrar socios y adjuntar certificados médicos,Para mantener actualizada la base de clientes,1,Alta de socio,El recepcionista accede al formulario de registro,Cuando completa los datos obligatorios,El sistema registra al socio,ALTA,"US01, US02"
+,,,,,2,Carga de certificado,El socio posee certificado médico,Cuando se adjunta un PDF o imagen válida,El sistema almacena el archivo correctamente,,
+,,,,,3,Actualización estado médico,El certificado es válido,Cuando finaliza la carga,"El estado médico cambia a ""Aprobado""",,
+,US04,Como socio activo,Quiero visualizar una credencial digital con QR dinámico,Para utilizarla como acceso al gimnasio,1,Visualización del QR,El socio tiene membresía vigente,Cuando accede a su credencial digital,El sistema muestra un QR válido,ALTA,"US01, US02"
+,,,,,2,Bloqueo por mora,El socio tiene pagos pendientes,Cuando intenta visualizar la credencial,El sistema bloquea la generación del QR,,
+,,,,,3,Generación segura,El socio tiene membresía activa,Cuando se genera el QR,El sistema crea un token cifrado con expiración automática,,
+,US05,Como recepcionista,Quiero validar el QR de los socios,Para autorizar o rechazar el ingreso,1,Validación exitosa,El socio presenta un QR válido,Cuando el recepcionista lo escanea,El sistema autoriza el acceso,ALTA,US04
+,,,,,2,Validación por mora,El socio tiene deuda pendiente,Cuando se escanea el QR,El sistema deniega el acceso,,
+,,,,,3,Registro de asistencia,El acceso fue autorizado,Cuando finaliza la validación,El sistema registra la entrada en el historial,,
+,US06,Como administrador,Quiero crear clases y definir cupos,Para organizar las actividades del gimnasio,1,Creación de clase,El administrador accede al módulo de clases,Cuando registra una nueva actividad,El sistema guarda la clase,MEDIA,US01
+,,,,,2,Configuración de cupos,Se define una capacidad máxima,Cuando se guarda la configuración,El sistema registra el límite de participantes,,
+,,,,,3,Modificación de clase,Existe una clase registrada,Cuando se actualizan los datos,El sistema guarda los cambios,,
+,US07,Como socio activo,Quiero reservar o cancelar clases,Para asegurar mi participación,1,Reserva exitosa,La clase tiene cupos disponibles,Cuando el socio confirma la reserva,El sistema registra la reserva y descuenta un cupo,MEDIA,US06
+,,,,,2,Clase completa,No quedan cupos disponibles,Cuando intenta reservar,El sistema informa que la clase está llena,,
+,,,,,3,Cancelación,Existe una reserva activa,Cuando el socio cancela,El sistema libera el cupo correspondiente,,
+,US08,Como recepcionista o administrador,Quiero visualizar el aforo en tiempo real,Para controlar la capacidad del gimnasio,1,Actualización por ingreso,Un socio registra entrada,Cuando se valida el QR,El contador aumenta automáticamente,MEDIA,US05
+,,,,,2,Actualización por salida,Un socio registra salida,Cuando se valida la salida,El contador disminuye automáticamente,,
+,,,,,3,Actualización en vivo,El dashboard está abierto,Cuando ocurre un cambio de aforo,La información se actualiza mediante WebSockets sin recargar la página,,
+,US09,Como administrador,Quiero generar reportes y exportarlos,Para analizar el desempeño del gimnasio,1,Reporte de morosidad,El administrador selecciona filtros,"Cuando presiona ""Exportar""",El sistema genera el reporte solicitado,BAJA,US05
+,,,,,2,Exportación PDF,El reporte fue generado,Cuando selecciona PDF,El sistema descarga el archivo,,
+,,,,,3,Exportación Excel,El reporte fue generado,Cuando selecciona Excel,El sistema descarga el archivo,,
