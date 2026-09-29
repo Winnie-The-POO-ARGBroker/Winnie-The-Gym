@@ -7,6 +7,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from apps.access.models import AccessLog
 from apps.access.services import invalidate_aforo_cache
 from core.asgi import application
+from django.db import close_old_connections
 
 
 User = get_user_model()
@@ -46,6 +47,7 @@ async def test_admin_can_connect_and_receives_snapshot():
     assert msg['type'] == 'aforo.snapshot'
     assert msg['aforo_actual'] == 0
     await comm.disconnect()
+    await sync_to_async(close_old_connections)()
 
 
 @pytest.mark.django_db(transaction=True)
@@ -56,6 +58,9 @@ async def test_anonymous_is_rejected():
     close_code = await comm.receive_output(timeout=1)
     assert close_code == {"type": "websocket.close", "code": 4401}
     await comm.disconnect()
+    from asgiref.sync import sync_to_async
+    from django.db import close_old_connections
+    await sync_to_async(close_old_connections)()
 
 
 @pytest.mark.django_db(transaction=True)
@@ -70,6 +75,7 @@ async def test_socio_is_rejected():
     close_code = await comm.receive_output(timeout=1)
     assert close_code == {"type": "websocket.close", "code": 4403}
     await comm.disconnect()
+    await sync_to_async(close_old_connections)()
 
 
 @pytest.mark.django_db(transaction=True)
@@ -98,6 +104,7 @@ async def test_access_log_creation_broadcasts_update():
     assert update['aforo_actual'] == 1
 
     await comm.disconnect()
+    await sync_to_async(close_old_connections)()
 
 
 @pytest.mark.django_db(transaction=True)
@@ -119,3 +126,4 @@ async def test_denied_access_does_not_broadcast():
 
     assert await comm.receive_nothing(timeout=1.5)
     await comm.disconnect()
+    await sync_to_async(close_old_connections)()
