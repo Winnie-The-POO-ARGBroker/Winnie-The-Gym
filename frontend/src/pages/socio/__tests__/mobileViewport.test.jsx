@@ -91,4 +91,21 @@ describe('RNF03: Mobile First Viewport Tests', () => {
     // Menu / Layout should be visible (implicit in layout rendering)
     expect(screen.getAllByText(/Credencial no disponible|Iniciá sesión/i).length).toBeGreaterThan(0);
   });
+
+  it('CheckoutPage renders in mobile viewport without overflow', async () => {
+    const { container } = render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <CheckoutPage />
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => {
+      // It should render the layout which contains 'Renovar membresía'
+      expect(screen.getAllByText(/Renovar membresía/i).length).toBeGreaterThan(0);
+    });
+
+    assertNoHorizontalOverflow(container);
+  });
 });
