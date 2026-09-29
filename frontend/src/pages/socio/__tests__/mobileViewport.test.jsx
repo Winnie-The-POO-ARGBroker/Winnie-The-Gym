@@ -108,4 +108,21 @@ describe('RNF03: Mobile First Viewport Tests', () => {
 
     assertNoHorizontalOverflow(container);
   });
+
+  it('ClasesPage renders in mobile viewport without overflow', async () => {
+    const { container } = render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <ClasesPage />
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => {
+      // It should render the layout which contains 'Clases disponibles' or 'clases'
+      expect(screen.getAllByText(/Clases/i).length).toBeGreaterThan(0);
+    });
+
+    assertNoHorizontalOverflow(container);
+  });
 });
