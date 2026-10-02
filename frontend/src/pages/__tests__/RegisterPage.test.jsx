@@ -118,7 +118,7 @@ describe('RegisterPage', () => {
 
     await waitFor(() => {
       // First call: registration
-      expect(api.post).toHaveBeenNthCalledWith(1, '/auth/registration/', {
+      expect(api.post).toHaveBeenNthCalledWith(1, '/auth/registration/register/', {
         email: 'nuevo@test.com',
         password1: 'Segura123!',
         password2: 'Segura123!',
