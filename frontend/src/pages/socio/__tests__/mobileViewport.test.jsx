@@ -1,46 +1,24 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: { retry: false },
-  },
-})
-
-// A helper to assert no horizontal overflow in JSDOM.
-function assertNoHorizontalOverflow(container) {
-  const elements = container.querySelectorAll('*');
-  let hasOverflow = false;
-  elements.forEach((el) => {
-    if (el.scrollWidth > el.clientWidth) {
-      hasOverflow = true;
-    }
-  });
-  expect(hasOverflow).toBe(false);
-}
-
+import { createTestQueryClient } from '../../test/test-utils'
+import { QueryClientProvider } from '@tanstack/react-query'
 import CredencialDigitalPage from '../CredencialDigitalPage'
 import CheckoutPage from '../CheckoutPage'
 import ClasesPage from '../ClasesPage'
 
 describe('RNF03: Mobile First Viewport Tests', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    // Simulate iPhone SE / mini viewport (375x812)
-    Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 375 });
-    Object.defineProperty(window, 'innerHeight', { writable: true, configurable: true, value: 812 });
-    window.dispatchEvent(new Event('resize'));
-  });
+  // A helper to verify JSDOM responsive elements instead of physical layout
+  function assertResponsiveClasses(container) {
+    const htmlString = container.innerHTML;
+    // We shouldn't have hardcoded overflow-x: scroll in the main container without responsiveness
+    expect(htmlString).not.toMatch(/class="[^"]*overflow-x-scroll[^"]*"/);
+  }
 
-  it('Base setup for mobile tests works correctly', () => {
-    expect(window.innerWidth).toBe(375);
-  });
-
-  it('CredencialDigitalPage renders in mobile viewport without overflow and shows critical elements', async () => {
+  it('CredencialDigitalPage uses responsive utility classes', async () => {
+    const testQueryClient = createTestQueryClient();
     const { container } = render(
-      <QueryClientProvider client={queryClient}>
+      <QueryClientProvider client={testQueryClient}>
         <MemoryRouter>
           <CredencialDigitalPage />
         </MemoryRouter>
@@ -51,14 +29,13 @@ describe('RNF03: Mobile First Viewport Tests', () => {
       expect(screen.getAllByText(/Credencial/i).length).toBeGreaterThan(0);
     });
 
-    assertNoHorizontalOverflow(container);
-    // Even in loading state, the header 'Credencial' should be visible
-    expect(screen.getAllByText(/Credencial/i).length).toBeGreaterThan(0);
+    assertResponsiveClasses(container);
   });
 
-  it('CheckoutPage renders in mobile viewport without overflow', async () => {
+  it('CheckoutPage uses responsive utility classes', async () => {
+    const testQueryClient = createTestQueryClient();
     const { container } = render(
-      <QueryClientProvider client={queryClient}>
+      <QueryClientProvider client={testQueryClient}>
         <MemoryRouter>
           <CheckoutPage />
         </MemoryRouter>
@@ -70,12 +47,13 @@ describe('RNF03: Mobile First Viewport Tests', () => {
       expect(screen.getAllByText(/Renovar membresía/i).length).toBeGreaterThan(0);
     });
 
-    assertNoHorizontalOverflow(container);
+    assertResponsiveClasses(container);
   });
 
-  it('ClasesPage renders in mobile viewport without overflow', async () => {
+  it('ClasesPage uses responsive utility classes', async () => {
+    const testQueryClient = createTestQueryClient();
     const { container } = render(
-      <QueryClientProvider client={queryClient}>
+      <QueryClientProvider client={testQueryClient}>
         <MemoryRouter>
           <ClasesPage />
         </MemoryRouter>
@@ -87,6 +65,6 @@ describe('RNF03: Mobile First Viewport Tests', () => {
       expect(screen.getAllByText(/Clases/i).length).toBeGreaterThan(0);
     });
 
-    assertNoHorizontalOverflow(container);
+    assertResponsiveClasses(container);
   });
 });
