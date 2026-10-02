@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { createTestQueryClient } from '../../test/test-utils'
+import { createTestQueryClient } from '../../../test/test-utils'
 import { QueryClientProvider } from '@tanstack/react-query'
 import CredencialDigitalPage from '../CredencialDigitalPage'
 import CheckoutPage from '../CheckoutPage'
