@@ -13,6 +13,32 @@ Versionado según [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [v1.1.0] - 2026-09-22
+**PR #104** · Cierre de sprint: coverage 82%, walkthrough integral y fix staff-redirect
+
+### Added
+- Certificado médico self-service, cambio de password, historial de pagos, cancelación de membresía (soft-cancel), detalle de socio, warnings de cobro y configuración de gimnasio
+- Página de registro público para socios (`/registro`)
+- Bootstrap de infraestructura con comando `seed_demo_users`, endpoint de staff, email de activación y UI de administración
+- 24 screenshots de walkthrough añadidas al plan de pruebas QA y ciclo SDD completo documentado en addendum
+
+### Changed
+- CI backend configurado para heredar de development, mantener DEBUG=True y añadir servicio Mongo para tests
+- Removido componente de "dev-login" end-to-end (limpieza de desarrollo)
+- CI arreglado con 3 rondas de fix
+
+### Fixed
+- Bug crítico de redirección de staff resuelto: los roles no-socio (`staff`) quedan exentos del redirect forzoso de completitud de perfil (@Franco-Arce)
+- Validación de planes, alias de instructor, permisos de clase y campos en los contratos (API)
+
+### Testing
+- Se elevó la cobertura frontend de 35% a 82% con 693 tests nuevos a través de páginas, componentes, hooks y servicios
+- Factory de pruebas compartido (`renderWithProviders`, `seedAuthStore`, `QueryClient` limpio)
+- Baseline de cobertura backend al 95% y frontend en 35% enforceado
+- Umbrales de Vitest subidos a 68/70/65/68
+
+---
+
 ## [1.0.0] — 2026-09-15
 **PR #75** · Google OAuth auth-code flow · @MrForii
 **PR #76** · fix backend `callback_url` · @MrForii
