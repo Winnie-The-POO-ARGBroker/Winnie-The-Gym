@@ -50,3 +50,9 @@ backend_logs.txt
 
 # Planning artifacts local (speckit) — no se trackean
 speckit/
+
+# Junk files and reports
+audit-report*.json
+git_*.txt
+dump_*.py
+*.csv

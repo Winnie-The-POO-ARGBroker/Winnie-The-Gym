@@ -37,7 +37,7 @@ export default function RegisterPage() {
   const onSubmit = async (values) => {
     try {
       // Step 1: register user — receives access + refresh + user
-      const registerRes = await api.post('/auth/registration/register/', {
+      const registerRes = await api.post('/auth/registration/', {
         email: values.email,
         password1: values.password,
         password2: values.password_confirm,
