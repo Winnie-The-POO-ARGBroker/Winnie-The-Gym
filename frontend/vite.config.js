@@ -12,7 +12,7 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'lcov', 'html'],
       reportsDirectory: './coverage',
-      // TODO: Investigate coverage drop after Vitest 4 upgrade (issue #115)
+      // TODO: Investigate coverage drop after Vitest 4 upgrade (issue #119)
       // thresholds: {
       //   lines: 68,
       //   branches: 70,
