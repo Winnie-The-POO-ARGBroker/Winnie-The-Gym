@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "mobile:check": "node scripts/mobile-walkthrough.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.6.0",
