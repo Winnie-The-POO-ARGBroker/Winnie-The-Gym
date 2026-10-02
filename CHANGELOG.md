@@ -13,13 +13,13 @@ Versionado según [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
-## [v0.10.0] - 2026-09-22
+## [v1.1.0] - 2026-09-22
 **PR #104** · Cierre de sprint: coverage 82%, walkthrough integral y fix staff-redirect
 
 ### Added
 - Certificado médico self-service, cambio de password, historial de pagos, cancelación de membresía (soft-cancel), detalle de socio, warnings de cobro y configuración de gimnasio
-- Página de registro público para socios (`/register`)
-- Bootstrap de infraestructura con comando `seed_data`, endpoint de staff, email de activación y UI de administración
+- Página de registro público para socios (`/registro`)
+- Bootstrap de infraestructura con comando `seed_demo_users`, endpoint de staff, email de activación y UI de administración
 - 24 screenshots de walkthrough añadidas al plan de pruebas QA y ciclo SDD completo documentado en addendum
 
 ### Changed
