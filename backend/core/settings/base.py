@@ -70,7 +70,15 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'core.urls'
 
-CORS_EXPOSE_HEADERS = ['Content-Disposition']
+from corsheaders.defaults import default_headers
+
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'x-request-id',
+]
+CORS_EXPOSE_HEADERS = [
+    'Content-Disposition',
+    'X-Request-ID',
+]
 
 TEMPLATES = [
     {
