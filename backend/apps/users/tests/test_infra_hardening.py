@@ -1,3 +1,5 @@
+from unittest.mock import patch, MagicMock
+
 from django.conf import settings
 from django.test import Client, TestCase, override_settings
 
@@ -47,3 +49,38 @@ class HealthCheckTests(TestCase):
         self.assertIn('mongo', body['checks'])
         # Postgres and redis must always succeed inside the test container.
         self.assertTrue(body['checks']['postgres']['ok'])
+
+    def test_health_incluye_celery(self):
+        """Verifica que la respuesta de /api/health/ contiene la clave 'celery'
+        dentro de 'checks' con el campo 'ok' (booleano)."""
+        response = self.client.get('/api/health/')
+        body = response.json()
+        self.assertIn('celery', body['checks'])
+        self.assertIn('ok', body['checks']['celery'])
+        self.assertIsInstance(body['checks']['celery']['ok'], bool)
+
+    @patch('core.urls._check_celery')
+    def test_health_celery_worker_activo(self, mock_check):
+        """Simula que el worker Celery responde al ping correctamente.
+        El chequeo debe devolver ok=True y el status general no debe
+        ser 'unhealthy'."""
+        mock_check.return_value = (True, None)
+        response = self.client.get('/api/health/')
+        body = response.json()
+        self.assertTrue(body['checks']['celery']['ok'])
+        self.assertIn(body['status'], ('ok', 'degraded'))
+
+    @patch('core.urls._check_celery')
+    def test_health_celery_worker_caido(self, mock_check):
+        """Simula que el worker Celery no responde (caído o timeout).
+        El chequeo debe devolver ok=False. Como Celery es no-crítico,
+        el endpoint debe seguir devolviendo HTTP 200 (degraded),
+        nunca 503."""
+        mock_check.return_value = (False, 'No workers responded within 0.5s')
+        response = self.client.get('/api/health/')
+        body = response.json()
+        self.assertFalse(body['checks']['celery']['ok'])
+        # Celery no es crítico → HTTP 200, nunca 503
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(body['status'], ('degraded',))
+
