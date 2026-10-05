@@ -66,7 +66,62 @@ def _describe_actor():
     }
 
 
-def _dispatch(instance, action):
+def _capture_pre_state(instance):
+    """Snapshot the current DB state of the instance before the write.
+
+    Called from the `pre_save` signal. Stores the serialised dict on a
+    transient attribute ``_audit_pre_state`` so that `post_save` can
+    compute the diff without an extra DB query.
+    """
+    if instance.pk is None:
+        # New instance — no previous state exists.
+        instance._audit_pre_state = {}
+        return
+    try:
+        db_instance = instance.__class__.objects.get(pk=instance.pk)
+        instance._audit_pre_state = _serialize(db_instance)
+    except instance.__class__.DoesNotExist:
+        instance._audit_pre_state = {}
+
+
+def _compute_diff(pre_state, post_state):
+    """Return a flat ``{field: {old, new}}`` dict from two serialised snapshots.
+
+    Uses ``deepdiff`` to detect value changes and presents them in the
+    format the issue specifies::
+
+        {"precio": {"old": "1500.00", "new": "2000.00"}}
+
+    Internal / noisy fields (timestamps, state metadata) are included — the
+    audit trail should capture *everything* that changed.
+    """
+    if not pre_state:
+        return {}
+
+    diff = DeepDiff(pre_state, post_state, ignore_order=True, verbose_level=2)
+    result = {}
+
+    for changed_key, details in diff.get('values_changed', {}).items():
+        # DeepDiff keys look like "root['precio']" — extract the field name.
+        field_name = changed_key.replace("root['", '').replace("']", '')
+        result[field_name] = {
+            'old': details.get('old_value'),
+            'new': details.get('new_value'),
+        }
+
+    return result
+
+
+def _get_request_id():
+    """Obtain the current request_id from contextvars (issue #58 integration)."""
+    try:
+        from core.middleware.request_id import get_request_id
+        return get_request_id() or None
+    except ImportError:
+        return None
+
+
+def _dispatch(instance, action, diff=None):
     model_label = f'{instance._meta.app_label}.{instance._meta.model_name}'
     payload = {
         'timestamp': _dt.datetime.now(_dt.timezone.utc).isoformat().replace('+00:00', 'Z'),
@@ -75,7 +130,10 @@ def _dispatch(instance, action):
         'instance_id': getattr(instance, 'pk', None),
         'snapshot': _serialize(instance),
         **_describe_actor(),
+        'request_id': _get_request_id(),
     }
+    if diff:
+        payload['diff'] = diff
     try:
         log_audit_event(payload)
     except Exception as exc:  # noqa: BLE001
