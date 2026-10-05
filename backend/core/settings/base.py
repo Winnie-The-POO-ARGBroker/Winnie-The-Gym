@@ -137,14 +137,19 @@ SITE_ID = 1
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'filters': {
+        'request_id': {
+            '()': 'core.middleware.request_id.RequestIDFilter',
+        },
+    },
     'formatters': {
         'json': {
             '()': 'pythonjsonlogger.jsonlogger.JsonFormatter',
-            'format': '%(asctime)s %(name)s %(levelname)s %(message)s %(pathname)s %(lineno)d',
+            'format': '%(asctime)s %(name)s %(levelname)s %(request_id)s %(message)s %(pathname)s %(lineno)d',
             'rename_fields': {'asctime': 'timestamp', 'levelname': 'level'},
         },
         'plain': {
-            'format': '[{asctime}] {levelname} {name}: {message}',
+            'format': '[{asctime}] [{request_id}] {levelname} {name}: {message}',
             'style': '{',
         },
     },
@@ -152,6 +157,7 @@ LOGGING = {
         'console': {
             'class': 'logging.StreamHandler',
             'formatter': config('LOG_FORMAT', default='json'),
+            'filters': ['request_id'],
         },
     },
     'root': {
