@@ -84,3 +84,60 @@ class HealthCheckTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(body['status'], ('degraded',))
 
+
+class CeleryCheckUnitTests(TestCase):
+    """Tests unitarios de la función _check_celery() en aislamiento.
+
+    Estos tests validan la lógica interna de la función directamente,
+    sin pasar por la view de health. Cubren los distintos escenarios
+    de respuesta del control.ping de Celery.
+    """
+
+    @patch('core.urls.celery_app' if False else 'core.celery.app')
+    def test_check_celery_ping_exitoso(self, mock_app):
+        """Cuando el worker responde al ping, _check_celery debe devolver
+        (True, None)."""
+        mock_app.control.ping.return_value = [
+            {'celery@worker1': {'ok': 'pong'}}
+        ]
+        from core.urls import _check_celery
+        ok, err = _check_celery()
+        self.assertTrue(ok)
+        self.assertIsNone(err)
+        # Verificar que se usa el timeout de 500ms
+        mock_app.control.ping.assert_called_once_with(timeout=0.5)
+
+    @patch('core.celery.app')
+    def test_check_celery_sin_workers(self, mock_app):
+        """Cuando no hay workers conectados, control.ping devuelve
+        lista vacía. _check_celery debe retornar (False, None)."""
+        mock_app.control.ping.return_value = []
+        from core.urls import _check_celery
+        ok, err = _check_celery()
+        self.assertFalse(ok)
+        self.assertIsNone(err)
+
+    @patch('core.celery.app')
+    def test_check_celery_excepcion_conexion(self, mock_app):
+        """Si ocurre una excepción al intentar el ping (por ejemplo,
+        Redis caído), _check_celery debe capturarla y devolver
+        (False, mensaje_de_error)."""
+        mock_app.control.ping.side_effect = ConnectionError(
+            'Error connecting to Redis'
+        )
+        from core.urls import _check_celery
+        ok, err = _check_celery()
+        self.assertFalse(ok)
+        self.assertIn('Error connecting to Redis', err)
+
+    @patch('core.celery.app')
+    def test_check_celery_timeout_excepcion(self, mock_app):
+        """Simula que el ping lanza una excepción de timeout.
+        _check_celery debe capturarla y retornar (False, error)."""
+        mock_app.control.ping.side_effect = Exception(
+            'Timed out waiting for ping response'
+        )
+        from core.urls import _check_celery
+        ok, err = _check_celery()
+        self.assertFalse(ok)
+        self.assertIn('Timed out', err)
