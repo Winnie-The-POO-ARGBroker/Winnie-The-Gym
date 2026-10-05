@@ -62,6 +62,21 @@ def _check_mongo():
         return False, f'{type(exc).__name__}: {str(exc)[:200]}'
 
 
+def _check_celery():
+    """Chequeo de worker Celery vía control.ping con timeout de 500ms.
+
+    Se considera no-crítico (igual que Mongo): si Celery está caído,
+    las tasks se acumulan en Redis pero la API sigue funcional para
+    el usuario. El health degrada a 'degraded' en vez de 'unhealthy'.
+    """
+    try:
+        from core.celery import app as celery_app
+        pong = celery_app.control.ping(timeout=0.5)
+        return bool(pong), None
+    except Exception as exc:
+        return False, str(exc)[:200]
+
+
 CRITICAL_CHECKS = ('postgres', 'redis')
 
 
@@ -72,16 +87,18 @@ def health(request):
       - Both OK → 200 `ok`
       - Any critical down → 503 `unhealthy`
 
-    Non-critical dependencies (mongo) never fail the response — they only
-    downgrade `status` to `degraded` in the body. Mongo hosts audit trail
-    and QR history — losing it temporarily degrades observability but does
-    not break the user-facing app. This is intentional so UptimeRobot does
-    not page for a Mongo TLS blip while Postgres/Redis are healthy.
+    Non-critical dependencies (mongo, celery) never fail the response — they
+    only downgrade `status` to `degraded` in the body. Mongo hosts audit trail
+    and QR history; Celery processes async tasks (emails, reports). Losing
+    either temporarily degrades observability but does not break the
+    user-facing app. This is intentional so UptimeRobot does not page for a
+    Celery/Mongo blip while Postgres/Redis are healthy.
     """
     checks = {
         'postgres': _check_postgres(),
         'redis': _check_redis(),
         'mongo': _check_mongo(),
+        'celery': _check_celery(),
     }
     critical_ok = all(checks[name][0] for name in CRITICAL_CHECKS)
     any_degraded = any(not ok for ok, _ in checks.values())
