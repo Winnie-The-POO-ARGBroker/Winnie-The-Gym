@@ -84,6 +84,26 @@ class HealthCheckTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(body['status'], ('degraded',))
 
+    @patch('core.urls._check_celery')
+    def test_health_celery_no_es_critico(self, mock_check):
+        """Verifica que Celery está marcado como critical=False en el
+        response. Esto garantiza que un fallo de Celery nunca produce
+        HTTP 503 (eso solo pasa con postgres/redis)."""
+        mock_check.return_value = (False, 'Worker no responde')
+        response = self.client.get('/api/health/')
+        body = response.json()
+        self.assertFalse(body['checks']['celery']['critical'])
+
+    @patch('core.urls._check_celery')
+    @override_settings(DEBUG=True)
+    def test_health_celery_muestra_error_en_debug(self, mock_check):
+        """En modo DEBUG, el campo 'error' debe incluir el detalle del
+        fallo de Celery para facilitar el diagnóstico en desarrollo."""
+        mock_check.return_value = (False, 'Connection refused')
+        response = self.client.get('/api/health/')
+        body = response.json()
+        self.assertEqual(body['checks']['celery']['error'], 'Connection refused')
+
 
 class CeleryCheckUnitTests(TestCase):
     """Tests unitarios de la función _check_celery() en aislamiento.
