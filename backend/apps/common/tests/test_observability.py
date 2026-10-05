@@ -45,6 +45,20 @@ class StructuredLoggingTests(TestCase):
         self.assertEqual(parsed['name'], 'test.logger')
         self.assertIn('timestamp', parsed)
 
+    def test_logging_config_wires_request_id_filter_and_formatter(self):
+        filters = settings.LOGGING.get('filters', {})
+        self.assertIn('request_id', filters)
+        self.assertEqual(
+            filters['request_id']['()'],
+            'core.middleware.request_id.RequestIDFilter',
+        )
+
+        handler_filters = settings.LOGGING['handlers']['console'].get('filters', [])
+        self.assertIn('request_id', handler_filters)
+
+        json_format = settings.LOGGING['formatters']['json']['format']
+        self.assertIn('%(request_id)s', json_format)
+
 
 class LocustfileStaticCheckTests(TestCase):
     """Locust scenarios must contain the expected user classes.
