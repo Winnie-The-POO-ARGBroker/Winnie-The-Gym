@@ -51,6 +51,9 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    # Must come first so request_id is assigned immediately and available in
+    # contextvars for all subsequent middlewares, views, and error handlers.
+    'core.middleware.request_id.RequestIDMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
