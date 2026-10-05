@@ -143,12 +143,13 @@ def build_asistencia(fecha_desde=None, fecha_hasta=None):
 
     for entrada in ingresos:
         matching_exit = None
+        entrada_local_date = entrada.timestamp.astimezone(tz).date()
         for salida in egresos:
             if (
                 salida.id in consumed_exit_ids
                 or salida.user_id != entrada.user_id
                 or salida.timestamp <= entrada.timestamp
-                or salida.timestamp.date() != entrada.timestamp.date()
+                or salida.timestamp.astimezone(tz).date() != entrada_local_date
             ):
                 continue
             matching_exit = salida
