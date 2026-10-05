@@ -1,4 +1,4 @@
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 
 from django.utils import timezone
@@ -176,11 +176,10 @@ class AsistenciaReportTests(APITestCase):
         bare (que devuelve la fecha UTC y falla cuando el CI corre cerca de las
         23:xx UTC).
         """
-        utc = timezone.utc
         # 23:30 UTC = 20:30 ART (mismo día local 2026-01-15)
-        entry_dt = datetime(2026, 1, 15, 23, 30, 0, tzinfo=utc)
+        entry_dt = datetime(2026, 1, 15, 23, 30, 0, tzinfo=UTC)
         # 00:15 UTC del día siguiente = 21:15 ART (aún 2026-01-15 en ART)
-        exit_dt = datetime(2026, 1, 16, 0, 15, 0, tzinfo=utc)
+        exit_dt = datetime(2026, 1, 16, 0, 15, 0, tzinfo=UTC)
 
         entry = AccessLog.objects.create(
             user=self.socio_user,
