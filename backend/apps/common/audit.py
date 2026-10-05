@@ -1,8 +1,12 @@
 """MongoDB audit trail for CRUD operations on critical models.
 
-Signals `post_save` and `post_delete` on `Socio`, `PlanMembresia`, `Membresia`,
-`Clase` and `Pago` write an entry to the `audit_logs` collection via
-`core.mongodb.log_audit_event`.
+Signals `pre_save`, `post_save` and `post_delete` on `Socio`, `PlanMembresia`,
+`Membresia`, `Clase`, `User` and `Pago` write an entry to the `audit_logs`
+collection via `core.mongodb.log_audit_event`.
+
+On updates, the `pre_save` signal captures a snapshot of the instance before
+the write, and `post_save` computes a field-level diff (using `deepdiff`) that
+is stored alongside the audit entry for full traceability (RNF04).
 
 Actor detection uses `apps.common.middleware.CurrentUserMiddleware` — when a
 request is in flight the user is thread-local; when the trigger is CLI, Celery
@@ -14,8 +18,9 @@ import json
 import logging
 import uuid
 
+from deepdiff import DeepDiff
 from django.core.serializers.json import DjangoJSONEncoder
-from django.db.models.signals import post_delete, post_save
+from django.db.models.signals import post_delete, post_save, pre_save
 from django.dispatch import receiver
 from django.forms.models import model_to_dict
 
