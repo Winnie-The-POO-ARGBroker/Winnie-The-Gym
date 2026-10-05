@@ -87,6 +87,7 @@ _AUDITED_MODELS = (
     ('memberships', 'PlanMembresia'),
     ('memberships', 'Membresia'),
     ('classes', 'Clase'),
+    ('users', 'User'),
     ('payments', 'Pago'),
 )
 
