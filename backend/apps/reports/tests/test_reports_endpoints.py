@@ -168,3 +168,42 @@ class AsistenciaReportTests(APITestCase):
         # Last column empty on the data row
         data_line = [l for l in body.splitlines() if '87654321' in l][0]
         self.assertTrue(data_line.rstrip().endswith(','))
+
+    def test_csv_pairs_entry_exit_when_crossing_utc_midnight(self):
+        """Regresión: entry y exit que cruzan medianoche UTC pero están en el
+        mismo día local (ART, UTC-3) deben parearse correctamente.
+        Garantiza que build_asistencia usa .astimezone(tz).date() y no .date()
+        bare (que devuelve la fecha UTC y falla cuando el CI corre cerca de las
+        23:xx UTC).
+        """
+        utc = timezone.utc
+        # 23:30 UTC = 20:30 ART (mismo día local 2026-01-15)
+        entry_dt = datetime(2026, 1, 15, 23, 30, 0, tzinfo=utc)
+        # 00:15 UTC del día siguiente = 21:15 ART (aún 2026-01-15 en ART)
+        exit_dt = datetime(2026, 1, 16, 0, 15, 0, tzinfo=utc)
+
+        entry = AccessLog.objects.create(
+            user=self.socio_user,
+            access_type=AccessLog.AccessType.ENTRY,
+            status=AccessLog.AccessStatus.GRANTED,
+        )
+        entry.timestamp = entry_dt
+        entry.save(update_fields=['timestamp'])
+
+        exit_log = AccessLog.objects.create(
+            user=self.socio_user,
+            access_type=AccessLog.AccessType.EXIT,
+            status=AccessLog.AccessStatus.GRANTED,
+        )
+        exit_log.timestamp = exit_dt
+        exit_log.save(update_fields=['timestamp'])
+
+        # Usamos ambas fechas UTC para que no interfiera el bug secundario del filtro
+        response = self.client.get(
+            f'{ASISTENCIA_URL}?formato=csv&fecha_desde=2026-01-15&fecha_hasta=2026-01-16'
+        )
+        body = response.content.decode('utf-8')
+
+        self.assertIn('87654321', body)
+        self.assertIn('45', body)  # 45 minutos de permanencia
+
