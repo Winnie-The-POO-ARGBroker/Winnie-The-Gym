@@ -113,7 +113,7 @@ class CeleryCheckUnitTests(TestCase):
     de respuesta del control.ping de Celery.
     """
 
-    @patch('core.urls.celery_app' if False else 'core.celery.app')
+    @patch('core.celery.app')
     def test_check_celery_ping_exitoso(self, mock_app):
         """Cuando el worker responde al ping, _check_celery debe devolver
         (True, None)."""
