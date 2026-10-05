@@ -5,6 +5,7 @@ from datetime import timedelta
 from pathlib import Path
 from urllib.parse import urlparse, urlunparse as _urlunparse
 
+from corsheaders.defaults import default_headers
 from decouple import config
 from django.core.exceptions import ImproperlyConfigured
 
@@ -69,8 +70,6 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'core.urls'
-
-from corsheaders.defaults import default_headers
 
 CORS_ALLOW_HEADERS = list(default_headers) + [
     'x-request-id',
