@@ -5,6 +5,7 @@ from datetime import timedelta
 from pathlib import Path
 from urllib.parse import urlparse, urlunparse as _urlunparse
 
+from corsheaders.defaults import default_headers
 from decouple import config
 from django.core.exceptions import ImproperlyConfigured
 
@@ -51,6 +52,9 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    # Must come first so request_id is assigned immediately and available in
+    # contextvars for all subsequent middlewares, views, and error handlers.
+    'core.middleware.request_id.RequestIDMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -67,7 +71,13 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'core.urls'
 
-CORS_EXPOSE_HEADERS = ['Content-Disposition']
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'x-request-id',
+]
+CORS_EXPOSE_HEADERS = [
+    'Content-Disposition',
+    'X-Request-ID',
+]
 
 TEMPLATES = [
     {
@@ -126,14 +136,19 @@ SITE_ID = 1
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'filters': {
+        'request_id': {
+            '()': 'core.middleware.request_id.RequestIDFilter',
+        },
+    },
     'formatters': {
         'json': {
             '()': 'pythonjsonlogger.jsonlogger.JsonFormatter',
-            'format': '%(asctime)s %(name)s %(levelname)s %(message)s %(pathname)s %(lineno)d',
+            'format': '%(asctime)s %(name)s %(levelname)s %(request_id)s %(message)s %(pathname)s %(lineno)d',
             'rename_fields': {'asctime': 'timestamp', 'levelname': 'level'},
         },
         'plain': {
-            'format': '[{asctime}] {levelname} {name}: {message}',
+            'format': '[{asctime}] [{request_id}] {levelname} {name}: {message}',
             'style': '{',
         },
     },
@@ -141,6 +156,7 @@ LOGGING = {
         'console': {
             'class': 'logging.StreamHandler',
             'formatter': config('LOG_FORMAT', default='json'),
+            'filters': ['request_id'],
         },
     },
     'root': {

@@ -174,3 +174,8 @@ Costo total: $0 en tiers gratuitos.
 - Se usa para 4 cosas: **broker Celery**, **result backend Celery**, **channel layer WS**, **cache**
 - Bases lógicas separadas: `/0` (Celery broker), `/3` (Celery result backend), `/1` (Django cache), `/2` (Channel Layer)
 - En Upstash (single-DB mode) todas las claves van a `/0`; la separación por DB es solo para entornos locales.
+
+### Trazabilidad y Observabilidad (Request ID / Trace ID)
+- **Frontend**: El cliente HTTP Axios (`frontend/src/services/api.js`) genera o propaga el header `X-Request-ID` con UUID v4 en cada solicitud.
+- **Backend**: `RequestIDMiddleware` captura o genera el `request_id`, lo mantiene en `contextvars` para todo el ciclo de vida del request y lo devuelve en el header `X-Request-ID` de la respuesta.
+- **Logs estructurados (JSON)**: `RequestIDFilter` inyecta automáticamente `request_id` en cada registro de log formateado con `python-json-logger`, permitiendo correlacionar eventos entre frontend, backend y servicios externos.

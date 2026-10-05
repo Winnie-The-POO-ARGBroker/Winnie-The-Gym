@@ -22,11 +22,43 @@ export function getApiNavigator() {
   return navigator
 }
 
+export function generateUUID() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0
+    const v = c === 'x' ? r : (r & 0x3) | 0x8
+    return v.toString(16)
+  })
+}
+
 api.interceptors.request.use((config) => {
   const token = useAuthStore.getState().accessToken
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`
+    if (config.headers && typeof config.headers.set === 'function') {
+      config.headers.set('Authorization', `Bearer ${token}`)
+    } else {
+      config.headers = config.headers || {}
+      config.headers.Authorization = `Bearer ${token}`
+    }
   }
+
+  // Trazabilidad end-to-end: adjuntar X-Request-ID respetando si ya viene definido
+  const hasRequestId =
+    config.headers && typeof config.headers.has === 'function'
+      ? (config.headers.has('X-Request-ID') || config.headers.has('x-request-id'))
+      : Boolean(config.headers && (config.headers['X-Request-ID'] || config.headers['x-request-id']))
+
+  if (!hasRequestId) {
+    if (config.headers && typeof config.headers.set === 'function') {
+      config.headers.set('X-Request-ID', generateUUID())
+    } else {
+      config.headers = config.headers || {}
+      config.headers['X-Request-ID'] = generateUUID()
+    }
+  }
+
   return config
 })
 
