@@ -168,17 +168,30 @@ describe('reportsService', () => {
       expect(planes).toEqual(mockPlanes)
     })
 
-    it('returns empty array on network failure', async () => {
+    it('throws classified network error on network failure', async () => {
       api.get.mockRejectedValueOnce(new Error('Network error'))
-      const planes = await getReportPlans()
-      expect(planes).toEqual([])
+      await expect(getReportPlans()).rejects.toMatchObject({ type: 'network' })
     })
 
-    it('propagates 401/403 auth error upstream', async () => {
+    it('throws classified auth error on 401/403', async () => {
       const authError = new Error('Unauthorized')
       authError.response = { status: 401 }
       api.get.mockRejectedValueOnce(authError)
-      await expect(getReportPlans()).rejects.toThrow('Unauthorized')
+      await expect(getReportPlans()).rejects.toMatchObject({ type: 'auth', status: 401 })
+    })
+
+    it('throws classified notfound error on 404', async () => {
+      const notFoundError = new Error('Not Found')
+      notFoundError.response = { status: 404 }
+      api.get.mockRejectedValueOnce(notFoundError)
+      await expect(getReportPlans()).rejects.toMatchObject({ type: 'notfound', status: 404 })
+    })
+
+    it('throws classified server error on 500+', async () => {
+      const serverError = new Error('Internal Server Error')
+      serverError.response = { status: 500 }
+      api.get.mockRejectedValueOnce(serverError)
+      await expect(getReportPlans()).rejects.toMatchObject({ type: 'server', status: 500 })
     })
   })
 })
