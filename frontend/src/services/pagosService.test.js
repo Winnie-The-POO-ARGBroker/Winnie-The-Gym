@@ -3,7 +3,7 @@
  * Coverage uplift for pagosService.js functions.
  */
 
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 
 // Mock api before importing the service
 vi.mock('./api', () => ({
@@ -18,19 +18,18 @@ import api from './api'
 
 describe('pagosService', () => {
   beforeEach(() => vi.clearAllMocks())
+  afterEach(() => vi.unstubAllEnvs())
 
   // ── resolverInitPoint ──────────────────────────────────────────────────
 
   it('resolverInitPoint returns init_point when VITE_MP_SANDBOX is not true', () => {
-    const originalSandbox = import.meta.env.VITE_MP_SANDBOX
-    import.meta.env.VITE_MP_SANDBOX = 'false'
+    vi.stubEnv('VITE_MP_SANDBOX', 'false')
     const preferencia = {
       init_point: 'https://www.mercadopago.com/checkout/v1/redirect?pref_id=123',
       sandbox_init_point: 'https://sandbox.mercadopago.com/checkout/v1/redirect?pref_id=123',
     }
     const result = resolverInitPoint(preferencia)
     expect(result).toBe(preferencia.init_point)
-    import.meta.env.VITE_MP_SANDBOX = originalSandbox
   })
 
   it('resolverInitPoint returns init_point when sandbox_init_point is null', () => {
