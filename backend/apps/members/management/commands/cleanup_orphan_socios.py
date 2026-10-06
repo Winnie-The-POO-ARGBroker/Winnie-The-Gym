@@ -1,3 +1,18 @@
+"""Management command: cleanup_orphan_socios.
+
+Detecta y elimina registros de `Socio` donde el usuario asociado (`usuario.rol`)
+tiene un rol distinto a 'socio' (por ejemplo, 'administrador' o 'recepcionista').
+
+Comportamiento:
+- Por defecto opera en modo `--dry-run` (seguro), listando los registros afectados
+  sin ejecutar cambios en la base de datos.
+- Requiere la bandera `--force` para ejecutar el borrado efectivo de los registros.
+- Al invocar `delete()` sobre cada instancia de `Socio`, se disparan las señales
+  `post_delete` de Django, registrando automáticamente la baja en la colección de
+  auditoría de MongoDB (`audit_logs`) para mantener la trazabilidad completa (RNF04).
+- Emite un reporte final detallando: total de socios encontrados, total borrados
+  y la lista de IDs eliminados.
+"""
 import logging
 
 from django.core.management.base import BaseCommand
@@ -10,7 +25,7 @@ logger = logging.getLogger(__name__)
 class Command(BaseCommand):
     help = (
         'Detecta y elimina registros de Socio cuyo usuario asociado no tiene rol de "socio". '
-        'Opera en modo dry-run por defecto.'
+        'Opera en modo dry-run por defecto. Usar --force para ejecutar.'
     )
 
     def add_arguments(self, parser):
