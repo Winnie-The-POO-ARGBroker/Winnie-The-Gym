@@ -189,3 +189,34 @@ class AuditDiffCriticalModelsTests(TestCase):
         self.assertIn('model', entry)
         self.assertEqual(entry['object_id'], plan.pk)
         self.assertEqual(entry['diff'], {'precio': {'old': '1500.00', 'new': '2000.00'}})
+
+    def test_audit_entry_includes_request_id_when_set_in_context(self):
+        """La correlacion request_id (issue #58) debe reflejarse en el payload del audit cuando se setea en el ContextVar antes del save."""
+        from core.middleware.request_id import request_id_var
+
+        test_request_id = 'test-trace-abc-123'
+        token = request_id_var.set(test_request_id)
+        try:
+            plan = make_plan_factory(nombre='Plan Trace Test', precio=Decimal('1500.00'))
+            _clean_audit_collection()
+            plan.precio = Decimal('1800.00')
+            plan.save()
+
+            col = get_collection('audit_logs')
+            entry = col.find_one({'instance_id': plan.pk, 'action': 'update'})
+            self.assertIsNotNone(entry)
+            self.assertEqual(entry['request_id'], test_request_id)
+        finally:
+            request_id_var.reset(token)
+
+    def test_audit_entry_request_id_is_none_outside_request_context(self):
+        """Fuera de un request HTTP, request_id debe ser None (no romper el save)."""
+        plan = make_plan_factory(nombre='Plan Sin Request')
+        _clean_audit_collection()
+        plan.precio = Decimal('2000.00')
+        plan.save()
+
+        col = get_collection('audit_logs')
+        entry = col.find_one({'instance_id': plan.pk, 'action': 'update'})
+        self.assertIsNotNone(entry)
+        self.assertIsNone(entry['request_id'])
