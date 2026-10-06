@@ -58,9 +58,15 @@ def _serialize(instance):
 def _describe_actor():
     user = get_current_user()
     if user is None or not getattr(user, 'is_authenticated', False):
-        return {'actor_id': None, 'actor_email': None, 'actor_rol': 'system'}
+        return {
+            'actor_id': None,
+            'actor_user_id': None,
+            'actor_email': None,
+            'actor_rol': 'system',
+        }
     return {
         'actor_id': user.pk,
+        'actor_user_id': user.pk,
         'actor_email': getattr(user, 'email', None),
         'actor_rol': getattr(user, 'rol', None),
     }
@@ -130,21 +136,23 @@ def _get_request_id():
 
 def _dispatch(instance, action, diff=None):
     model_label = f'{instance._meta.app_label}.{instance._meta.model_name}'
+    pk = getattr(instance, 'pk', None)
     payload = {
         'timestamp': _dt.datetime.now(_dt.timezone.utc).isoformat().replace('+00:00', 'Z'),
         'action': action,
         'model': model_label,
-        'instance_id': getattr(instance, 'pk', None),
+        'instance_id': pk,
+        'object_id': pk,
         'snapshot': _serialize(instance),
         **_describe_actor(),
         'request_id': _get_request_id(),
     }
-    if diff:
+    if diff is not None:
         payload['diff'] = diff
     try:
         log_audit_event(payload)
     except Exception as exc:  # noqa: BLE001
-        logger.warning('Audit log failed for %s#%s (%s): %s', model_label, payload['instance_id'], action, exc)
+        logger.warning('Audit log failed for %s#%s (%s): %s', model_label, pk, action, exc)
 
 
 # ---------------------------------------------------------------------------
