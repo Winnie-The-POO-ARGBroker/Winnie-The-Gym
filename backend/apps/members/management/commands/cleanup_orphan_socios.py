@@ -2,6 +2,8 @@ import logging
 
 from django.core.management.base import BaseCommand
 
+from apps.members.models import Socio
+
 logger = logging.getLogger(__name__)
 
 
@@ -30,4 +32,22 @@ class Command(BaseCommand):
         dry_run_flag = options.get('dry_run', False)
         is_dry_run = not force or dry_run_flag
 
-        self.stdout.write(f'Iniciando cleanup_orphan_socios (modo: {"dry-run" if is_dry_run else "force"})...')
+        orphans_qs = Socio.objects.exclude(usuario__rol='socio').select_related('usuario')
+        orphans = list(orphans_qs)
+        total_found = len(orphans)
+
+        if not total_found:
+            self.stdout.write(self.style.SUCCESS('No se encontraron socios huerfanos.'))
+            return
+
+        self.stdout.write(f'Encontrados {total_found} socios huerfanos:')
+        for s in orphans:
+            user_email = getattr(s.usuario, 'email', 'sin-email')
+            user_rol = getattr(s.usuario, 'rol', 'desconocido')
+            self.stdout.write(f'  Socio #{s.id} - user {user_email} (rol={user_rol})')
+
+        if is_dry_run:
+            self.stdout.write(self.style.WARNING(
+                f'Dry-run: {total_found} socios huerfanos detectados. Ninguno borrado. Usa --force para ejecutar.'
+            ))
+            return
