@@ -1,4 +1,5 @@
 import api from './api'
+import { classifyError } from '../utils/errorHandling'
 
 /**
  * Helper to extract filename from Content-Disposition header.
@@ -137,12 +138,7 @@ export async function getReportPlans() {
     const response = await api.get('/memberships/planes/')
     return response.data?.results || response.data || []
   } catch (error) {
-    const status = error.response?.status
-    if (status === 401 || status === 403) {
-      throw error
-    }
-    console.error('Error fetching plans for report filter:', error)
-    return []
+    throw classifyError(error)
   }
 }
 
