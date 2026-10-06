@@ -40,6 +40,22 @@ class CleanupOrphanSociosDryRunTests(TestCase):
         self.assertIn('Dry-run', output)
         self.assertTrue(Socio.objects.filter(id=orphan_socio.id).exists())
 
+    def test_force_combined_with_dry_run_resolves_to_dry_run_safer_default(self):
+        """Si vienen ambos flags (--force --dry-run), gana dry-run por seguridad."""
+        admin_user = make_user_factory(email='combo@test.com', rol='administrador')
+        orphan_socio = make_socio_factory(usuario=admin_user)
+
+        out = StringIO()
+        call_command('cleanup_orphan_socios', '--force', '--dry-run', stdout=out)
+        output = out.getvalue()
+
+        # Debe ganar dry-run
+        self.assertIn('Dry-run', output)
+        self.assertIn('Ninguno borrado', output)
+
+        # El socio debe seguir existiendo
+        self.assertTrue(Socio.objects.filter(id=orphan_socio.id).exists())
+
 
 class CleanupOrphanSociosForceTests(TestCase):
     """Test cleanup_orphan_socios command with --force execution."""
