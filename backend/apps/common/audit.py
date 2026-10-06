@@ -155,9 +155,24 @@ _AUDITED_MODELS = (
 )
 
 
+def _make_pre_save_receiver(sender_label):
+    """Factory for pre_save receivers that capture DB state before the write."""
+    def _receiver(sender, instance, **kwargs):
+        _capture_pre_state(instance)
+    _receiver.__name__ = f'audit_pre_save_{sender_label}'
+    return _receiver
+
+
 def _make_save_receiver(sender_label):
+    """Factory for post_save receivers that emit the audit entry with diff."""
     def _receiver(sender, instance, created, **kwargs):
-        _dispatch(instance, 'create' if created else 'update')
+        if created:
+            _dispatch(instance, 'create')
+        else:
+            pre_state = getattr(instance, '_audit_pre_state', {})
+            post_state = _serialize(instance)
+            diff = _compute_diff(pre_state, post_state)
+            _dispatch(instance, 'update', diff=diff)
     _receiver.__name__ = f'audit_post_save_{sender_label}'
     return _receiver
 
@@ -180,5 +195,6 @@ def register_audit_signals():
             logger.warning('Audit skipped: model %s.%s not installed.', app_label, model_name)
             continue
         label = f'{app_label}_{model_name}'.lower()
+        pre_save.connect(_make_pre_save_receiver(label), sender=sender, weak=False, dispatch_uid=f'audit_pre_{label}')
         post_save.connect(_make_save_receiver(label), sender=sender, weak=False, dispatch_uid=f'audit_save_{label}')
         post_delete.connect(_make_delete_receiver(label), sender=sender, weak=False, dispatch_uid=f'audit_delete_{label}')
