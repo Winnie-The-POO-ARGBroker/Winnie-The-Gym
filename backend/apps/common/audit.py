@@ -109,6 +109,13 @@ def _compute_diff(pre_state, post_state):
             'new': details.get('new_value'),
         }
 
+    for changed_key, details in diff.get('type_changes', {}).items():
+        field_name = changed_key.replace("root['", '').replace("']", '')
+        result[field_name] = {
+            'old': details.get('old_value'),
+            'new': details.get('new_value'),
+        }
+
     return result
 
 
