@@ -84,9 +84,10 @@ def _capture_pre_state(instance):
         instance._audit_pre_state = {}
         return
     try:
-        db_instance = instance.__class__.objects.get(pk=instance.pk)
-        instance._audit_pre_state = _serialize(db_instance)
-    except instance.__class__.DoesNotExist:
+        manager = getattr(instance.__class__, '_base_manager', instance.__class__.objects)
+        db_instance = manager.filter(pk=instance.pk).first()
+        instance._audit_pre_state = _serialize(db_instance) if db_instance else {}
+    except Exception:
         instance._audit_pre_state = {}
 
 
@@ -188,6 +189,11 @@ def _make_save_receiver(sender_label):
             post_state = _serialize(instance)
             diff = _compute_diff(pre_state, post_state)
             _dispatch(instance, 'update', diff=diff)
+            if hasattr(instance, '_audit_pre_state'):
+                try:
+                    delattr(instance, '_audit_pre_state')
+                except AttributeError:
+                    pass
     _receiver.__name__ = f'audit_post_save_{sender_label}'
     return _receiver
 
