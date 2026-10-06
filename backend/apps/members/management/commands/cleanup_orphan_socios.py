@@ -16,6 +16,7 @@ Comportamiento:
 import logging
 
 from django.core.management.base import BaseCommand
+from django.db import transaction
 
 from apps.members.models import Socio
 
@@ -68,13 +69,14 @@ class Command(BaseCommand):
             return
 
         deleted_ids = []
-        for s in orphans:
-            socio_id = s.id
-            user_email = getattr(s.usuario, 'email', 'sin-email')
-            user_rol = getattr(s.usuario, 'rol', 'desconocido')
-            s.delete()
-            deleted_ids.append(socio_id)
-            logger.info('Socio huerfano eliminado: id=%s user=%s (rol=%s)', socio_id, user_email, user_rol)
+        with transaction.atomic():
+            for s in orphans:
+                socio_id = s.id
+                user_email = getattr(s.usuario, 'email', 'sin-email')
+                user_rol = getattr(s.usuario, 'rol', 'desconocido')
+                s.delete()
+                deleted_ids.append(socio_id)
+                logger.info('Socio huerfano eliminado: id=%s user=%s (rol=%s)', socio_id, user_email, user_rol)
 
         self.stdout.write(self.style.SUCCESS(
             f'Borrados {len(deleted_ids)} socios. IDs eliminados: {deleted_ids}'
