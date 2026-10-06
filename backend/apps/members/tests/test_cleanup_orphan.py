@@ -39,3 +39,28 @@ class CleanupOrphanSociosDryRunTests(TestCase):
 
         self.assertIn('Dry-run', output)
         self.assertTrue(Socio.objects.filter(id=orphan_socio.id).exists())
+
+
+class CleanupOrphanSociosForceTests(TestCase):
+    """Test cleanup_orphan_socios command with --force execution."""
+
+    def test_force_deletes_orphan_socio_and_reports_deleted_id(self):
+        """Con --force se eliminan los socios huerfanos y se reportan sus IDs."""
+        admin_user = make_user_factory(email='admin_force@test.com', rol='administrador')
+        orphan_socio = make_socio_factory(usuario=admin_user)
+        orphan_id = orphan_socio.id
+
+        out = StringIO()
+        call_command('cleanup_orphan_socios', '--force', stdout=out)
+        output = out.getvalue()
+
+        # Debe confirmar el borrado e incluir el ID eliminado
+        self.assertIn('Borrados 1 socios', output)
+        self.assertIn(str(orphan_id), output)
+
+        # El registro de Socio debe haber sido eliminado
+        self.assertFalse(Socio.objects.filter(id=orphan_id).exists())
+
+        # El usuario User NO debe haber sido eliminado (sigue existiendo como admin)
+        admin_user.refresh_from_db()
+        self.assertEqual(admin_user.rol, 'administrador')
