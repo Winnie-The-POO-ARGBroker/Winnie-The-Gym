@@ -64,3 +64,30 @@ class CleanupOrphanSociosForceTests(TestCase):
         # El usuario User NO debe haber sido eliminado (sigue existiendo como admin)
         admin_user.refresh_from_db()
         self.assertEqual(admin_user.rol, 'administrador')
+
+    def test_preserves_legitimate_socio_with_rol_socio(self):
+        """Los socios legitimos (usuario.rol == 'socio') NUNCA deben ser borrados."""
+        legit_user = make_user_factory(email='legit_socio@test.com', rol='socio')
+        legit_socio = make_socio_factory(usuario=legit_user)
+
+        admin_user = make_user_factory(email='another_admin@test.com', rol='administrador')
+        orphan_socio = make_socio_factory(usuario=admin_user)
+
+        out = StringIO()
+        call_command('cleanup_orphan_socios', '--force', stdout=out)
+
+        # El socio legítimo debe seguir existiendo intacto
+        self.assertTrue(Socio.objects.filter(id=legit_socio.id).exists())
+        # El huérfano sí debió ser eliminado
+        self.assertFalse(Socio.objects.filter(id=orphan_socio.id).exists())
+
+    def test_no_orphan_socios_found_message(self):
+        """Si no hay socios huerfanos, informa el estado sin errores."""
+        legit_user = make_user_factory(email='only_legit@test.com', rol='socio')
+        make_socio_factory(usuario=legit_user)
+
+        out = StringIO()
+        call_command('cleanup_orphan_socios', stdout=out)
+        output = out.getvalue()
+
+        self.assertIn('No se encontraron socios huerfanos', output)
