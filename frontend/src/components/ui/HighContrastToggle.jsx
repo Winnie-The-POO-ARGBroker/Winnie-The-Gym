@@ -1,14 +1,12 @@
-﻿import { useHighContrast } from '../../hooks/useHighContrast'
-
+import { useHighContrast } from '../../hooks/useHighContrast'
 export default function HighContrastToggle() {
   const { isHighContrast, toggleHighContrast } = useHighContrast()
-
   return (
     <button
-      id= high-contrast-toggle
-      type=button
+      id="high-contrast-toggle"
+      type="button"
       onClick={toggleHighContrast}
-      className={px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors flex items-center gap-1.5 }
+      className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors flex items-center gap-1.5 ${isHighContrast ? 'bg-black text-white border-black' : 'bg-bg-surface text-text-secondary border-subtle hover:text-text-primary'}`}
       aria-label={isHighContrast ? 'Desactivar alto contraste' : 'Activar alto contraste'}
       aria-pressed={isHighContrast}
       title={isHighContrast ? 'Modo alto contraste (exterior)' : 'Activar modo exterior'}

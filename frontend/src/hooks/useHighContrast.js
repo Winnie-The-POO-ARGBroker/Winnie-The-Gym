@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 
 const STORAGE_KEY = 'winnie-high-contrast-pref'
