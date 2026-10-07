@@ -113,3 +113,35 @@
   from { opacity: 0; transform: scale(0.95); }
   to { opacity: 1; transform: scale(1); }
 }
+
+/* ==========================================================================
+   Modo Alto Contraste (RNF07 - Outdoor / Luz Solar)
+   ========================================================================== */
+body.high-contrast {
+  --color-bg-base:        #FFFFFF;
+  --color-bg-surface:     #FFFFFF;
+  --color-bg-raised:      #F4F4F4;
+  --color-border-subtle:  #000000;
+  --color-border-strong:  #000000;
+  --color-text-primary:   #000000;
+  --color-text-secondary: #1A1A1A;
+  --color-text-tertiary:  #333333;
+}
+
+body.high-contrast .credencial-page {
+  background-color: #FFFFFF !important;
+  color: #000000 !important;
+}
+
+body.high-contrast .credencial-page * {
+  text-shadow: none !important;
+}
+
+body.high-contrast .credencial-page .hc-text-strong {
+  color: #000000 !important;
+  font-weight: 800 !important;
+}
+
+body.high-contrast .credencial-page .hc-border-strong {
+  border-color: #000000 !important;
+}
