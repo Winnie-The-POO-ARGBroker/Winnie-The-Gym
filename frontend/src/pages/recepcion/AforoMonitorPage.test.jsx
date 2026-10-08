@@ -66,11 +66,11 @@ import { useAforoStats, useAccessLogs } from '../../hooks/queries/useDashboardDa
 import { useGymConfig } from '../../hooks/queries/useGymConfig'
 import useWebSocket from '../../hooks/useWebSocket'
 
-function setupMocks({ isConnected = true, isConnecting = false, stats = null, logs = [], gymConfig = null } = {}) {
+function setupMocks({ isConnected = true, isConnecting = false, isReconnecting = false, stats = null, logs = [], gymConfig = null } = {}) {
   useAforoStats.mockReturnValue({ data: stats })
   useAccessLogs.mockReturnValue({ data: logs })
   useGymConfig.mockReturnValue({ data: gymConfig })
-  useWebSocket.mockReturnValue({ isConnected, isConnecting, lastMessage: null })
+  useWebSocket.mockReturnValue({ isConnected, isConnecting, isReconnecting, lastMessage: null })
 }
 
 function renderPage() {
@@ -113,21 +113,28 @@ describe('AforoMonitorPage', () => {
 
   // ── 5. Connected status badge renders ─────────────────────────────────────
   it('shows "Conectado" badge when WebSocket is connected', () => {
-    setupMocks({ isConnected: true, isConnecting: false })
+    setupMocks({ isConnected: true, isConnecting: false, isReconnecting: false })
     renderPage()
     expect(screen.getByText('Conectado')).toBeInTheDocument()
   })
 
-  // ── 6. Connecting status badge renders ────────────────────────────────────
-  it('shows "Reconectando" badge when WebSocket is connecting', () => {
-    setupMocks({ isConnected: false, isConnecting: true })
+  // ── 6a. First-connect badge renders ──────────────────────────────────────
+  it('shows "Conectando..." badge on initial connection attempt', () => {
+    setupMocks({ isConnected: false, isConnecting: true, isReconnecting: false })
+    renderPage()
+    expect(screen.getByText('Conectando...')).toBeInTheDocument()
+  })
+
+  // ── 6b. Reconnecting badge renders ────────────────────────────────────────
+  it('shows "Reconectando..." badge when WebSocket is doing exponential backoff', () => {
+    setupMocks({ isConnected: false, isConnecting: true, isReconnecting: true })
     renderPage()
     expect(screen.getByText('Reconectando...')).toBeInTheDocument()
   })
 
   // ── 7. Disconnected status badge renders ──────────────────────────────────
   it('shows "Desconectado" badge when WebSocket is disconnected', () => {
-    setupMocks({ isConnected: false, isConnecting: false })
+    setupMocks({ isConnected: false, isConnecting: false, isReconnecting: false })
     renderPage()
     expect(screen.getByText('Desconectado')).toBeInTheDocument()
   })
