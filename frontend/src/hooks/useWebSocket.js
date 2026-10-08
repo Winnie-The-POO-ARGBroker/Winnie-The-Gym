@@ -3,12 +3,23 @@ import useAuthStore from '../stores/authStore';
 import { getApiNavigator } from '../services/api';
 
 const MAX_RECONNECT_ATTEMPTS = 10;
-const INITIAL_BACKOFF_MS = 2000;
+const INITIAL_BACKOFF_MS = 1000;  // 1s → 2s → 4s → 8s → ... capped at MAX_BACKOFF_MS
 const MAX_BACKOFF_MS = 30000;
+
+/**
+ * Calcula el delay de reconexión con backoff exponencial.
+ * @param {number} attempt - Número de intento (base 1).
+ * @returns {number} Milisegundos a esperar antes del próximo intento.
+ */
+export function computeBackoffMs(attempt) {
+  return Math.min(INITIAL_BACKOFF_MS * 2 ** (attempt - 1), MAX_BACKOFF_MS);
+}
 
 export default function useWebSocket(path) {
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(true);
+  // isReconnecting: true cuando ya hubo al menos un intento fallido y se está reintentando
+  const [isReconnecting, setIsReconnecting] = useState(false);
   const [lastMessage, setLastMessage] = useState(null);
   const [error, setError] = useState(null);
   
@@ -27,6 +38,7 @@ export default function useWebSocket(path) {
     
     if (!token) {
       setIsConnecting(false);
+      setIsReconnecting(false);
       return;
     }
 
@@ -41,6 +53,7 @@ export default function useWebSocket(path) {
       ws.onopen = () => {
         setIsConnected(true);
         setIsConnecting(false);
+        setIsReconnecting(false);
         setError(null);
         reconnectAttempts.current = 0; // Reset attempts on successful connection
         
@@ -77,12 +90,14 @@ export default function useWebSocket(path) {
           if (success) {
             console.log('Token refreshed successfully. Reconnecting WebSocket...');
             // Reseteamos los intentos para darle una chance limpia a la nueva sesión
-            reconnectAttempts.current = 0; 
+            reconnectAttempts.current = 0;
+            setIsReconnecting(false);
             connect();
             return;
           } else {
             console.error('Token refresh failed. Redirecting to login.');
             clearTimeout(reconnectTimeoutRef.current);
+            setIsReconnecting(false);
             useAuthStore.getState().clearAuth();
             const nav = getApiNavigator();
             if (nav) nav('/login');
@@ -94,6 +109,7 @@ export default function useWebSocket(path) {
         // If forbidden (4403), stop retrying.
         if (event.code === 4403) {
           console.error('WebSocket connection forbidden (4403). Max permissions reached.');
+          setIsReconnecting(false);
           setError(new Error('No tienes permisos para acceder a esta información en tiempo real.'));
           return;
         }
@@ -101,15 +117,18 @@ export default function useWebSocket(path) {
         // Exponential backoff logic
         if (reconnectAttempts.current < MAX_RECONNECT_ATTEMPTS) {
           reconnectAttempts.current += 1;
-          const backoff = Math.min(
-            INITIAL_BACKOFF_MS * (2 ** (reconnectAttempts.current - 1)),
-            MAX_BACKOFF_MS
-          );
+          const backoff = computeBackoffMs(reconnectAttempts.current);
           
+          setIsReconnecting(true);
+          console.info(
+            `WebSocket closed. Reconnecting in ${backoff}ms (attempt ${reconnectAttempts.current}/${MAX_RECONNECT_ATTEMPTS})...`
+          );
+
           reconnectTimeoutRef.current = setTimeout(() => {
             connect();
           }, backoff);
         } else {
+          setIsReconnecting(false);
           setError(new Error('Max reconnection attempts reached.'));
         }
       };
@@ -121,6 +140,7 @@ export default function useWebSocket(path) {
     } catch (err) {
       setError(err);
       setIsConnecting(false);
+      setIsReconnecting(false);
     }
   }, [path]);
 
@@ -148,5 +168,5 @@ export default function useWebSocket(path) {
     }
   }, []);
 
-  return { isConnected, isConnecting, lastMessage, error, sendMessage };
+  return { isConnected, isConnecting, isReconnecting, lastMessage, error, sendMessage };
 }

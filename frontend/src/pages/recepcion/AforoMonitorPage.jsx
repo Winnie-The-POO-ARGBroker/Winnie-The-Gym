@@ -5,7 +5,7 @@ import OccupancyCard from '../../components/recepcion/OccupancyCard';
 import RecentEventsPanel from '../../components/recepcion/RecentEventsPanel';
 import AforoStatBar from '../../components/recepcion/AforoStatBar';
 import Badge from '../../components/ui/Badge';
-import { Wifi, Loader2 } from 'lucide-react';
+import { Wifi, Loader2, WifiOff } from 'lucide-react';
 import useWebSocket from '../../hooks/useWebSocket';
 import { useAforoStats, useAccessLogs } from '../../hooks/queries/useDashboardData';
 import { useGymConfig } from '../../hooks/queries/useGymConfig';
@@ -35,7 +35,7 @@ export default function AforoMonitorPage() {
     };
   });
 
-  const { isConnected, isConnecting, lastMessage } = useWebSocket('/ws/aforo/');
+  const { isConnected, isConnecting, isReconnecting, lastMessage } = useWebSocket('/ws/aforo/');
 
   useEffect(() => {
     if (lastMessage && lastMessage.aforo_actual !== undefined) {
@@ -44,7 +44,16 @@ export default function AforoMonitorPage() {
   }, [lastMessage]);
 
   let statusBadge = null;
-  if (isConnecting) {
+  if (isConnecting && !isReconnecting) {
+    // Primera conexión al montar
+    statusBadge = (
+      <Badge variant="warning" className="px-4 py-2 flex items-center gap-2 text-sm font-medium">
+        <Loader2 className="w-4 h-4 animate-spin" />
+        Conectando...
+      </Badge>
+    );
+  } else if (isReconnecting) {
+    // Reconexión con backoff exponencial tras una desconexión
     statusBadge = (
       <Badge variant="warning" className="px-4 py-2 flex items-center gap-2 text-sm font-medium">
         <Loader2 className="w-4 h-4 animate-spin" />
@@ -61,7 +70,7 @@ export default function AforoMonitorPage() {
   } else {
     statusBadge = (
       <Badge variant="danger" className="px-4 py-2 flex items-center gap-2 text-sm font-medium">
-        <Wifi className="w-4 h-4" />
+        <WifiOff className="w-4 h-4" />
         Desconectado
       </Badge>
     );
