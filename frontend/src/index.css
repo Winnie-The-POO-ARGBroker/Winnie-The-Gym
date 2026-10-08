@@ -12,6 +12,22 @@
   --color-error:          #F44336;
   --color-warning:        #FFC107;
   --color-success:        #4CAF50;
+
+  /* Disciplinas - Design Tokens */
+  --color-disciplina-funcional: #FF5722;
+  --color-disciplina-funcional-bg: rgba(255, 87, 34, 0.15);
+
+  --color-disciplina-spinning: #3B82F6;
+  --color-disciplina-spinning-bg: rgba(59, 130, 246, 0.15);
+
+  --color-disciplina-crossfit: #EF4444;
+  --color-disciplina-crossfit-bg: rgba(239, 68, 68, 0.15);
+
+  --color-disciplina-pilates: #6366F1;
+  --color-disciplina-pilates-bg: rgba(99, 102, 241, 0.15);
+
+  --color-disciplina-yoga: #10B981;
+  --color-disciplina-yoga-bg: rgba(16, 185, 129, 0.15);
 }
 
 .dark {
