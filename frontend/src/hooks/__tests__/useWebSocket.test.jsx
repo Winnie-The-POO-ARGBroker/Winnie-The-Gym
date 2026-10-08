@@ -143,7 +143,9 @@ describe('useWebSocket — estado isReconnecting con backoff', () => {
   let originalWebSocket
 
   beforeEach(() => {
-    vi.useFakeTimers()
+    // Fakear SOLO las APIs de timer — dejar queueMicrotask / Promise sin tocar
+    // para que advanceTimersByTimeAsync pueda flushear correctamente.
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] })
 
     mockWebSocket = {
       send: vi.fn(),
@@ -174,8 +176,8 @@ describe('useWebSocket — estado isReconnecting con backoff', () => {
   it('activa isReconnecting tras cierre inesperado y programa reconexión con backoff 1s', async () => {
     const { result } = renderHook(() => useWebSocket('/ws/test/'))
 
-    // Esperar a que el hook registre onclose
-    await waitFor(() => expect(mockWebSocket.onclose).toBeInstanceOf(Function))
+    // renderHook wrappea en act → los efectos ya corrieron, onclose ya está asignado
+    expect(mockWebSocket.onclose).toBeInstanceOf(Function)
 
     // Simular cierre inesperado (código normal, no 4401/4403)
     act(() => {
@@ -186,9 +188,9 @@ describe('useWebSocket — estado isReconnecting con backoff', () => {
     expect(result.current.isReconnecting).toBe(true)
     expect(result.current.isConnected).toBe(false)
 
-    // Avanzar el timer 1s → debe reconectar (intento 1 = 1000ms)
-    act(() => {
-      vi.advanceTimersByTime(1000)
+    // Avanzar 1s + flushear promesas pendientes (intento 1 = 1000ms)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000)
     })
 
     // WebSocket debería haberse instanciado 2 veces (conexión inicial + reconexión)
@@ -198,7 +200,8 @@ describe('useWebSocket — estado isReconnecting con backoff', () => {
   it('resetea isReconnecting a false cuando la reconexión es exitosa', async () => {
     const { result } = renderHook(() => useWebSocket('/ws/test/'))
 
-    await waitFor(() => expect(mockWebSocket.onclose).toBeInstanceOf(Function))
+    // renderHook wrappea en act → efectos ya corrieron
+    expect(mockWebSocket.onclose).toBeInstanceOf(Function)
 
     // Simular desconexión
     act(() => {
@@ -207,12 +210,13 @@ describe('useWebSocket — estado isReconnecting con backoff', () => {
 
     expect(result.current.isReconnecting).toBe(true)
 
-    // Avanzar timer para que intente reconectar
-    act(() => {
-      vi.advanceTimersByTime(1000)
+    // Avanzar 1s + flushear promesas → dispara reconexión
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000)
     })
 
-    await waitFor(() => expect(mockWebSocket.onopen).toBeInstanceOf(Function))
+    // onopen ya está asignado en la nueva instancia (misma referencia mockWebSocket)
+    expect(mockWebSocket.onopen).toBeInstanceOf(Function)
 
     // Simular reconexión exitosa
     act(() => {
@@ -223,3 +227,4 @@ describe('useWebSocket — estado isReconnecting con backoff', () => {
     expect(result.current.isReconnecting).toBe(false)
   })
 })
+
