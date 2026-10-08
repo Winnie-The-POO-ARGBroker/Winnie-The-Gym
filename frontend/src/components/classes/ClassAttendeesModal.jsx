@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import {
-  X,
   Search,
   Check,
   X as XIcon,
@@ -10,6 +9,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import Avatar from '../ui/Avatar'
 import Button from '../ui/Button'
+import Modal from '../ui/Modal'
 
 export default function ClassAttendeesModal({
   isOpen,
@@ -40,33 +40,23 @@ export default function ClassAttendeesModal({
   ).length
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-bg-surface border border-subtle w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-subtle bg-bg-raised/40">
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-text-primary">
-                Inscriptos: {selectedClass.nombre}
-              </h2>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-500/10 text-orange-500 border border-orange-500/20">
-                {attendees.length} / {selectedClass.cupo_maximo || 20}
-              </span>
-            </div>
-            <p className="text-xs text-text-secondary mt-0.5">
-              {selectedClass.dia} · {selectedClass.hora} ({selectedClass.duracion_min || 45} min) · {selectedClass.sala} · Prof. {selectedClass.instructor}
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl text-text-tertiary hover:text-text-primary hover:bg-bg-raised transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={
+        <span className="flex items-center gap-2">
+          <span>Inscriptos: {selectedClass.nombre}</span>
+          <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-500/10 text-orange-500 border border-orange-500/20">
+            {attendees.length} / {selectedClass.cupo_maximo || 20}
+          </span>
+        </span>
+      }
+      description={`${selectedClass.dia} · ${selectedClass.hora} (${selectedClass.duracion_min || 45} min) · ${selectedClass.sala} · Prof. ${selectedClass.instructor}`}
+      maxWidth="max-w-3xl"
+    >
+      <div className="flex flex-col -mx-6 -mb-6 mt-2">
         {/* Controls & Badges */}
-        <div className="p-4 sm:px-6 bg-bg-surface border-b border-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="px-6 pb-4 border-b border-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           {/* Search */}
           <div className="relative flex-1 max-w-xs">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
@@ -94,7 +84,7 @@ export default function ClassAttendeesModal({
         </div>
 
         {/* Attendees List */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 divide-y divide-subtle space-y-2">
+        <div className="overflow-y-auto px-6 py-4 divide-y divide-subtle space-y-2 max-h-[60vh]">
           {filteredAttendees.length === 0 ? (
             <div className="py-12 text-center text-text-secondary text-xs">
               No se encontraron socios inscriptos para los criterios de búsqueda.
@@ -177,7 +167,7 @@ export default function ClassAttendeesModal({
         </div>
 
         {/* Modal Footer */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-subtle bg-bg-raised/40">
+        <div className="flex items-center justify-between px-6 py-4 border-t border-subtle bg-bg-raised/40 rounded-b-2xl">
           <button
             onClick={() => {
               onClose()
@@ -207,6 +197,6 @@ export default function ClassAttendeesModal({
           </div>
         </div>
       </div>
-    </div>
+    </Modal>
   )
 }

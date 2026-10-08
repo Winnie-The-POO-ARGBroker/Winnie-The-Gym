@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { X, Plus, Trash2, Check, Sparkles } from 'lucide-react'
+import { Plus, Trash2, Check, Sparkles } from 'lucide-react'
 import { z } from 'zod'
+import Modal from '../ui/Modal'
 import Button from '../ui/Button'
 
 const planSchema = z.object({
@@ -129,28 +130,15 @@ export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = nu
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-bg-surface border border-subtle w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-subtle bg-bg-raised/40">
-          <div>
-            <h2 className="text-lg font-bold text-text-primary">
-              {isDuplicate ? 'Duplicar Plan' : planToEdit ? 'Editar Plan de Membresía' : 'Crear Nuevo Plan'}
-            </h2>
-            <p className="text-xs text-text-secondary">
-              Definí el precio, duración y beneficios comerciales de la membresía
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl text-text-tertiary hover:text-text-primary hover:bg-bg-raised transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Modal Form */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={isDuplicate ? 'Duplicar Plan' : planToEdit ? 'Editar Plan de Membresía' : 'Crear Nuevo Plan'}
+      description="Definí el precio, duración y beneficios comerciales de la membresía"
+      maxWidth="max-w-2xl"
+    >
+      <form onSubmit={handleSubmit} className="flex flex-col gap-6 -mx-6 -mb-6 mt-2">
+        <div className="overflow-y-auto px-6 space-y-6 max-h-[60vh]">
           {/* Main Info */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -248,7 +236,7 @@ export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = nu
                 <Sparkles className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-sm font-bold text-text-primary">Destacar como &quot;POPULAR&quot;</p>
+                <p className="text-sm font-bold text-text-primary">Destacar como “POPULAR”</p>
                 <p className="text-xs text-text-secondary">
                   Aparecerá con borde naranja brillante y etiqueta en el portal de membresías
                 </p>
@@ -315,10 +303,9 @@ export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = nu
               ))}
             </div>
           </div>
-        </form>
+        </div>
 
-        {/* Modal Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-subtle bg-bg-raised/40">
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-subtle bg-bg-raised/40 rounded-b-2xl">
           <button
             type="button"
             onClick={onClose}
@@ -334,7 +321,7 @@ export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = nu
             {isDuplicate ? 'Duplicar Plan' : planToEdit ? 'Guardar Cambios' : 'Crear Plan'}
           </Button>
         </div>
-      </div>
-    </div>
+      </form>
+    </Modal>
   )
 }
