@@ -67,6 +67,8 @@ MIDDLEWARE = [
     # Must come AFTER AuthenticationMiddleware so request.user is populated
     # before we stash it in thread-local for the audit trail.
     'apps.common.middleware.CurrentUserMiddleware',
+    # RNF05 — Auto-invalidate admin/recepcionista sessions after 30 minutes of inactivity.
+    'apps.users.middleware.StaffInactivityMiddleware',
 ]
 
 ROOT_URLCONF = 'core.urls'
@@ -221,6 +223,9 @@ SIMPLE_JWT = {
     'BLACKLIST_AFTER_ROTATION': True,
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
+
+# RNF05 — Timeout de inactividad para usuarios staff (30 minutos)
+STAFF_INACTIVITY_TIMEOUT_SECONDS = 30 * 60
 
 REST_AUTH = {
     'USE_JWT': True,

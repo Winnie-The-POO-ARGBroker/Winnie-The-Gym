@@ -22,6 +22,11 @@ export function getApiNavigator() {
   return navigator
 }
 
+export function resetApiRedirectState() {
+  isRedirecting = false
+  isRefreshing = false
+}
+
 export function generateUUID() {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID()
@@ -36,6 +41,7 @@ export function generateUUID() {
 api.interceptors.request.use((config) => {
   const token = useAuthStore.getState().accessToken
   if (token) {
+    isRedirecting = false
     if (config.headers && typeof config.headers.set === 'function') {
       config.headers.set('Authorization', `Bearer ${token}`)
     } else {
@@ -87,6 +93,21 @@ api.interceptors.response.use(
       return Promise.reject(error)
     }
 
+    // RNF05: Detectar 401 por inactividad de sesión para usuarios administrativos y de recepción
+    const isInactiveSession =
+      error.response?.status === 401 &&
+      error.response?.data?.code === 'session_inactive'
+
+    if (isInactiveSession) {
+      if (!isRedirecting) {
+        isRedirecting = true
+        useAuthStore.getState().clearAuth()
+        toast.error('Sesión expirada por inactividad. Por favor, iniciá sesión nuevamente.')
+        if (navigator) navigator('/login', { replace: true, state: { reason: 'inactivity' } })
+      }
+      return Promise.reject(error)
+    }
+
     if (error.response?.status === 401 && !isAuthEndpoint && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
@@ -119,7 +140,6 @@ api.interceptors.response.use(
           useAuthStore.getState().clearAuth()
           toast.error('Tu sesión ha expirado. Por favor, iniciá sesión nuevamente.')
           if (navigator) navigator('/login', { replace: true })
-          setTimeout(() => { isRedirecting = false }, 0)
         }
         return Promise.reject(error)
       }
