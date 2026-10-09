@@ -28,6 +28,12 @@ class CustomJWTSerializer(JWTSerializer):
         if user.is_profile_complete:
             data['nombre'] = user.socio.nombre
             data['apellido'] = user.socio.apellido
+
+        # RNF05: Inicializar marca de actividad en login para usuarios staff
+        if getattr(user, 'rol', None) in STAFF_ROLES:
+            from .middleware import record_staff_activity
+            record_staff_activity(user.id)
+
         return data
 
 

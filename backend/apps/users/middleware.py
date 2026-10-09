@@ -92,8 +92,60 @@ class StaffInactivityMiddleware:
                     pass
         return None
 
+    def _check_token_refresh(self, request):
+        """Si la petición es un refresh token de un staff inactivo, rechazar con 401."""
+        try:
+            import json
+            body = json.loads(request.body.decode('utf-8'))
+            refresh_token_str = body.get('refresh')
+            if not refresh_token_str:
+                return None
+
+            from rest_framework_simplejwt.tokens import RefreshToken
+            from django.contrib.auth import get_user_model
+
+            refresh = RefreshToken(refresh_token_str)
+            user_id = refresh.get('user_id')
+            if not user_id:
+                return None
+
+            User = get_user_model()
+            user = User.objects.filter(pk=user_id).first()
+            if not user or getattr(user, 'rol', None) not in STAFF_ROLES:
+                return None
+
+            now_ts = timezone.now().timestamp()
+            last_activity = get_staff_last_activity(user.id)
+
+            if last_activity is not None and (now_ts - last_activity) > self.timeout_seconds:
+                clear_staff_activity(user.id)
+                logger.info(
+                    'RNF05: Refresh token rechazado por inactividad para staff id=%s (inactivo por %d s)',
+                    user.id,
+                    int(now_ts - last_activity),
+                )
+                return JsonResponse(
+                    {
+                        'detail': 'Sesión expirada por inactividad.',
+                        'code': 'session_inactive',
+                    },
+                    status=401,
+                )
+
+            record_staff_activity(user.id)
+        except Exception as e:
+            logger.debug('Error validando refresh token en middleware: %s', e)
+        return None
+
     def __call__(self, request):
         path = request.path_info
+
+        # Validar refresh token de staff ante inactividad
+        if (path.startswith('/api/auth/token/refresh/') or path.startswith('/api/token/refresh/')) and request.method == 'POST':
+            refresh_response = self._check_token_refresh(request)
+            if refresh_response:
+                return refresh_response
+
         if any(path.startswith(exempt) for exempt in self.EXEMPT_PATHS):
             return self.get_response(request)
 
