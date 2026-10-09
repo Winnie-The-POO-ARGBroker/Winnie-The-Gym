@@ -122,30 +122,89 @@ class StaffInactivityMiddlewareTests(SimpleTestCase):
         self.assertIsNotNone(get_staff_last_activity(user.id))
 
     def test_token_refresh_rejected_when_staff_inactive(self):
-        """Token refresh en /api/auth/token/refresh/ rechaza a staff inactivo > 30 min."""
-        user = MockUser(user_id=60, rol='administrador')
+        """Token refresh en /api/auth/token/refresh/ rechaza a staff inactivo > 30 min sin tocar DB."""
+        user_id = 60
         past_time = timezone.now().timestamp() - 2000
-        cache.set(f'staff_last_activity_{user.id}', past_time)
+        cache.set(f'staff_last_activity_{user_id}', past_time)
 
-        with patch('rest_framework_simplejwt.tokens.RefreshToken') as mock_refresh_class, \
-             patch('django.contrib.auth.get_user_model') as mock_get_user_model:
-            mock_refresh_instance = MagicMock()
-            mock_refresh_instance.get.return_value = user.id
-            mock_refresh_class.return_value = mock_refresh_instance
+        from rest_framework_simplejwt.tokens import RefreshToken
+        refresh = RefreshToken()
+        refresh['user_id'] = user_id
 
-            mock_user_model = MagicMock()
-            mock_user_model.objects.filter.return_value.first.return_value = user
-            mock_get_user_model.return_value = mock_user_model
+        body = json.dumps({'refresh': str(refresh)}).encode('utf-8')
+        request = self.factory.post(
+            '/api/auth/token/refresh/',
+            data=body,
+            content_type='application/json',
+        )
 
-            body = json.dumps({'refresh': 'fake-refresh-token'}).encode('utf-8')
-            request = self.factory.post(
-                '/api/auth/token/refresh/',
-                data=body,
-                content_type='application/json',
-            )
+        response = self.middleware(request)
 
-            response = self.middleware(request)
+        self.assertEqual(response.status_code, 401)
+        data = json.loads(response.content.decode('utf-8'))
+        self.assertEqual(data.get('code'), 'session_inactive')
 
-            self.assertEqual(response.status_code, 401)
-            data = json.loads(response.content.decode('utf-8'))
-            self.assertEqual(data.get('code'), 'session_inactive')
+    def test_staff_jwt_request_tracks_activity(self):
+        """Request con JWT Bearer token real de staff actualiza last_activity sin tocar DB."""
+        from rest_framework_simplejwt.tokens import AccessToken
+        user_id = 101
+        past_time = timezone.now().timestamp() - 300  # 5 minutos atrás
+        cache.set(f'staff_last_activity_{user_id}', past_time)
+
+        token = AccessToken()
+        token['user_id'] = user_id
+
+        request = self.factory.get('/api/users/staff/', HTTP_AUTHORIZATION=f'Bearer {str(token)}')
+        request.user = None  # En producción DRF, request.user aún no está autenticado en la capa de middleware
+
+        response = self.middleware(request)
+
+        self.assertEqual(response.status_code, 200)
+        updated_activity = get_staff_last_activity(user_id)
+        self.assertIsNotNone(updated_activity)
+        self.assertGreater(updated_activity, past_time)
+
+    def test_staff_jwt_request_blocked_after_inactivity(self):
+        """Request con JWT Bearer token real de staff inactivo (> 30 min) es rechazado con 401."""
+        from rest_framework_simplejwt.tokens import AccessToken
+        user_id = 102
+        past_time = timezone.now().timestamp() - 2000  # 33 minutos atrás
+        cache.set(f'staff_last_activity_{user_id}', past_time)
+
+        token = AccessToken()
+        token['user_id'] = user_id
+
+        request = self.factory.get('/api/users/staff/', HTTP_AUTHORIZATION=f'Bearer {str(token)}')
+        request.user = None
+
+        response = self.middleware(request)
+
+        self.assertEqual(response.status_code, 401)
+        data = json.loads(response.content.decode('utf-8'))
+        self.assertEqual(data.get('code'), 'session_inactive')
+        self.assertIn('inactividad', data.get('detail', '').lower())
+        self.assertIsNone(get_staff_last_activity(user_id))
+
+    def test_socio_jwt_request_bypasses_without_db_query(self):
+        """Request con JWT Bearer de socio (sin clave en caché) pasa sin queries a DB."""
+        from rest_framework_simplejwt.tokens import AccessToken
+        user_id = 103
+        token = AccessToken()
+        token['user_id'] = user_id
+
+        request = self.factory.get('/api/classes/mis-reservas/', HTTP_AUTHORIZATION=f'Bearer {str(token)}')
+        request.user = None
+
+        response = self.middleware(request)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(get_staff_last_activity(user_id))
+
+    def test_invalid_jwt_token_passed_to_drf(self):
+        """Token Bearer malformado es ignorado por el middleware y delegado a DRF."""
+        request = self.factory.get('/api/users/staff/', HTTP_AUTHORIZATION='Bearer not-a-valid-jwt-token')
+        request.user = None
+
+        response = self.middleware(request)
+
+        self.assertEqual(response.status_code, 200)
