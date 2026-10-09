@@ -148,9 +148,11 @@ def build_asistencia(fecha_desde=None, fecha_hasta=None):
     fecha_hasta = _parse_date(fecha_hasta)
 
     if fecha_desde:
-        qs = qs.filter(timestamp__date__gte=fecha_desde)
+        start = timezone.make_aware(datetime.combine(fecha_desde, time.min), tz)
+        qs = qs.filter(timestamp__gte=start)
     if fecha_hasta:
-        qs = qs.filter(timestamp__date__lte=fecha_hasta)
+        end = timezone.make_aware(datetime.combine(fecha_hasta, time.max), tz)
+        qs = qs.filter(timestamp__lte=end)
 
     ingresos = list(qs.filter(access_type=AccessLog.AccessType.ENTRY).order_by('timestamp'))
     egresos = list(qs.filter(access_type=AccessLog.AccessType.EXIT).order_by('timestamp'))
