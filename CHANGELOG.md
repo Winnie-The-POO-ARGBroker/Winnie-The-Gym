@@ -8,6 +8,14 @@ Versionado según [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- **RNF05 — Timeout de inactividad de 30 minutos para staff (Issue #108)**:
+  - Backend: `StaffInactivityMiddleware` (`apps.users.middleware`) que trackea la última actividad para roles administrativos (`administrador`, `recepcionista`) mediante Django Cache (`staff_last_activity_<id>`).
+  - Si un usuario staff permanece inactivo por más de 30 minutos (1800s), cualquier request subsecuente o intento de token refresh se invalida automáticamente con HTTP 401 (`code: 'session_inactive'`).
+  - Los usuarios con rol `socio` quedan exentos del timeout de inactividad (diseñado para portal móvil).
+  - Frontend: Interceptor de Axios (`frontend/src/services/api.js`) actualizado para detectar respuestas 401 por inactividad, cancelar intentos de refresh, limpiar estado de sesión en `authStore`, notificar con toast informativo y redirigir a `/login`.
+  - Tests unitarios completos en backend (`backend/apps/users/tests/test_inactivity_middleware.py`) y frontend (`frontend/src/services/__tests__/api.test.js`).
+
 ### En progreso
 - **project-wide-cleanup** (branch `chore/project-wide-cleanup`, 4 commits atómicos): security hardening + CI + backend refactor + frontend React Query migration + DevOps hygiene. PR por abrirse cuando el equipo lo indique.
 
