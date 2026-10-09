@@ -1,13 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import api, { generateUUID } from '../api'
+import { toast } from 'sonner'
+import api, { generateUUID, setApiNavigator, resetApiRedirectState } from '../api'
 import useAuthStore from '../../stores/authStore'
+
+vi.mock('sonner', () => ({
+  toast: {
+    error: vi.fn(),
+    success: vi.fn(),
+  },
+}))
 
 const UUID_V4_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 describe('api service - X-Request-ID y generador UUID', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    useAuthStore.setState({ accessToken: null })
+    resetApiRedirectState()
+    useAuthStore.setState({ accessToken: null, user: null })
   })
 
   describe('generateUUID', () => {
@@ -95,6 +104,75 @@ describe('api service - X-Request-ID y generador UUID', () => {
 
       expect(updatedConfig.headers.Authorization).toBe('Bearer mock-jwt-token')
       expect(updatedConfig.headers['X-Request-ID']).toMatch(UUID_V4_REGEX)
+    })
+  })
+
+  describe('interceptor de response - RNF05 inactividad', () => {
+    it('detecta 401 por inactividad (code: session_inactive), limpia auth y muestra toast', async () => {
+      const mockNav = vi.fn()
+      setApiNavigator(mockNav)
+      useAuthStore.setState({ accessToken: 'valid-staff-token', user: { id: 1, rol: 'administrador' } })
+
+      const responseInterceptor = api.interceptors.response.handlers[0].rejected
+      const error = {
+        config: { url: '/api/members/' },
+        response: {
+          status: 401,
+          data: {
+            code: 'session_inactive',
+            detail: 'Sesión expirada por inactividad.',
+          },
+        },
+      }
+
+      await expect(responseInterceptor(error)).rejects.toEqual(error)
+
+      expect(useAuthStore.getState().accessToken).toBeNull()
+      expect(useAuthStore.getState().user).toBeNull()
+      expect(toast.error).toHaveBeenCalledWith('Sesión expirada por inactividad. Por favor, iniciá sesión nuevamente.')
+      expect(mockNav).toHaveBeenCalledWith('/login', { replace: true, state: { reason: 'inactivity' } })
+    })
+
+    it('detecta 401 con mención de inactividad en detail, limpia auth y redirige', async () => {
+      const mockNav = vi.fn()
+      setApiNavigator(mockNav)
+      useAuthStore.setState({ accessToken: 'valid-staff-token', user: { id: 2, rol: 'recepcionista' } })
+
+      const responseInterceptor = api.interceptors.response.handlers[0].rejected
+      const error = {
+        config: { url: '/api/access/monitor/' },
+        response: {
+          status: 401,
+          data: {
+            detail: 'Tu sesión fue cerrada por inactividad prolongada.',
+          },
+        },
+      }
+
+      await expect(responseInterceptor(error)).rejects.toEqual(error)
+
+      expect(useAuthStore.getState().accessToken).toBeNull()
+      expect(mockNav).toHaveBeenCalledWith('/login', { replace: true, state: { reason: 'inactivity' } })
+    })
+
+    it('no cierra sesión si el token es de desarrollo (mock-*)', async () => {
+      const mockNav = vi.fn()
+      setApiNavigator(mockNav)
+      useAuthStore.setState({ accessToken: 'mock-admin-token' })
+
+      const responseInterceptor = api.interceptors.response.handlers[0].rejected
+      const error = {
+        config: { url: '/api/members/' },
+        response: {
+          status: 401,
+          data: { code: 'session_inactive' },
+        },
+      }
+
+      await expect(responseInterceptor(error)).rejects.toEqual(error)
+
+      expect(useAuthStore.getState().accessToken).toBe('mock-admin-token')
+      expect(mockNav).not.toHaveBeenCalled()
     })
   })
 })

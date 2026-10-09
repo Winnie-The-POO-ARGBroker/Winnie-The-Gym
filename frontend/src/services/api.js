@@ -22,6 +22,11 @@ export function getApiNavigator() {
   return navigator
 }
 
+export function resetApiRedirectState() {
+  isRedirecting = false
+  isRefreshing = false
+}
+
 export function generateUUID() {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID()
