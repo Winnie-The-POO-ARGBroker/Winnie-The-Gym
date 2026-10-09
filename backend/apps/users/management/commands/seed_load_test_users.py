@@ -5,12 +5,18 @@ Configurable volume (--count), cleanup before seeding (--purge), and custom emai
 Enforces DEBUG=True guardrail to prevent accidental production execution.
 Idempotent: safe to run multiple times with the same count without duplicates.
 """
+from datetime import date, timedelta
+from decimal import Decimal
 import os
+import random
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
 from faker import Faker
+
+from apps.members.models import Socio
+from apps.memberships.models import Membresia, PlanMembresia
 
 User = get_user_model()
 
@@ -71,6 +77,20 @@ class Command(BaseCommand):
         except Exception:
             fake = Faker()
 
+        # Ensure active membership plans exist for socio accounts
+        planes = list(PlanMembresia.objects.filter(activo=True))
+        if not planes:
+            default_plan, _ = PlanMembresia.objects.get_or_create(
+                nombre='Plan Load Test',
+                defaults={
+                    'duracion_dias': 30,
+                    'precio': Decimal('15000.00'),
+                    'clases_asignadas': 12,
+                    'activo': True,
+                },
+            )
+            planes = [default_plan]
+
         # Calculate role distribution: 90% socio, 8% recepcionista, 2% administrador
         admin_count = int(round(count * 0.02))
         recep_count = int(round(count * 0.08))
@@ -80,6 +100,8 @@ class Command(BaseCommand):
             recep_count = 1
 
         users_created = 0
+        socios_created = 0
+        membresias_created = 0
 
         for i in range(count):
             if i < admin_count:
@@ -124,7 +146,43 @@ class Command(BaseCommand):
                 user.is_superuser = is_superuser
                 user.save()
 
+            if rol == User.Rol.SOCIO:
+                dni = f'{40000000 + i}'
+                telefono = f'54911{40000000 + i}'
+
+                socio, socio_created = Socio.objects.get_or_create(
+                    usuario=user,
+                    defaults={
+                        'nombre': first_name,
+                        'apellido': last_name,
+                        'dni': dni,
+                        'telefono': telefono,
+                    },
+                )
+                if socio_created:
+                    socios_created += 1
+
+                # Ensure active membership exists
+                if not Membresia.objects.filter(socio=socio, estado=Membresia.Estado.ACTIVA).exists():
+                    plan = random.choice(planes)
+                    start_offset = random.randint(1, 15)
+                    fecha_inicio = date.today() - timedelta(days=start_offset)
+                    fecha_fin = fecha_inicio + timedelta(days=plan.duracion_dias)
+                    if fecha_fin <= date.today():
+                        fecha_fin = date.today() + timedelta(days=15)
+
+                    Membresia.objects.create(
+                        socio=socio,
+                        plan=plan,
+                        fecha_inicio=fecha_inicio,
+                        fecha_fin=fecha_fin,
+                        estado=Membresia.Estado.ACTIVA,
+                    )
+                    membresias_created += 1
+
         self.stdout.write(self.style.SUCCESS(
-            f'Successfully seeded {users_created} new user(s) (target: {count}). '
-            f'Admins: {admin_count}, Recepcionistas: {recep_count}, Socios: {count - admin_count - recep_count}.'
+            f'Successfully seeded load test users.\n'
+            f'Total targeted: {count} (Admins: {admin_count}, Recepcionistas: {recep_count}, Socios: {count - admin_count - recep_count})\n'
+            f'New users created: {users_created} | New socios created: {socios_created} | New memberships: {membresias_created}\n'
+            f'Password for all: {password}'
         ))
