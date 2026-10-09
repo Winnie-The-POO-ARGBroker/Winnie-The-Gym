@@ -206,3 +206,36 @@ class AsistenciaReportTests(APITestCase):
         self.assertIn('87654321', body)
         self.assertIn('45', body)  # 45 minutos de permanencia
 
+    def test_csv_pairs_entry_exit_when_filtering_single_local_day(self):
+        """Issue #123: Al filtrar por un único día local (2026-01-15 a 2026-01-15),
+        un ingreso a las 20:30 ART (23:30 UTC) y su egreso a las 21:15 ART
+        (00:15 UTC del día siguiente) deben ser incluidos y pareados.
+        """
+        entry_dt = datetime(2026, 1, 15, 23, 30, 0, tzinfo=UTC)
+        exit_dt = datetime(2026, 1, 16, 0, 15, 0, tzinfo=UTC)
+
+        entry = AccessLog.objects.create(
+            user=self.socio_user,
+            access_type=AccessLog.AccessType.ENTRY,
+            status=AccessLog.AccessStatus.GRANTED,
+        )
+        entry.timestamp = entry_dt
+        entry.save(update_fields=['timestamp'])
+
+        exit_log = AccessLog.objects.create(
+            user=self.socio_user,
+            access_type=AccessLog.AccessType.EXIT,
+            status=AccessLog.AccessStatus.GRANTED,
+        )
+        exit_log.timestamp = exit_dt
+        exit_log.save(update_fields=['timestamp'])
+
+        # Filtro estricto de UN solo día local (2026-01-15 a 2026-01-15)
+        response = self.client.get(
+            f'{ASISTENCIA_URL}?formato=csv&fecha_desde=2026-01-15&fecha_hasta=2026-01-15'
+        )
+        body = response.content.decode('utf-8')
+
+        self.assertIn('87654321', body)
+        self.assertIn('45', body)  # Debe incluir permanencia pareada de 45 minutos
+
