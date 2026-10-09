@@ -17,6 +17,13 @@ Versionado según [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - Frontend: Interceptor de Axios (`frontend/src/services/api.js`) robustecido con detección directa por `code: 'session_inactive'`, prevención de re-disparo concurrente (double-fire toast/redirect) y limpieza de sesión en `authStore`.
   - Tests unitarios e integración en backend (`backend/apps/users/tests/test_inactivity_middleware.py`, `backend/apps/users/tests/test_inactivity_middleware_integration.py`) y frontend (`frontend/src/services/__tests__/api.test.js`).
 
+### Fixed
+- **Reporte de asistencia**: resolución del filter bug de timezone en `build_asistencia` (Issue #123):
+  - Normalización y parseo robusto de `fecha_desde` y `fecha_hasta` a objetos `date`.
+  - Reemplazo de filtros `timestamp__date__gte` / `timestamp__date__lte` por rangos timezone-aware explícitos en hora local ART (`timestamp__gte=start` y `timestamp__lte=end` con `timezone.make_aware`).
+  - Tests de regresión para bordes de día (pareo de accesos nocturnos cruzando medianoche UTC filtrados por un solo día local, y aislamiento de madrugada temprana a las 00:30 ART).
+  - Removido el workaround temporal de fechas UTC en `test_csv_pairs_entry_exit_when_crossing_utc_midnight`.
+
 ### En progreso
 - **project-wide-cleanup** (branch `chore/project-wide-cleanup`, 4 commits atómicos): security hardening + CI + backend refactor + frontend React Query migration + DevOps hygiene. PR por abrirse cuando el equipo lo indique.
 
