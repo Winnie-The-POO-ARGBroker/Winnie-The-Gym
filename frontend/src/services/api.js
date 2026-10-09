@@ -87,6 +87,24 @@ api.interceptors.response.use(
       return Promise.reject(error)
     }
 
+    // RNF05: Detectar 401 por inactividad de sesión para usuarios administrativos y de recepción
+    const isInactiveSession =
+      error.response?.status === 401 &&
+      (error.response?.data?.code === 'session_inactive' ||
+        (typeof error.response?.data?.detail === 'string' &&
+          error.response.data.detail.toLowerCase().includes('inactividad')))
+
+    if (isInactiveSession) {
+      if (!isRedirecting) {
+        isRedirecting = true
+        useAuthStore.getState().clearAuth()
+        toast.error('Sesión expirada por inactividad. Por favor, iniciá sesión nuevamente.')
+        if (navigator) navigator('/login', { replace: true, state: { reason: 'inactivity' } })
+        setTimeout(() => { isRedirecting = false }, 0)
+      }
+      return Promise.reject(error)
+    }
+
     if (error.response?.status === 401 && !isAuthEndpoint && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
