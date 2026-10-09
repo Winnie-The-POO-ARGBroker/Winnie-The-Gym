@@ -197,12 +197,81 @@ class AsistenciaReportTests(APITestCase):
         exit_log.timestamp = exit_dt
         exit_log.save(update_fields=['timestamp'])
 
-        # Usamos ambas fechas UTC para que no interfiera el bug secundario del filtro
+        # Con el filtro de timezone corregido, ya no se requiere expandir a 2026-01-16
         response = self.client.get(
-            f'{ASISTENCIA_URL}?formato=csv&fecha_desde=2026-01-15&fecha_hasta=2026-01-16'
+            f'{ASISTENCIA_URL}?formato=csv&fecha_desde=2026-01-15&fecha_hasta=2026-01-15'
         )
         body = response.content.decode('utf-8')
 
         self.assertIn('87654321', body)
         self.assertIn('45', body)  # 45 minutos de permanencia
+
+    def test_csv_pairs_entry_exit_when_filtering_single_local_day(self):
+        """Issue #123: Al filtrar por un único día local (2026-01-15 a 2026-01-15),
+        un ingreso a las 20:30 ART (23:30 UTC) y su egreso a las 21:15 ART
+        (00:15 UTC del día siguiente) deben ser incluidos y pareados.
+        """
+        entry_dt = datetime(2026, 1, 15, 23, 30, 0, tzinfo=UTC)
+        exit_dt = datetime(2026, 1, 16, 0, 15, 0, tzinfo=UTC)
+
+        entry = AccessLog.objects.create(
+            user=self.socio_user,
+            access_type=AccessLog.AccessType.ENTRY,
+            status=AccessLog.AccessStatus.GRANTED,
+        )
+        entry.timestamp = entry_dt
+        entry.save(update_fields=['timestamp'])
+
+        exit_log = AccessLog.objects.create(
+            user=self.socio_user,
+            access_type=AccessLog.AccessType.EXIT,
+            status=AccessLog.AccessStatus.GRANTED,
+        )
+        exit_log.timestamp = exit_dt
+        exit_log.save(update_fields=['timestamp'])
+
+        # Filtro estricto de UN solo día local (2026-01-15 a 2026-01-15)
+        response = self.client.get(
+            f'{ASISTENCIA_URL}?formato=csv&fecha_desde=2026-01-15&fecha_hasta=2026-01-15'
+        )
+        body = response.content.decode('utf-8')
+
+        self.assertIn('87654321', body)
+        self.assertIn('45', body)  # Debe incluir permanencia pareada de 45 minutos
+
+    def test_filter_lower_boundary_early_morning_art(self):
+        """Verifica que un registro a las 00:30 ART (03:30 UTC) esté incluido,
+        mientras que un registro a las 23:30 ART del día anterior (02:30 UTC)
+        quede excluido aunque su fecha UTC sea 2026-01-15.
+        """
+        other_user = make_user_factory(email='prev@rep.test', rol='socio')
+        make_socio_factory(other_user, apellido='PrevDay', dni='11223344')
+
+        # 23:30 ART del 14-ene = 02:30 UTC del 15-ene (día local anterior)
+        prev_log = AccessLog.objects.create(
+            user=other_user,
+            access_type=AccessLog.AccessType.ENTRY,
+            status=AccessLog.AccessStatus.GRANTED,
+        )
+        prev_log.timestamp = datetime(2026, 1, 15, 2, 30, 0, tzinfo=UTC)
+        prev_log.save(update_fields=['timestamp'])
+
+        # 00:30 ART del 15-ene = 03:30 UTC del 15-ene (día local actual)
+        today_log = AccessLog.objects.create(
+            user=self.socio_user,
+            access_type=AccessLog.AccessType.ENTRY,
+            status=AccessLog.AccessStatus.GRANTED,
+        )
+        today_log.timestamp = datetime(2026, 1, 15, 3, 30, 0, tzinfo=UTC)
+        today_log.save(update_fields=['timestamp'])
+
+        response = self.client.get(
+            f'{ASISTENCIA_URL}?formato=csv&fecha_desde=2026-01-15&fecha_hasta=2026-01-15'
+        )
+        body = response.content.decode('utf-8')
+
+        # Debe incluir al socio del día 15
+        self.assertIn('87654321', body)
+        # NO debe incluir al socio del día local 14 a pesar de tener fecha UTC del 15
+        self.assertNotIn('11223344', body)
 

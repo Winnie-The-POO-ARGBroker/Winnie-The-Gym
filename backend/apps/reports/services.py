@@ -124,16 +124,35 @@ def _active_plan_via_user(user):
     return _plan_for(socio) if socio else ''
 
 
+def _parse_date(val):
+    """Parsea una fecha si viene como string ISO o retorna el objeto date."""
+    if not val:
+        return None
+    if isinstance(val, date):
+        return val
+    if isinstance(val, str):
+        try:
+            return date.fromisoformat(val)
+        except (ValueError, TypeError):
+            return None
+    return None
+
+
 def build_asistencia(fecha_desde=None, fecha_hasta=None):
     tz = timezone.get_current_timezone()
     qs = AccessLog.objects.select_related('user', 'user__socio').filter(
         status=AccessLog.AccessStatus.GRANTED
     )
 
+    fecha_desde = _parse_date(fecha_desde)
+    fecha_hasta = _parse_date(fecha_hasta)
+
     if fecha_desde:
-        qs = qs.filter(timestamp__date__gte=fecha_desde)
+        start = timezone.make_aware(datetime.combine(fecha_desde, time.min), tz)
+        qs = qs.filter(timestamp__gte=start)
     if fecha_hasta:
-        qs = qs.filter(timestamp__date__lte=fecha_hasta)
+        end = timezone.make_aware(datetime.combine(fecha_hasta, time.max), tz)
+        qs = qs.filter(timestamp__lte=end)
 
     ingresos = list(qs.filter(access_type=AccessLog.AccessType.ENTRY).order_by('timestamp'))
     egresos = list(qs.filter(access_type=AccessLog.AccessType.EXIT).order_by('timestamp'))
