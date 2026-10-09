@@ -133,25 +133,37 @@ describe('api service - X-Request-ID y generador UUID', () => {
       expect(mockNav).toHaveBeenCalledWith('/login', { replace: true, state: { reason: 'inactivity' } })
     })
 
-    it('detecta 401 con mención de inactividad en detail, limpia auth y redirige', async () => {
+    it('evita doble toast/redirect ante múltiples errores 401 concurrentes', async () => {
       const mockNav = vi.fn()
       setApiNavigator(mockNav)
       useAuthStore.setState({ accessToken: 'valid-staff-token', user: { id: 2, rol: 'recepcionista' } })
 
       const responseInterceptor = api.interceptors.response.handlers[0].rejected
-      const error = {
+      const error1 = {
         config: { url: '/api/access/monitor/' },
         response: {
           status: 401,
-          data: {
-            detail: 'Tu sesión fue cerrada por inactividad prolongada.',
-          },
+          data: { code: 'session_inactive', detail: 'Sesión expirada.' },
+        },
+      }
+      const error2 = {
+        config: { url: '/api/classes/' },
+        response: {
+          status: 401,
+          data: { code: 'session_inactive', detail: 'Sesión expirada.' },
         },
       }
 
-      await expect(responseInterceptor(error)).rejects.toEqual(error)
+      // Dos peticiones concurrentes que fallan por inactividad
+      await Promise.allSettled([
+        responseInterceptor(error1),
+        responseInterceptor(error2),
+      ])
 
       expect(useAuthStore.getState().accessToken).toBeNull()
+      // Toast y navegación deben invocarse exactamente una vez
+      expect(toast.error).toHaveBeenCalledTimes(1)
+      expect(mockNav).toHaveBeenCalledTimes(1)
       expect(mockNav).toHaveBeenCalledWith('/login', { replace: true, state: { reason: 'inactivity' } })
     })
 
