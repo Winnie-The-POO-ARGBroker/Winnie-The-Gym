@@ -197,9 +197,9 @@ class AsistenciaReportTests(APITestCase):
         exit_log.timestamp = exit_dt
         exit_log.save(update_fields=['timestamp'])
 
-        # Usamos ambas fechas UTC para que no interfiera el bug secundario del filtro
+        # Con el filtro de timezone corregido, ya no se requiere expandir a 2026-01-16
         response = self.client.get(
-            f'{ASISTENCIA_URL}?formato=csv&fecha_desde=2026-01-15&fecha_hasta=2026-01-16'
+            f'{ASISTENCIA_URL}?formato=csv&fecha_desde=2026-01-15&fecha_hasta=2026-01-15'
         )
         body = response.content.decode('utf-8')
 
