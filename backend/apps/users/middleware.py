@@ -17,7 +17,7 @@ def get_staff_activity_cache_key(user_id):
 
 
 def record_staff_activity(user_id):
-    """Actualiza la marca de tiempo de última actividad para un usuario staff."""
+    """Actualiza la marca de tiempo de última actividad para un usuario staff en caché."""
     try:
         now_ts = timezone.now().timestamp()
         cache.set(get_staff_activity_cache_key(user_id), now_ts, timeout=CACHE_EXPIRY_SECONDS)
@@ -26,7 +26,7 @@ def record_staff_activity(user_id):
 
 
 def clear_staff_activity(user_id):
-    """Elimina el registro de actividad de staff en cache."""
+    """Elimina el registro de actividad de staff en caché."""
     try:
         cache.delete(get_staff_activity_cache_key(user_id))
     except Exception as e:
@@ -34,7 +34,7 @@ def clear_staff_activity(user_id):
 
 
 def get_staff_last_activity(user_id):
-    """Obtiene el timestamp de última actividad registrada para un usuario staff."""
+    """Obtiene el timestamp de última actividad registrada para un usuario staff desde caché."""
     try:
         return cache.get(get_staff_activity_cache_key(user_id))
     except Exception as e:
@@ -47,6 +47,7 @@ class StaffInactivityMiddleware:
 
     Previene accesos no autorizados en terminales compartidas de recepción.
     No aplica a socios (portal móvil).
+    Opera con 0 queries a la base de datos usando presencia de clave en caché.
     """
 
     EXEMPT_PATHS = (
@@ -69,31 +70,40 @@ class StaffInactivityMiddleware:
             DEFAULT_INACTIVITY_TIMEOUT_SECONDS,
         )
 
-    def _resolve_user(self, request):
-        user = getattr(request, 'user', None)
-        if user and user.is_authenticated:
-            return user
+    def _enforce_activity(self, user_id, is_known_staff=False):
+        """Valida y actualiza la actividad de staff en caché sin realizar consultas a la base de datos.
 
-        auth_header = request.headers.get('Authorization') or request.META.get('HTTP_AUTHORIZATION')
-        if auth_header and auth_header.startswith('Bearer '):
-            raw_token = auth_header.split(' ', 1)[1].strip()
-            if raw_token:
-                try:
-                    from rest_framework_simplejwt.tokens import AccessToken
-                    from django.contrib.auth import get_user_model
-                    access = AccessToken(raw_token)
-                    user_id = access.get('user_id')
-                    if user_id:
-                        User = get_user_model()
-                        resolved = User.objects.filter(pk=user_id).first()
-                        if resolved:
-                            return resolved
-                except Exception:
-                    pass
+        Retorna JsonResponse(401) si la sesión expiró por inactividad, o None si está activa.
+        """
+        last_activity = get_staff_last_activity(user_id)
+        if last_activity is None:
+            # Si se conoce explícitamente que es staff (p.ej. session auth), registrar actividad inicial
+            if is_known_staff:
+                record_staff_activity(user_id)
+            # Si no hay actividad registrada en caché (JWT) -> no es staff tracked -> bypass sin DB
+            return None
+
+        now_ts = timezone.now().timestamp()
+        if (now_ts - last_activity) > self.timeout_seconds:
+            clear_staff_activity(user_id)
+            logger.info(
+                'RNF05: Sesión invalidada por inactividad para staff id=%s (inactivo por %d s)',
+                user_id,
+                int(now_ts - last_activity),
+            )
+            return JsonResponse(
+                {
+                    'detail': 'Sesión expirada por inactividad.',
+                    'code': 'session_inactive',
+                },
+                status=401,
+            )
+
+        record_staff_activity(user_id)
         return None
 
     def _check_token_refresh(self, request):
-        """Si la petición es un refresh token de un staff inactivo, rechazar con 401."""
+        """Si la petición es un refresh token de un staff inactivo, rechaza con 401."""
         try:
             import json
             body = json.loads(request.body.decode('utf-8'))
@@ -101,38 +111,13 @@ class StaffInactivityMiddleware:
             if not refresh_token_str:
                 return None
 
-            from rest_framework_simplejwt.tokens import RefreshToken
-            from django.contrib.auth import get_user_model
-
-            refresh = RefreshToken(refresh_token_str)
-            user_id = refresh.get('user_id')
+            from rest_framework_simplejwt.tokens import UntypedToken
+            token = UntypedToken(refresh_token_str)
+            user_id = token.get('user_id')
             if not user_id:
                 return None
 
-            User = get_user_model()
-            user = User.objects.filter(pk=user_id).first()
-            if not user or getattr(user, 'rol', None) not in STAFF_ROLES:
-                return None
-
-            now_ts = timezone.now().timestamp()
-            last_activity = get_staff_last_activity(user.id)
-
-            if last_activity is not None and (now_ts - last_activity) > self.timeout_seconds:
-                clear_staff_activity(user.id)
-                logger.info(
-                    'RNF05: Refresh token rechazado por inactividad para staff id=%s (inactivo por %d s)',
-                    user.id,
-                    int(now_ts - last_activity),
-                )
-                return JsonResponse(
-                    {
-                        'detail': 'Sesión expirada por inactividad.',
-                        'code': 'session_inactive',
-                    },
-                    status=401,
-                )
-
-            record_staff_activity(user.id)
+            return self._enforce_activity(user_id)
         except Exception as e:
             logger.debug('Error validando refresh token en middleware: %s', e)
         return None
@@ -149,34 +134,36 @@ class StaffInactivityMiddleware:
         if any(path.startswith(exempt) for exempt in self.EXEMPT_PATHS):
             return self.get_response(request)
 
-        user = self._resolve_user(request)
-
-        if not user or not user.is_authenticated:
+        # 1. Fast path para Session auth (Django admin)
+        user = getattr(request, 'user', None)
+        if user and user.is_authenticated:
+            if getattr(user, 'rol', None) in STAFF_ROLES:
+                response = self._enforce_activity(user.id, is_known_staff=True)
+                if response:
+                    return response
             return self.get_response(request)
 
-        user_role = getattr(user, 'rol', None)
-        if user_role not in STAFF_ROLES:
+        # 2. JWT auth — decode de token en memoria (0 consultas a la base de datos)
+        auth_header = request.headers.get('Authorization') or request.META.get('HTTP_AUTHORIZATION') or ''
+        if not auth_header.startswith('Bearer '):
             return self.get_response(request)
 
-        now_ts = timezone.now().timestamp()
-        last_activity = get_staff_last_activity(user.id)
+        try:
+            raw_token = auth_header.split(' ', 1)[1].strip()
+            if not raw_token:
+                return self.get_response(request)
 
-        if last_activity is not None:
-            elapsed = now_ts - last_activity
-            if elapsed > self.timeout_seconds:
-                clear_staff_activity(user.id)
-                logger.info(
-                    'RNF05: Sesión invalidada por inactividad para staff id=%s (inactivo por %d s)',
-                    user.id,
-                    int(elapsed),
-                )
-                return JsonResponse(
-                    {
-                        'detail': 'Sesión expirada por inactividad.',
-                        'code': 'session_inactive',
-                    },
-                    status=401,
-                )
+            from rest_framework_simplejwt.tokens import AccessToken
+            access = AccessToken(raw_token)
+            user_id = access.get('user_id')
+            if not user_id:
+                return self.get_response(request)
+        except Exception:
+            # Token inválido o malformado: dejar que DRF maneje la autenticación normalmente
+            return self.get_response(request)
 
-        record_staff_activity(user.id)
+        response = self._enforce_activity(user_id)
+        if response:
+            return response
+
         return self.get_response(request)
