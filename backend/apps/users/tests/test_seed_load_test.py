@@ -49,28 +49,52 @@ class SeedLoadTestUsersCommandTests(TestCase):
         self.assertEqual(receps.count(), 8)
         self.assertEqual(socios.count(), 90)
 
-        # Admins have superuser and staff flags
+        # Admins have rol=ADMINISTRADOR but is_staff=False and is_superuser=False (defensive posture)
         for admin in admins:
-            self.assertTrue(admin.is_staff)
-            self.assertTrue(admin.is_superuser)
+            self.assertEqual(admin.rol, User.Rol.ADMINISTRADOR)
+            self.assertFalse(admin.is_staff)
+            self.assertFalse(admin.is_superuser)
 
         # Recepcionistas have staff=False, superuser=False
         for recep in receps:
+            self.assertEqual(recep.rol, User.Rol.RECEPCIONISTA)
             self.assertFalse(recep.is_staff)
             self.assertFalse(recep.is_superuser)
 
-        # Socios have linked Socio records and active memberships
+        # Socios have linked Socio records and active memberships consistent with plan duration
         for socio_user in socios:
             self.assertTrue(hasattr(socio_user, 'socio'))
             socio_record = socio_user.socio
             self.assertTrue(socio_record.dni.startswith('4000'))
-            self.assertTrue(
-                Membresia.objects.filter(socio=socio_record, estado=Membresia.Estado.ACTIVA).exists()
-            )
+            membresia = Membresia.objects.filter(socio=socio_record, estado=Membresia.Estado.ACTIVA).first()
+            self.assertIsNotNone(membresia)
+            # fecha_fin - fecha_inicio must match plan.duracion_dias exactly
+            self.assertEqual((membresia.fecha_fin - membresia.fecha_inicio).days, membresia.plan.duracion_dias)
 
         # Verify password is valid / login-able
         sample_user = load_users.first()
         self.assertTrue(sample_user.check_password('LoadTest123!'))
+
+    @override_settings(DEBUG=True)
+    def test_distribution_edge_case_count_50(self):
+        """With count=50, at least 1 admin is guaranteed (1 admin, 4 receps, 45 socios)."""
+        call_command('seed_load_test_users', count=50, prefix='c50_', stdout=StringIO())
+        c50_users = User.objects.filter(email__startswith='c50_')
+        self.assertEqual(c50_users.count(), 50)
+        self.assertEqual(c50_users.filter(rol=User.Rol.ADMINISTRADOR).count(), 1)
+        self.assertEqual(c50_users.filter(rol=User.Rol.RECEPCIONISTA).count(), 4)
+        self.assertEqual(c50_users.filter(rol=User.Rol.SOCIO).count(), 45)
+
+    @override_settings(DEBUG=True)
+    def test_distribution_edge_case_count_12(self):
+        """With count=12, 1 recepcionista is guaranteed (0 admin, 1 recep, 11 socios)."""
+        call_command('seed_load_test_users', count=12, prefix='c12_', stdout=StringIO())
+        c12_users = User.objects.filter(email__startswith='c12_')
+        self.assertEqual(c12_users.count(), 12)
+        self.assertEqual(c12_users.filter(rol=User.Rol.ADMINISTRADOR).count(), 0)
+        self.assertEqual(c12_users.filter(rol=User.Rol.RECEPCIONISTA).count(), 1)
+        self.assertEqual(c12_users.filter(rol=User.Rol.SOCIO).count(), 11)
+
 
     @override_settings(DEBUG=True)
     def test_purge_deletes_previous(self):

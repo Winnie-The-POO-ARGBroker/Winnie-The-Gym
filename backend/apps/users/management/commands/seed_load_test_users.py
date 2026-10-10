@@ -106,8 +106,8 @@ class Command(BaseCommand):
         for i in range(count):
             if i < admin_count:
                 rol = User.Rol.ADMINISTRADOR
-                is_staff = True
-                is_superuser = True
+                is_staff = False
+                is_superuser = False
             elif i < admin_count + recep_count:
                 rol = User.Rol.RECEPCIONISTA
                 is_staff = False
@@ -165,11 +165,10 @@ class Command(BaseCommand):
                 # Ensure active membership exists
                 if not Membresia.objects.filter(socio=socio, estado=Membresia.Estado.ACTIVA).exists():
                     plan = random.choice(planes)
-                    start_offset = random.randint(1, 15)
+                    max_start_offset = max(1, min(plan.duracion_dias - 1, 15))
+                    start_offset = random.randint(1, max_start_offset)
                     fecha_inicio = date.today() - timedelta(days=start_offset)
                     fecha_fin = fecha_inicio + timedelta(days=plan.duracion_dias)
-                    if fecha_fin <= date.today():
-                        fecha_fin = date.today() + timedelta(days=15)
 
                     Membresia.objects.create(
                         socio=socio,
@@ -186,3 +185,9 @@ class Command(BaseCommand):
             f'New users created: {users_created} | New socios created: {socios_created} | New memberships: {membresias_created}\n'
             f'Password for all: {password}'
         ))
+        if admin_count > 0:
+            self.stdout.write(self.style.WARNING(
+                f'Nota de seguridad: Se crearon {admin_count} usuarios con rol "administrador" '
+                f'(is_staff=False e is_superuser=False por postura defensiva en load testing).'
+            ))
+
