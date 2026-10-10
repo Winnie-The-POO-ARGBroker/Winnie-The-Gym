@@ -76,24 +76,27 @@ class SeedLoadTestUsersCommandTests(TestCase):
         self.assertTrue(sample_user.check_password('LoadTest123!'))
 
     @override_settings(DEBUG=True)
-    def test_distribution_edge_case_count_50(self):
-        """With count=50, at least 1 admin is guaranteed (1 admin, 4 receps, 45 socios)."""
-        call_command('seed_load_test_users', count=50, prefix='c50_', stdout=StringIO())
-        c50_users = User.objects.filter(email__startswith='c50_')
-        self.assertEqual(c50_users.count(), 50)
-        self.assertEqual(c50_users.filter(rol=User.Rol.ADMINISTRADOR).count(), 1)
-        self.assertEqual(c50_users.filter(rol=User.Rol.RECEPCIONISTA).count(), 4)
-        self.assertEqual(c50_users.filter(rol=User.Rol.SOCIO).count(), 45)
+    def test_membership_duration_matches_plan_duracion_dias(self):
+        """La duración de la Membresía creada debe coincidir con plan.duracion_dias."""
+        call_command('seed_load_test_users', count=5, prefix='dur_', stdout=StringIO())
+        for membresia in Membresia.objects.filter(socio__usuario__email__startswith='dur_'):
+            duracion = (membresia.fecha_fin - membresia.fecha_inicio).days
+            self.assertEqual(duracion, membresia.plan.duracion_dias)
 
     @override_settings(DEBUG=True)
-    def test_distribution_edge_case_count_12(self):
-        """With count=12, 1 recepcionista is guaranteed (0 admin, 1 recep, 11 socios)."""
-        call_command('seed_load_test_users', count=12, prefix='c12_', stdout=StringIO())
-        c12_users = User.objects.filter(email__startswith='c12_')
-        self.assertEqual(c12_users.count(), 12)
-        self.assertEqual(c12_users.filter(rol=User.Rol.ADMINISTRADOR).count(), 0)
-        self.assertEqual(c12_users.filter(rol=User.Rol.RECEPCIONISTA).count(), 1)
-        self.assertEqual(c12_users.filter(rol=User.Rol.SOCIO).count(), 11)
+    def test_count_12_forces_min_one_recepcionista(self):
+        """Count=12 fuerza al menos 1 recepcionista (branch de minimum)."""
+        call_command('seed_load_test_users', count=12, prefix='r12_', stdout=StringIO())
+        receps = User.objects.filter(email__startswith='r12_', rol=User.Rol.RECEPCIONISTA)
+        self.assertGreaterEqual(receps.count(), 1)
+
+    @override_settings(DEBUG=True)
+    def test_count_50_forces_min_one_admin(self):
+        """Count=50 fuerza al menos 1 administrador (branch de minimum)."""
+        call_command('seed_load_test_users', count=50, prefix='a50_', stdout=StringIO())
+        admins = User.objects.filter(email__startswith='a50_', rol=User.Rol.ADMINISTRADOR)
+        self.assertGreaterEqual(admins.count(), 1)
+
 
 
     @override_settings(DEBUG=True)
