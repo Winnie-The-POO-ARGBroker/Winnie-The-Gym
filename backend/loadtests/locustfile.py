@@ -73,7 +73,11 @@ class SocioUser(HttpUser):
     wait_time = between(1, 4)
 
     def on_start(self):
-        self.token = _login(self.client, 'socio1@load.test', 'loadpass!')
+        email = _get_random_socio_email()
+        self.token = _login(self.client, email, LOAD_TEST_PASSWORD)
+        if not self.token:
+            # Fallback a credencial fija por retrocompatibilidad
+            self.token = _login(self.client, 'socio1@load.test', 'loadpass!')
         self.headers = {'Authorization': f'Bearer {self.token}'} if self.token else {}
 
     @task(3)
@@ -107,19 +111,27 @@ class RecepcionistaUser(HttpUser):
     wait_time = between(2, 5)
 
     def on_start(self):
-        self.token = _login(self.client, 'recep1@load.test', 'loadpass!')
+        email = _get_random_recep_email()
+        self.token = _login(self.client, email, LOAD_TEST_PASSWORD)
+        if not self.token:
+            self.token = _login(self.client, 'recep1@load.test', 'loadpass!')
         self.headers = {'Authorization': f'Bearer {self.token}'} if self.token else {}
 
     @task(4)
     def scan_qr(self):
         # RNF01 target: this endpoint must respond in under 2s at p95.
         fake_token = f'test-token-{random.randint(1, 999999)}'
-        self.client.post(
+        with self.client.post(
             '/api/access/qr/scan/',
             json={'qr_token': fake_token, 'access_type': 'ENTRY'},
             headers=self.headers,
             name='POST /api/access/qr/scan/',
-        )
+            catch_response=True,
+        ) as response:
+            # 200 (acceso otorgado) y 403 (acceso denegado por token inválido)
+            # son respuestas válidas esperadas del dominio para medir latencia SLA.
+            if response.status_code in (200, 403):
+                response.success()
 
     @task(1)
     def list_access_logs(self):
@@ -136,8 +148,12 @@ class AdminUser(HttpUser):
     wait_time = between(5, 10)
 
     def on_start(self):
-        self.token = _login(self.client, 'admin1@load.test', 'loadpass!')
+        email = _get_random_admin_email()
+        self.token = _login(self.client, email, LOAD_TEST_PASSWORD)
+        if not self.token:
+            self.token = _login(self.client, 'admin1@load.test', 'loadpass!')
         self.headers = {'Authorization': f'Bearer {self.token}'} if self.token else {}
+
 
     @task(2)
     def get_morosidad(self):
