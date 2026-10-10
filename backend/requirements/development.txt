@@ -5,3 +5,4 @@ pytest-django==4.8.0
 pytest-asyncio==0.24.0
 pytest-cov==5.0.0
 locust==2.31.5
+Faker==33.1.0

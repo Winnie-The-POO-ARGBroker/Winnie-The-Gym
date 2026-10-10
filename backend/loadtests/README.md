@@ -54,7 +54,7 @@ recep1@load.test / loadpass!
 admin1@load.test / loadpass!
 ```
 
-Podés seedear con:
+Podés seedear las cuentas fijas con:
 
 ```bash
 docker compose exec backend python manage.py shell -c "
@@ -66,6 +66,21 @@ for r in ['socio', 'recepcionista', 'administrador']:
     u = U.objects.get(email=email); u.set_password('loadpass!'); u.save()
 "
 ```
+
+### Poblado masivo para pruebas de carga
+
+Para pruebas a escala con cientos o miles de usuarios sintéticos (con perfiles Faker, distribución 90% socios / 8% recepcionistas / 2% administradores y membresías activas):
+
+```bash
+docker compose exec backend python manage.py seed_load_test_users --count 100 --purge
+```
+
+Opciones disponibles:
+- `--count N`: Cantidad de usuarios a generar (default: `100`).
+- `--purge`: Borra usuarios previos coincidentes con el prefijo antes de generar.
+- `--prefix`: Prefijo de emails (default: `loadtest_`, generando `loadtest_00000@loadtest.local`).
+- Contraseña: `LoadTest123!` (o la configurada en la variable de entorno `LOAD_TEST_PASSWORD`).
+
 
 ## Interpretación de resultados
 
