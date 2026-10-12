@@ -144,4 +144,30 @@ describe('ClassCard', () => {
     fireEvent.click(screen.getByText('Cancelar'))
     expect(onCancel).toHaveBeenCalledWith(mockClaseAvailable.id)
   })
+
+  // ── 14. Category badge styling branches ───────────────────────────────────
+  it('renders crossfit category badge with danger variant', () => {
+    const crossfitClase = { ...mockClaseAvailable, categoria: 'crossfit' }
+    render(<ClassCard clase={crossfitClase} variant="catalog" onBook={vi.fn()} onCancel={vi.fn()} />)
+    expect(screen.getByText('CROSSFIT')).toBeInTheDocument()
+  })
+
+  it('renders yoga category badge with default success variant', () => {
+    const yogaClase = { ...mockClaseAvailable, categoria: 'yoga', intensidad: null, instructor: null }
+    render(<ClassCard clase={yogaClase} variant="catalog" onBook={vi.fn()} onCancel={vi.fn()} />)
+    expect(screen.getByText('YOGA')).toBeInTheDocument()
+  })
+
+  // ── 15. High occupancy ratio (> 0.75) ─────────────────────────────────────
+  it('renders warning color bar when occupancy is over 75%', () => {
+    const highOccupancyClase = {
+      ...mockClaseAvailable,
+      cuposTotales: 20,
+      cuposReservados: 18,
+    }
+    const { container } = render(
+      <ClassCard clase={highOccupancyClase} variant="catalog" onBook={vi.fn()} onCancel={vi.fn()} />
+    )
+    expect(container.querySelector('.bg-warning-500')).toBeInTheDocument()
+  })
 })
