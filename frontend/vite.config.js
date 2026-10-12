@@ -12,13 +12,16 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'lcov', 'html'],
       reportsDirectory: './coverage',
-      // TODO: Investigate coverage drop after Vitest 4 upgrade (issue #119)
-      // thresholds: {
-      //   lines: 68,
-      //   branches: 70,
-      //   functions: 65,
-      //   statements: 68,
-      // },
+      // Coverage gates reinstated after Vitest 4 / v8 upgrade investigation (issue #119).
+      // Baseline metrics post-upgrade: lines ~78.9%, branches ~71.6%, functions ~72.3%, statements ~78.0%.
+      // Thresholds set to baseline - margin (or previous agreed baseline):
+      // lines: 68, branches: 70, functions: 65, statements: 68.
+      thresholds: {
+        lines: 68,
+        branches: 70,
+        functions: 65,
+        statements: 68,
+      },
       exclude: [
         '**/*.test.jsx',
         '**/*.test.js',
