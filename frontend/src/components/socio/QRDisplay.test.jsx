@@ -75,4 +75,10 @@ describe('QRDisplay', () => {
     render(<QRDisplay {...defaultProps} isExpired={false} />)
     expect(screen.queryByText('Acceso Bloqueado')).not.toBeInTheDocument()
   })
+
+  it('renders spinning icon when isRefreshing is true', () => {
+    const { container } = render(<QRDisplay {...defaultProps} isRefreshing={true} />)
+    const svg = container.querySelector('svg.animate-spin')
+    expect(svg).toBeInTheDocument()
+  })
 })

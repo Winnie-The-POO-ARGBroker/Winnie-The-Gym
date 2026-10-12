@@ -135,4 +135,13 @@ describe('ClassCard', () => {
     // spotsLeft = 20 - 10 = 10 libres
     expect(screen.getByText('10')).toBeInTheDocument()
   })
+
+  // ── 13. Booked variant cancel button calls onCancel ───────────────────────
+  it('triggers onCancel when clicking Cancelar in booked variant', () => {
+    const onCancel = vi.fn()
+    render(<ClassCard clase={mockClaseAvailable} variant="booked" onBook={vi.fn()} onCancel={onCancel} />)
+
+    fireEvent.click(screen.getByText('Cancelar'))
+    expect(onCancel).toHaveBeenCalledWith(mockClaseAvailable.id)
+  })
 })
