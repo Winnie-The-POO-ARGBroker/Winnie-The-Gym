@@ -9,6 +9,12 @@ Versionado según [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- **Infraestructura de Tests — Reactivación de coverage gates en Vitest 4 (Issue #119)**:
+  - Investigación de la variación en evaluación de branches tras el upgrade a Vitest 4 (`@vitest/coverage-v8` v4).
+  - Incorporación de tests unitarios focalizados para ramas de `errorHandling`, `useHighContrast`, interceptores y token refresh de `api.js`, `FilterPanel`, `Modal`, `SearchBar`, `ClassCard` y `usePlanes`.
+  - Reanudación de gates activos en `frontend/vite.config.js`: `lines: 68`, `branches: 70`, `functions: 65`, `statements: 68`.
+  - Métricas de cobertura alcanzadas post-upgrade: Lines `78.9%`, Branches `71.6%`, Functions `72.3%`, Statements `78.0%`.
+
 - **RNF05 — Timeout de inactividad de 30 minutos para staff (Issue #108)**:
   - Backend: `StaffInactivityMiddleware` (`apps.users.middleware`) que trackea la última actividad para roles administrativos (`administrador`, `recepcionista`) mediante Django Cache (`staff_last_activity_<id>`).
   - Optimización de rendimiento: lectura y validación de tokens JWT en memoria mediante `AccessToken` / `UntypedToken` con 0 consultas a base de datos por petición autenticada, identificando sesiones de staff a partir de la presencia en caché (inicializada al login).
