@@ -498,6 +498,51 @@ El comando `seed_demo_users` crea de forma determinista e idempotente **6 usuari
 
 ---
 
+<h2 align='center'>🧪 Testing y Cobertura</h2>
+
+<br>
+
+El proyecto cuenta con una amplia suite de pruebas automatizadas en ambos extremos de la aplicación, garantizando estabilidad funcional y previniendo regresiones:
+
+| Capa | Framework / Herramientas | Cantidad de Tests | Cobertura alcanzada | Gate mínimo en CI |
+|:---|:---|:---:|:---:|:---:|
+| **Frontend** | [Vitest](https://vitest.dev/) · [React Testing Library](https://testing-library.com/) | **733 tests** | Lines: **82.2%** <br> Statements: **82.2%** <br> Branches: **77.3%** <br> Functions: **67.5%** | Lines: 68% <br> Statements: 68% <br> Branches: 68% <br> Functions: 65% |
+| **Backend** | [pytest](https://pytest.org/) · Django Test Framework | **335 tests** | Global: **> 80%** | Global: 80% |
+
+> **Total:** **1068 tests automatizados**, cubriendo servicios de negocio, modelos, API REST, WebSockets, autenticación JWT/OAuth, hooks, componentes y vistas.
+
+### Ejecución de tests
+
+**Frontend:**
+```bash
+# Con Docker Compose
+docker compose exec frontend npm test
+
+# Ejecución con reporte completo de cobertura
+docker compose exec frontend npx vitest run --coverage
+
+# Entorno local
+cd frontend
+npm test
+```
+
+**Backend:**
+```bash
+# Con Docker Compose
+docker compose exec backend pytest -q
+
+# Ejecución con reporte de cobertura por apps
+docker compose exec backend pytest --cov=apps
+
+# Entorno local
+cd backend
+pytest
+```
+
+<br>
+
+---
+
 <h2 align='center'>🌿 Estrategia de Branching</h2>
 
 | Rama | Propósito |
