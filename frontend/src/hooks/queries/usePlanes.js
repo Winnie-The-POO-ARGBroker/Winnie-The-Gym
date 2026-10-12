@@ -31,7 +31,7 @@ export function usePlanes() {
     staleTime: 5 * 60 * 1000,
     retry: (failureCount, error) => {
       // No reintentar en errores de auth o not found
-      if (error.type === 'auth' || error.type === 'notfound') return false
+      if (error?.type === 'auth' || error?.type === 'notfound') return false
       return failureCount < 3
     },
   })

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { toast } from 'sonner'
-import api, { generateUUID, setApiNavigator, resetApiRedirectState } from '../api'
+import api, { generateUUID, setApiNavigator, getApiNavigator, resetApiRedirectState } from '../api'
 import useAuthStore from '../../stores/authStore'
 
 vi.mock('sonner', () => ({
@@ -185,6 +185,56 @@ describe('api service - X-Request-ID y generador UUID', () => {
 
       expect(useAuthStore.getState().accessToken).toBe('mock-admin-token')
       expect(mockNav).not.toHaveBeenCalled()
+    })
+
+    it('permite consultar el navigator con getApiNavigator', () => {
+      const mockNav = vi.fn()
+      setApiNavigator(mockNav)
+      expect(getApiNavigator()).toBe(mockNav)
+    })
+
+    it('retorna la respuesta sin cambios en el handler fulfilled', () => {
+      const fulfilledHandler = api.interceptors.response.handlers[0].fulfilled
+      const mockResponse = { data: { success: true }, status: 200 }
+      expect(fulfilledHandler(mockResponse)).toBe(mockResponse)
+    })
+
+    it('rechaza directamente si el error es de /auth/token o error genérico no-401', async () => {
+      const rejectedHandler = api.interceptors.response.handlers[0].rejected
+      const genericError = {
+        config: { url: '/api/members/' },
+        response: { status: 500, data: 'Server Error' },
+      }
+      await expect(rejectedHandler(genericError)).rejects.toEqual(genericError)
+
+      const tokenEndpointError = {
+        config: { url: '/auth/token/' },
+        response: { status: 401, data: 'Invalid creds' },
+      }
+      await expect(rejectedHandler(tokenEndpointError)).rejects.toEqual(tokenEndpointError)
+    })
+
+    it('intenta refrescar token en 401 y si falla limpia auth y redirige a login', async () => {
+      const mockNav = vi.fn()
+      setApiNavigator(mockNav)
+      useAuthStore.setState({
+        accessToken: 'expired-token',
+        refreshAuthToken: vi.fn().mockResolvedValue(false),
+        clearAuth: vi.fn(),
+      })
+
+      const rejectedHandler = api.interceptors.response.handlers[0].rejected
+      const error = {
+        config: { url: '/api/classes/', headers: {} },
+        response: { status: 401, data: { detail: 'Token expired' } },
+      }
+
+      await expect(rejectedHandler(error)).rejects.toEqual(error)
+
+      expect(useAuthStore.getState().refreshAuthToken).toHaveBeenCalled()
+      expect(useAuthStore.getState().clearAuth).toHaveBeenCalled()
+      expect(toast.error).toHaveBeenCalledWith('Tu sesión ha expirado. Por favor, iniciá sesión nuevamente.')
+      expect(mockNav).toHaveBeenCalledWith('/login', { replace: true })
     })
   })
 })
