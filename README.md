@@ -543,6 +543,34 @@ pytest
 
 ---
 
+<h2 align='center'>⚙️ Integración Continua (CI/CD)</h2>
+
+<br>
+
+El repositorio implementa un pipeline automatizado mediante **GitHub Actions** ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) que se ejecuta en cada *push* y *pull request* hacia la rama `develop`. Este flujo garantiza que ningún cambio con defectos de tipado, estilo, regresiones o cobertura insuficiente llegue a la rama principal:
+
+#### Pipeline Jobs y Gates de Calidad:
+
+1. **Job Backend (`Python / Django`)**:
+   - **Servicios:** Contenedores de servicio en red con **PostgreSQL 16**, **Redis 7** y **MongoDB 7** con *health checks* activos.
+   - **Entorno:** Python 3.12 con dependencias cacheadas y biblioteca nativa `libmagic1`.
+   - **Migraciones:** Verificación de consistencia del esquema relacional (`python manage.py migrate --check`).
+   - **Quality Gate:** Ejecución de **335 tests con `pytest`** aplicando un umbral estricto de **80% de cobertura mínima** (`--cov-fail-under=80`).
+
+2. **Job Frontend (`Node / Vite / Vitest`)**:
+   - **Entorno:** Node.js 20 con instalación limpia reproducible (`npm ci`).
+   - **Linter Gate:** `npm run lint` configurado con `--max-warnings 0` (cero advertencias toleradas).
+   - **Coverage Gate:** Ejecución de **733 tests con Vitest** validando los umbrales de cobertura configurados en [`frontend/vite.config.js`](frontend/vite.config.js):
+     - *Lines:* ≥ 68% (actual: **82.2%**)
+     - *Statements:* ≥ 68% (actual: **82.2%**)
+     - *Branches:* ≥ 68% (actual: **77.3%**)
+     - *Functions:* ≥ 65% (actual: **67.5%**)
+   - **Build Gate:** Compilación productiva de assets (`npm run build`) para verificar la ausencia de errores en bundles y tipados.
+
+<br>
+
+---
+
 <h2 align='center'>🌿 Estrategia de Branching</h2>
 
 | Rama | Propósito |
@@ -588,14 +616,16 @@ Una Historia de Usuario se considera **Terminada** cuando cumple:
 | [v0.2.0](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/CHANGELOG#020--2026-08-10) | 2026-08-10 | Motor QR dinámico, anti-replay Redis, logs MongoDB | @Franco-Arce |
 | [v0.1.0](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/CHANGELOG#010--2026-08-08) | 2026-08-08 | Scaffold inicial, Docker Compose, estructura base | @MrForii |
 
-> 📋 Historial completo en la [Wiki — CHANGELOG](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/CHANGELOG)
+> 📋 Historial completo en el archivo local [**CHANGELOG.md**](CHANGELOG.md) y en la [**Wiki — CHANGELOG**](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/CHANGELOG).
 
 <h2 align='center'>🤝 Contribuir al proyecto</h2>
 
-Antes de abrir un PR o una Issue, revisá los templates y convenciones del equipo:
+Antes de abrir un PR o una Issue, revisá los templates y recursos del equipo:
 
 | Recurso | Descripción |
 |:---|:---|
+| [📖 CHANGELOG](CHANGELOG.md) | Historial de versiones y notas de release |
+| [📚 Wiki del Repositorio](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki) | Documentación extendida y guías del equipo |
 | [📋 Template de PR](.github/pull_request_template.md) | Checklist y estructura para Pull Requests |
 | [✨ Template Feature](.github/ISSUE_TEMPLATE/feature.md) | Para proponer nuevas funcionalidades |
 | [🐛 Template Bug](.github/ISSUE_TEMPLATE/bug_report.md) | Para reportar comportamientos incorrectos |
