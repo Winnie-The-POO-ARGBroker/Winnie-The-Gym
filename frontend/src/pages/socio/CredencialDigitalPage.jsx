@@ -15,6 +15,8 @@ import HighContrastToggle from '../../components/ui/HighContrastToggle'
 import api from '../../services/api'
 import useAuth from '../../hooks/useAuth'
 import { useSocioMembresiaMe } from '../../hooks/queries/useMembresias'
+import useScreenWakeLock from '../../hooks/useScreenWakeLock'
+
 export default function CredencialDigitalPage() {
   const { user } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -55,6 +57,13 @@ export default function CredencialDigitalPage() {
         : null,
     }
   }, [rawProfile])
+
+  const isExpired = !member?.membresia || member.membresia.estado === 'vencida'
+  const hasValidQR = Boolean(member && qrData && !isExpired)
+
+  // Wake Lock API & Screen Brightness Boost para maximizar visibilidad del QR en molinete
+  // Solo se activa si hay un QR válido que presentar (evita consumo innecesario de batería)
+  useScreenWakeLock({ enabled: hasValidQR })
 
   const refreshQR = useCallback(async (manual = false) => {
     setIsRefreshing(true)
@@ -116,8 +125,6 @@ export default function CredencialDigitalPage() {
       </MemberLayout>
     )
   }
-
-  const isExpired = !member.membresia || member.membresia.estado === 'vencida'
 
   return (
     <MemberLayout
