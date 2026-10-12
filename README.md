@@ -447,6 +447,11 @@ docker compose exec backend python manage.py migrate
 docker compose exec backend python manage.py createsuperuser
 ```
 
+**5. Cargar usuarios de prueba para desarrollo (seed)**
+```bash
+docker compose exec backend python manage.py seed_demo_users
+```
+
 ---
 
 ### Sin Docker (desarrollo local)
@@ -459,6 +464,7 @@ source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements/development.txt
 cp .env.example .env            # Configurar con DB local
 python manage.py migrate
+python manage.py seed_demo_users
 python manage.py runserver
 ```
 
@@ -468,6 +474,27 @@ cd frontend
 npm install
 npm run dev
 ```
+
+---
+
+<h2 align='center'>👥 Usuarios de Prueba (Seed Users)</h2>
+
+<br>
+
+El comando `seed_demo_users` crea de forma determinista e idempotente **6 usuarios de prueba** diseñados para ejercitar todos los flujos y roles del sistema. La contraseña para todos es **`Demo1234!`**:
+
+| Rol | Email | Contraseña | Perfil Completo (`is_profile_complete`) | Propósito / Estado |
+|:---|:---|:---:|:---:|:---|
+| **Administrador** | `admin@winnie.local` | `Demo1234!` | `false` *(exento)* | Superusuario con acceso total a gestión de socios, planes, clases, auditoría y reportes |
+| **Recepcionista** | `recepcion@winnie.local` | `Demo1234!` | `false` *(exento)* | Operación en mostrador: control de acceso por QR, monitor de aforo, cobros y clases |
+| **Socio Activo** | `socio.activo@winnie.local` | `Demo1234!` | `true` | Carlos Activo · Membresía activa vigente, acceso concedido por QR dinámico |
+| **Socio Vencido** | `socio.vencido@winnie.local` | `Demo1234!` | `true` | Diana Vencida · Membresía vencida, acceso denegado por QR, alertas de pago |
+| **Socio Nuevo** | `socio.nuevo@winnie.local` | `Demo1234!` | `true` | Eduardo Nuevo · Perfil completo pero sin membresía activa adquirida |
+| **Socio Pendiente** | `socio.pendiente@winnie.local` | `Demo1234!` | `false` | Usuario registrado sin ficha de socio; valida la redirección al flujo de completitud de perfil (`/completar-perfil`) |
+
+> 💡 **Idempotencia y seguridad:** El comando puede ejecutarse reiteradas veces sin generar duplicados. Si `DEBUG=False`, la ejecución se bloquea por seguridad para evitar modificaciones accidentales en producción.
+
+<br>
 
 ---
 
