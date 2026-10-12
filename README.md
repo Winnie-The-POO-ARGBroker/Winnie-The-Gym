@@ -48,14 +48,34 @@ Desarrollar una aplicación web integral para la gestión de gimnasios que autom
 
 | Módulo | Descripción |
 |:---|:---|
-| **Gestión de socios** | ABM completo: alta, baja, modificación y consulta de socios con datos personales y certificados médicos |
-| **Membresías y pagos** | Planes configurables, suscripciones, seguimiento de vencimientos y procesamiento de pagos |
+| **Gestión de socios** | ABM completo en administración/recepción, registro público de socios (`/registro`), certificado médico self-service con carga y visualización, y cambio seguro de contraseña |
+| **Membresías y pagos** | Planes configurables, suscripciones, seguimiento de vencimientos, procesamiento de pagos con MercadoPago, historial de pagos por socio y cancelación de membresía (*soft-cancel*) |
 | **Clases grupales** | Creación de clases con horarios, control de cupos y sistema de reservas autónomo para socios |
-| **Acceso por QR** | Generación de códigos QR dinámicos por socio; validación en menos de 2 segundos en recepción |
+| **Acceso por QR** | Generación de códigos QR dinámicos por socio; validación en menos de 2 segundos en recepción con Wake Lock API y brillo automático |
 | **Aforo en tiempo real** | Dashboard con WebSockets que actualiza la ocupación del gimnasio automáticamente |
-| **Logs de auditoría** | Historial de ingresos y eventos almacenado en MongoDB para trazabilidad completa |
-| **Reportes** | Exportación de datos en formato PDF y CSV para administración |
-| **Autenticación multi-rol** | Roles diferenciados: Administrador, Recepcionista y Socio, con JWT y OAuth Google |
+| **Logs de auditoría** | Historial de ingresos y eventos almacenado en MongoDB con diffs de cambios para trazabilidad completa |
+| **Reportes** | Exportación de datos en formato PDF, Excel y CSV para administración |
+| **Autenticación multi-rol** | Roles diferenciados: Administrador, Recepcionista y Socio, con JWT, timeout de inactividad para staff y OAuth Google |
+
+<br>
+
+<h2 align='center'>📸 Capturas de Pantalla (Walkthrough)</h2>
+
+<br>
+
+Demostración visual de los flujos principales del sistema validados durante el walkthrough integral post-Sprint 3:
+
+<p align="center">
+  <b>Panel de Control de Administración</b><br>
+  <img src="docs/qa/screenshots/2026-09-22/01-admin-dashboard.png" alt="Dashboard de Administración" width="85%" />
+</p>
+
+<p align="center">
+  <b>Portal del Socio — Credencial Digital con QR Dinámico</b><br>
+  <img src="docs/qa/screenshots/2026-09-22/20-socio-activo-credencial.png" alt="Credencial Digital QR Socio" width="85%" />
+</p>
+
+> 📋 El registro completo con las 24 capturas y la verificación paso a paso se encuentra documentado en [**Manual Walkthrough Record (2026-09-22)**](docs/qa/walkthrough-2026-09-22.md).
 
 <br>
 
