@@ -34,13 +34,18 @@ vi.mock('sonner', () => ({
 }))
 
 vi.mock('../../components/layout/MemberLayout', () => ({
-  default: ({ children, title, subtitle }) => (
+  default: ({ children, title, subtitle, rightAction }) => (
     <div data-testid="member-layout">
       <h1>{title}</h1>
       {subtitle && <p>{subtitle}</p>}
+      <div data-testid="member-layout-right-action">{rightAction}</div>
       {children}
     </div>
   ),
+}))
+
+vi.mock('../../components/ui/HighContrastToggle', () => ({
+  default: () => <button data-testid="high-contrast-toggle">Alto Contraste</button>,
 }))
 
 vi.mock('../../components/ui/Card', () => ({
@@ -283,9 +288,32 @@ describe('CredencialDigitalPage', () => {
     })
   })
 
-  // ── 16. Wake lock enabled on credencial page mount (Issue #110) ───────────
-  it('activates screen wake lock on mount for credencial route', () => {
+  // ── 16. Wake lock activated when valid QR is present (Issue #110) ─────────
+  it('activates screen wake lock when valid QR is present and deactivates when expired', async () => {
     renderPage()
-    expect(useScreenWakeLock).toHaveBeenCalledWith({ enabled: true })
+    await waitFor(() => {
+      expect(useScreenWakeLock).toHaveBeenCalledWith({ enabled: true })
+    })
+  })
+
+  it('disables screen wake lock when membership is expired', async () => {
+    setupMocks({
+      profile: {
+        ...MOCK_PROFILE,
+        membresia_activa: { estado: 'vencida', fecha_fin: '2025-01-01', plan: { nombre: 'Básico' } },
+      },
+    })
+    renderPage()
+    await waitFor(() => {
+      expect(useScreenWakeLock).toHaveBeenCalledWith({ enabled: false })
+    })
+  })
+
+  // ── 17. HighContrastToggle renders (RNF07) ────────────────────────────────
+  it('renders HighContrastToggle in MemberLayout rightAction', async () => {
+    renderPage()
+    await waitFor(() => {
+      expect(screen.getByTestId('high-contrast-toggle')).toBeInTheDocument()
+    })
   })
 })
