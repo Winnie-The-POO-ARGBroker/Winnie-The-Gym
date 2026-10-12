@@ -7,7 +7,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { waitFor } from '@testing-library/react'
-import { renderHookWithProviders } from '../../test/test-utils'
+import { renderHookWithProviders, createTestQueryClient } from '../../test/test-utils'
 
 vi.mock('../../services/reportsService', () => ({
   getReportPlans: vi.fn(),
@@ -65,7 +65,13 @@ describe('usePlanes', () => {
   it('handles server error with toast and sentry report', async () => {
     const serverError = { type: 'server', message: 'Internal Server Error' }
     getReportPlans.mockRejectedValue(serverError)
-    const { result } = renderHookWithProviders(() => usePlanes({ retry: false }))
+    const testClient = createTestQueryClient()
+    testClient.setDefaultOptions({
+      queries: { retry: false, gcTime: 0, staleTime: 0, retryDelay: 0 },
+    })
+    const { result } = renderHookWithProviders(() => usePlanes(), {
+      queryClient: testClient,
+    })
 
     await waitFor(() => expect(result.current.isError).toBe(true))
     expect(toast.error).toHaveBeenCalledWith('Error interno, intentá más tarde')
@@ -75,7 +81,13 @@ describe('usePlanes', () => {
   it('handles network error with retry toast action', async () => {
     const networkError = { type: 'network', message: 'Sin conexión' }
     getReportPlans.mockRejectedValue(networkError)
-    const { result } = renderHookWithProviders(() => usePlanes({ retry: false }))
+    const testClient = createTestQueryClient()
+    testClient.setDefaultOptions({
+      queries: { retry: false, gcTime: 0, staleTime: 0, retryDelay: 0 },
+    })
+    const { result } = renderHookWithProviders(() => usePlanes(), {
+      queryClient: testClient,
+    })
 
     await waitFor(() => expect(result.current.isError).toBe(true))
     expect(toast.error).toHaveBeenCalledWith('Sin conexión', expect.any(Object))

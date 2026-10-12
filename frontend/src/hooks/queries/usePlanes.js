@@ -23,7 +23,7 @@ export const PLANES_KEY = ['planes']
  * service, y un switch (error.type) en el hook consumidor.
  * También aplicable a: paymentsService, membershipsService, classesService.
  */
-export function usePlanes(options = {}) {
+export function usePlanes() {
   const navigate = useNavigate()
   const query = useQuery({
     queryKey: PLANES_KEY,
@@ -34,7 +34,6 @@ export function usePlanes(options = {}) {
       if (error?.type === 'auth' || error?.type === 'notfound') return false
       return failureCount < 3
     },
-    ...options,
   })
 
   const { isError, error, refetch } = query
