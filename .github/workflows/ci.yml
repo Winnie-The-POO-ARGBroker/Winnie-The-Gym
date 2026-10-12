@@ -131,8 +131,8 @@ jobs:
         run: npm run lint
 
       - name: Run tests with coverage
-        # vite.config.js defines thresholds (lines: 35, branches: 60,
-        # functions: 40, statements: 35). Build fails if thresholds are not met.
+        # vite.config.js defines thresholds (lines: 68, branches: 70,
+        # functions: 65, statements: 68). Build fails if thresholds are not met.
         run: npx vitest run --coverage
 
       - name: Upload frontend coverage report
