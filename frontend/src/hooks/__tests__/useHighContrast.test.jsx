@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { useHighContrast } from '../useHighContrast'
@@ -53,5 +53,43 @@ describe('useHighContrast', () => {
     expect(result.current.isHighContrast).toBe(false)
     expect(localStorage.getItem('winnie-high-contrast-pref')).toBe('false')
     expect(document.body.classList.contains('high-contrast')).toBe(false)
+  })
+
+  it('lee la preferencia existente de localStorage si ya estaba seteada', () => {
+    localStorage.setItem('winnie-high-contrast-pref', 'true')
+    const { result } = renderHook(() => useHighContrast(), {
+      wrapper: ({ children }) => (
+        <MemoryRouter initialEntries={['/socio/clases']}>{children}</MemoryRouter>
+      ),
+    })
+
+    expect(result.current.isHighContrast).toBe(true)
+    expect(result.current.isAutoActivated).toBe(false)
+  })
+
+  it('tolera errores al acceder a localStorage en lectura y escritura', () => {
+    const getItemSpy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error('SecurityError')
+    })
+    const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('QuotaExceededError')
+    })
+
+    const { result } = renderHook(() => useHighContrast(), {
+      wrapper: ({ children }) => (
+        <MemoryRouter initialEntries={['/socio/clases']}>{children}</MemoryRouter>
+      ),
+    })
+
+    expect(result.current.isHighContrast).toBe(false)
+
+    act(() => {
+      result.current.toggleHighContrast()
+    })
+
+    expect(result.current.isHighContrast).toBe(true)
+
+    getItemSpy.mockRestore()
+    setItemSpy.mockRestore()
   })
 })
