@@ -11,10 +11,11 @@ import QRDisplay from '../../components/socio/QRDisplay'
 import MemberPlanDetails from '../../components/socio/MemberPlanDetails'
 import QRFullscreenModal from '../../components/socio/QRFullscreenModal'
 import EmptyState from '../../components/ui/EmptyState'
-import HighContrastToggle from '../../components/ui/HighContrastToggle'
 import api from '../../services/api'
 import useAuth from '../../hooks/useAuth'
 import { useSocioMembresiaMe } from '../../hooks/queries/useMembresias'
+import useScreenWakeLock from '../../hooks/useScreenWakeLock'
+
 export default function CredencialDigitalPage() {
   const { user } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -22,6 +23,9 @@ export default function CredencialDigitalPage() {
   const [timeLeft, setTimeLeft] = useState(30)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
+
+  // Wake Lock API & Screen Brightness Boost para maximizar visibilidad del QR en molinete
+  useScreenWakeLock({ enabled: true })
 
   // Capture pago result on first render (avoids StrictMode race condition)
   const [pagoResultado] = useState(() => searchParams.get('pago'))
@@ -124,9 +128,8 @@ export default function CredencialDigitalPage() {
       member={member}
       title="Credencial Digital"
       subtitle="Acceso al gimnasio por molinete"
-      rightAction={<HighContrastToggle />}
     >
-      <div className="credencial-page flex flex-col gap-3 w-full animate-fadeIn">
+      <div className="flex flex-col gap-3 w-full animate-fadeIn">
 
         {/* Banner de resultado del pago — se muestra al volver de MercadoPago */}
         {pagoResultado && (

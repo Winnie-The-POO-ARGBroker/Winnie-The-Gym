@@ -86,4 +86,24 @@ describe('QRFullscreenModal', () => {
     render(<QRFullscreenModal {...defaultProps} />)
     expect(screen.getByText(/Winnie The Gym/i)).toBeInTheDocument()
   })
+
+  // ── 9. Fullscreen API fallback for brightness boost (Issue #110) ──────────
+  it('invokes requestFullscreen when opened and exitFullscreen on close', () => {
+    const requestFullscreenMock = vi.fn().mockResolvedValue(undefined)
+    const exitFullscreenMock = vi.fn().mockResolvedValue(undefined)
+
+    Element.prototype.requestFullscreen = requestFullscreenMock
+    document.exitFullscreen = exitFullscreenMock
+    Object.defineProperty(document, 'fullscreenElement', {
+      value: document.body,
+      configurable: true,
+      writable: true,
+    })
+
+    const { unmount } = render(<QRFullscreenModal {...defaultProps} />)
+    expect(requestFullscreenMock).toHaveBeenCalled()
+
+    unmount()
+    expect(exitFullscreenMock).toHaveBeenCalled()
+  })
 })

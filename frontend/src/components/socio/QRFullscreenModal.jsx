@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import Button from '../ui/Button'
 import QRCode from './QRCode'
 
@@ -9,10 +10,61 @@ export default function QRFullscreenModal({
   timeLeft,
   isExpired,
 }) {
+  const modalRef = useRef(null)
+
+  // Disparar modo pantalla completa nativo del dispositivo (HTML5 Fullscreen API)
+  // como fallback que suele forzar el brillo máximo en Android / iOS WebView.
+  useEffect(() => {
+    if (!isOpen) return
+
+    const el = modalRef.current || (typeof document !== 'undefined' ? document.documentElement : null)
+    if (!el) return
+
+    const requestFs =
+      el.requestFullscreen ||
+      el.webkitRequestFullscreen ||
+      el.mozRequestFullScreen ||
+      el.msRequestFullscreen ||
+      (document.documentElement && document.documentElement.webkitRequestFullscreen)
+
+    if (requestFs) {
+      try {
+        requestFs.call(el).catch(() => {
+          // Si el navegador bloquea fullscreen sin interacción directa, ignorar silenciosamente
+        })
+      } catch {
+        // Ignorar
+      }
+    }
+
+    return () => {
+      const exitFs =
+        document.exitFullscreen ||
+        document.webkitExitFullscreen ||
+        document.mozCancelFullScreen ||
+        document.msExitFullscreen
+
+      if (
+        exitFs &&
+        (document.fullscreenElement ||
+          document.webkitFullscreenElement ||
+          document.mozFullScreenElement ||
+          document.msFullscreenElement)
+      ) {
+        try {
+          exitFs.call(document).catch(() => {})
+        } catch {
+          // Ignorar
+        }
+      }
+    }
+  }, [isOpen])
+
   if (!isOpen) return null
 
   return (
     <div
+      ref={modalRef}
       role="dialog"
       aria-modal="true"
       className="fixed inset-0 z-50 bg-neutral-950/90 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-fadeIn"

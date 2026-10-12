@@ -21,6 +21,10 @@ vi.mock('../../hooks/useAuth', () => ({
   default: vi.fn(),
 }))
 
+vi.mock('../../hooks/useScreenWakeLock', () => ({
+  default: vi.fn(),
+}))
+
 vi.mock('../../services/api', () => ({
   default: { get: vi.fn() },
 }))
@@ -90,6 +94,7 @@ vi.mock('../../components/socio/PagoResultadoBanner', () => ({
 
 import { useSocioMembresiaMe } from '../../hooks/queries/useMembresias'
 import useAuth from '../../hooks/useAuth'
+import useScreenWakeLock from '../../hooks/useScreenWakeLock'
 import api from '../../services/api'
 import { toast } from 'sonner'
 
@@ -276,5 +281,11 @@ describe('CredencialDigitalPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Sede Central')).toBeInTheDocument()
     })
+  })
+
+  // ── 16. Wake lock enabled on credencial page mount (Issue #110) ───────────
+  it('activates screen wake lock on mount for credencial route', () => {
+    renderPage()
+    expect(useScreenWakeLock).toHaveBeenCalledWith({ enabled: true })
   })
 })
