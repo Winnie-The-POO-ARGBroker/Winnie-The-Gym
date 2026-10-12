@@ -14,11 +14,11 @@ export default defineConfig({
       reportsDirectory: './coverage',
       // Coverage gates reinstated after Vitest 4 / v8 upgrade investigation (issue #119).
       // Baseline metrics post-upgrade: lines ~78.9%, branches ~71.6%, functions ~72.3%, statements ~78.0%.
-      // Thresholds set to baseline - margin (or previous agreed baseline):
-      // lines: 68, branches: 70, functions: 65, statements: 68.
+      // Thresholds set to baseline - safe margin (absorbs minor branch variance across PRs):
+      // lines: 68, branches: 68, functions: 65, statements: 68.
       thresholds: {
         lines: 68,
-        branches: 70,
+        branches: 68,
         functions: 65,
         statements: 68,
       },

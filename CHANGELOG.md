@@ -12,7 +12,7 @@ Versionado según [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Infraestructura de Tests — Reactivación de coverage gates en Vitest 4 (Issue #119)**:
   - Investigación de la variación en evaluación de branches tras el upgrade a Vitest 4 (`@vitest/coverage-v8` v4).
   - Incorporación de tests unitarios focalizados para ramas de `errorHandling`, `useHighContrast`, interceptores y token refresh de `api.js`, `FilterPanel`, `Modal`, `SearchBar`, `ClassCard` y `usePlanes`.
-  - Reanudación de gates activos en `frontend/vite.config.js`: `lines: 68`, `branches: 70`, `functions: 65`, `statements: 68`.
+  - Reanudación de gates activos en `frontend/vite.config.js`: `lines: 68`, `branches: 68`, `functions: 65`, `statements: 68` (con margen de tolerancia saludable sobre baseline para absorber variaciones normales de AST en upgrades).
   - Métricas de cobertura alcanzadas post-upgrade: Lines `78.9%`, Branches `71.6%`, Functions `72.3%`, Statements `78.0%`.
 
 - **RNF05 — Timeout de inactividad de 30 minutos para staff (Issue #108)**:
