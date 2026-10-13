@@ -6,7 +6,7 @@ does differently (public URL building, no ACL support on the free tier).
 
 In dev, `settings/development.py` keeps the default `FileSystemStorage`
 pointing at `MEDIA_ROOT`, so nothing changes locally. In prod
-`settings/production.py` swaps this class in via `DEFAULT_FILE_STORAGE`.
+`settings/production.py` swaps this class in via `STORAGES["default"]`.
 """
 from django.conf import settings
 from storages.backends.s3boto3 import S3Boto3Storage
