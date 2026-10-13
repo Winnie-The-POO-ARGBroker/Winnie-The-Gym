@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { useQueryClient } from '@tanstack/react-query'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
@@ -14,6 +15,7 @@ import ChangePasswordModal from '../components/auth/ChangePasswordModal'
 import useAuth from '../hooks/useAuth'
 import { useProfile, useUpdateProfile } from '../hooks/queries/useProfile'
 import api from '../services/api'
+import { ALLOWED_CERT_MIME_TYPES, MAX_CERT_SIZE_BYTES } from '../constants/files'
 
 // ─── Schemas ──────────────────────────────────────────────────────────────────
 
@@ -205,8 +207,9 @@ function StaffProfileView({ profile, user, isChangePwdOpen, setIsChangePwdOpen }
 
 // ─── Socio profile view (existing logic, unchanged) ───────────────────────────
 
-function SocioProfileView({ profile, user, isChangePwdOpen, setIsChangePwdOpen, refetchProfile }) {
+function SocioProfileView({ profile, user, isChangePwdOpen, setIsChangePwdOpen, refetchProfile: _refetchProfile }) {
   const updateProfile = useUpdateProfile()
+  const queryClient = useQueryClient()
   const { setAuth, accessToken, refreshToken } = useAuth()
   const [uploadingCert, setUploadingCert] = useState(false)
   const certInputRef = useRef(null)
@@ -249,7 +252,25 @@ function SocioProfileView({ profile, user, isChangePwdOpen, setIsChangePwdOpen, 
 
   const handleCertUpload = async (e) => {
     const file = e.target.files?.[0]
-    if (!file || !profile?.id) return
+    if (!file) return
+
+    // Client-side validation — no request if validation fails
+    if (!ALLOWED_CERT_MIME_TYPES.includes(file.type)) {
+      toast.error('Formato no permitido. Solo PDF o imagen.')
+      if (certInputRef.current) certInputRef.current.value = ''
+      return
+    }
+    if (file.size > MAX_CERT_SIZE_BYTES) {
+      toast.error('Archivo demasiado grande. Máximo 5 MB.')
+      if (certInputRef.current) certInputRef.current.value = ''
+      return
+    }
+    if (!profile?.id) {
+      toast.error('No se pudo identificar tu cuenta. Recargá la página.')
+      if (certInputRef.current) certInputRef.current.value = ''
+      return
+    }
+
     setUploadingCert(true)
     const formData = new FormData()
     formData.append('archivo', file)
@@ -257,8 +278,9 @@ function SocioProfileView({ profile, user, isChangePwdOpen, setIsChangePwdOpen, 
       await api.post(`/members/socios/${profile.id}/certificado-medico/`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
-      toast.success('Certificado médico actualizado.')
-      refetchProfile()
+      toast.success('Certificado subido correctamente.')
+      queryClient.invalidateQueries(['profile'])
+      queryClient.invalidateQueries(['membresias', 'me'])
     } catch (err) {
       const errData = err?.response?.data
       const message =

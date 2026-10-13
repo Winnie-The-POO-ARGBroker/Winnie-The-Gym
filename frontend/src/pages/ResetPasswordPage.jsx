@@ -39,10 +39,16 @@ export default function ResetPasswordPage() {
       toast.success('Contraseña restablecida exitosamente')
       navigate('/login')
     } catch (err) {
-      // dj-rest-auth returns descriptive error objects, e.g.:
-      //   { token: ['Invalid value'] }
-      //   { new_password2: ['This password is too short.'] }
+      const status = err.response?.status
       const data = err.response?.data
+
+      // Token invalid or expired → redirect to invalid link page
+      if (status === 400 || status === 404) {
+        navigate('/auth/link-invalido', { state: { from: 'reset' } })
+        return
+      }
+
+      // Other errors — show in toast
       const message =
         data && typeof data === 'object'
           ? Object.values(data).flat().join(' ')

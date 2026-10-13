@@ -108,4 +108,28 @@ describe('ChangePasswordModal', () => {
       expect(toast.error).toHaveBeenCalledWith('Contraseña incorrecta.')
     })
   })
+
+  // Contract test 9 — fix #226: wrong old_password shows error under field
+  it('wrong old_password shows error under field', async () => {
+    api.post.mockRejectedValueOnce({
+      response: {
+        status: 400,
+        data: { old_password: ['Contraseña actual incorrecta.'] },
+      },
+    })
+    renderModal()
+
+    const pwdInputs = document.querySelectorAll('input[type="password"]')
+    fireEvent.input(pwdInputs[0], { target: { value: 'WrongPass!' } })
+    fireEvent.input(pwdInputs[1], { target: { value: 'NewPass123!' } })
+    fireEvent.input(pwdInputs[2], { target: { value: 'NewPass123!' } })
+    fireEvent.click(screen.getByRole('button', { name: /Cambiar contraseña/i }))
+
+    await waitFor(() => {
+      // Error appears under the "Contraseña actual" field, not as a generic toast
+      expect(screen.getByText('Contraseña actual incorrecta.')).toBeInTheDocument()
+    })
+    // No generic toast should have been shown for this specific error
+    expect(toast.error).not.toHaveBeenCalled()
+  })
 })

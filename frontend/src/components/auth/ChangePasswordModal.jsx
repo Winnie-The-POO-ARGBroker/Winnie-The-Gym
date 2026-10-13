@@ -24,6 +24,7 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
     register,
     handleSubmit,
     reset,
+    setError,
     formState: { errors, isSubmitting },
   } = useForm({ resolver: zodResolver(schema) })
 
@@ -39,6 +40,12 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
       onClose()
     } catch (err) {
       const data = err?.response?.data
+      // Show old_password error under the field, not in a generic toast
+      if (data?.old_password) {
+        const msg = Array.isArray(data.old_password) ? data.old_password[0] : data.old_password
+        setError('old_password', { type: 'server', message: msg })
+        return
+      }
       const message =
         data && typeof data === 'object'
           ? Object.values(data).flat().join(' ')

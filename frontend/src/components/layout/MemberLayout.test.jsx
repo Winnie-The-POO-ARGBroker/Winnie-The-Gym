@@ -24,6 +24,14 @@ vi.mock('./Sidebar', () => ({
   default: () => <aside data-testid="sidebar">Sidebar</aside>,
 }))
 
+// AppBottomNav requires useAuth — provide a socio user so nav renders
+vi.mock('../../hooks/useAuth', () => ({
+  default: vi.fn(() => ({
+    user: { rol: 'socio', id: 1 },
+    clearAuth: vi.fn(),
+  })),
+}))
+
 describe('MemberLayout', () => {
   beforeEach(() => {
     resetAllStores()
@@ -111,8 +119,8 @@ describe('MemberLayout', () => {
     expect(document.querySelector('nav')).toBeInTheDocument()
   })
 
-  // ── 8. Bottom nav has Inicio, Clases, QR, Pagar, Perfil links ────────────
-  it('renders navigation labels: Inicio, Clases, QR, Pagar, Perfil', () => {
+  // ── 8. Bottom nav has Inicio, Credencial, Clases, Pagar, Más links ──────────
+  it('renders navigation labels: Inicio, Credencial, Clases, Pagar, Más', () => {
     renderWithProviders(
       <MemberLayout>
         <div>Content</div>
@@ -120,10 +128,10 @@ describe('MemberLayout', () => {
     )
 
     expect(screen.getByText('Inicio')).toBeInTheDocument()
+    expect(screen.getByText('Credencial')).toBeInTheDocument()
     expect(screen.getByText('Clases')).toBeInTheDocument()
-    expect(screen.getByText('QR')).toBeInTheDocument()
     expect(screen.getByText('Pagar')).toBeInTheDocument()
-    expect(screen.getByText('Perfil')).toBeInTheDocument()
+    expect(screen.getByText('Más')).toBeInTheDocument()
   })
 
   // ── 9. rightAction slot is rendered ──────────────────────────────────────
