@@ -244,7 +244,8 @@ describe('ProfilePage', () => {
     await waitFor(() => {
       expect(screen.getByText('Carlos Admin')).toBeInTheDocument()
     })
-    expect(screen.getByText('admin@winnie.local')).toBeInTheDocument()
+    // Email appears in both display header and read-only field
+    expect(screen.getAllByText('admin@winnie.local').length).toBeGreaterThan(0)
     expect(screen.getByText('Administrador')).toBeInTheDocument()
     // Staff profile does NOT show certificado section
     expect(screen.queryByText(/Certificado médico/i)).not.toBeInTheDocument()

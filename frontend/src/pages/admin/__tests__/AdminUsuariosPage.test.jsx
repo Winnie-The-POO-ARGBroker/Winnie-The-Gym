@@ -108,11 +108,12 @@ describe('AdminUsuariosPage', () => {
     expect(screen.getByText(/no hay usuarios staff registrados/i)).toBeInTheDocument()
   })
 
-  it('renders Reenviar activación button per row', async () => {
+  it('renders Reenviar activación button only for staff with pending activation', async () => {
     renderWithProviders(<AdminUsuariosPage />)
     await waitFor(() => {
+      // Only the staff member with has_usable_password: false gets the resend button
       const buttons = screen.getAllByRole('button', { name: /reenviar activación/i })
-      expect(buttons).toHaveLength(2)
+      expect(buttons).toHaveLength(1)
     })
   })
 

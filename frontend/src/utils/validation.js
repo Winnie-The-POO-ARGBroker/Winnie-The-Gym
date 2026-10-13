@@ -33,7 +33,7 @@ export function validateDni(value) {
  */
 export function validateTelefono(value) {
   if (!value || !value.trim()) return 'El teléfono es obligatorio.'
-  if (!/^[+]?[\d\s()\-]{7,30}$/.test(value.trim())) {
+  if (!/^[+]?[\d\s()-]{7,30}$/.test(value.trim())) {
     return 'Teléfono inválido. Formato esperado: +54 9 351 1234567.'
   }
   return null

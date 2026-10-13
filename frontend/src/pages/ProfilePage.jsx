@@ -445,11 +445,7 @@ export default function ProfilePage() {
   const { data: profile, isPending: loading, isError, refetch } = useProfile()
   const [isChangePwdOpen, setIsChangePwdOpen] = useState(false)
 
-  const isStaff = profile?.is_staff_profile === true
-    || (user?.rol && user.rol !== 'socio' && !profile)
-    || (profile && profile.is_staff_profile)
-
-  // Determine if socio based on profile discriminator or user.rol
+  // Determine if socio based on profile discriminator or user.rol fallback
   const isSocio = profile
     ? !profile.is_staff_profile
     : user?.rol === 'socio'
