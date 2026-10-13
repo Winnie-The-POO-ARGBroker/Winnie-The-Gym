@@ -48,14 +48,34 @@ Desarrollar una aplicación web integral para la gestión de gimnasios que autom
 
 | Módulo | Descripción |
 |:---|:---|
-| **Gestión de socios** | ABM completo: alta, baja, modificación y consulta de socios con datos personales y certificados médicos |
-| **Membresías y pagos** | Planes configurables, suscripciones, seguimiento de vencimientos y procesamiento de pagos |
+| **Gestión de socios** | ABM completo en administración/recepción, registro público de socios (`/registro`), certificado médico self-service con carga y visualización, y cambio seguro de contraseña |
+| **Membresías y pagos** | Planes configurables, suscripciones, seguimiento de vencimientos, procesamiento de pagos con MercadoPago, historial de pagos por socio y cancelación de membresía (*soft-cancel*) |
 | **Clases grupales** | Creación de clases con horarios, control de cupos y sistema de reservas autónomo para socios |
-| **Acceso por QR** | Generación de códigos QR dinámicos por socio; validación en menos de 2 segundos en recepción |
+| **Acceso por QR** | Generación de códigos QR dinámicos por socio; validación en menos de 2 segundos en recepción con Wake Lock API y brillo automático |
 | **Aforo en tiempo real** | Dashboard con WebSockets que actualiza la ocupación del gimnasio automáticamente |
-| **Logs de auditoría** | Historial de ingresos y eventos almacenado en MongoDB para trazabilidad completa |
-| **Reportes** | Exportación de datos en formato PDF y CSV para administración |
-| **Autenticación multi-rol** | Roles diferenciados: Administrador, Recepcionista y Socio, con JWT y OAuth Google |
+| **Logs de auditoría** | Historial de ingresos y eventos almacenado en MongoDB con diffs de cambios para trazabilidad completa |
+| **Reportes** | Exportación de datos en formato PDF, Excel y CSV para administración |
+| **Autenticación multi-rol** | Roles diferenciados: Administrador, Recepcionista y Socio, con JWT, timeout de inactividad para staff y OAuth Google |
+
+<br>
+
+<h2 align='center'>📸 Capturas de Pantalla (Walkthrough)</h2>
+
+<br>
+
+Demostración visual de los flujos principales del sistema validados durante el walkthrough integral post-Sprint 3:
+
+<p align="center">
+  <b>Panel de Control de Administración</b><br>
+  <img src="docs/qa/screenshots/2026-09-22/01-admin-dashboard.png" alt="Dashboard de Administración" width="85%" />
+</p>
+
+<p align="center">
+  <b>Portal del Socio — Credencial Digital con QR Dinámico</b><br>
+  <img src="docs/qa/screenshots/2026-09-22/20-socio-activo-credencial.png" alt="Credencial Digital QR Socio" width="85%" />
+</p>
+
+> 📋 El registro completo con las 24 capturas y la verificación paso a paso se encuentra documentado en [**Manual Walkthrough Record (2026-09-22)**](docs/qa/walkthrough-2026-09-22.md).
 
 <br>
 
@@ -427,6 +447,11 @@ docker compose exec backend python manage.py migrate
 docker compose exec backend python manage.py createsuperuser
 ```
 
+**5. Cargar usuarios de prueba para desarrollo (seed)**
+```bash
+docker compose exec backend python manage.py seed_demo_users
+```
+
 ---
 
 ### Sin Docker (desarrollo local)
@@ -439,6 +464,7 @@ source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements/development.txt
 cp .env.example .env            # Configurar con DB local
 python manage.py migrate
+python manage.py seed_demo_users
 python manage.py runserver
 ```
 
@@ -448,6 +474,100 @@ cd frontend
 npm install
 npm run dev
 ```
+
+---
+
+<h2 align='center'>👥 Usuarios de Prueba (Seed Users)</h2>
+
+<br>
+
+El comando `seed_demo_users` crea de forma determinista e idempotente **6 usuarios de prueba** diseñados para ejercitar todos los flujos y roles del sistema. La contraseña para todos es **`Demo1234!`**:
+
+| Rol | Email | Contraseña | Perfil Completo (`is_profile_complete`) | Propósito / Estado |
+|:---|:---|:---:|:---:|:---|
+| **Administrador** | `admin@winnie.local` | `Demo1234!` | `false` *(exento)* | Superusuario con acceso total a gestión de socios, planes, clases, auditoría y reportes |
+| **Recepcionista** | `recepcion@winnie.local` | `Demo1234!` | `false` *(exento)* | Operación en mostrador: control de acceso por QR, monitor de aforo, cobros y clases |
+| **Socio Activo** | `socio.activo@winnie.local` | `Demo1234!` | `true` | Carlos Activo · Membresía activa vigente, acceso concedido por QR dinámico |
+| **Socio Vencido** | `socio.vencido@winnie.local` | `Demo1234!` | `true` | Diana Vencida · Membresía vencida, acceso denegado por QR, alertas de pago |
+| **Socio Nuevo** | `socio.nuevo@winnie.local` | `Demo1234!` | `true` | Eduardo Nuevo · Perfil completo pero sin membresía activa adquirida |
+| **Socio Pendiente** | `socio.pendiente@winnie.local` | `Demo1234!` | `false` | Usuario registrado sin ficha de socio; valida la redirección al flujo de completitud de perfil (`/completar-perfil`) |
+
+> 💡 **Idempotencia y seguridad:** El comando puede ejecutarse reiteradas veces sin generar duplicados. Si `DEBUG=False`, la ejecución se bloquea por seguridad para evitar modificaciones accidentales en producción.
+
+<br>
+
+---
+
+<h2 align='center'>🧪 Testing y Cobertura</h2>
+
+<br>
+
+El proyecto cuenta con una amplia suite de pruebas automatizadas en ambos extremos de la aplicación, garantizando estabilidad funcional y previniendo regresiones:
+
+| Capa | Framework / Herramientas | Cantidad de Tests | Cobertura alcanzada | Gate mínimo en CI |
+|:---|:---|:---:|:---:|:---:|
+| **Frontend** | [Vitest](https://vitest.dev/) · [React Testing Library](https://testing-library.com/) | **733 tests** | Lines: **82.2%** <br> Statements: **82.2%** <br> Branches: **77.3%** <br> Functions: **67.5%** | Lines: 68% <br> Statements: 68% <br> Branches: 68% <br> Functions: 65% |
+| **Backend** | [pytest](https://pytest.org/) · Django Test Framework | **335 tests** | Global: **> 80%** | Global: 80% |
+
+> **Total:** **1068 tests automatizados**, cubriendo servicios de negocio, modelos, API REST, WebSockets, autenticación JWT/OAuth, hooks, componentes y vistas.
+
+### Ejecución de tests
+
+**Frontend:**
+```bash
+# Con Docker Compose
+docker compose exec frontend npm test
+
+# Ejecución con reporte completo de cobertura
+docker compose exec frontend npx vitest run --coverage
+
+# Entorno local
+cd frontend
+npm test
+```
+
+**Backend:**
+```bash
+# Con Docker Compose
+docker compose exec backend pytest -q
+
+# Ejecución con reporte de cobertura por apps
+docker compose exec backend pytest --cov=apps
+
+# Entorno local
+cd backend
+pytest
+```
+
+<br>
+
+---
+
+<h2 align='center'>⚙️ Integración Continua (CI/CD)</h2>
+
+<br>
+
+El repositorio implementa un pipeline automatizado mediante **GitHub Actions** ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) que se ejecuta en cada *push* y *pull request* hacia la rama `develop`. Este flujo garantiza que ningún cambio con defectos de tipado, estilo, regresiones o cobertura insuficiente llegue a la rama principal:
+
+#### Pipeline Jobs y Gates de Calidad:
+
+1. **Job Backend (`Python / Django`)**:
+   - **Servicios:** Contenedores de servicio en red con **PostgreSQL 16**, **Redis 7** y **MongoDB 7** con *health checks* activos.
+   - **Entorno:** Python 3.12 con dependencias cacheadas y biblioteca nativa `libmagic1`.
+   - **Migraciones:** Verificación de consistencia del esquema relacional (`python manage.py migrate --check`).
+   - **Quality Gate:** Ejecución de **335 tests con `pytest`** aplicando un umbral estricto de **80% de cobertura mínima** (`--cov-fail-under=80`).
+
+2. **Job Frontend (`Node / Vite / Vitest`)**:
+   - **Entorno:** Node.js 20 con instalación limpia reproducible (`npm ci`).
+   - **Linter Gate:** `npm run lint` configurado con `--max-warnings 0` (cero advertencias toleradas).
+   - **Coverage Gate:** Ejecución de **733 tests con Vitest** validando los umbrales de cobertura configurados en [`frontend/vite.config.js`](frontend/vite.config.js):
+     - *Lines:* ≥ 68% (actual: **82.2%**)
+     - *Statements:* ≥ 68% (actual: **82.2%**)
+     - *Branches:* ≥ 68% (actual: **77.3%**)
+     - *Functions:* ≥ 65% (actual: **67.5%**)
+   - **Build Gate:** Compilación productiva de assets (`npm run build`) para verificar la ausencia de errores en bundles y tipados.
+
+<br>
 
 ---
 
@@ -496,14 +616,16 @@ Una Historia de Usuario se considera **Terminada** cuando cumple:
 | [v0.2.0](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/CHANGELOG#020--2026-08-10) | 2026-08-10 | Motor QR dinámico, anti-replay Redis, logs MongoDB | @Franco-Arce |
 | [v0.1.0](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/CHANGELOG#010--2026-08-08) | 2026-08-08 | Scaffold inicial, Docker Compose, estructura base | @MrForii |
 
-> 📋 Historial completo en la [Wiki — CHANGELOG](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/CHANGELOG)
+> 📋 Historial completo en el archivo local [**CHANGELOG.md**](CHANGELOG.md) y en la [**Wiki — CHANGELOG**](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/CHANGELOG).
 
 <h2 align='center'>🤝 Contribuir al proyecto</h2>
 
-Antes de abrir un PR o una Issue, revisá los templates y convenciones del equipo:
+Antes de abrir un PR o una Issue, revisá los templates y recursos del equipo:
 
 | Recurso | Descripción |
 |:---|:---|
+| [📖 CHANGELOG](CHANGELOG.md) | Historial de versiones y notas de release |
+| [📚 Wiki del Repositorio](https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki) | Documentación extendida y guías del equipo |
 | [📋 Template de PR](.github/pull_request_template.md) | Checklist y estructura para Pull Requests |
 | [✨ Template Feature](.github/ISSUE_TEMPLATE/feature.md) | Para proponer nuevas funcionalidades |
 | [🐛 Template Bug](.github/ISSUE_TEMPLATE/bug_report.md) | Para reportar comportamientos incorrectos |
