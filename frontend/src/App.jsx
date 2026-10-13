@@ -34,6 +34,7 @@ import AdminConfiguracionPage from './pages/admin/AdminConfiguracionPage'
 import CheckoutPage from './pages/socio/CheckoutPage'
 import HistorialPagosPage from './pages/socio/HistorialPagosPage'
 import CobroManualPage from './pages/recepcion/CobroManualPage'
+import AuthActivationExpiredPage from './pages/AuthActivationExpiredPage'
 
 const AccesoTerminalPage = lazy(() => import('./pages/recepcion/AccesoTerminalPage'))
 
@@ -69,6 +70,7 @@ export default function App() {
         <Route path="/completar-perfil" element={<CompleteProfileRoute />} />
         <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
         <Route path="/reset-password/:uid/:token" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
+        <Route path="/auth/link-invalido" element={<AuthActivationExpiredPage />} />
 
         {/* Protected */}
         <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />

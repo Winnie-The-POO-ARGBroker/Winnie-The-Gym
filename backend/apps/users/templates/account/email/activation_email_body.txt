@@ -1,0 +1,12 @@
+Hola {{ nombre_usuario }},
+
+Te damos la bienvenida a Winnie The Gym. Para activar tu cuenta y
+elegir tu contraseña, hacé click en el siguiente enlace:
+
+{{ FRONTEND_URL }}/reset-password/{{ uid }}/{{ token }}/
+
+Este enlace vence en 3 días. Si ya pasó el plazo, pedile a
+recepción que te lo reenvíe.
+
+¡Nos vemos en el gym!
+Equipo Winnie The Gym

@@ -47,6 +47,7 @@ vi.mock('../components/layout/TopBar', () => ({
 
 import { useProfile, useUpdateProfile } from '../hooks/queries/useProfile'
 import useAuth from '../hooks/useAuth'
+import api from '../services/api'
 
 const mockProfile = {
   id: 1,
@@ -260,5 +261,62 @@ describe('ProfilePage', () => {
     await waitFor(() => {
       expect(screen.getByTestId('retry-button')).toBeInTheDocument()
     })
+  })
+
+  // ── Contract test 7 — fix #224 ────────────────────────────────────────────
+  it('certificado upload: oversized file shows toast and does NOT fire request', async () => {
+    const { toast } = await import('sonner')
+    useProfile.mockReturnValue({ data: mockProfile, isPending: false, isError: false, refetch: vi.fn() })
+
+    renderWithProviders(<ProfilePage />)
+
+    await waitFor(() => {
+      expect(screen.getByTestId('cert-file-input')).toBeInTheDocument()
+    })
+
+    // Create a file that exceeds 5 MB
+    const oversizedFile = new File(['x'.repeat(6 * 1024 * 1024)], 'cert.pdf', { type: 'application/pdf' })
+    Object.defineProperty(oversizedFile, 'size', { value: 6 * 1024 * 1024 })
+
+    fireEvent.change(screen.getByTestId('cert-file-input'), {
+      target: { files: [oversizedFile] },
+    })
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Archivo demasiado grande. Máximo 5 MB.')
+    })
+    // api.post should NOT have been called
+    expect(api.post).not.toHaveBeenCalled()
+  })
+
+  // ── Contract test 8 — fix #224 ────────────────────────────────────────────
+  it('certificado upload: valid file fires POST and updates cache', async () => {
+    const { toast } = await import('sonner')
+    api.post.mockResolvedValueOnce({ data: { id: 1, certificado_medico_url: 'https://cdn/cert.pdf' } })
+    useProfile.mockReturnValue({ data: mockProfile, isPending: false, isError: false, refetch: vi.fn() })
+
+    const { queryClient } = renderWithProviders(<ProfilePage />)
+    vi.spyOn(queryClient, 'invalidateQueries')
+
+    await waitFor(() => {
+      expect(screen.getByTestId('cert-file-input')).toBeInTheDocument()
+    })
+
+    const validFile = new File(['pdf content'], 'cert.pdf', { type: 'application/pdf' })
+
+    fireEvent.change(screen.getByTestId('cert-file-input'), {
+      target: { files: [validFile] },
+    })
+
+    await waitFor(() => {
+      expect(api.post).toHaveBeenCalledWith(
+        '/members/socios/1/certificado-medico/',
+        expect.any(FormData),
+        expect.objectContaining({ headers: { 'Content-Type': 'multipart/form-data' } }),
+      )
+      expect(toast.success).toHaveBeenCalledWith('Certificado subido correctamente.')
+    })
+    expect(queryClient.invalidateQueries).toHaveBeenCalledWith(['profile'])
+    expect(queryClient.invalidateQueries).toHaveBeenCalledWith(['membresias', 'me'])
   })
 })

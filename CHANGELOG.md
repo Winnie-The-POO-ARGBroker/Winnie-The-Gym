@@ -37,6 +37,21 @@ Versionado según [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - Tests de regresión para bordes de día (pareo de accesos nocturnos cruzando medianoche UTC filtrados por un solo día local, y aislamiento de madrugada temprana a las 00:30 ART).
   - Removido el workaround temporal de fechas UTC en `test_csv_pairs_entry_exit_when_crossing_utc_midnight`.
 
+### Fixed (PR 2 — Sprint 4)
+
+- **fix #224 — ProfileSerializer socio incompleta**: `ProfileSerializer` ahora expone `id`, `numero_socio`, `estado`, `fecha_baja`, `certificado_medico_url` y `observaciones`. Campos `id`, `numero_socio`, `estado`, `fecha_baja`, `email` y `certificado_medico_url` son read-only en PATCH. Endpoint `POST /api/members/socios/{id}/certificado-medico/` ahora valida tipo MIME (`application/pdf`, `image/*`) y tamaño ≤ 5 MB en el backend (defensa en profundidad además de la validación client-side). Respuesta del endpoint cert reducida a shape mínimo `{id, certificado_medico_url, numero_socio, estado}`.
+
+- **fix #226 — Password change sin verificación + sin revocación de sesiones**: `REST_AUTH` configurado con `OLD_PASSWORD_FIELD_ENABLED: True` y `LOGOUT_ON_PASSWORD_CHANGE: True`. `WinniePasswordChangeSerializer` blacklistea todos los `OutstandingToken` del usuario tras un cambio de contraseña exitoso, revocando otras sesiones activas. `apps/users/signals.py` creado como punto de extensión para el signal `allauth.account.signals.password_changed`, registrado en `UsersConfig.ready()`.
+
+- **fix #233 — Activación cuenta: emails en inglés + link con `example.com` + sin resend para socios**:
+  - `send_activation_email` migrado a `AllAuthPasswordResetForm` con `url_generator` personalizado que produce `FRONTEND_URL/reset-password/{uidb64}/{token}/` en lugar del dominio del Site (`example.com`).
+  - `WinniePasswordResetSerializer` override de `PasswordResetSerializer` con `url_generator` para garantizar el mismo comportamiento en el endpoint `/api/auth/password/reset/`.
+  - Templates en español creados en `apps/users/templates/account/email/`: `password_reset_key_subject.txt`, `password_reset_key_message.txt`. Templates de activación (`activation_email_*`) y reset (`password_reset_*`) disponibles como overrides opcionales.
+  - `TEMPLATES['DIRS']` configurado para que los templates de `apps.users` tengan precedencia sobre los built-ins de allauth.
+  - `PASSWORD_RESET_TIMEOUT = 60 * 60 * 24 * 3` (3 días) explicitado en settings.
+  - Nuevo action `POST /api/members/socios/{id}/resend-activation/` (admin + recepcionista) en `SocioViewSet`. Guarda email sintético: retorna 400 con mensaje claro si el socio no tiene email real.
+  - Test E2E `test_activation_email_token_accepted_by_password_reset_confirm` confirma ida-vuelta completa: token generado por `AllAuthPasswordResetForm` es aceptado por `PasswordResetConfirmSerializer` de dj-rest-auth.
+
 ### En progreso
 - **project-wide-cleanup** (branch `chore/project-wide-cleanup`, 4 commits atómicos): security hardening + CI + backend refactor + frontend React Query migration + DevOps hygiene. PR por abrirse cuando el equipo lo indique.
 

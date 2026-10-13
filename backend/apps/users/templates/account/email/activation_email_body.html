@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Activá tu cuenta en Winnie The Gym</title>
+</head>
+<body style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 24px;">
+  <h2>Hola {{ nombre_usuario }},</h2>
+
+  <p>Te damos la bienvenida a <strong>Winnie The Gym</strong>. Para activar tu cuenta y
+  elegir tu contraseña, hacé click en el siguiente enlace:</p>
+
+  <p>
+    <a href="{{ FRONTEND_URL }}/reset-password/{{ uid }}/{{ token }}/"
+       style="display: inline-block; padding: 12px 24px; background-color: #1a73e8;
+              color: #fff; text-decoration: none; border-radius: 4px;">
+      Activar mi cuenta
+    </a>
+  </p>
+
+  <p style="color: #666; font-size: 0.9em;">
+    Este enlace vence en 3 días. Si ya pasó el plazo, pedile a recepción que te lo reenvíe.
+  </p>
+
+  <p>¡Nos vemos en el gym!<br>Equipo Winnie The Gym</p>
+</body>
+</html>

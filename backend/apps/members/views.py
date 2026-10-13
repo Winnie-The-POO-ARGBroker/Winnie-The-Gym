@@ -8,11 +8,12 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 
 from apps.access.permissions import IsAdminOnly, IsReceptionistOrAdmin
+from apps.users.services import is_synthetic_email, send_activation_email
 
 from .filters import SocioFilter
 from .permissions import IsAdminOrOwnSocio
 from .models import Socio
-from .serializers import SocioCertificadoUploadSerializer, SocioSerializer
+from .serializers import SocioCertificadoResponseSerializer, SocioCertificadoUploadSerializer, SocioSerializer
 from .services import dar_baja, guardar_certificado_medico
 
 
@@ -51,6 +52,8 @@ class SocioViewSet(viewsets.ModelViewSet):
             return [IsReceptionistOrAdmin()]
         if self.action == 'subir_certificado':
             return [IsAdminOrOwnSocio()]
+        if self.action == 'resend_activation':
+            return [IsReceptionistOrAdmin()]
         return [IsReceptionistOrAdmin()]
 
     def destroy(self, request, *args, **kwargs):
@@ -170,4 +173,37 @@ class SocioViewSet(viewsets.ModelViewSet):
 
         socio = guardar_certificado_medico(socio, archivo, request=request)
 
-        return Response(SocioSerializer(socio).data, status=status.HTTP_200_OK)
+        return Response(SocioCertificadoResponseSerializer(socio).data, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        tags=['members'],
+        summary='Reenviar email de activación al socio (admin/recep) — fix #233',
+        request=None,
+        responses={
+            200: {'type': 'object', 'properties': {'detail': {'type': 'string'}}},
+            400: {'type': 'object', 'properties': {'detail': {'type': 'string'}}},
+        },
+    )
+    @action(
+        detail=True,
+        methods=['post'],
+        url_path='resend-activation',
+        url_name='resend-activation',
+    )
+    def resend_activation(self, request, pk=None):
+        """Resend activation email to a socio (admin + recepcionista only).
+
+        Returns 400 if the socio has a synthetic placeholder email address
+        and cannot receive real emails.
+        """
+        socio = self.get_object()
+        email = socio.usuario.email if socio.usuario_id else ''
+
+        if is_synthetic_email(email):
+            return Response(
+                {'detail': 'El socio no tiene un email real registrado. No se puede reenviar activación.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        send_activation_email(socio.usuario)
+        return Response({'detail': 'Email de activación reenviado.'}, status=status.HTTP_200_OK)
