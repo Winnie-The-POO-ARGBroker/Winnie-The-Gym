@@ -65,12 +65,8 @@ describe('usePlanes', () => {
   it('handles server error with toast and sentry report', async () => {
     const serverError = { type: 'server', message: 'Internal Server Error' }
     getReportPlans.mockRejectedValue(serverError)
-    const testClient = createTestQueryClient()
-    testClient.setDefaultOptions({
-      queries: { retry: false, gcTime: 0, staleTime: 0, retryDelay: 0 },
-    })
     const { result } = renderHookWithProviders(() => usePlanes(), {
-      queryClient: testClient,
+      queryClient: createTestQueryClient({ retryDelay: 0 }),
     })
 
     await waitFor(() => expect(result.current.isError).toBe(true))
@@ -81,12 +77,8 @@ describe('usePlanes', () => {
   it('handles network error with retry toast action', async () => {
     const networkError = { type: 'network', message: 'Sin conexión' }
     getReportPlans.mockRejectedValue(networkError)
-    const testClient = createTestQueryClient()
-    testClient.setDefaultOptions({
-      queries: { retry: false, gcTime: 0, staleTime: 0, retryDelay: 0 },
-    })
     const { result } = renderHookWithProviders(() => usePlanes(), {
-      queryClient: testClient,
+      queryClient: createTestQueryClient({ retryDelay: 0 }),
     })
 
     await waitFor(() => expect(result.current.isError).toBe(true))

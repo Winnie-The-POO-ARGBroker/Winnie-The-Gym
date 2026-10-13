@@ -137,7 +137,5 @@ export default function useScreenWakeLock({ enabled = true } = {}) {
     isSupported,
     isActive,
     brightnessBoosted,
-    requestWakeLock,
-    releaseWakeLock,
   }
 }

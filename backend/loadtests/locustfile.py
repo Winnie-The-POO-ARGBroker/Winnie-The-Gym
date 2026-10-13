@@ -20,7 +20,8 @@ LOAD_TEST_PREFIX = os.environ.get('LOAD_TEST_PREFIX', 'loadtest_')
 LOAD_TEST_DOMAIN = os.environ.get('LOAD_TEST_DOMAIN', 'loadtest.local')
 LOAD_TEST_PASSWORD = os.environ.get('LOAD_TEST_PASSWORD', 'LoadTest123!')
 
-# Proporciones consistentes: 2% admin, 8% recep, 90% socio
+# Fórmula de distribución espejo de seed_load_test_users.handle (canonical source).
+# Si cambia la proporción en el seed, actualizar también acá para evitar drift del pool.
 ADMIN_COUNT = int(round(LOAD_TEST_COUNT * 0.02))
 RECEP_COUNT = int(round(LOAD_TEST_COUNT * 0.08))
 if LOAD_TEST_COUNT >= 50 and ADMIN_COUNT == 0:
