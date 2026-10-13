@@ -506,10 +506,12 @@ El proyecto cuenta con una amplia suite de pruebas automatizadas en ambos extrem
 
 | Capa | Framework / Herramientas | Cantidad de Tests | Cobertura alcanzada | Gate mínimo en CI |
 |:---|:---|:---:|:---:|:---:|
-| **Frontend** | [Vitest](https://vitest.dev/) · [React Testing Library](https://testing-library.com/) | **733 tests** | Lines: **82.2%** <br> Statements: **82.2%** <br> Branches: **77.3%** <br> Functions: **67.5%** | Lines: 68% <br> Statements: 68% <br> Branches: 68% <br> Functions: 65% |
-| **Backend** | [pytest](https://pytest.org/) · Django Test Framework | **335 tests** | Global: **> 80%** | Global: 80% |
+| **Frontend** | [Vitest](https://vitest.dev/) · [React Testing Library](https://testing-library.com/) | **811 tests** <br> *(109 archivos)* | Lines: **82.2%** <br> Statements: **82.2%** <br> Branches: **77.3%** <br> Functions: **67.5%** | Lines: 68% <br> Statements: 68% <br> Branches: 68% <br> Functions: 65% |
+| **Backend** | [pytest](https://pytest.org/) · Django Test Framework | **395 tests** | Global: **> 80%** <br> *(gate verificado en CI con `--cov-fail-under=80`)* | Global: 80% |
 
-> **Total:** **1068 tests automatizados**, cubriendo servicios de negocio, modelos, API REST, WebSockets, autenticación JWT/OAuth, hooks, componentes y vistas.
+> **Total:** **1206 tests automatizados**, cubriendo servicios de negocio, modelos, API REST, WebSockets, autenticación JWT/OAuth, hooks, componentes y vistas.
+>
+> 📅 **Snapshot de métricas:** regenerado el **2026-10-13** tras los PRs #136 (coverage gates), #138 (Wake Lock) y #137 (locustfile). Los conteos de tests se validan con `vitest run` y `pytest --collect-only -q`; los porcentajes de cobertura frontend provienen de `vitest run --coverage` sobre `develop`.
 
 ### Ejecución de tests
 
@@ -555,12 +557,12 @@ El repositorio implementa un pipeline automatizado mediante **GitHub Actions** (
    - **Servicios:** Contenedores de servicio en red con **PostgreSQL 16**, **Redis 7** y **MongoDB 7** con *health checks* activos.
    - **Entorno:** Python 3.12 con dependencias cacheadas y biblioteca nativa `libmagic1`.
    - **Migraciones:** Verificación de consistencia del esquema relacional (`python manage.py migrate --check`).
-   - **Quality Gate:** Ejecución de **335 tests con `pytest`** aplicando un umbral estricto de **80% de cobertura mínima** (`--cov-fail-under=80`).
+   - **Quality Gate:** Ejecución de **395 tests con `pytest`** aplicando un umbral estricto de **80% de cobertura mínima** (`--cov-fail-under=80`).
 
 2. **Job Frontend (`Node / Vite / Vitest`)**:
    - **Entorno:** Node.js 20 con instalación limpia reproducible (`npm ci`).
    - **Linter Gate:** `npm run lint` configurado con `--max-warnings 0` (cero advertencias toleradas).
-   - **Coverage Gate:** Ejecución de **733 tests con Vitest** validando los umbrales de cobertura configurados en [`frontend/vite.config.js`](frontend/vite.config.js):
+   - **Coverage Gate:** Ejecución de **811 tests con Vitest** (109 archivos) validando los umbrales de cobertura configurados en [`frontend/vite.config.js`](frontend/vite.config.js):
      - *Lines:* ≥ 68% (actual: **82.2%**)
      - *Statements:* ≥ 68% (actual: **82.2%**)
      - *Branches:* ≥ 68% (actual: **77.3%**)

@@ -115,6 +115,8 @@ docker compose exec backend locust \
    - Generación de reportes de morosidad (`GET /api/reportes/morosidad/?formato=csv`).
    - Sonda de salud (`GET /api/health/`).
 
+> ⚠️ **Distribución del POOL (90/8/2%) ≠ Distribución del TRÁFICO (60/20/20%)**: el pool de usuarios en la DB sigue la proporción del dominio real del gimnasio (muchos socios, pocos staff). La distribución del tráfico Locust refleja los flujos operativos (los socios generan QR constantemente, el staff escanea con menor frecuencia). Si subís `LOAD_TEST_USERS_COUNT` el pool crece pero los pesos de tráfico se mantienen — para benchmarks grandes dimensioná `--count 500+` así los 2 admins del pool por defecto no reciben el hammering del 20% del tráfico.
+
 ---
 
 ## 6. Interpretación de Resultados y SLAs
