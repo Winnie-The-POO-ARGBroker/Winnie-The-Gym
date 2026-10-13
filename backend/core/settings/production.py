@@ -54,7 +54,13 @@ MIDDLEWARE = _middleware
 # ---------------------------------------------------------------------------
 # Media files via Supabase Storage (S3-compatible endpoint)
 # ---------------------------------------------------------------------------
-DEFAULT_FILE_STORAGE = 'apps.common.storages.SupabaseMediaStorage'
+# Django >= 5.1 removed DEFAULT_FILE_STORAGE: only STORAGES is honored, so the
+# media backend has to be declared here. "staticfiles" keeps Django's default
+# (WhiteNoise serves the collected files from the middleware).
+STORAGES = {
+    'default': {'BACKEND': 'apps.common.storages.SupabaseMediaStorage'},
+    'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
+}
 
 SUPABASE_STORAGE_ACCESS_KEY = config('SUPABASE_STORAGE_ACCESS_KEY', default='')
 SUPABASE_STORAGE_SECRET_KEY = config('SUPABASE_STORAGE_SECRET_KEY', default='')
@@ -69,14 +75,21 @@ SUPABASE_STORAGE_PUBLIC_URL_BASE = config(
     default='',  # ej: https://<project-ref>.supabase.co/storage/v1/object/public
 )
 
-# Override the base MEDIA_URL ("/media/") with the Supabase public URL root so
-# the Django setting reflects reality in production. Note: django-storages
-# overrides `.url()` per-field through SupabaseMediaStorage.url(), so the
-# actual signed/public URLs returned by file fields are always correct
-# regardless of this setting. Setting MEDIA_URL truthfully here avoids
-# misleading log output and any direct references to settings.MEDIA_URL in
-# admin or third-party packages.
-MEDIA_URL = config('SUPABASE_STORAGE_PUBLIC_URL_BASE', default='')
+# Override the base MEDIA_URL ("/media/") with the Supabase public URL of the
+# bucket so the Django setting reflects reality in production. Note:
+# django-storages overrides `.url()` per-field through
+# SupabaseMediaStorage.url(), so the actual signed/public URLs returned by
+# file fields are always correct regardless of this setting. Setting
+# MEDIA_URL truthfully here avoids misleading log output and any direct
+# references to settings.MEDIA_URL in admin or third-party packages.
+#
+# Django requires MEDIA_URL to end with a slash (urls.E006) and the public base
+# is documented without one, so the value is rebuilt with the same layout as
+# SupabaseMediaStorage.url(): {base}/{bucket}/. Without a base the "/media/"
+# default from base.py is kept.
+_media_public_base = SUPABASE_STORAGE_PUBLIC_URL_BASE.rstrip('/')
+if _media_public_base:
+    MEDIA_URL = f'{_media_public_base}/{SUPABASE_STORAGE_BUCKET}/'
 
 
 # ---------------------------------------------------------------------------
