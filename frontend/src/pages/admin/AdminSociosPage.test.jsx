@@ -60,10 +60,11 @@ const mockSocios = [
 ]
 
 const defaultMutations = {
-  create: { mutateAsync: vi.fn(), isLoading: false },
-  patch: { mutateAsync: vi.fn(), isLoading: false },
+  create: { mutateAsync: vi.fn(), isLoading: false, isPending: false },
+  patch: { mutateAsync: vi.fn(), isLoading: false, isPending: false },
   baja: { mutateAsync: vi.fn(), isLoading: false, isPending: false },
-  certificado: { mutateAsync: vi.fn(), isLoading: false },
+  certificado: { mutateAsync: vi.fn(), isLoading: false, isPending: false },
+  reactivar: { mutateAsync: vi.fn(), isLoading: false, isPending: false },
 }
 
 const defaultStats = {

@@ -41,11 +41,29 @@ class SocioViewSet(viewsets.ModelViewSet):
     ordering = ['numero_socio']
 
     def get_permissions(self):
-        if self.action in ('create', 'update', 'partial_update', 'destroy', 'dar_baja'):
+        if self.action in ('update', 'partial_update', 'dar_baja', 'reactivar'):
             return [IsAdminOnly()]
+        if self.action == 'destroy':
+            # Any authenticated staff can reach the override; the override itself returns 405
+            return [IsReceptionistOrAdmin()]
+        if self.action == 'create':
+            # fix #223: recepcionista can create socios
+            return [IsReceptionistOrAdmin()]
         if self.action == 'subir_certificado':
             return [IsAdminOrOwnSocio()]
         return [IsReceptionistOrAdmin()]
+
+    def destroy(self, request, *args, **kwargs):
+        """Block physical deletion — soft-cancel via dar-de-baja instead (fix #229)."""
+        return Response(
+            {
+                'detail': (
+                    'Method "DELETE" not allowed. '
+                    'Use POST /api/members/socios/{id}/dar-de-baja/ instead.'
+                )
+            },
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
 
     @extend_schema(
         tags=['members'],
@@ -67,6 +85,44 @@ class SocioViewSet(viewsets.ModelViewSet):
 
         serializer = SocioSerializer(socio)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        tags=['members'],
+        summary='Reactivar socio dado de baja (admin) — fix #229',
+        request=None,
+        responses={200: dict},
+    )
+    @action(detail=True, methods=['post'], url_path='reactivar', url_name='reactivar')
+    def reactivar(self, request, pk=None):
+        """Set estado='activo' and fecha_baja=None. Idempotent — no-op if already active."""
+        socio = self.get_object()
+
+        if socio.estado == Socio.Estado.ACTIVO:
+            # Already active — idempotent, return current state without modification
+            return Response(
+                {
+                    'id': socio.id,
+                    'estado': socio.estado,
+                    'fecha_baja': None,
+                    'updated_at': socio.updated_at,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        socio.estado = Socio.Estado.ACTIVO
+        # The model's save() handles fecha_baja = None invariant when estado != BAJA
+        socio.save()
+        socio.refresh_from_db()
+
+        return Response(
+            {
+                'id': socio.id,
+                'estado': socio.estado,
+                'fecha_baja': socio.fecha_baja,
+                'updated_at': socio.updated_at,
+            },
+            status=status.HTTP_200_OK,
+        )
 
     @extend_schema(
         tags=['members'],

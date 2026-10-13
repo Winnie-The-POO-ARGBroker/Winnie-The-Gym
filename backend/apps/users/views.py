@@ -18,6 +18,7 @@ from .serializers import (
     ProfileSerializer,
     StaffCreateSerializer,
     StaffListSerializer,
+    StaffProfileSerializer,
 )
 from .services import send_activation_email
 
@@ -64,11 +65,27 @@ class SafePasswordResetView(BasePasswordResetView):
 
 
 class ProfileView(generics.RetrieveUpdateAPIView):
+    """GET/PATCH /api/auth/profile/
+
+    Returns different shapes depending on the authenticated user's role:
+    - socio → ProfileSerializer (Socio model)
+    - administrador / recepcionista → StaffProfileSerializer (User model)
+    """
+
     permission_classes = [permissions.IsAuthenticated]
-    serializer_class = ProfileSerializer
     http_method_names = ['get', 'patch']
 
+    def _is_staff_user(self):
+        return self.request.user.rol in ('administrador', 'recepcionista')
+
+    def get_serializer_class(self):
+        if self._is_staff_user():
+            return StaffProfileSerializer
+        return ProfileSerializer
+
     def get_object(self):
+        if self._is_staff_user():
+            return self.request.user
         return get_object_or_404(Socio, usuario=self.request.user)
 
 

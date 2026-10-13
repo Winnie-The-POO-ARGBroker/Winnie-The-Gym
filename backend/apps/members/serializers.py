@@ -9,20 +9,27 @@ User = get_user_model()
 
 
 class SocioSerializer(serializers.ModelSerializer):
-    usuario = serializers.PrimaryKeyRelatedField(
-        queryset=User.objects.all(),
-        required=False,
-    )
-    email = serializers.EmailField(
-        write_only=True,
-        required=False,
-    )
+    """Serializer for Socio model.
+
+    Read-side:
+      - `email` — read from linked User.email (SerializerMethodField)
+      - `usuario_id` — PK of the linked User (SerializerMethodField)
+      - `membresia_activa` — current active membership or null
+
+    Write-side:
+      - `email` accepted as a plain EmailField in `to_internal_value`.
+      - `usuario` accepted as a PK for explicit user assignment.
+    """
+
+    usuario_id = serializers.SerializerMethodField(read_only=True)
+    email = serializers.SerializerMethodField(read_only=True)
+    membresia_activa = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Socio
         fields = (
             'id',
-            'usuario',
+            'usuario_id',
             'email',
             'numero_socio',
             'nombre',
@@ -33,34 +40,84 @@ class SocioSerializer(serializers.ModelSerializer):
             'estado',
             'fecha_baja',
             'observaciones',
+            'membresia_activa',
             'created_at',
         )
         read_only_fields = ('numero_socio', 'certificado_medico_url', 'created_at')
 
-    def validate_email(self, value):
-        if not value:
-            return value
+    def get_usuario_id(self, obj):
+        return obj.usuario_id
 
-        # Prevent assigning emails of admin/staff users to a socio
-        if User.objects.filter(email=value).exclude(rol=User.Rol.SOCIO).exists():
-            raise serializers.ValidationError(
-                'Este email pertenece a un usuario de administración o staff.'
-            )
+    def get_email(self, obj):
+        return obj.usuario.email if obj.usuario_id else None
 
-        # Prevent duplicate socio email
-        socio_query = Socio.objects.filter(usuario__email=value)
-        if self.instance:
-            socio_query = socio_query.exclude(pk=self.instance.pk)
-        if socio_query.exists():
-            raise serializers.ValidationError(
-                'Este email ya está asociado a otro socio.'
-            )
+    def get_membresia_activa(self, obj):
+        try:
+            from apps.memberships.models import Membresia
+            m = obj.membresia_set.filter(
+                estado=Membresia.Estado.ACTIVA,
+            ).order_by('-fecha_inicio').first()
+            if m is None:
+                return None
+            return {
+                'id': m.id,
+                'plan': m.plan.nombre if m.plan_id else None,
+                'fecha_inicio': m.fecha_inicio.isoformat() if m.fecha_inicio else None,
+                'fecha_fin': m.fecha_fin.isoformat() if m.fecha_fin else None,
+                'estado': m.estado,
+            }
+        except Exception:
+            return None
 
-        return value
+    # ------------------------------------------------------------------
+    # Write-side: accept `email` and `usuario` as input fields
+    # ------------------------------------------------------------------
+
+    def to_internal_value(self, data):
+        # Extract write-only fields before ModelSerializer processes them
+        email = data.get('email', None)
+        usuario_pk = data.get('usuario', None)
+
+        # Let ModelSerializer handle the model fields normally
+        # (email and usuario are not model fields so they won't conflict)
+        ret = super().to_internal_value(data)
+
+        if email is not None:
+            ret['_email'] = email
+        if usuario_pk is not None:
+            ret['_usuario_pk'] = usuario_pk
+
+        return ret
+
+    def validate(self, attrs):
+        email = attrs.get('_email')
+        if email:
+            # Validate: must not belong to a non-socio user
+            if User.objects.filter(email=email).exclude(rol=User.Rol.SOCIO).exists():
+                raise serializers.ValidationError(
+                    {'email': ['Ya existe un usuario con este email.']}
+                )
+            # Validate uniqueness (exclude self on update)
+            socio_query = Socio.objects.filter(usuario__email=email)
+            if self.instance:
+                socio_query = socio_query.exclude(pk=self.instance.pk)
+            if socio_query.exists():
+                raise serializers.ValidationError(
+                    {'email': ['Ya existe un usuario con este email.']}
+                )
+        return attrs
 
     def create(self, validated_data):
-        email = validated_data.pop('email', None)
-        usuario = validated_data.get('usuario')
+        email = validated_data.pop('_email', None)
+        usuario_pk = validated_data.pop('_usuario_pk', None)
+
+        usuario = None
+        if usuario_pk is not None:
+            try:
+                usuario = User.objects.get(pk=usuario_pk)
+            except User.DoesNotExist:
+                raise serializers.ValidationError({'usuario': ['Usuario no encontrado.']})
+
         if not usuario:
             dni = validated_data.get('dni')
             user_email = email or f'socio_{dni}@winniegym.com'
@@ -74,21 +131,28 @@ class SocioSerializer(serializers.ModelSerializer):
                 )
                 if not created and Socio.objects.filter(usuario=usuario).exists():
                     raise serializers.ValidationError(
-                        {'dni': 'Ya existe un socio con este DNI o email.'}
+                        {'dni': ['Ya existe un socio con este DNI.']}
                     )
-                validated_data['usuario'] = usuario
-                socio = super().create(validated_data)
-                # REQ-1.3: dispatch activation email so the socio can set a password
-                dispatch_activation_email_for_socio(usuario)
-                return socio
             except IntegrityError:
                 raise serializers.ValidationError(
-                    {'email': 'Este email ya está asociado a otro socio.'}
+                    {'email': ['Ya existe un usuario con este email.']}
                 )
-        return super().create(validated_data)
+
+        validated_data['usuario'] = usuario
+        socio = super().create(validated_data)
+        # REQ-1.3: dispatch activation email (service skips synthetic emails automatically)
+        dispatch_activation_email_for_socio(usuario)
+        return socio
 
     def update(self, instance, validated_data):
-        validated_data.pop('email', None)
+        # Handle email update: mutate the linked User object
+        email = validated_data.pop('_email', None)
+        validated_data.pop('_usuario_pk', None)
+        if email is not None and email != instance.usuario.email:
+            # Uniqueness was already validated in validate()
+            instance.usuario.email = email
+            instance.usuario.username = email
+            instance.usuario.save(update_fields=['email', 'username'])
         return super().update(instance, validated_data)
 
 

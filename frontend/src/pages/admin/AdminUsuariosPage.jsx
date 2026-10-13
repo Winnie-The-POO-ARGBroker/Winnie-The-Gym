@@ -44,7 +44,7 @@ export default function AdminUsuariosPage() {
       <TopBar
         title="Gestión de usuarios"
         icon={<Users className="w-5 h-5" />}
-        actions={
+        rightContent={
           <Button
             onClick={() => setIsFormOpen(true)}
             className="flex items-center gap-2"
@@ -93,20 +93,22 @@ export default function AdminUsuariosPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <StatusBadge isActive={member.is_active} hasUsablePassword={true} />
+                      <StatusBadge isActive={member.is_active} hasUsablePassword={member.has_usable_password} />
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => resendMutation.mutate(member.id)}
-                        disabled={resendMutation.isPending}
-                        title="Reenviar email de activación"
-                        className="flex items-center gap-1.5 ml-auto"
-                      >
-                        <RefreshCw className="w-3.5 h-3.5" />
-                        Reenviar activación
-                      </Button>
+                      {!member.has_usable_password && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => resendMutation.mutate(member.id)}
+                          disabled={resendMutation.isPending}
+                          title="Reenviar email de activación"
+                          className="flex items-center gap-1.5 ml-auto"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5" />
+                          Reenviar activación
+                        </Button>
+                      )}
                     </td>
                   </tr>
                 ))}

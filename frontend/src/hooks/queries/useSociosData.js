@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import {
   getSocios,
@@ -8,6 +8,7 @@ import {
   patchSocio,
   deleteSocio,
   darBajaSocio,
+  reactivarSocio,
   uploadCertificado,
   getSociosStats,
 } from '../../services/sociosService'
@@ -52,7 +53,7 @@ export function useSociosList(params = {}, options = {}) {
   return useQuery({
     queryKey: SOCIOS_QUERY_KEYS.list(params),
     queryFn: () => getSocios(params),
-    keepPreviousData: true, // evita parpadeo al cambiar de página
+    placeholderData: keepPreviousData, // evita parpadeo al cambiar de página (React Query v5)
     staleTime: 30_000, // 30 s de cache
     ...options,
   })
@@ -161,5 +162,16 @@ export function useSocioMutations() {
     },
   })
 
-  return { create, update, patch, remove, baja, certificado }
+  const reactivar = useMutation({
+    mutationFn: (id) => reactivarSocio(id),
+    onSuccess: () => {
+      invalidate()
+      toast.success('Socio reactivado correctamente')
+    },
+    onError: (err) => {
+      toast.error(extractErrorMessage(err, 'Error al reactivar socio'))
+    },
+  })
+
+  return { create, update, patch, remove, baja, certificado, reactivar }
 }

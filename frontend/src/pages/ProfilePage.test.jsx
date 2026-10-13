@@ -146,8 +146,9 @@ describe('ProfilePage', () => {
   // ── 6. Non-socio role hides certificado section ────────────────────────────
   it('does not render certificado section for admin role', async () => {
     useProfile.mockReturnValue({
-      data: { ...mockProfile, rol: 'administrador' },
+      data: { ...mockProfile, rol: 'administrador', is_staff_profile: true },
       isPending: false,
+      isError: false,
       refetch: vi.fn(),
     })
     setupAuthMock(makeAuthedUser('admin'))
@@ -216,12 +217,48 @@ describe('ProfilePage', () => {
 
   // ── 11. Subir certificado button appears for socio ─────────────────────────
   it('shows upload certificate button for socio role', async () => {
-    useProfile.mockReturnValue({ data: mockProfile, isPending: false, refetch: vi.fn() })
+    useProfile.mockReturnValue({ data: mockProfile, isPending: false, refetch: vi.fn(), isError: false })
 
     renderWithProviders(<ProfilePage />)
 
     await waitFor(() => {
       expect(screen.getByText(/Subir certificado/i)).toBeInTheDocument()
+    })
+  })
+
+  // ── Contract test 3 — fix #160 ────────────────────────────────────────────
+  it('renders staff shape when user.rol is administrador', async () => {
+    const staffProfile = {
+      email: 'admin@winnie.local',
+      rol: 'administrador',
+      first_name: 'Carlos',
+      last_name: 'Admin',
+      foto: null,
+      is_staff_profile: true,
+    }
+    useProfile.mockReturnValue({ data: staffProfile, isPending: false, isError: false, refetch: vi.fn() })
+    setupAuthMock(makeAuthedUser('admin'))
+
+    renderWithProviders(<ProfilePage />)
+
+    await waitFor(() => {
+      expect(screen.getByText('Carlos Admin')).toBeInTheDocument()
+    })
+    // Email appears in both display header and read-only field
+    expect(screen.getAllByText('admin@winnie.local').length).toBeGreaterThan(0)
+    expect(screen.getByText('Administrador')).toBeInTheDocument()
+    // Staff profile does NOT show certificado section
+    expect(screen.queryByText(/Certificado médico/i)).not.toBeInTheDocument()
+  })
+
+  // ── Contract test 4 — fix #160 ────────────────────────────────────────────
+  it('shows "Reintentar" button on network error', async () => {
+    useProfile.mockReturnValue({ data: undefined, isPending: false, isError: true, refetch: vi.fn() })
+
+    renderWithProviders(<ProfilePage />)
+
+    await waitFor(() => {
+      expect(screen.getByTestId('retry-button')).toBeInTheDocument()
     })
   })
 })

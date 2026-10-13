@@ -53,9 +53,13 @@ export default function Sidebar() {
   const { theme, toggleTheme } = useThemeStore()
   const [menuOpen, setMenuOpen] = useState(false)
   
-  const displayName = user?.nombre
-    ? `${user.nombre} ${user.apellido ?? ''}`.trim()
-    : user?.email ?? 'Usuario'
+  const displayName = user?.socio?.nombre
+    ? `${user.socio.nombre} ${user.socio.apellido ?? ''}`.trim()
+    : (user?.nombre
+      ? `${user.nombre} ${user.apellido ?? ''}`.trim()
+      : (user?.first_name || user?.last_name)
+        ? `${user.first_name ?? ''} ${user.last_name ?? ''}`.trim()
+        : user?.email ?? 'Usuario')
   const rol = user?.rol ?? 'administrador'
 
   const currentNavItems = NAV_BY_ROLE[rol] ?? NAV_BY_ROLE.administrador

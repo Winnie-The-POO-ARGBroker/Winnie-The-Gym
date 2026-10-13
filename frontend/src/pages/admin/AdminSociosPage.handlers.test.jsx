@@ -86,10 +86,11 @@ const mockSocios = [
 ]
 
 const defaultMutations = {
-  create: { mutateAsync: vi.fn().mockResolvedValue({ id: 99 }), isLoading: false },
-  patch: { mutateAsync: vi.fn().mockResolvedValue({}), isLoading: false },
+  create: { mutateAsync: vi.fn().mockResolvedValue({ id: 99 }), isLoading: false, isPending: false },
+  patch: { mutateAsync: vi.fn().mockResolvedValue({}), isLoading: false, isPending: false },
   baja: { mutateAsync: vi.fn(), isLoading: false, isPending: false },
-  certificado: { mutateAsync: vi.fn(), isLoading: false },
+  certificado: { mutateAsync: vi.fn(), isLoading: false, isPending: false },
+  reactivar: { mutateAsync: vi.fn(), isLoading: false, isPending: false },
 }
 
 function setupMocks(overrides = {}) {

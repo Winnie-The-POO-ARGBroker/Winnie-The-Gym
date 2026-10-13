@@ -149,7 +149,8 @@ class ProfileViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_user_without_socio_returns_404(self):
-        user = make_user_factory()
+        """A socio-role user without a Socio record returns 404 (no staff bypass)."""
+        user = make_user_factory(rol='socio')
         _auth_client(self.client, user)
 
         response = self.client.get(PROFILE_URL)
@@ -157,7 +158,7 @@ class ProfileViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_user_with_socio_returns_200_with_correct_fields(self):
-        user = make_user_factory()
+        user = make_user_factory(rol='socio')
         make_socio_factory(usuario=user, dni='12345678', nombre='Jane', apellido='Doe')
         _auth_client(self.client, user)
 
@@ -170,7 +171,7 @@ class ProfileViewTests(APITestCase):
         self.assertEqual(response.data['email'], user.email)
 
     def test_patch_updates_allowed_fields(self):
-        user = make_user_factory()
+        user = make_user_factory(rol='socio')
         make_socio_factory(usuario=user)
         _auth_client(self.client, user)
 
@@ -186,7 +187,7 @@ class ProfileViewTests(APITestCase):
         self.assertEqual(response.data['telefono'], '5490000000001')
 
     def test_patch_ignores_dni_change(self):
-        user = make_user_factory()
+        user = make_user_factory(rol='socio')
         make_socio_factory(usuario=user, dni='12345678')
         _auth_client(self.client, user)
 
@@ -194,6 +195,82 @@ class ProfileViewTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['dni'], '12345678')
+
+    # --- Fix #160: staff profile tests ---
+
+    def test_profile_get_admin_returns_200_with_staff_shape(self):
+        """Admin user gets 200 with staff shape including is_staff_profile=True."""
+        user = make_user_factory(rol='administrador', first_name='Carlos', last_name='Admin')
+        _auth_client(self.client, user)
+
+        response = self.client.get(PROFILE_URL)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['email'], user.email)
+        self.assertEqual(response.data['rol'], 'administrador')
+        self.assertEqual(response.data['first_name'], 'Carlos')
+        self.assertEqual(response.data['last_name'], 'Admin')
+        self.assertTrue(response.data['is_staff_profile'])
+
+    def test_profile_get_recepcionista_returns_200_with_staff_shape(self):
+        """Recepcionista user gets 200 with staff shape including is_staff_profile=True."""
+        user = make_user_factory(rol='recepcionista', first_name='Maria', last_name='Recep')
+        _auth_client(self.client, user)
+
+        response = self.client.get(PROFILE_URL)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['email'], user.email)
+        self.assertEqual(response.data['rol'], 'recepcionista')
+        self.assertTrue(response.data['is_staff_profile'])
+
+    def test_profile_patch_admin_updates_first_name(self):
+        """Admin can PATCH first_name and last_name via staff profile endpoint."""
+        user = make_user_factory(rol='administrador', first_name='Old', last_name='Name')
+        _auth_client(self.client, user)
+
+        response = self.client.patch(PROFILE_URL, {
+            'first_name': 'New',
+            'last_name': 'Updated',
+        })
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['first_name'], 'New')
+        self.assertEqual(response.data['last_name'], 'Updated')
+        self.assertTrue(response.data['is_staff_profile'])
+
+    def test_profile_get_socio_still_returns_socio_shape(self):
+        """Regression: socio users still get socio-shape response (no is_staff_profile)."""
+        user = make_user_factory(rol='socio')
+        make_socio_factory(usuario=user, dni='55443322', nombre='Socio', apellido='Test')
+        _auth_client(self.client, user)
+
+        response = self.client.get(PROFILE_URL)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['dni'], '55443322')
+        self.assertNotIn('is_staff_profile', response.data)
+
+    # --- Fix #162: has_usable_password ---
+
+    def test_staff_list_includes_has_usable_password(self):
+        """GET /api/users/staff/ includes has_usable_password for each staff member."""
+        admin = make_user_factory(rol='administrador', password='pass1234!')
+        _auth_client(self.client, admin)
+
+        staff_url = '/api/users/staff/'
+        response = self.client.get(staff_url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.data
+        if isinstance(data, dict):
+            data = data.get('results', data)
+        self.assertGreater(len(data), 0)
+        self.assertIn('has_usable_password', data[0])
+        # admin created with password='pass1234!' should have usable password
+        admin_entry = next((d for d in data if d['email'] == admin.email), None)
+        self.assertIsNotNone(admin_entry)
+        self.assertTrue(admin_entry['has_usable_password'])
 
 
 class CustomJWTSerializerTests(APITestCase):

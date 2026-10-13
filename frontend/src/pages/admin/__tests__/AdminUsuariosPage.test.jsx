@@ -12,6 +12,7 @@ const mockStaffList = [
     last_name: 'Gym',
     rol: 'administrador',
     is_active: true,
+    has_usable_password: true,
   },
   {
     id: 2,
@@ -20,6 +21,7 @@ const mockStaffList = [
     last_name: 'Gym',
     rol: 'recepcionista',
     is_active: true,
+    has_usable_password: false,
   },
 ]
 
@@ -37,10 +39,10 @@ vi.mock('../../../components/layout/AppLayout', () => ({
   default: ({ children }) => <div data-testid="app-layout">{children}</div>,
 }))
 vi.mock('../../../components/layout/TopBar', () => ({
-  default: ({ title, actions }) => (
+  default: ({ title, rightContent }) => (
     <div data-testid="top-bar">
       <span>{title}</span>
-      {actions}
+      {rightContent}
     </div>
   ),
 }))
@@ -106,11 +108,12 @@ describe('AdminUsuariosPage', () => {
     expect(screen.getByText(/no hay usuarios staff registrados/i)).toBeInTheDocument()
   })
 
-  it('renders Reenviar activación button per row', async () => {
+  it('renders Reenviar activación button only for staff with pending activation', async () => {
     renderWithProviders(<AdminUsuariosPage />)
     await waitFor(() => {
+      // Only the staff member with has_usable_password: false gets the resend button
       const buttons = screen.getAllByRole('button', { name: /reenviar activación/i })
-      expect(buttons).toHaveLength(2)
+      expect(buttons).toHaveLength(1)
     })
   })
 
@@ -119,6 +122,23 @@ describe('AdminUsuariosPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Administrador')).toBeInTheDocument()
       expect(screen.getByText('Recepcionista')).toBeInTheDocument()
+    })
+  })
+
+  // ── Contract test 1 — fix #162 ────────────────────────────────────────────
+  it('renders Crear staff button in TopBar rightContent', async () => {
+    renderWithProviders(<AdminUsuariosPage />)
+    const topBar = screen.getByTestId('top-bar')
+    expect(topBar).toContainElement(
+      screen.getByRole('button', { name: /crear staff/i })
+    )
+  })
+
+  // ── Contract test 2 — fix #162 ────────────────────────────────────────────
+  it('shows "Pendiente activación" when has_usable_password is false', async () => {
+    renderWithProviders(<AdminUsuariosPage />)
+    await waitFor(() => {
+      expect(screen.getByText(/Pendiente activación/i)).toBeInTheDocument()
     })
   })
 })
