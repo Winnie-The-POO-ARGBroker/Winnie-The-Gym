@@ -84,7 +84,10 @@ CORS_EXPOSE_HEADERS = [
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        # fix #233: apps/users/templates/ is added to DIRS so our Spanish email
+        # overrides are found before allauth's built-in templates (allauth is
+        # higher in INSTALLED_APPS, so APP_DIRS order would find allauth's first).
+        'DIRS': [BASE_DIR / 'apps' / 'users' / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -235,7 +238,16 @@ REST_AUTH = {
     # JWT-only auth: disable the default token model so dj-rest-auth does not
     # require rest_framework.authtoken in INSTALLED_APPS.
     'TOKEN_MODEL': None,
+    # fix #226: require old_password on change + revoke all sessions on change
+    'OLD_PASSWORD_FIELD_ENABLED': True,
+    'LOGOUT_ON_PASSWORD_CHANGE': True,
+    'PASSWORD_CHANGE_SERIALIZER': 'apps.users.serializers.WinniePasswordChangeSerializer',
+    # fix #233: Spanish email templates + FRONTEND_URL instead of example.com
+    'PASSWORD_RESET_SERIALIZER': 'apps.users.serializers.WinniePasswordResetSerializer',
 }
+
+# fix #233: explicit timeout — 3 days (same as Django's default but made explicit)
+PASSWORD_RESET_TIMEOUT = 60 * 60 * 24 * 3
 
 AUTH_USER_MODEL = 'users.User'
 

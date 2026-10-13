@@ -1,6 +1,12 @@
+from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.auth.forms import PasswordResetForm
 
-from dj_rest_auth.serializers import JWTSerializer
+from dj_rest_auth.serializers import (
+    JWTSerializer,
+    PasswordChangeSerializer as BasePasswordChangeSerializer,
+    PasswordResetSerializer as BasePasswordResetSerializer,
+)
 from rest_framework import serializers
 
 from apps.members.models import Socio
@@ -59,8 +65,32 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Socio
-        fields = ('email', 'foto', 'rol', 'dni', 'nombre', 'apellido', 'telefono')
-        read_only_fields = ('email', 'foto', 'rol', 'dni')
+        fields = (
+            'id',
+            'email',
+            'foto',
+            'rol',
+            'dni',
+            'nombre',
+            'apellido',
+            'telefono',
+            'numero_socio',
+            'estado',
+            'fecha_baja',
+            'certificado_medico_url',
+            'observaciones',
+        )
+        read_only_fields = (
+            'id',
+            'email',
+            'foto',
+            'rol',
+            'dni',
+            'numero_socio',
+            'estado',
+            'fecha_baja',
+            'certificado_medico_url',
+        )
 
 
 class StaffCreateSerializer(serializers.ModelSerializer):
@@ -124,6 +154,62 @@ class StaffProfileSerializer(serializers.ModelSerializer):
 
     def get_is_staff_profile(self, obj):
         return True
+
+
+class WinniePasswordChangeSerializer(BasePasswordChangeSerializer):
+    """Override dj-rest-auth's PasswordChangeSerializer to blacklist all outstanding
+    refresh tokens after a successful password change.
+
+    fix #226: invalidate all active sessions on password change.
+    """
+
+    def save(self):
+        super().save()
+        # Blacklist all outstanding refresh tokens for this user so other sessions
+        # (e.g. other devices) are immediately invalidated.
+        try:
+            from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
+            user = self.user
+            outstanding = OutstandingToken.objects.filter(user=user)
+            for token in outstanding:
+                BlacklistedToken.objects.get_or_create(token=token)
+        except Exception:
+            import logging
+            logging.getLogger(__name__).warning(
+                'WinniePasswordChangeSerializer: failed to blacklist tokens for user %s',
+                getattr(self, 'user', None),
+            )
+
+
+def _make_frontend_url_generator(frontend_url: str):
+    """Return a url_generator that produces FRONTEND_URL-based reset links.
+
+    fix #233: password reset emails must link to FRONTEND_URL, not example.com.
+    The generator is passed to AllAuthPasswordResetForm.save() as `url_generator`.
+    """
+    def _generator(request, user, temp_key):
+        from allauth.account.utils import user_pk_to_url_str
+        uid = user_pk_to_url_str(user)
+        return f'{frontend_url}/reset-password/{uid}/{temp_key}/'
+    return _generator
+
+
+class WinniePasswordResetSerializer(BasePasswordResetSerializer):
+    """Override dj-rest-auth's PasswordResetSerializer to link to FRONTEND_URL.
+
+    fix #233: password reset emails must link to FRONTEND_URL (not example.com).
+    """
+
+    def save(self):
+        request = self.context.get('request')
+        frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:5173').rstrip('/')
+        opts = {
+            'use_https': request.is_secure() if request else True,
+            'from_email': getattr(settings, 'DEFAULT_FROM_EMAIL', None),
+            'request': request,
+            'url_generator': _make_frontend_url_generator(frontend_url),
+        }
+        self.reset_form.save(**opts)
 
 
 class StaffListSerializer(serializers.ModelSerializer):

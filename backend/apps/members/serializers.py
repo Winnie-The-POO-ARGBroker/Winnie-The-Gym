@@ -159,6 +159,34 @@ class SocioSerializer(serializers.ModelSerializer):
 class SocioCertificadoUploadSerializer(serializers.Serializer):
     """Payload for the medical certificate upload endpoint (RF08)."""
 
+    ALLOWED_MIME_TYPES = {
+        'application/pdf',
+        'image/jpeg',
+        'image/png',
+        'image/webp',
+    }
+    MAX_SIZE_BYTES = 5 * 1024 * 1024
+
     archivo = serializers.FileField(
-        help_text='Certificado médico en formato PDF o imagen (JPG/PNG). Máximo 5 MB.',
+        help_text='Certificado médico en formato PDF o imagen (JPG/PNG/WEBP). Máximo 5 MB.',
     )
+
+    def validate_archivo(self, value):
+        if value.size > self.MAX_SIZE_BYTES:
+            raise serializers.ValidationError('Archivo demasiado grande. Máximo 5 MB.')
+
+        content_type = getattr(value, 'content_type', None) or ''
+        # Normalize: strip parameters like "; charset=..."
+        mime = content_type.split(';')[0].strip().lower()
+        if mime not in self.ALLOWED_MIME_TYPES:
+            raise serializers.ValidationError('Formato no permitido. Solo PDF o imagen.')
+
+        return value
+
+
+class SocioCertificadoResponseSerializer(serializers.ModelSerializer):
+    """Minimal response shape for the certificate upload endpoint."""
+
+    class Meta:
+        model = Socio
+        fields = ('id', 'certificado_medico_url', 'numero_socio', 'estado')
