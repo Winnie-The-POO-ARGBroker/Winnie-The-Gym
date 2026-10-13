@@ -447,3 +447,139 @@ class SocioCreateActivationEmailTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         # Synthetic email → activation should NOT be dispatched
         mock_email.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# Fix #223 — recepcionista can create socios (PR1 hotfix)
+# ---------------------------------------------------------------------------
+
+class SocioCreateRecepcionistaTests(APITestCase):
+    """Fix #223: recepcionista must be able to POST /api/members/socios/ (was 403)."""
+
+    def setUp(self):
+        self.admin = make_user_factory(rol='administrador')
+        self.recep = make_user_factory(rol='recepcionista')
+
+    def test_socio_create_recepcionista_returns_201(self):
+        """Recepcionista can create a socio — fix #223."""
+        _auth_client(self.client, self.recep)
+        payload = {
+            'dni': '12345601',
+            'nombre': 'Eduardo',
+            'apellido': 'Nuevo',
+            'telefono': '+5493511234567',
+            'email': 'eduardo.nuevo@example.com',
+        }
+        response = self.client.post(SOCIOS_URL, payload, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIn('id', response.data)
+        self.assertIn('usuario_id', response.data)
+        self.assertIn('numero_socio', response.data)
+        self.assertEqual(response.data['estado'], 'activo')
+        self.assertIsNone(response.data.get('membresia_activa'))
+
+    def test_socio_create_missing_telefono_returns_400(self):
+        """Creating a socio without telefono returns 400 — fix #223."""
+        _auth_client(self.client, self.admin)
+        payload = {
+            'dni': '12345602',
+            'nombre': 'Sin',
+            'apellido': 'Telefono',
+        }
+        response = self.client.post(SOCIOS_URL, payload, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('telefono', response.data)
+
+
+# ---------------------------------------------------------------------------
+# Fix #229 — ABM socios: DELETE→405, reactivar, email edit
+# ---------------------------------------------------------------------------
+
+class SocioABMTests(APITestCase):
+    """Fix #229: ABM socios — DELETE returns 405, reactivar action, email edit."""
+
+    def setUp(self):
+        self.admin = make_user_factory(rol='administrador')
+        self.recep = make_user_factory(rol='recepcionista')
+        self.socio_user = make_user_factory(rol='socio', email='socio.abm@test.com')
+        self.socio = make_socio_factory(
+            usuario=self.socio_user,
+            nombre='ABM',
+            apellido='Socio',
+            dni='98765432',
+        )
+
+    def test_socio_delete_returns_405(self):
+        """DELETE /api/members/socios/{id}/ must return 405 with redirect message — fix #229."""
+        _auth_client(self.client, self.admin)
+        response = self.client.delete(_detail_url(self.socio.pk))
+
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertIn('detail', response.data)
+        self.assertIn('dar-de-baja', response.data['detail'])
+
+    def test_socio_delete_returns_405_for_recep(self):
+        """DELETE must return 405 for recepcionista too (permission check happens after method override)."""
+        _auth_client(self.client, self.recep)
+        response = self.client.delete(_detail_url(self.socio.pk))
+
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_socio_reactivar_sets_estado_activo(self):
+        """POST /api/members/socios/{id}/reactivar/ sets estado=activo — fix #229."""
+        self.socio.estado = 'baja'
+        self.socio.save()
+        _auth_client(self.client, self.admin)
+
+        url = f'/api/members/socios/{self.socio.pk}/reactivar/'
+        response = self.client.post(url, {}, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['estado'], 'activo')
+        self.assertIsNone(response.data['fecha_baja'])
+
+        self.socio.refresh_from_db()
+        self.assertEqual(self.socio.estado, 'activo')
+        self.assertIsNone(self.socio.fecha_baja)
+
+    def test_socio_reactivar_idempotent_when_already_active(self):
+        """Reactivar on an already-active socio returns 200 without error (idempotent)."""
+        self.assertEqual(self.socio.estado, 'activo')
+        _auth_client(self.client, self.admin)
+
+        url = f'/api/members/socios/{self.socio.pk}/reactivar/'
+        response = self.client.post(url, {}, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['estado'], 'activo')
+
+    def test_socio_patch_email_updates_user_email(self):
+        """PATCH /api/members/socios/{id}/ with email updates the linked User — fix #229."""
+        _auth_client(self.client, self.admin)
+        new_email = 'updated.socio@test.com'
+        response = self.client.patch(
+            _detail_url(self.socio.pk),
+            {'email': new_email},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.socio_user.refresh_from_db()
+        self.assertEqual(self.socio_user.email, new_email)
+
+    def test_socio_patch_email_duplicate_returns_400(self):
+        """PATCH with an email already owned by another user returns 400 — fix #229."""
+        other_user = make_user_factory(rol='socio', email='existing.other@test.com')
+        make_socio_factory(usuario=other_user, dni='11112222')
+        _auth_client(self.client, self.admin)
+
+        response = self.client.patch(
+            _detail_url(self.socio.pk),
+            {'email': 'existing.other@test.com'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('email', response.data)

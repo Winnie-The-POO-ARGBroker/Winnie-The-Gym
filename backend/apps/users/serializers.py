@@ -108,10 +108,33 @@ class StaffCreateSerializer(serializers.ModelSerializer):
         return user
 
 
-class StaffListSerializer(serializers.ModelSerializer):
-    """Read-only serializer for listing staff members."""
+class StaffProfileSerializer(serializers.ModelSerializer):
+    """Serializer for GET/PATCH /api/auth/profile/ when the user is staff (admin or receptionist).
+
+    Exposes staff-specific fields and adds `is_staff_profile: True` as a discriminator
+    so the frontend can distinguish this shape from the socio shape without checking `rol`.
+    """
+
+    is_staff_profile = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ('id', 'email', 'rol', 'first_name', 'last_name', 'is_active', 'date_joined')
+        fields = ('email', 'rol', 'first_name', 'last_name', 'foto', 'is_staff_profile')
+        read_only_fields = ('email', 'rol', 'is_staff_profile')
+
+    def get_is_staff_profile(self, obj):
+        return True
+
+
+class StaffListSerializer(serializers.ModelSerializer):
+    """Read-only serializer for listing staff members."""
+
+    has_usable_password = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ('id', 'email', 'rol', 'first_name', 'last_name', 'has_usable_password', 'date_joined')
         read_only_fields = fields
+
+    def get_has_usable_password(self, obj):
+        return obj.has_usable_password()

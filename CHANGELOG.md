@@ -23,7 +23,14 @@ Versionado según [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - Frontend: Interceptor de Axios (`frontend/src/services/api.js`) robustecido con detección directa por `code: 'session_inactive'`, prevención de re-disparo concurrente (double-fire toast/redirect) y limpieza de sesión en `authStore`.
   - Tests unitarios e integración en backend (`backend/apps/users/tests/test_inactivity_middleware.py`, `backend/apps/users/tests/test_inactivity_middleware_integration.py`) y frontend (`frontend/src/services/__tests__/api.test.js`).
 
+### Added
+- **Endpoint `POST /api/members/socios/{id}/reactivar/` (fix #229)**: nuevo action en `SocioViewSet` que setea `estado='activo'` y `fecha_baja=None`. Idempotente (retorna 200 sin cambios si el socio ya está activo). Admin-only.
+
 ### Fixed
+- **fix #160 — Perfil staff retornaba 404**: `ProfileView.get_object()` y `get_serializer_class()` ahora son polimórficos por `user.rol`. Admin y recepcionista reciben shape staff (`email`, `rol`, `first_name`, `last_name`, `foto`, `is_staff_profile: true`). Socios mantienen el shape anterior.
+- **fix #162 — `has_usable_password` en staff list**: `StaffListSerializer` agrega campo `has_usable_password` calculado vía `obj.has_usable_password()`. Permite al frontend distinguir cuentas activadas de pendientes.
+- **fix #223 — Alta de socio retornaba 403 para recepcionista**: permiso de `create` en `SocioViewSet` cambiado de `IsAdminOnly` a `IsReceptionistOrAdmin`. `SocioSerializer` ahora expone `usuario_id` y `membresia_activa: null` en la respuesta 201. Validaciones de unicidad de DNI y email en español.
+- **fix #229 — ABM socios**: `DELETE /api/members/socios/{id}/` retorna 405 con mensaje que redirige a `dar-de-baja`. `PATCH` acepta campo `email` para actualizar el User vinculado con validación de unicidad.
 - **Reporte de asistencia**: resolución del filter bug de timezone en `build_asistencia` (Issue #123):
   - Normalización y parseo robusto de `fecha_desde` y `fecha_hasta` a objetos `date`.
   - Reemplazo de filtros `timestamp__date__gte` / `timestamp__date__lte` por rangos timezone-aware explícitos en hora local ART (`timestamp__gte=start` y `timestamp__lte=end` con `timezone.make_aware`).
