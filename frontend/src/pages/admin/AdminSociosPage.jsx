@@ -4,11 +4,13 @@ import {
   UserCheck,
   FileCheck,
   UserX,
+  UserRoundCheck,
   Plus,
   Eye,
   Edit2,
-  Trash2,
+  RefreshCw,
   AlertTriangle,
+  Pause,
 } from 'lucide-react'
 import AppLayout from '../../components/layout/AppLayout'
 import TopBar from '../../components/layout/TopBar'
@@ -30,6 +32,7 @@ export default function AdminSociosPage() {
   const [filters, setFilters] = useState({ estado: '', con_certificado: '' })
   const [ordering, setOrdering] = useState('-created_at')
   const [socioABajar, setSocioABajar] = useState(null)
+  const [socioAReactivar, setSocioAReactivar] = useState(null)
   const [isFormModalOpen, setIsFormModalOpen] = useState(false)
   const [socioToEdit, setSocioToEdit] = useState(null)
   const [socioParaDetalle, setSocioParaDetalle] = useState(null)
@@ -48,7 +51,7 @@ export default function AdminSociosPage() {
   // Query de estadísticas globales reales del backend
   const { data: stats, isLoading: isStatsLoading } = useSociosStats()
 
-  const { create, patch, baja, certificado } = useSocioMutations()
+  const { create, patch, baja, certificado, reactivar } = useSocioMutations()
 
   const socios = data?.results || (Array.isArray(data) ? data : [])
   const totalCount = data?.count ?? socios.length
@@ -114,6 +117,16 @@ export default function AdminSociosPage() {
     try {
       await baja.mutateAsync(socioABajar.id)
       setSocioABajar(null)
+    } catch {
+      // El toast ya lo gestiona el onError de la mutación
+    }
+  }
+
+  const handleConfirmarReactivar = async () => {
+    if (!socioAReactivar) return
+    try {
+      await reactivar.mutateAsync(socioAReactivar.id)
+      setSocioAReactivar(null)
     } catch {
       // El toast ya lo gestiona el onError de la mutación
     }
@@ -187,13 +200,25 @@ export default function AdminSociosPage() {
               </h3>
             </div>
           </div>
+
+          <div className="p-4 rounded-2xl bg-bg-surface border border-subtle flex items-center gap-4 shadow-sm">
+            <div className="w-12 h-12 rounded-xl bg-warning-500/10 flex items-center justify-center text-warning-500">
+              <Pause className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-xs font-medium text-text-secondary">Suspendidos</p>
+              <h3 className="text-2xl font-bold text-text-primary">
+                {isStatsLoading ? '...' : (stats?.suspendidos ?? socios.filter(s => s.estado === 'suspendido').length)}
+              </h3>
+            </div>
+          </div>
         </div>
 
         {/* Barra de Búsqueda y Filtros */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <div className="w-full sm:w-80">
             <SearchBar
-              placeholder="Buscar por nombre, DNI o número..."
+              placeholder="Buscar por nombre, DNI, email o teléfono..."
               onSearch={handleSearch}
             />
           </div>
@@ -251,7 +276,21 @@ export default function AdminSociosPage() {
                   <Edit2 className="w-4 h-4" />
                 </button>
 
-                {row.estado !== 'baja' && (
+                {row.estado === 'baja' ? (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setSocioAReactivar(row)
+                    }}
+                    className="p-1.5 rounded-lg text-text-secondary hover:text-success-500 hover:bg-bg-raised transition-colors"
+                    title="Reactivar socio"
+                    aria-label={`Reactivar a ${row.nombre} ${row.apellido}`}
+                    data-testid={`reactivar-${row.id}`}
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                  </button>
+                ) : (
                   <button
                     type="button"
                     onClick={(e) => {
@@ -262,7 +301,7 @@ export default function AdminSociosPage() {
                     title="Dar de baja socio"
                     aria-label={`Dar de baja a ${row.nombre} ${row.apellido}`}
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <UserRoundCheck className="w-4 h-4" />
                   </button>
                 )}
               </div>
@@ -299,17 +338,17 @@ export default function AdminSociosPage() {
           <Button
             variant="secondary"
             onClick={() => setSocioABajar(null)}
-            disabled={baja.isLoading}
+            disabled={baja.isPending}
           >
             Cancelar
           </Button>
           <Button
             variant="danger"
             onClick={handleConfirmarBaja}
-            disabled={baja.isLoading}
+            disabled={baja.isPending}
             className="gap-2"
           >
-            {baja.isLoading ? 'Procesando...' : 'Confirmar Baja'}
+            {baja.isPending ? 'Procesando...' : 'Confirmar Baja'}
           </Button>
         </div>
       </Modal>
@@ -323,7 +362,7 @@ export default function AdminSociosPage() {
         }}
         onSave={handleSaveSocio}
         socioToEdit={socioToEdit}
-        isLoading={create.isLoading || patch.isLoading || certificado.isLoading}
+        isLoading={create.isPending || patch.isPending || certificado.isPending}
       />
 
       {/* Modal de visualización de detalle */}
@@ -340,6 +379,42 @@ export default function AdminSociosPage() {
           handleAbrirEditar(socio)
         }}
       />
+
+      {/* Modal de confirmación para reactivar socio */}
+      <Modal
+        isOpen={!!socioAReactivar}
+        onClose={() => setSocioAReactivar(null)}
+        maxWidth="max-w-md"
+        title="Reactivar socio"
+        description='Esta acción cambiará el estado del socio a "activo".'
+        icon={<RefreshCw className="w-5 h-5 text-success-500" />}
+      >
+        <p className="text-sm text-text-secondary mb-4">
+          ¿Deseas reactivar al socio{' '}
+          <strong className="text-text-primary">
+            {socioAReactivar?.nombre} {socioAReactivar?.apellido}
+          </strong>{' '}
+          (DNI: {socioAReactivar?.dni})?
+        </p>
+
+        <div className="flex items-center justify-end gap-3 pt-2">
+          <Button
+            variant="secondary"
+            onClick={() => setSocioAReactivar(null)}
+            disabled={reactivar.isPending}
+          >
+            Cancelar
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleConfirmarReactivar}
+            disabled={reactivar.isPending}
+            className="gap-2"
+          >
+            {reactivar.isPending ? 'Procesando...' : 'Reactivar'}
+          </Button>
+        </div>
+      </Modal>
     </AppLayout>
   )
 }

@@ -85,6 +85,15 @@ export function darBajaSocio(id) {
 }
 
 /**
+ * Reactivates a socio (estado → activo, fecha_baja → null).
+ * Idempotent: if already active, returns 200 without changes.
+ * @param {number|string} id
+ */
+export function reactivarSocio(id) {
+  return api.post(`${SOCIOS_URL}${id}/reactivar/`).then((r) => r.data)
+}
+
+/**
  * Sube el certificado médico del socio (RF08).
  * @param {number|string} id
  * @param {File} archivo - Archivo PDF, JPG o PNG (máx. 5 MB)

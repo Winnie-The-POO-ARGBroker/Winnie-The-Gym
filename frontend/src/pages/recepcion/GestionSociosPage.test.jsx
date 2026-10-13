@@ -1,12 +1,11 @@
 /**
  * Tests for GestionSociosPage (recepcion role).
  *
- * Satisfies REQ-2.4 (≥ 10 tests).
- * Mocked: useSociosList, useSocioMutations
+ * Covers both the listado tab and the Alta en Recepción form flow.
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { screen, waitFor, fireEvent } from '@testing-library/react'
+import { screen, waitFor, fireEvent, act } from '@testing-library/react'
 import GestionSociosPage from './GestionSociosPage'
 import { renderWithProviders, resetAllStores } from '../../test/test-utils'
 
@@ -15,6 +14,14 @@ import { renderWithProviders, resetAllStores } from '../../test/test-utils'
 vi.mock('../../hooks/queries/useSociosData', () => ({
   useSociosList: vi.fn(),
   useSocioMutations: vi.fn(),
+}))
+
+vi.mock('../../hooks/queries/usePlanesAdmin', () => ({
+  usePlanesQuery: vi.fn(),
+}))
+
+vi.mock('../../services/pagosService', () => ({
+  cobrarManual: vi.fn(),
 }))
 
 vi.mock('../../components/layout/AppLayout', () => ({
@@ -43,40 +50,28 @@ vi.mock('../../components/admin/SocioColumns', () => ({
   ],
 }))
 
-vi.mock('../../components/recepcion/DatosPersonalesCard', () => ({
-  default: () => <div data-testid="datos-personales-card">DatosPersonalesCard</div>,
-}))
-
-vi.mock('../../components/recepcion/PlanPagoCard', () => ({
-  default: () => <div data-testid="plan-pago-card">PlanPagoCard</div>,
-}))
-
-vi.mock('../../components/recepcion/SaludCard', () => ({
-  default: () => <div data-testid="salud-card">SaludCard</div>,
-}))
-
-vi.mock('../../components/recepcion/SocioResumenSidebar', () => ({
-  default: ({ onSubmit }) => (
-    <div data-testid="socio-resumen-sidebar">
-      <button onClick={onSubmit}>Crear socio sidebar</button>
-    </div>
-  ),
-}))
-
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
 
 import { useSociosList, useSocioMutations } from '../../hooks/queries/useSociosData'
+import { usePlanesQuery } from '../../hooks/queries/usePlanesAdmin'
+import { cobrarManual } from '../../services/pagosService'
 
 const mockSocios = [
   { id: 1, nombre: 'Ana', apellido: 'García', estado: 'activo', dni: '11111111' },
   { id: 2, nombre: 'Luis', apellido: 'Herrera', estado: 'activo', dni: '22222222' },
 ]
 
+const mockPlanes = [
+  { id: 1, nombre: 'Básico', precio: 8000, activo: true },
+  { id: 2, nombre: 'Premium', precio: 12000, activo: true },
+]
+
 const defaultMutations = {
-  create: { mutateAsync: vi.fn().mockResolvedValue({}), isLoading: false },
-  patch: { mutateAsync: vi.fn(), isLoading: false },
-  baja: { mutateAsync: vi.fn(), isLoading: false },
-  certificado: { mutateAsync: vi.fn(), isLoading: false },
+  create: { mutateAsync: vi.fn().mockResolvedValue({ id: 99, nombre: 'Ana', apellido: 'García', numero_socio: 'S-00099', email: '' }), isPending: false },
+  patch: { mutateAsync: vi.fn(), isPending: false },
+  baja: { mutateAsync: vi.fn(), isPending: false },
+  certificado: { mutateAsync: vi.fn(), isPending: false },
+  reactivar: { mutateAsync: vi.fn(), isPending: false },
 }
 
 function setupMocks(overrides = {}) {
@@ -86,6 +81,12 @@ function setupMocks(overrides = {}) {
     ...overrides.list,
   })
   useSocioMutations.mockReturnValue({ ...defaultMutations, ...overrides.mutations })
+  usePlanesQuery.mockReturnValue({
+    data: mockPlanes,
+    isLoading: false,
+    ...overrides.planes,
+  })
+  cobrarManual.mockResolvedValue({ id: 1 })
 }
 
 describe('GestionSociosPage', () => {
@@ -163,20 +164,18 @@ describe('GestionSociosPage', () => {
     fireEvent.click(screen.getByText('Alta en Recepción'))
 
     await waitFor(() => {
-      expect(screen.getByTestId('datos-personales-card')).toBeInTheDocument()
+      expect(screen.getByText('Datos del socio')).toBeInTheDocument()
     })
   })
 
-  // ── 8. Form tab shows all card components ─────────────────────────────────
-  it('form tab renders DatosPersonalesCard, PlanPagoCard, SaludCard', async () => {
+  // ── 8. Form tab shows plan select ─────────────────────────────────────────
+  it('form tab renders plan select with planes from API', async () => {
     renderWithProviders(<GestionSociosPage />)
 
     fireEvent.click(screen.getByText('Alta en Recepción'))
 
     await waitFor(() => {
-      expect(screen.getByTestId('datos-personales-card')).toBeInTheDocument()
-      expect(screen.getByTestId('plan-pago-card')).toBeInTheDocument()
-      expect(screen.getByTestId('salud-card')).toBeInTheDocument()
+      expect(screen.getByTestId('plan-select')).toBeInTheDocument()
     })
   })
 
@@ -227,5 +226,97 @@ describe('GestionSociosPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Ana')).toBeInTheDocument()
     })
+  })
+
+  // ── Contract test 5 — fix #223 ────────────────────────────────────────────
+  it('alta recepción creates socio + cobro successfully', async () => {
+    const mockCreate = vi.fn().mockResolvedValue({
+      id: 99,
+      nombre: 'Eduardo',
+      apellido: 'Nuevo',
+      numero_socio: 'S-00099',
+      email: '',
+      usuario_id: 55,
+    })
+    useSocioMutations.mockReturnValue({
+      ...defaultMutations,
+      create: { mutateAsync: mockCreate, isPending: false },
+    })
+    cobrarManual.mockResolvedValue({ id: 10 })
+
+    renderWithProviders(<GestionSociosPage />)
+
+    fireEvent.click(screen.getByText('Alta en Recepción'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('plan-select')).toBeInTheDocument()
+    })
+
+    // Fill the form
+    fireEvent.change(screen.getByPlaceholderText('Ej. Ana'), { target: { value: 'Eduardo' } })
+    fireEvent.change(screen.getByPlaceholderText('Ej. González'), { target: { value: 'Nuevo' } })
+    fireEvent.change(screen.getByTestId('dni-input'), { target: { value: '33333333' } })
+    fireEvent.change(screen.getByTestId('telefono-input'), { target: { value: '+5493511234567' } })
+    fireEvent.change(screen.getByTestId('plan-select'), { target: { value: '1' } })
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('submit-alta'))
+    })
+
+    await waitFor(() => {
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ nombre: 'Eduardo', apellido: 'Nuevo', dni: '33333333' })
+      )
+      expect(cobrarManual).toHaveBeenCalledWith(
+        expect.objectContaining({ socio_id: 99, plan_id: 1 })
+      )
+    })
+  })
+
+  // ── Contract test 6 — fix #223 ────────────────────────────────────────────
+  it('alta recepción shows partial failure UI when cobro fails', async () => {
+    const mockCreate = vi.fn().mockResolvedValue({
+      id: 99,
+      nombre: 'Eduardo',
+      apellido: 'Nuevo',
+      numero_socio: 'S-00099',
+      email: 'edu@test.com',
+      usuario_id: 55,
+    })
+    useSocioMutations.mockReturnValue({
+      ...defaultMutations,
+      create: { mutateAsync: mockCreate, isPending: false },
+    })
+    cobrarManual.mockRejectedValue({
+      response: { data: { detail: 'Saldo insuficiente' } },
+    })
+
+    renderWithProviders(<GestionSociosPage />)
+
+    fireEvent.click(screen.getByText('Alta en Recepción'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('plan-select')).toBeInTheDocument()
+    })
+
+    // Fill form
+    fireEvent.change(screen.getByPlaceholderText('Ej. Ana'), { target: { value: 'Eduardo' } })
+    fireEvent.change(screen.getByPlaceholderText('Ej. González'), { target: { value: 'Nuevo' } })
+    fireEvent.change(screen.getByTestId('dni-input'), { target: { value: '33333333' } })
+    fireEvent.change(screen.getByTestId('telefono-input'), { target: { value: '+5493511234567' } })
+    fireEvent.change(screen.getByTestId('plan-select'), { target: { value: '1' } })
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('submit-alta'))
+    })
+
+    await waitFor(() => {
+      expect(screen.getByTestId('partial-failure-card')).toBeInTheDocument()
+    })
+
+    // Partial failure card should have "Ir a Cobros Manuales" button
+    expect(screen.getByText(/Ir a Cobros Manuales/i)).toBeInTheDocument()
+    // Should show cobro error
+    expect(screen.getByText(/Saldo insuficiente/i)).toBeInTheDocument()
   })
 })

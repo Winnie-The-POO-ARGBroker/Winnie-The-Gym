@@ -3,6 +3,7 @@ import { Check, UserPlus, Edit, AlertCircle, FileText, CheckCircle2 } from 'luci
 import Button from '../ui/Button'
 import Modal from '../ui/Modal'
 import { MAX_CERT_FILE_SIZE, CERT_ACCEPT_ATTR } from '../../constants/files'
+import { validateDni, validateTelefono, validateEmail } from '../../utils/validation'
 
 export default function SocioFormModal({
   isOpen,
@@ -59,11 +60,12 @@ export default function SocioFormModal({
     const errs = {}
     if (!formData.nombre?.trim()) errs.nombre = 'El nombre es obligatorio'
     if (!formData.apellido?.trim()) errs.apellido = 'El apellido es obligatorio'
-    if (!formData.dni?.trim()) {
-      errs.dni = 'El DNI es obligatorio'
-    } else if (!/^\d{7,10}$/.test(formData.dni.trim())) {
-      errs.dni = 'DNI inválido (debe tener entre 7 y 10 dígitos numéricos)'
-    }
+    const dniError = validateDni(formData.dni?.trim() ?? '')
+    if (dniError) errs.dni = dniError
+    const telefonoError = validateTelefono(formData.telefono?.trim() ?? '')
+    if (telefonoError) errs.telefono = telefonoError
+    const emailError = validateEmail(formData.email?.trim() ?? '')
+    if (emailError) errs.email = emailError
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
@@ -181,15 +183,22 @@ export default function SocioFormModal({
           {/* Teléfono */}
           <div>
             <label className="block text-xs font-medium text-text-secondary mb-1">
-              Teléfono
+              Teléfono <span className="text-error-500">*</span>
             </label>
             <input
               type="text"
               value={formData.telefono}
               onChange={(e) => handleChange('telefono', e.target.value)}
-              placeholder="Ej. 11 4567-8901"
-              className="w-full px-3 py-2 rounded-xl text-sm bg-bg-raised border border-subtle text-text-primary focus:outline-none focus:border-orange-500 transition-colors"
+              placeholder="Ej. +54 9 351 1234567"
+              className={`w-full px-3 py-2 rounded-xl text-sm bg-bg-raised border ${
+                errors.telefono ? 'border-error-500' : 'border-subtle'
+              } text-text-primary focus:outline-none focus:border-orange-500 transition-colors`}
             />
+            {errors.telefono && (
+              <p className="text-xs text-error-500 mt-1 flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" /> {errors.telefono}
+              </p>
+            )}
           </div>
         </div>
 
@@ -204,8 +213,16 @@ export default function SocioFormModal({
               value={formData.email}
               onChange={(e) => handleChange('email', e.target.value)}
               placeholder="Ej. socio@correo.com"
-              className="w-full px-3 py-2 rounded-xl text-sm bg-bg-raised border border-subtle text-text-primary focus:outline-none focus:border-orange-500 transition-colors"
+              className={`w-full px-3 py-2 rounded-xl text-sm bg-bg-raised border ${
+                errors.email ? 'border-error-500' : 'border-subtle'
+              } text-text-primary focus:outline-none focus:border-orange-500 transition-colors`}
+              data-testid="email-input"
             />
+            {errors.email && (
+              <p className="text-xs text-error-500 mt-1 flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" /> {errors.email}
+              </p>
+            )}
           </div>
 
           {/* Estado */}
