@@ -13,6 +13,7 @@ export default function PlanCard({ plan, onEdit, onArchive, onDelete, onDuplicat
 
   return (
     <div
+      data-testid={`plan-row-${plan.id}`}
       className={`relative flex flex-col justify-between rounded-2xl p-6 transition-all duration-200 ${
         isPopular
           ? 'bg-bg-surface border-2 border-orange-500 shadow-[0_0_25px_rgba(255,87,34,0.2)]'
@@ -89,6 +90,7 @@ export default function PlanCard({ plan, onEdit, onArchive, onDelete, onDuplicat
         <div className="flex items-center gap-2 pt-4 border-t border-subtle">
           <button
             onClick={() => onEdit(plan)}
+            data-testid="btn-editar-plan"
             className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-bg-raised hover:bg-bg-surface hover:border-orange-500/50 border border-subtle text-text-primary text-xs font-semibold transition-colors"
           >
             <Edit2 className="w-3.5 h-3.5 text-text-secondary" />
@@ -109,6 +111,7 @@ export default function PlanCard({ plan, onEdit, onArchive, onDelete, onDuplicat
           {onDelete && (
             <button
               onClick={() => onDelete(plan)}
+              data-testid="btn-eliminar-plan"
               className="flex items-center justify-center p-2.5 rounded-xl bg-bg-raised hover:bg-error-500/10 text-text-tertiary hover:text-error-500 border border-subtle transition-colors"
               title="Eliminar plan"
             >

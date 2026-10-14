@@ -68,6 +68,7 @@ export default function EmailPasswordForm({ onSuccess }) {
           type="email"
           placeholder="tu@email.com"
           autoComplete="email"
+          data-testid="login-email"
           {...register('email')}
         />
         {errors.email && (
@@ -81,6 +82,7 @@ export default function EmailPasswordForm({ onSuccess }) {
           type="password"
           placeholder="••••••••"
           autoComplete="current-password"
+          data-testid="login-password"
           {...register('password')}
         />
         {errors.password && (
@@ -88,7 +90,7 @@ export default function EmailPasswordForm({ onSuccess }) {
         )}
       </div>
 
-      <Button type="submit" variant="primary" size="lg" loading={loading} className="w-full">
+      <Button type="submit" variant="primary" size="lg" loading={loading} className="w-full" data-testid="login-submit">
         Iniciar sesión
       </Button>
     </form>
