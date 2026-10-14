@@ -40,7 +40,9 @@ class GymConfig(models.Model):
     def save(self, *args, **kwargs):
         # Enforce singleton: always write to pk=1.
         self.pk = 1
-        self.full_clean()
+        # Only run model-level clean(); skip validate_unique() because it
+        # trips on the singleton's own pk=1 the second time it is saved.
+        self.clean()
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
