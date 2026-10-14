@@ -1,38 +1,56 @@
 import Button from '../ui/Button'
 import QRCode from './QRCode'
 
+/**
+ * QRDisplay — inline QR code card shown on the credential page.
+ *
+ * Props:
+ *  qrToken         — raw QR token string
+ *  timeLeft        — seconds remaining (from useCredentialState)
+ *  maxTime         — max seconds (from useCredentialState)
+ *  isRefreshing    — true while a refresh is in flight
+ *  isExpired       — membership expired flag
+ *  isStale         — true when the QR couldn't be refreshed (network error)
+ *  onRefresh       — callback to trigger manual refresh
+ *  onOpenFullscreen — callback to open fullscreen modal
+ */
 export default function QRDisplay({
   qrToken,
   timeLeft,
-  maxTime,
+  maxTime = 30,
   isRefreshing,
   isExpired,
+  isStale = false,
   onRefresh,
   onOpenFullscreen,
 }) {
   const progressPercent = ((maxTime - timeLeft) / maxTime) * 100
   const strokeDashoffset = 100 - progressPercent
 
+  // High-contrast black for readable QR codes (RNF07)
+  const qrFgColor = isExpired ? '#666666' : '#000000'
+
   return (
     <div className="my-4 flex flex-col items-center justify-center">
       <div
         className={`p-3.5 rounded-xl transition-all relative ${
-          isExpired
+          isExpired || isStale
             ? 'bg-bg-raised border border-error-500/40 opacity-70'
             : 'bg-white shadow-lg ring-4 ring-primary/20'
         }`}
       >
+        {/* Responsive QR — minimum 180px inline, fullscreen handled by QRFullscreenModal */}
         <QRCode
           value={qrToken}
-          size={170}
-          fgColor={isExpired ? '#666666' : '#121212'}
+          size={180}
+          fgColor={qrFgColor}
           bgColor="#FFFFFF"
-          includeLogo={!isExpired}
+          includeLogo={!isExpired && !isStale}
         />
 
-        {/* Watermark si está vencida */}
-        {isExpired && (
-          <div className="absolute inset-0 bg-neutral-950/80 backdrop-blur-[1px] rounded-xl flex flex-col items-center justify-center p-2 text-center">{/* overlay — no token yet */}
+        {/* Expired membership overlay */}
+        {isExpired && !isStale && (
+          <div className="absolute inset-0 bg-neutral-950/80 backdrop-blur-[1px] rounded-xl flex flex-col items-center justify-center p-2 text-center">
             <span className="text-xs font-bold text-error-500 uppercase tracking-wide">
               Acceso Bloqueado
             </span>
@@ -41,9 +59,27 @@ export default function QRDisplay({
             </span>
           </div>
         )}
+
+        {/* Stale QR overlay — network failure (#157) */}
+        {isStale && (
+          <div className="absolute inset-0 bg-neutral-950/80 backdrop-blur-[1px] rounded-xl flex flex-col items-center justify-center p-2 text-center gap-1">
+            <span className="text-xs font-bold text-warning-400 uppercase tracking-wide">
+              Desactualizado
+            </span>
+            <span className="text-[10px] text-text-secondary">
+              Sin conexión
+            </span>
+            <button
+              onClick={onRefresh}
+              className="mt-1 text-[10px] text-primary underline font-medium"
+            >
+              Reintentar
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Temporizador de rotación de 30 segundos */}
+      {/* Countdown timer */}
       <div className="mt-3 flex items-center gap-2.5">
         <div className="relative w-6 h-6 flex items-center justify-center">
           <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
@@ -55,7 +91,7 @@ export default function QRDisplay({
               d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
             />
             <path
-              className={isExpired ? 'text-neutral-600' : 'text-primary'}
+              className={isExpired || isStale ? 'text-neutral-600' : 'text-primary'}
               strokeDasharray="100, 100"
               strokeDashoffset={strokeDashoffset}
               strokeWidth="3.5"
@@ -75,7 +111,7 @@ export default function QRDisplay({
             Token dinámico seguro
           </span>
           <span className="text-[10px] text-text-tertiary">
-            Se actualiza automáticamente cada 30s
+            Se actualiza automáticamente
           </span>
         </div>
 
@@ -100,7 +136,7 @@ export default function QRDisplay({
         </Button>
       </div>
 
-      {/* Botón pantalla completa */}
+      {/* Fullscreen button */}
       <Button
         variant="secondary"
         size="md"
