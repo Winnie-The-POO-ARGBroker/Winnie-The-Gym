@@ -5,14 +5,188 @@ Filters passed in by the view are honored so that exported data matches the
 listing the user was looking at.
 """
 from datetime import date, datetime, time
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.utils import timezone
 
 from apps.access.models import AccessLog
 from apps.memberships.models import Membresia
 from apps.payments.models import Pago
+
+
+# ---------------------------------------------------------------------------
+# Resumen / Dashboard (server-side aggregation — fix #183)
+# ---------------------------------------------------------------------------
+
+def _parse_mes(mes_str):
+    """Parse 'YYYY-MM' string into (year, month). Defaults to current month."""
+    if mes_str:
+        try:
+            year, month = [int(x) for x in mes_str.split('-', 1)]
+            return year, month
+        except (ValueError, TypeError):
+            pass
+    today = timezone.localdate()
+    return today.year, today.month
+
+
+def _month_range(year, month):
+    """Return (start_dt, end_dt) for a calendar month in the local timezone."""
+    tz = timezone.get_current_timezone()
+    start = datetime(year, month, 1, tzinfo=tz)
+    if month == 12:
+        end = datetime(year + 1, 1, 1, tzinfo=tz)
+    else:
+        end = datetime(year, month + 1, 1, tzinfo=tz)
+    return start, end
+
+
+def _prev_month(year, month):
+    if month == 1:
+        return year - 1, 12
+    return year, month - 1
+
+
+def _ingresos_mes(year, month, plan_id=None):
+    """Total of approved payments for a given (year, month)."""
+    start, end = _month_range(year, month)
+    qs = Pago.objects.filter(
+        estado=Pago.Estado.APROBADO,
+        paid_at__gte=start,
+        paid_at__lt=end,
+    )
+    if plan_id:
+        qs = qs.filter(plan_id=plan_id)
+    total = qs.aggregate(total=Sum('monto'))['total'] or Decimal('0')
+    return total
+
+
+def build_resumen(mes=None, plan_id=None):
+    """Build the full dashboard summary JSON for a given month + optional plan filter.
+
+    Returns a dict matching the contract:
+    {
+      "ingresos": {"mes_actual": X, "mes_anterior": Y, "variacion_pct": Z, "serie_6_meses": [...]},
+      "morosos":  {"cantidad": N, "monto_total": M, "tasa_pct": P},
+      "membresias": {"activas": A, "por_vencer_7d": V, "nuevas_mes": NM},
+      "asistencia": {"promedio_dia": {"lun": ..., "mar": ..., ...}},
+    }
+    """
+    year, month = _parse_mes(mes)
+    plan_id = int(plan_id) if plan_id else None
+
+    # ---- Ingresos ----
+    mes_actual = _ingresos_mes(year, month, plan_id)
+    py, pm = _prev_month(year, month)
+    mes_anterior = _ingresos_mes(py, pm, plan_id)
+
+    if mes_anterior and mes_anterior != 0:
+        variacion_pct = float(
+            ((mes_actual - mes_anterior) / mes_anterior * 100).quantize(Decimal('0.1'), rounding=ROUND_HALF_UP)
+        )
+    else:
+        variacion_pct = None
+
+    # Last 6 months series (oldest → newest)
+    serie_6_meses = []
+    cy, cm = year, month
+    months_back = []
+    for _ in range(6):
+        months_back.append((cy, cm))
+        cy, cm = _prev_month(cy, cm)
+    months_back.reverse()
+    for sy, sm in months_back:
+        start, end = _month_range(sy, sm)
+        label = f'{sy}-{sm:02d}'
+        total = _ingresos_mes(sy, sm, plan_id)
+        serie_6_meses.append({'mes': label, 'total': float(total)})
+
+    # ---- Morosos ----
+    today = timezone.localdate()
+    morosos_qs = Membresia.objects.filter(
+        estado__in=[Membresia.Estado.VENCIDA, Membresia.Estado.PENDIENTE_PAGO],
+        fecha_fin__lte=today,
+    )
+    if plan_id:
+        morosos_qs = morosos_qs.filter(plan_id=plan_id)
+    morosos_count = morosos_qs.count()
+    # Use the plan price as the owed amount per delinquent membership
+    monto_morosos = morosos_qs.select_related('plan').aggregate(
+        total=Sum('plan__precio')
+    )['total'] or Decimal('0')
+
+    total_socios = Membresia.objects.values('socio_id').distinct().count() or 1
+    tasa_pct = float(
+        (Decimal(morosos_count) / Decimal(total_socios) * 100).quantize(Decimal('0.1'), rounding=ROUND_HALF_UP)
+    )
+
+    # ---- Membresías ----
+    activas_qs = Membresia.objects.filter(estado=Membresia.Estado.ACTIVA)
+    if plan_id:
+        activas_qs = activas_qs.filter(plan_id=plan_id)
+    activas = activas_qs.count()
+
+    vencer_7d = activas_qs.filter(
+        fecha_fin__lte=today + timezone.timedelta(days=7),
+        fecha_fin__gte=today,
+    ).count()
+
+    start_mes, end_mes = _month_range(year, month)
+    nuevas_qs = Membresia.objects.filter(
+        created_at__gte=start_mes,
+        created_at__lt=end_mes,
+    )
+    if plan_id:
+        nuevas_qs = nuevas_qs.filter(plan_id=plan_id)
+    nuevas_mes = nuevas_qs.count()
+
+    # ---- Asistencia por día de semana ----
+    day_names = ['lun', 'mar', 'mie', 'jue', 'vie', 'sab', 'dom']
+    # Use the target month for attendance aggregation
+    a_start, a_end = _month_range(year, month)
+    entries = AccessLog.objects.filter(
+        access_type=AccessLog.AccessType.ENTRY,
+        status=AccessLog.AccessStatus.GRANTED,
+        timestamp__gte=a_start,
+        timestamp__lt=a_end,
+    )
+    tz = timezone.get_current_timezone()
+    counts = {d: 0 for d in day_names}
+    days_seen = {d: set() for d in day_names}
+    for entry in entries.values('timestamp'):
+        local_dt = entry['timestamp'].astimezone(tz)
+        day_key = day_names[local_dt.weekday()]
+        day_date = local_dt.date()
+        days_seen[day_key].add(day_date)
+        counts[day_key] += 1
+
+    promedio_dia = {}
+    for d in day_names:
+        n_days = len(days_seen[d]) or 1
+        promedio_dia[d] = round(counts[d] / n_days, 1)
+
+    return {
+        'ingresos': {
+            'mes_actual': float(mes_actual),
+            'mes_anterior': float(mes_anterior),
+            'variacion_pct': variacion_pct,
+            'serie_6_meses': serie_6_meses,
+        },
+        'morosos': {
+            'cantidad': morosos_count,
+            'monto_total': float(monto_morosos),
+            'tasa_pct': tasa_pct,
+        },
+        'membresias': {
+            'activas': activas,
+            'por_vencer_7d': vencer_7d,
+            'nuevas_mes': nuevas_mes,
+        },
+        'asistencia': {
+            'promedio_dia': promedio_dia,
+        },
+    }
 
 
 # ---------------------------------------------------------------------------

@@ -18,21 +18,16 @@ vi.mock('../../../hooks/queries/usePlanes', () => ({
 }))
 
 vi.mock('../../../hooks/queries/useReportes', () => ({
-  useReportMetrics: vi.fn(() => ({
+  useReportesResumen: vi.fn(() => ({
     data: {
-      ingresosMesFormatted: '$ 0',
-      vsAnteriorFormatted: '+0%',
-      chartPath: 'M 0,80 L 100,70',
-      asistenciaBars: [10, 10, 10, 10, 10, 10, 10],
-      morososCount: 0,
-      adeudadoFormatted: '$ 0',
-      morosidadTasa: '0%',
-      morosidadPct: 0,
-      activasCount: '0',
-      porVencerCount: 0,
-      nuevasMesCount: 0,
+      ingresos:    { mes_actual: 0, mes_anterior: 0, variacion_pct: 0, serie_6_meses: [] },
+      morosos:     { cantidad: 0, monto_total: 0, tasa_pct: 0 },
+      membresias:  { activas: 0, por_vencer_7d: 0, nuevas_mes: 0 },
+      asistencia:  { promedio_dia: {} },
     },
     isLoading: false,
+    isError: false,
+    refetch: vi.fn(),
   })),
 }))
 

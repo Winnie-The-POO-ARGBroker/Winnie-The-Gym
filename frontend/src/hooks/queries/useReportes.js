@@ -3,6 +3,33 @@ import api from '../../services/api'
 import { REPORT_FETCH_LIMIT } from '../../constants/pagination'
 
 export const REPORTES_QUERY_KEY = ['reportes', 'metrics']
+export const REPORTES_RESUMEN_QUERY_KEY = (params = {}) => ['reportes', 'resumen', params]
+
+/**
+ * Fetches server-side pre-computed report summary from /api/reportes/resumen/.
+ * Accepts optional filters: { mes: 'YYYY-MM', plan_id: number }.
+ *
+ * Returns the raw API shape:
+ *   ingresos: { mes_actual, mes_anterior, variacion_pct, serie_6_meses }
+ *   morosos:  { cantidad, monto_total, tasa_pct }
+ *   membresias: { activas, por_vencer_7d, nuevas_mes }
+ *   asistencia: { promedio_dia: { lun, mar, mie, jue, vie, sab, dom } }
+ */
+export function useReportesResumen({ mes, plan_id } = {}) {
+  const params = {}
+  if (mes) params.mes = mes
+  if (plan_id) params.plan_id = plan_id
+
+  return useQuery({
+    queryKey: REPORTES_RESUMEN_QUERY_KEY(params),
+    queryFn: async () => {
+      const res = await api.get('/reportes/resumen/', { params })
+      return res.data
+    },
+    staleTime: 2 * 60_000,
+    retry: 1,
+  })
+}
 
 /**
  * Fetches the three raw data sources needed to compute dashboard metrics,
