@@ -11,28 +11,28 @@ export default function MemberLayout({
   const { theme, toggleTheme } = useThemeStore()
 
   return (
-    <div className="min-h-screen bg-bg-base flex justify-center md:justify-start selection:bg-primary selection:text-white">
+    <div className="min-h-dvh bg-bg-base flex justify-center md:justify-start selection:bg-primary selection:text-white">
 
       {/* Desktop Sidebar */}
       <Sidebar />
 
       {/* Content Frame */}
-      <div className="w-full sm:max-w-sm md:max-w-none md:flex-1 min-h-screen bg-bg-base text-text-primary flex flex-col relative sm:shadow-2xl sm:border-x sm:border-subtle md:shadow-none md:border-x-0">
+      <div className="w-full sm:max-w-sm md:max-w-none md:flex-1 min-h-dvh bg-bg-base text-text-primary flex flex-col relative sm:shadow-2xl sm:border-x sm:border-subtle md:shadow-none md:border-x-0">
 
         {/* Header Superior */}
         <header className="sticky top-0 z-20 bg-bg-surface backdrop-blur-md px-5 pt-3 pb-3 flex items-center justify-between border-b border-subtle">
-          <div className="flex flex-col">
-            <h1 className="text-lg font-bold text-text-primary tracking-tight leading-tight">
+          <div className="flex flex-col min-w-0 flex-1">
+            <h1 className="text-lg font-bold text-text-primary tracking-tight leading-tight truncate">
               {title || 'Winnie The Gym'}
             </h1>
             {subtitle && (
-              <p className="text-xs text-text-tertiary mt-0.5 leading-tight">
+              <p className="text-xs text-text-tertiary mt-0.5 leading-tight truncate">
                 {subtitle}
               </p>
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             {rightAction}
             <button
               onClick={toggleTheme}
@@ -56,7 +56,10 @@ export default function MemberLayout({
         </header>
 
         {/* Main Content */}
-        <main className="flex-1 px-5 py-4 pb-24 md:pb-4 overflow-y-auto">
+        <main
+          className="flex-1 px-5 py-4 overflow-y-auto"
+          style={{ paddingBottom: 'max(6rem, calc(env(safe-area-inset-bottom) + 5rem))' }}
+        >
           {children}
         </main>
 

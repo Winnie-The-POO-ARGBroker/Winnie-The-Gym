@@ -1,0 +1,113 @@
+{
+  "browser": "Chromium 153.0.8010.12 (Playwright)",
+  "capturedAt": "2026-10-13T14:09:36.955Z",
+  "apiCalls": {
+    "admin": [
+      {
+        "method": "GET",
+        "url": "/api/classes/clases/?limit=5",
+        "status": 200,
+        "count": 4,
+        "results": 4
+      },
+      {
+        "method": "GET",
+        "url": "/api/auth/profile/",
+        "status": 404,
+        "detail": "No Socio matches the given query."
+      },
+      {
+        "method": "GET",
+        "url": "/api/auth/profile/",
+        "status": 404,
+        "detail": "No Socio matches the given query."
+      }
+    ],
+    "recepcion": [
+      {
+        "method": "GET",
+        "url": "/api/classes/clases/?page_size=1000",
+        "status": 200,
+        "count": 4,
+        "results": 4
+      },
+      {
+        "method": "GET",
+        "url": "/api/classes/clases/1/",
+        "status": 200
+      }
+    ],
+    "admin-socios": [
+      {
+        "method": "GET",
+        "url": "/api/classes/clases/?limit=5",
+        "status": 200,
+        "count": 4,
+        "results": 4
+      },
+      {
+        "method": "GET",
+        "url": "/api/members/socios/stats/",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "url": "/api/members/socios/?page=1&search=&estado=&con_certificado=&ordering=-created_at&page_size=10",
+        "status": 200,
+        "count": 8,
+        "results": 8
+      },
+      {
+        "method": "GET",
+        "url": "/api/payments/pagos/?socio_id=9",
+        "status": 200,
+        "count": 2,
+        "results": 2
+      }
+    ],
+    "socio-nuevo": [
+      {
+        "method": "GET",
+        "url": "/api/auth/profile/",
+        "status": 200
+      }
+    ],
+    "socio-mobile": [
+      {
+        "method": "GET",
+        "url": "/api/classes/clases/?page_size=1000",
+        "status": 200,
+        "count": 4,
+        "results": 4
+      },
+      {
+        "method": "GET",
+        "url": "/api/auth/profile/",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "url": "/api/payments/pagos/mis-pagos/",
+        "status": 200,
+        "count": 0,
+        "results": 0
+      }
+    ]
+  },
+  "bug04FinalUrl": "http://localhost:5173/admin/clases/asistencia",
+  "bugSoc02NonGetApiRequestsAfterUpload": 0,
+  "bugMob02": {
+    "/socio/credencial": {
+      "bottomNavVisible": true
+    },
+    "/dashboard": {
+      "bottomNavVisible": false
+    },
+    "/perfil": {
+      "bottomNavVisible": false
+    },
+    "/socio/pagos": {
+      "bottomNavVisible": false
+    }
+  }
+}

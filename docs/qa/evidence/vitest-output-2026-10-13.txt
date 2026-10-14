@@ -1,0 +1,134 @@
+# docker exec winnie-the-gym-frontend-1 npx vitest run <6 archivos de test citados en los casos> --reporter=verbose --coverage.enabled=false
+# Ejecutado el 13/10/2026 en el repo Winnie-The-Gym (rama develop). Solo los 6 archivos de test citados por los casos TC-LOGIN/PLANES-UI/CREDENCIAL/REPORTES-UI.
+
+
+ RUN  v4.1.11 /app
+
+ ✓ src/components/socio/QRDisplay.test.jsx > QRDisplay > renders QRCode component 373ms
+ ✓ src/components/socio/QRDisplay.test.jsx > QRDisplay > renders time left countdown 89ms
+ ✓ src/components/socio/QRDisplay.test.jsx > QRDisplay > renders "Token dinámico seguro" label 40ms
+ ✓ src/components/socio/QRDisplay.test.jsx > QRDisplay > renders "Ver QR en pantalla completa" button 36ms
+ ✓ src/components/socio/QRDisplay.test.jsx > QRDisplay > calls onOpenFullscreen when fullscreen button is clicked 155ms
+ ✓ src/components/socio/QRDisplay.test.jsx > QRDisplay > calls onRefresh when refresh button is clicked 1024ms
+ ✓ src/components/socio/QRDisplay.test.jsx > QRDisplay > shows "Acceso Bloqueado" overlay when isExpired is true 61ms
+ ✓ src/components/socio/QRDisplay.test.jsx > QRDisplay > does not show "Acceso Bloqueado" when not expired 26ms
+ ✓ src/components/socio/QRDisplay.test.jsx > QRDisplay > renders spinning icon when isRefreshing is true 92ms
+ ✓ src/components/recepcion/__tests__/ReportExportButtons.test.jsx > ReportExportButtons component > renders all three export buttons (PDF, Excel, CSV) 1392ms
+ ✓ src/components/admin/__tests__/PlanFormModal.test.jsx > PlanFormModal > renders when isOpen is true 587ms
+ ✓ src/components/admin/__tests__/PlanFormModal.test.jsx > PlanFormModal > does not render when isOpen is false 7ms
+ ✓ src/components/auth/__tests__/EmailPasswordForm.test.jsx > EmailPasswordForm > renders email and password fields 1573ms
+ ✓ src/components/recepcion/__tests__/ReportExportButtons.test.jsx > ReportExportButtons component > triggers onExport with corresponding format on click 419ms
+ ✓ src/components/recepcion/__tests__/ReportExportButtons.test.jsx > ReportExportButtons component > disables all buttons when downloadingFormat is active 213ms
+ ✓ src/components/recepcion/__tests__/ReportExportButtons.test.jsx > ReportExportButtons component > disables all buttons when disabled prop is true 180ms
+ ✓ src/components/auth/__tests__/EmailPasswordForm.test.jsx > EmailPasswordForm > shows validation error for invalid email 551ms
+ ✓ src/components/auth/__tests__/EmailPasswordForm.test.jsx > EmailPasswordForm > shows validation error for short password 461ms
+stderr | src/pages/socio/CredencialDigitalPage.test.jsx > CredencialDigitalPage > shows loading message when isLoading is true
+Warning: An update to CredencialDigitalPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at CredencialDigitalPage (/app/src/pages/socio/CredencialDigitalPage.jsx:23:84)
+    at Router (file:///app/node_modules/react-router/dist/development/chunk-OB3PAWPO.mjs:7134:13)
+    at MemoryRouter (file:///app/node_modules/react-router/dist/development/chunk-OB3PAWPO.mjs:7044:3)
+Warning: An update to CredencialDigitalPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at CredencialDigitalPage (/app/src/pages/socio/CredencialDigitalPage.jsx:23:84)
+    at Router (file:///app/node_modules/react-router/dist/development/chunk-OB3PAWPO.mjs:7134:13)
+    at MemoryRouter (file:///app/node_modules/react-router/dist/development/chunk-OB3PAWPO.mjs:7044:3)
+Warning: An update to CredencialDigitalPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at CredencialDigitalPage (/app/src/pages/socio/CredencialDigitalPage.jsx:23:84)
+    at Router (file:///app/node_modules/react-router/dist/development/chunk-OB3PAWPO.mjs:7134:13)
+    at MemoryRouter (file:///app/node_modules/react-router/dist/development/chunk-OB3PAWPO.mjs:7044:3)
+
+ ✓ src/components/auth/__tests__/EmailPasswordForm.test.jsx > EmailPasswordForm > calls api.post and navigates on successful login with complete profile 98ms
+ ✓ src/components/auth/__tests__/EmailPasswordForm.test.jsx > EmailPasswordForm > shows toast error on 401 credentials failure 97ms
+ ✓ src/pages/socio/CredencialDigitalPage.test.jsx > CredencialDigitalPage > renders "Credencial Digital" title 376ms
+ ✓ src/pages/socio/CredencialDigitalPage.test.jsx > CredencialDigitalPage > shows loading message when isLoading is true 31ms
+ ✓ src/pages/socio/CredencialDigitalPage.test.jsx > CredencialDigitalPage > shows EmptyState with "Credencial no disponible" when no member data 34ms
+ ✓ src/pages/socio/CredencialDigitalPage.test.jsx > CredencialDigitalPage > shows admin-specific empty state message for administrador role 20ms
+ ✓ src/pages/socio/CredencialDigitalPage.test.jsx > CredencialDigitalPage > renders MemberCardHeader with member name 74ms
+ ✓ src/pages/socio/CredencialDigitalPage.test.jsx > CredencialDigitalPage > renders QRDisplay component when member is loaded 49ms
+ ✓ src/pages/socio/CredencialDigitalPage.test.jsx > CredencialDigitalPage > shows MembershipExpiredAlert when membresia_activa estado is "vencida" 109ms
+ ✓ src/pages/socio/CredencialDigitalPage.test.jsx > CredencialDigitalPage > renders MemberPlanDetails when membresia is present 57ms
+ ✓ src/pages/socio/CredencialDigitalPage.test.jsx > CredencialDigitalPage > shows MembershipExpiredAlert when membresia_activa is null (no plan) 122ms
+ ✓ src/components/admin/__tests__/PlanFormModal.test.jsx > PlanFormModal > shows es_popular toggle 556ms
+ ✓ src/pages/socio/CredencialDigitalPage.test.jsx > CredencialDigitalPage > opens QRFullscreenModal when "Ver fullscreen" is clicked 138ms
+ ✓ src/pages/socio/CredencialDigitalPage.test.jsx > CredencialDigitalPage > closes QRFullscreenModal when close button is clicked 69ms
+stderr | src/pages/socio/CredencialDigitalPage.test.jsx > CredencialDigitalPage > shows toast.error when api.get for QR rejects
+Error al generar QR: Error: Network error
+    at /app/src/pages/socio/CredencialDigitalPage.test.jsx:276:31
+    at file:///app/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///app/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///app/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///app/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///app/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///app/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+    at file:///app/node_modules/@vitest/runner/dist/chunk-artifact.js:2956:64
+
+ ✓ src/components/admin/__tests__/PlanFormModal.test.jsx > PlanFormModal > shows duracion_dias select with valid options 1274ms
+ ✓ src/pages/socio/CredencialDigitalPage.test.jsx > CredencialDigitalPage > calls api.get to generate QR when member loads 83ms
+ ✓ src/pages/socio/CredencialDigitalPage.test.jsx > CredencialDigitalPage > calls api.get again when "Actualizar QR" is clicked 45ms
+ ✓ src/pages/socio/CredencialDigitalPage.test.jsx > CredencialDigitalPage > shows toast.error when api.get for QR rejects 70ms
+ ✓ src/pages/socio/CredencialDigitalPage.test.jsx > CredencialDigitalPage > renders "Sede Central" as sede habitual 12ms
+ ✓ src/pages/socio/CredencialDigitalPage.test.jsx > CredencialDigitalPage > activates screen wake lock when valid QR is present and deactivates when expired 76ms
+ ✓ src/pages/socio/CredencialDigitalPage.test.jsx > CredencialDigitalPage > disables screen wake lock when membership is expired 32ms
+ ✓ src/pages/socio/CredencialDigitalPage.test.jsx > CredencialDigitalPage > renders HighContrastToggle in MemberLayout rightAction 49ms
+ ✓ src/components/admin/__tests__/PlanFormModal.test.jsx > PlanFormModal > calls onSave with correct data when form is valid 229ms
+ ✓ src/components/admin/__tests__/PlanFormModal.test.jsx > PlanFormModal > shows inline error when nombre is empty on submit 194ms
+stderr | src/components/admin/__tests__/PlanFormModal.test.jsx > PlanFormModal > populates form when planToEdit is provided
+Warning: A component is changing a controlled input to be uncontrolled. This is likely caused by the value changing from a defined to undefined, which should not happen. Decide between using a controlled or uncontrolled input element for the lifetime of the component. More info: https://reactjs.org/link/controlled-components
+    at input
+    at div
+    at div
+    at div
+    at form
+    at div
+    at div
+    at Modal (/app/src/components/ui/Modal.jsx:6:3)
+    at PlanFormModal (/app/src/components/admin/PlanFormModal.jsx:13:26)
+
+ ✓ src/components/admin/__tests__/PlanFormModal.test.jsx > PlanFormModal > shows inline error when precio is negative on submit 373ms
+ ✓ src/components/admin/__tests__/PlanFormModal.test.jsx > PlanFormModal > populates form when planToEdit is provided 238ms
+ ✓ src/pages/admin/AdminPlanesPage.test.jsx > AdminPlanesPage > renders plan names from query 1204ms
+ ✓ src/pages/admin/AdminPlanesPage.test.jsx > AdminPlanesPage > renders plan prices from query 831ms
+ ✓ src/pages/admin/AdminPlanesPage.test.jsx > AdminPlanesPage > renders a PlanCard for each plan 70ms
+ ✓ src/pages/admin/AdminPlanesPage.test.jsx > AdminPlanesPage > shows empty state when planes list is empty 24ms
+ ✓ src/pages/admin/AdminPlanesPage.test.jsx > AdminPlanesPage > renders "Nuevo plan" button 18ms
+ ✓ src/pages/admin/AdminPlanesPage.test.jsx > AdminPlanesPage > opens PlanFormModal when "Nuevo plan" is clicked 88ms
+ ✓ src/pages/admin/AdminPlanesPage.test.jsx > AdminPlanesPage > opens modal when edit is triggered from PlanCard 90ms
+ ✓ src/pages/admin/AdminPlanesPage.test.jsx > AdminPlanesPage > calls deletePlan mutation when delete is triggered 43ms
+ ✓ src/pages/admin/AdminPlanesPage.test.jsx > AdminPlanesPage > shows toast.error when trying to delete the only plan 30ms
+ ✓ src/pages/admin/AdminPlanesPage.test.jsx > AdminPlanesPage > shows PlanComparativeTable when comparativa tab is selected 51ms
+ ✓ src/pages/admin/AdminPlanesPage.test.jsx > AdminPlanesPage > shows empty state in comparativa tab when no plans 31ms
+ ✓ src/pages/admin/AdminPlanesPage.test.jsx > AdminPlanesPage > renders PlanDistributionChart in tarjetas tab 14ms
+
+ Test Files  6 passed (6)
+      Tests  56 passed (56)
+   Start at  21:34:23
+   Duration  15.53s (transform 14.55s, setup 3.88s, import 37.65s, tests 14.61s, environment 18.46s)
+

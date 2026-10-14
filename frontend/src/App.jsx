@@ -1,5 +1,5 @@
 import { useEffect, Suspense, lazy } from 'react'
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import useThemeStore from './stores/themeStore'
 import Skeleton from './components/ui/Skeleton'
@@ -13,7 +13,6 @@ import ResetPasswordPage from './pages/ResetPasswordPage'
 import DashboardPage from './pages/DashboardPage'
 import ProfilePage from './pages/ProfilePage'
 import NotFoundPage from './pages/NotFoundPage'
-import ComingSoonPage from './pages/ComingSoonPage'
 import CredencialDigitalPage from './pages/socio/CredencialDigitalPage'
 import ClasesPage from './pages/socio/ClasesPage'
 import ProtectedRoute from './components/routing/ProtectedRoute'
@@ -26,6 +25,10 @@ import ClassSchedulePage from './pages/ClassSchedulePage'
 import AforoMonitorPage from './pages/recepcion/AforoMonitorPage'
 import GestionSociosPage from './pages/recepcion/GestionSociosPage'
 import ReportesPage from './pages/recepcion/ReportesPage'
+import ForbiddenPage from './pages/ForbiddenPage'
+import InternalErrorPage from './pages/InternalErrorPage'
+import ErrorBoundary from './components/error/ErrorBoundary'
+import ConnectionBanner from './components/system/ConnectionBanner'
 
 import AdminPlanesPage from './pages/admin/AdminPlanesPage'
 import AdminSociosPage from './pages/admin/AdminSociosPage'
@@ -38,7 +41,14 @@ import AuthActivationExpiredPage from './pages/AuthActivationExpiredPage'
 
 const AccesoTerminalPage = lazy(() => import('./pages/recepcion/AccesoTerminalPage'))
 
-const COMING_SOON_PATHS = []
+/**
+ * LegacyRedirect — preserves search params and hash when redirecting legacy routes (fix #163).
+ * Replaces plain <Navigate> so ?id= and other query params are not discarded.
+ */
+function LegacyRedirect({ to }) {
+  const { search, hash } = useLocation()
+  return <Navigate to={`${to}${search}${hash}`} replace />
+}
 
 function RoleBasedClasesRedirect() {
   const { user } = useAuth()
@@ -60,7 +70,8 @@ export default function App() {
   }, [theme])
 
   return (
-    <>
+    <ErrorBoundary>
+      <ConnectionBanner />
       <Toaster theme={theme} position="top-right" richColors />
       <Routes>
         {/* Public only — redirect to /dashboard if already logged in */}
@@ -92,10 +103,10 @@ export default function App() {
           <ProtectedRoute roles={['administrador', 'recepcionista']}><AttendancePage /></ProtectedRoute>
         } />
 
-        {/* Legacy redirects */}
-        <Route path="/clases/crear" element={<Navigate to="/admin/clases/crear" replace />} />
-        <Route path="/clases/asistencia" element={<Navigate to="/admin/clases/asistencia" replace />} />
-        <Route path="/membresias" element={<Navigate to="/admin/planes" replace />} />
+        {/* Legacy redirects — use LegacyRedirect to preserve search params (fix #163) */}
+        <Route path="/clases/crear" element={<LegacyRedirect to="/admin/clases/crear" />} />
+        <Route path="/clases/asistencia" element={<LegacyRedirect to="/admin/clases/asistencia" />} />
+        <Route path="/membresias" element={<LegacyRedirect to="/admin/planes" />} />
 
         {/* Admin planes */}
         <Route path="/admin/planes" element={
@@ -111,7 +122,7 @@ export default function App() {
         <Route path="/admin/usuarios" element={
           <ProtectedRoute roles={['administrador']}><AdminUsuariosPage /></ProtectedRoute>
         } />
-        <Route path="/socios" element={<Navigate to="/admin/socios" replace />} />
+        <Route path="/socios" element={<LegacyRedirect to="/admin/socios" />} />
 
         {/* Recepcion routes */}
         <Route path="/recepcion/acceso" element={
@@ -125,7 +136,7 @@ export default function App() {
         <Route path="/recepcion/socios" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><GestionSociosPage /></ProtectedRoute>} />
         <Route path="/recepcion/reportes" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><ReportesPage /></ProtectedRoute>} />
         <Route path="/admin/reportes" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><ReportesPage /></ProtectedRoute>} />
-        <Route path="/reportes" element={<Navigate to="/admin/reportes" replace />} />
+        <Route path="/reportes" element={<LegacyRedirect to="/admin/reportes" />} />
         <Route path="/recepcion/cobros" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><CobroManualPage /></ProtectedRoute>} />
 
         {/* Socio routes — mobile first */}
@@ -139,17 +150,16 @@ export default function App() {
         <Route path="/configuracion" element={<ProtectedRoute roles={['administrador']}><AdminConfiguracionPage /></ProtectedRoute>} />
         <Route path="/admin/configuracion" element={<ProtectedRoute roles={['administrador']}><AdminConfiguracionPage /></ProtectedRoute>} />
 
-        {/* Sidebar routes — protected, coming soon */}
-        {COMING_SOON_PATHS.map((path) => (
-          <Route key={path} path={path} element={<ProtectedRoute><ComingSoonPage /></ProtectedRoute>} />
-        ))}
-
         {/* Root → dashboard if logged in, login if not */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+        {/* Error pages */}
+        <Route path="/403" element={<ForbiddenPage />} />
+        <Route path="/500" element={<InternalErrorPage />} />
 
         {/* 404 */}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
-    </>
+    </ErrorBoundary>
   )
 }

@@ -349,9 +349,10 @@ export default function CreateClassPage() {
                   <input
                     type="number"
                     min="1"
+                    inputMode="numeric"
                     value={formData.cupo_maximo}
                     onChange={(e) => setFormData({ ...formData, cupo_maximo: Number(e.target.value) })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm font-semibold focus:outline-none focus:border-orange-500 transition-colors"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-base md:text-sm min-h-11 font-semibold focus:outline-none focus:border-orange-500 transition-colors"
                   />
                 </div>
 
@@ -362,9 +363,10 @@ export default function CreateClassPage() {
                   <input
                     type="number"
                     min="0"
+                    inputMode="numeric"
                     value={formData.lista_espera_max}
                     onChange={(e) => setFormData({ ...formData, lista_espera_max: Number(e.target.value) })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus:border-orange-500 transition-colors"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-base md:text-sm min-h-11 focus:outline-none focus:border-orange-500 transition-colors"
                   />
                 </div>
 
@@ -375,9 +377,10 @@ export default function CreateClassPage() {
                   <input
                     type="number"
                     min="0"
+                    inputMode="numeric"
                     value={formData.cancelacion_horas}
                     onChange={(e) => setFormData({ ...formData, cancelacion_horas: Number(e.target.value) })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus:border-orange-500 transition-colors"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-base md:text-sm min-h-11 focus:outline-none focus:border-orange-500 transition-colors"
                   />
                 </div>
               </div>

@@ -221,7 +221,11 @@ export default function RegisterPage() {
               <input
                 {...register('dni')}
                 placeholder="12345678"
-                className="rounded-lg px-3 py-2.5 text-text-primary text-sm outline-none appearance-none placeholder:text-text-tertiary bg-bg-raised border border-subtle"
+                inputMode="numeric"
+                autoComplete="off"
+                maxLength={8}
+                enterKeyHint="next"
+                className="rounded-lg px-3 py-2.5 text-text-primary text-base md:text-sm min-h-11 outline-none appearance-none placeholder:text-text-tertiary bg-bg-raised border border-subtle"
               />
               {errors.dni && (
                 <span className="text-xs text-error-500">{errors.dni.message}</span>
@@ -236,7 +240,10 @@ export default function RegisterPage() {
               <input
                 {...register('telefono')}
                 placeholder="+54 11 1234 5678"
-                className="rounded-lg px-3 py-2.5 text-text-primary text-sm outline-none appearance-none placeholder:text-text-tertiary bg-bg-raised border border-subtle"
+                inputMode="tel"
+                autoComplete="tel"
+                enterKeyHint="done"
+                className="rounded-lg px-3 py-2.5 text-text-primary text-base md:text-sm min-h-11 outline-none appearance-none placeholder:text-text-tertiary bg-bg-raised border border-subtle"
               />
               {errors.telefono && (
                 <span className="text-xs text-error-500">{errors.telefono.message}</span>

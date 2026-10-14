@@ -214,7 +214,7 @@ describe('api service - X-Request-ID y generador UUID', () => {
       await expect(rejectedHandler(tokenEndpointError)).rejects.toEqual(tokenEndpointError)
     })
 
-    it('intenta refrescar token en 401 y si falla limpia auth y redirige a login', async () => {
+    it('intenta refrescar token en 401 y si falla limpia auth y redirige a /login?reason=expired', async () => {
       const mockNav = vi.fn()
       setApiNavigator(mockNav)
       useAuthStore.setState({
@@ -234,6 +234,65 @@ describe('api service - X-Request-ID y generador UUID', () => {
       expect(useAuthStore.getState().refreshAuthToken).toHaveBeenCalled()
       expect(useAuthStore.getState().clearAuth).toHaveBeenCalled()
       expect(toast.error).toHaveBeenCalledWith('Tu sesión ha expirado. Por favor, iniciá sesión nuevamente.')
+      expect(mockNav).toHaveBeenCalledWith('/login?reason=expired', { replace: true })
+    })
+
+    it('401 saves current path to sessionStorage.next and redirects to /login?reason=expired', async () => {
+      const mockNav = vi.fn()
+      setApiNavigator(mockNav)
+      sessionStorage.clear()
+
+      // Simulate being on a protected page
+      Object.defineProperty(window, 'location', {
+        value: { ...window.location, pathname: '/admin/socios', search: '' },
+        writable: true,
+      })
+
+      useAuthStore.setState({
+        accessToken: 'expired-token',
+        refreshAuthToken: vi.fn().mockResolvedValue(false),
+        clearAuth: vi.fn(),
+      })
+
+      const rejectedHandler = api.interceptors.response.handlers[0].rejected
+      const error = {
+        config: { url: '/api/members/', headers: {} },
+        response: { status: 401, data: { detail: 'Token expired' } },
+      }
+
+      await expect(rejectedHandler(error)).rejects.toEqual(error)
+
+      expect(sessionStorage.getItem('next')).toBe('/admin/socios')
+      expect(mockNav).toHaveBeenCalledWith('/login?reason=expired', { replace: true })
+    })
+
+    it('403 authenticated redirects to /403', async () => {
+      const mockNav = vi.fn()
+      setApiNavigator(mockNav)
+      useAuthStore.setState({ accessToken: 'valid-token', user: { id: 1, rol: 'administrador' } })
+
+      const rejectedHandler = api.interceptors.response.handlers[0].rejected
+      const error = {
+        config: { url: '/api/admin/settings/' },
+        response: { status: 403, data: { detail: 'Forbidden' } },
+      }
+
+      await expect(rejectedHandler(error)).rejects.toEqual(error)
+      expect(mockNav).toHaveBeenCalledWith('/403', { replace: true })
+    })
+
+    it('403 unauthenticated redirects to /login', async () => {
+      const mockNav = vi.fn()
+      setApiNavigator(mockNav)
+      useAuthStore.setState({ accessToken: null, user: null })
+
+      const rejectedHandler = api.interceptors.response.handlers[0].rejected
+      const error = {
+        config: { url: '/api/admin/settings/' },
+        response: { status: 403, data: { detail: 'Forbidden' } },
+      }
+
+      await expect(rejectedHandler(error)).rejects.toEqual(error)
       expect(mockNav).toHaveBeenCalledWith('/login', { replace: true })
     })
   })

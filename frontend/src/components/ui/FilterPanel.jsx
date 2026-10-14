@@ -8,8 +8,9 @@ import { Filter, ChevronDown, X } from 'lucide-react'
  * @param {Object}   props.filters  - Estado actual de los filtros { estado, con_certificado }
  * @param {function} props.onChange  - Callback (key, value)
  * @param {function} props.onClear  - Callback para limpiar todos los filtros
+ * @param {'left'|'right'} [props.align='left'] - Align the dropdown to the left or right of the toggle
  */
-export default function FilterPanel({ filters, onChange, onClear }) {
+export default function FilterPanel({ filters, onChange, onClear, align = 'left' }) {
   const [open, setOpen] = useState(false)
 
   const activeCount = Object.values(filters).filter(
@@ -17,7 +18,7 @@ export default function FilterPanel({ filters, onChange, onClear }) {
   ).length
 
   return (
-    <div className="relative">
+    <div className="relative max-w-full">
       {/* Toggle button */}
       <button
         onClick={() => setOpen(!open)}
@@ -41,7 +42,11 @@ export default function FilterPanel({ filters, onChange, onClear }) {
 
       {/* Panel desplegable */}
       {open && (
-        <div className="absolute top-full left-0 mt-2 z-30 w-80 bg-bg-surface border border-subtle rounded-xl shadow-xl p-4 space-y-4">
+        <div
+          className={`absolute top-full mt-2 z-30 w-80 max-w-[calc(100vw-2rem)] overflow-x-auto bg-bg-surface border border-subtle rounded-xl shadow-xl p-4 space-y-4 ${
+            align === 'right' ? 'right-0' : 'left-0'
+          }`}
+        >
           {/* Estado */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-text-secondary mb-2">

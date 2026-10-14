@@ -7,11 +7,20 @@ import { manualAccess } from '../../../services/accessService';
 vi.mock('../../../services/accessService', () => ({
   manualAccess: vi.fn(),
   scanQR: vi.fn(),
+  getPresentes: vi.fn(),
+  salidaManual: vi.fn(),
+  cerrarDia: vi.fn(),
 }));
 
 vi.mock('../../../hooks/useWebSocket', () => ({
   __esModule: true,
-  default: vi.fn(() => ({ lastMessage: { aforo_actual: 150 } })),
+  default: vi.fn(() => ({ lastMessage: { aforo_actual: 150 }, isConnected: true, isConnecting: false, isReconnecting: false, sendMessage: vi.fn() })),
+}));
+
+const mockUseScreenWakeLock = vi.fn(() => ({ isSupported: true, isActive: false, brightnessBoosted: false }));
+vi.mock('../../../hooks/useScreenWakeLock', () => ({
+  __esModule: true,
+  default: (...args) => mockUseScreenWakeLock(...args),
 }));
 
 // Mock layout components so we don't need router context
@@ -30,12 +39,20 @@ vi.mock('../../../components/layout/TopBar', () => ({
 
 // Mock scanner since it uses browser APIs not available in jsdom
 vi.mock('@yudiel/react-qr-scanner', () => ({
-  Scanner: () => <div data-testid="qr-scanner-mock">Scanner</div>,
+  Scanner: ({ onScan }) => (
+    <div data-testid="qr-scanner-mock">
+      <button onClick={() => onScan([{ rawValue: 'mock-qr-token' }])}>
+        Simulate Scan
+      </button>
+    </div>
+  ),
 }));
 
 describe('AccesoTerminal', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Reset localStorage mock
+    localStorage.clear();
   });
 
   it('renders aforo from websocket', () => {
@@ -43,11 +60,63 @@ describe('AccesoTerminal', () => {
     expect(screen.getByText(/Aforo 150\/200/)).toBeInTheDocument();
   });
 
+  // fix #148: terminal mode selector — ENTRY by default
+  it('terminal mode selector sends access_type ENTRY by default', async () => {
+    manualAccess.mockResolvedValueOnce({
+      status: 'GRANTED',
+      message: 'Entrada registrada',
+      denial_reason: null,
+      access_type: 'ENTRY',
+      access_log: { access_type: 'ENTRY', user_nombre: 'Juan', user_apellido: 'Perez', timestamp: new Date().toISOString() }
+    });
+
+    render(<AccesoTerminalPage />);
+
+    // Verify "Entrada" button is pressed by default
+    const entradaBtn = screen.getByRole('button', { name: /^Entrada$/ });
+    expect(entradaBtn).toHaveAttribute('aria-pressed', 'true');
+
+    // Switch to manual and submit
+    fireEvent.click(screen.getByRole('button', { name: /DNI manual/i }));
+    const input = screen.getByPlaceholderText('Ej. 30111222');
+    fireEvent.change(input, { target: { value: '12345678' } });
+    fireEvent.click(screen.getByRole('button', { name: /Validar DNI/i }));
+
+    expect(manualAccess).toHaveBeenCalledWith('12345678', 'ENTRY');
+  });
+
+  // fix #148: terminal mode selector — EXIT sends access_type EXIT
+  it('terminal mode EXIT sends access_type EXIT in request', async () => {
+    manualAccess.mockResolvedValueOnce({
+      status: 'GRANTED',
+      message: 'Salida registrada',
+      denial_reason: null,
+      access_type: 'EXIT',
+      access_log: { access_type: 'EXIT', user_nombre: 'Ana', user_apellido: 'Lopez', timestamp: new Date().toISOString() }
+    });
+
+    render(<AccesoTerminalPage />);
+
+    // Switch to EXIT mode
+    const salidaBtn = screen.getByRole('button', { name: /^Salida$/ });
+    fireEvent.click(salidaBtn);
+    expect(salidaBtn).toHaveAttribute('aria-pressed', 'true');
+
+    // Switch to manual and submit
+    fireEvent.click(screen.getByRole('button', { name: /DNI manual/i }));
+    const input = screen.getByPlaceholderText('Ej. 30111222');
+    fireEvent.change(input, { target: { value: '12345678' } });
+    fireEvent.click(screen.getByRole('button', { name: /Validar DNI/i }));
+
+    expect(manualAccess).toHaveBeenCalledWith('12345678', 'EXIT');
+  });
+
   it('handles successful manual access', async () => {
     manualAccess.mockResolvedValueOnce({
       status: 'GRANTED',
       message: 'Acceso permitido',
       denial_reason: null,
+      access_type: 'ENTRY',
       access_log: {
         access_type: 'ENTRY',
         user_nombre: 'Juan',
@@ -57,14 +126,14 @@ describe('AccesoTerminal', () => {
     });
 
     render(<AccesoTerminalPage />);
-    
+
     // Switch to manual mode
     fireEvent.click(screen.getByRole('button', { name: /DNI manual/i }));
-    
+
     // Enter DNI
     const input = screen.getByPlaceholderText('Ej. 30111222');
     fireEvent.change(input, { target: { value: '12345678' } });
-    
+
     // Submit
     fireEvent.click(screen.getByRole('button', { name: /Validar DNI/i }));
 
@@ -83,6 +152,7 @@ describe('AccesoTerminal', () => {
           status: 'DENIED',
           message: 'Acceso denegado: MEMBERSHIP_INACTIVE',
           denial_reason: 'MEMBERSHIP_INACTIVE',
+          access_type: 'ENTRY',
           access_log: {
             access_type: 'ENTRY',
             user_nombre: 'Ana',
@@ -94,14 +164,14 @@ describe('AccesoTerminal', () => {
     });
 
     render(<AccesoTerminalPage />);
-    
+
     // Switch to manual mode
     fireEvent.click(screen.getByRole('button', { name: /DNI manual/i }));
-    
+
     // Enter DNI
     const input = screen.getByPlaceholderText('Ej. 30111222');
     fireEvent.change(input, { target: { value: '11223344' } });
-    
+
     // Submit
     fireEvent.click(screen.getByRole('button', { name: /Validar DNI/i }));
 
@@ -114,16 +184,38 @@ describe('AccesoTerminal', () => {
     manualAccess.mockRejectedValueOnce(new Error('Network Error'));
 
     render(<AccesoTerminalPage />);
-    
+
     // Switch to manual mode
     fireEvent.click(screen.getByRole('button', { name: /DNI manual/i }));
-    
+
     const input = screen.getByPlaceholderText('Ej. 30111222');
     fireEvent.change(input, { target: { value: '11223344' } });
-    
+
     fireEvent.click(screen.getByRole('button', { name: /Validar DNI/i }));
 
     expect(await screen.findByText('Acceso denegado')).toBeInTheDocument();
     expect(await screen.findByText('Error al validar acceso')).toBeInTheDocument();
+  });
+
+  // #203 — Wake Lock active when scanner is running
+  it('uses useScreenWakeLock when scanner is active (camera mode)', () => {
+    render(<AccesoTerminalPage />);
+
+    // By default camera mode is active (isManualMode = false)
+    // useScreenWakeLock should be called with enabled: true
+    expect(mockUseScreenWakeLock).toHaveBeenCalledWith({ enabled: true });
+  });
+
+  // #203 — Wake Lock disabled in manual (DNI) mode
+  it('disables useScreenWakeLock when manual mode is active', () => {
+    render(<AccesoTerminalPage />);
+
+    fireEvent.click(screen.getByRole('button', { name: /DNI manual/i }));
+
+    // After switching to manual mode, enabled should be false
+    const calls = mockUseScreenWakeLock.mock.calls;
+    // The last call should have enabled: false
+    const lastCall = calls[calls.length - 1]
+    expect(lastCall[0]).toEqual({ enabled: false });
   });
 });

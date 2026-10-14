@@ -1,4 +1,5 @@
-import { Users, Clock, MapPin } from 'lucide-react'
+import { useState } from 'react'
+import { Users, Clock, MapPin, ChevronLeft, ChevronRight } from 'lucide-react'
 import { DISCIPLINAS_CONFIG } from '../../constants/disciplinas'
 
 // Dates are passed in as diasSemana prop
@@ -21,40 +22,223 @@ const HORAS_GRILLA = [
   '22:00',
 ]
 
-export default function ClassCalendarView({ classes = [], diasSemana = [], onSelectClass, onOpenAttendees }) {
+/**
+ * AgendaView — mobile-first daily class list.
+ * Shows classes for one selected day with prev/next navigation.
+ */
+function AgendaView({ classes, diasSemana, onSelectClass, onOpenAttendees }) {
+  const [selectedIndex, setSelectedIndex] = useState(0)
+
+  const selectedDia = diasSemana[selectedIndex]
+
+  const diasMap = {
+    Lunes: 'L',
+    Martes: 'M',
+    Miércoles: 'X',
+    Jueves: 'J',
+    Viernes: 'V',
+    Sábado: 'S',
+    Domingo: 'D',
+  }
+
+  const dayClasses = classes
+    .filter((cls) => {
+      if (!selectedDia) return false
+      const recKey = diasMap[selectedDia.key]
+      const hasRecurrencia = cls.dias_recurrencia && cls.dias_recurrencia.length > 0
+      if (hasRecurrencia) {
+        return cls.dias_recurrencia.includes(recKey)
+      }
+      const primaryDay = cls.dia?.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+      const targetDay = selectedDia.key.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+      return primaryDay === targetDay
+    })
+    .sort((a, b) => (a.hora || '00:00').localeCompare(b.hora || '00:00'))
+
+  return (
+    <div className="w-full bg-bg-surface border border-subtle rounded-2xl overflow-hidden shadow-sm animate-fadeIn">
+      {/* Day selector */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-subtle bg-bg-raised/40">
+        <button
+          onClick={() => setSelectedIndex((i) => Math.max(0, i - 1))}
+          disabled={selectedIndex === 0}
+          className="p-2 rounded-lg disabled:opacity-30 hover:bg-bg-raised transition-colors text-text-secondary"
+          aria-label="Previous day"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+
+        <div className="text-center">
+          <p className="text-sm font-bold text-text-primary uppercase tracking-wide">
+            {selectedDia?.label}
+          </p>
+          {selectedDia?.fecha && (
+            <span className="text-xs text-text-secondary">{selectedDia.fecha}</span>
+          )}
+        </div>
+
+        <button
+          onClick={() => setSelectedIndex((i) => Math.min(diasSemana.length - 1, i + 1))}
+          disabled={selectedIndex === diasSemana.length - 1}
+          className="p-2 rounded-lg disabled:opacity-30 hover:bg-bg-raised transition-colors text-text-secondary"
+          aria-label="Next day"
+        >
+          <ChevronRight className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* Class list */}
+      <div className="divide-y divide-subtle">
+        {dayClasses.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-12 text-text-tertiary">
+            <Clock className="w-8 h-8 mb-2 opacity-40" />
+            <p className="text-sm">No hay clases este día</p>
+          </div>
+        )}
+
+        {dayClasses.map((cls) => {
+          const cfg = DISCIPLINAS_CONFIG[cls.categoria] || DISCIPLINAS_CONFIG.funcional
+          const isFull = cls.cupos_reservados >= cls.cupo_maximo
+
+          return (
+            <div
+              key={cls.id}
+              onClick={() => onSelectClass(cls)}
+              style={{ borderLeftWidth: '4px', borderLeftColor: cfg.border }}
+              className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-bg-raised/30 transition-colors"
+            >
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span style={{ color: cfg.color }} className="text-sm font-bold truncate">
+                    {cls.nombre}
+                  </span>
+                  {isFull && (
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-error-500/20 text-error-500 border border-error-500/30 flex-shrink-0">
+                      LLENO
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-3 text-xs text-text-secondary">
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    {cls.hora}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <MapPin className="w-3 h-3" />
+                    {cls.sala}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Users className="w-3 h-3" />
+                    {cls.cupos_reservados}/{cls.cupo_maximo}
+                  </span>
+                </div>
+              </div>
+
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onOpenAttendees(cls)
+                }}
+                className="ml-3 px-3 py-1.5 rounded-lg text-xs font-bold text-orange-500 hover:bg-orange-500/10 transition-colors flex-shrink-0"
+              >
+                Lista
+              </button>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * ClassCalendarView — week grid (≥ md) with agenda view fallback for mobile.
+ *
+ * @param {'grid'|'agenda'} [view='grid']   — force a specific view (used in tests / parent override)
+ */
+export default function ClassCalendarView({
+  classes = [],
+  diasSemana = [],
+  onSelectClass,
+  onOpenAttendees,
+  view,
+}) {
   // Helper to find classes for a specific day and hour slot
   const getClassesForSlot = (diaKey, horaStr) => {
     const slotHour = parseInt(horaStr.split(':')[0], 10)
     return classes.filter((cls) => {
       const diasMap = {
-        'Lunes': 'L',
-        'Martes': 'M',
-        'Miércoles': 'X',
-        'Jueves': 'J',
-        'Viernes': 'V',
-        'Sábado': 'S',
-        'Domingo': 'D'
+        Lunes: 'L',
+        Martes: 'M',
+        Miércoles: 'X',
+        Jueves: 'J',
+        Viernes: 'V',
+        Sábado: 'S',
+        Domingo: 'D',
       }
       const recKey = diasMap[diaKey]
 
       const hasRecurrencia = cls.dias_recurrencia && cls.dias_recurrencia.length > 0
-      
+
       let dayMatch = false
       if (hasRecurrencia) {
         dayMatch = cls.dias_recurrencia.includes(recKey)
       } else {
-        const primaryDay = cls.dia?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-        const targetDay = diaKey.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        const primaryDay = cls.dia?.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+        const targetDay = diaKey.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
         dayMatch = primaryDay === targetDay
       }
 
       if (!dayMatch) return false
-      
+
       const clsHour = parseInt((cls.hora || '08:00').split(':')[0], 10)
       return clsHour === slotHour
     })
   }
 
+  // Forced view prop (used in tests); otherwise agenda is rendered via CSS
+  if (view === 'agenda') {
+    return (
+      <AgendaView
+        classes={classes}
+        diasSemana={diasSemana}
+        onSelectClass={onSelectClass}
+        onOpenAttendees={onOpenAttendees}
+      />
+    )
+  }
+
+  if (view === 'grid') {
+    return <WeekGrid diasSemana={diasSemana} onSelectClass={onSelectClass} onOpenAttendees={onOpenAttendees} getClassesForSlot={getClassesForSlot} />
+  }
+
+  // Responsive: agenda on mobile (<md), grid on ≥ md
+  return (
+    <>
+      {/* Agenda view — visible on mobile only */}
+      <div className="block md:hidden">
+        <AgendaView
+          classes={classes}
+          diasSemana={diasSemana}
+          onSelectClass={onSelectClass}
+          onOpenAttendees={onOpenAttendees}
+        />
+      </div>
+
+      {/* Week grid view — visible on md+ */}
+      <div className="hidden md:block">
+        <WeekGrid
+          diasSemana={diasSemana}
+          onSelectClass={onSelectClass}
+          onOpenAttendees={onOpenAttendees}
+          getClassesForSlot={getClassesForSlot}
+        />
+      </div>
+    </>
+  )
+}
+
+function WeekGrid({ diasSemana, onSelectClass, onOpenAttendees, getClassesForSlot }) {
   return (
     <div className="w-full bg-bg-surface border border-subtle rounded-2xl overflow-hidden shadow-sm transition-all animate-fadeIn">
       {/* Calendar Grid Header */}
@@ -68,9 +252,7 @@ export default function ClassCalendarView({ classes = [], diasSemana = [], onSel
             <p className="text-xs font-bold text-text-primary uppercase tracking-wide">
               {dia.label}
             </p>
-            <span className="text-[11px] text-text-secondary font-medium">
-              {dia.fecha}
-            </span>
+            <span className="text-[11px] text-text-secondary font-medium">{dia.fecha}</span>
           </div>
         ))}
       </div>

@@ -1,9 +1,12 @@
+import { useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Check,
   X as XIcon,
   Download,
   Users,
+  AlertCircle,
+  ArrowLeft,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import AppLayout from '../components/layout/AppLayout'
@@ -20,25 +23,26 @@ export default function AttendancePage() {
   const [searchParams] = useSearchParams()
   const classId = searchParams.get('id')
 
-  const { data: classInfo, isLoading: loading } = useClaseDetail(classId)
+  const { data: classInfo, isLoading: loading, isError: classError } = useClaseDetail(classId)
   const { attendees, toggleStatus, fetchAttendees } = useClassAttendees(classId)
-  
+
+  // fix #163: move side-effects to useEffect — no body-level logic that fires on every render
+  useEffect(() => {
+    if (!classId) {
+      toast.error('Clase no encontrada')
+      navigate('/admin/clases')
+    }
+  }, [classId, navigate])
+
   // Real waiting list should come from `en_espera`
   const waitingList = attendees.filter(a => a.en_espera)
   const confirmedAttendees = attendees.filter(a => !a.en_espera)
 
-  if (!classId) {
-    toast.error('Clase no encontrada')
-    navigate('/admin/clases')
-  }
-
   const handlePromoteFromWaitingList = async (waitingPerson) => {
     try {
-      // In the real system, promoting could mean cancelling en_espera status
-      // or using a specific endpoint. 
       toast.success(`${waitingPerson.socio_nombre} habilitado e inscripto`)
-      fetchAttendees() // Reload
-    } catch(err) {
+      fetchAttendees()
+    } catch {
       toast.error('Error al promover')
     }
   }
@@ -77,6 +81,11 @@ export default function AttendancePage() {
 
   const cls = classInfo
 
+  if (!classId) {
+    // Already handled in useEffect; render nothing while redirect happens.
+    return null
+  }
+
   if (loading) {
     return (
       <AppLayout>
@@ -86,6 +95,35 @@ export default function AttendancePage() {
         />
         <div className="w-full flex-1 p-6 md:p-10 max-w-[1840px] mx-auto">
           <Skeleton className="h-64 w-full rounded-2xl" />
+        </div>
+      </AppLayout>
+    )
+  }
+
+  // fix #163: if detail returns 404 → in-page error state instead of toast + redirect
+  if (classError || (!loading && !classInfo)) {
+    return (
+      <AppLayout>
+        <TopBar
+          title="Asistencia"
+          backAction={{ to: '/admin/clases' }}
+        />
+        <div className="w-full flex-1 p-6 md:p-10 max-w-[1840px] mx-auto flex flex-col items-center justify-center gap-6">
+          <AlertCircle className="w-16 h-16 text-error-500 opacity-70" />
+          <div className="text-center">
+            <h2 className="text-xl font-bold text-text-primary">La clase no existe</h2>
+            <p className="text-text-secondary mt-2 text-sm">
+              No se encontró la clase con ID {classId}. Puede que haya sido eliminada.
+            </p>
+          </div>
+          <Button
+            variant="secondary"
+            onClick={() => navigate('/admin/clases')}
+            className="gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Volver a Clases
+          </Button>
         </div>
       </AppLayout>
     )

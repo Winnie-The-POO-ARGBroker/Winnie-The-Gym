@@ -17,10 +17,10 @@ const schema = z.object({
 })
 
 const FIELDS = [
-  { name: 'nombre', label: 'Nombre', placeholder: 'Juan' },
-  { name: 'apellido', label: 'Apellido', placeholder: 'García' },
-  { name: 'dni', label: 'DNI', placeholder: '12345678' },
-  { name: 'telefono', label: 'Teléfono', placeholder: '+54 11 1234 5678' },
+  { name: 'nombre',   label: 'Nombre',    placeholder: 'Juan' },
+  { name: 'apellido', label: 'Apellido',  placeholder: 'García' },
+  { name: 'dni',      label: 'DNI',       placeholder: '12345678', inputMode: 'numeric', autoComplete: 'off', maxLength: 8 },
+  { name: 'telefono', label: 'Teléfono',  placeholder: '+54 11 1234 5678', inputMode: 'tel', autoComplete: 'tel' },
 ]
 
 export default function CompleteProfilePage() {
@@ -72,13 +72,16 @@ export default function CompleteProfilePage() {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-          {FIELDS.map(({ name, label, placeholder }) => (
+          {FIELDS.map(({ name, label, placeholder, inputMode, autoComplete, maxLength }) => (
             <div key={name} className="flex flex-col gap-1">
               <label className="text-sm font-medium text-text-primary">{label}</label>
               <input
                 {...register(name)}
                 placeholder={placeholder}
-                className="rounded-lg px-3 py-2.5 text-text-primary text-sm outline-none appearance-none placeholder:text-text-tertiary bg-bg-raised border border-subtle"
+                inputMode={inputMode}
+                autoComplete={autoComplete}
+                maxLength={maxLength}
+                className="rounded-lg px-3 py-2.5 text-text-primary text-base md:text-sm min-h-11 outline-none appearance-none placeholder:text-text-tertiary bg-bg-raised border border-subtle"
               />
               {errors[name] && (
                 <span className="text-xs text-error-500">

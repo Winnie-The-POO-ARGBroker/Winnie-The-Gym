@@ -39,10 +39,11 @@ vi.mock('../../../components/layout/AppLayout', () => ({
   default: ({ children }) => <div data-testid="app-layout">{children}</div>,
 }))
 vi.mock('../../../components/layout/TopBar', () => ({
-  default: ({ title, rightContent }) => (
+  default: ({ title, rightContent, actions }) => (
     <div data-testid="top-bar">
       <span>{title}</span>
       {rightContent}
+      {actions}
     </div>
   ),
 }))
@@ -98,8 +99,10 @@ describe('AdminUsuariosPage', () => {
 
   it('shows loading state when isLoading is true', () => {
     mockUseStaffList.mockReturnValueOnce({ data: undefined, isLoading: true })
-    renderWithProviders(<AdminUsuariosPage />)
-    expect(screen.getByText(/cargando usuarios/i)).toBeInTheDocument()
+    const { container } = renderWithProviders(<AdminUsuariosPage />)
+    // DataTable now renders a skeleton when loading (replaces the previous text).
+    const skeletons = container.querySelectorAll('.animate-pulse')
+    expect(skeletons.length).toBeGreaterThan(0)
   })
 
   it('shows empty state when no staff', () => {

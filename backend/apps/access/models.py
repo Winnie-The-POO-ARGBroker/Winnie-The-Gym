@@ -28,6 +28,14 @@ class AccessLog(models.Model):
         NO_MEMBERSHIP = 'NO_MEMBERSHIP', 'Socio sin membresía registrada'
         USER_SUSPENDED = 'USER_SUSPENDED', 'Usuario suspendido'
         UNKNOWN_USER = 'UNKNOWN_USER', 'Usuario no registrado'
+        AFORO_FULL = 'AFORO_FULL', 'Aforo completo'
+        NOT_INSIDE = 'NOT_INSIDE', 'Socio no registra entrada hoy'
+
+    class AccessSource(models.TextChoices):
+        QR_SCAN = 'QR_SCAN', 'QR Scan'
+        DNI_SCAN = 'DNI_SCAN', 'DNI Scan'
+        MANUAL_CORRECTION = 'MANUAL_CORRECTION', 'Manual Correction'
+        DAY_CLOSE_AUTO = 'DAY_CLOSE_AUTO', 'Day Close Auto'
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -75,6 +83,26 @@ class AccessLog(models.Model):
         blank=True,
         related_name='scanned_access_logs',
         verbose_name='Escaneado por (Personal/Dispositivo)',
+    )
+    source = models.CharField(
+        max_length=30,
+        choices=AccessSource.choices,
+        default=AccessSource.QR_SCAN,
+        verbose_name='Fuente del registro',
+    )
+    operator = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='operated_access_logs',
+        verbose_name='Operador (admin/recepcionista en corrección manual o cierre día)',
+    )
+    motivo = models.CharField(
+        max_length=200,
+        blank=True,
+        default='',
+        verbose_name='Motivo (corrección manual)',
     )
 
     class Meta:

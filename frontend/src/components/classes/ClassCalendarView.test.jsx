@@ -47,41 +47,91 @@ describe('ClassCalendarView', () => {
 
   beforeEach(() => vi.clearAllMocks())
 
+  // ── Week grid (view='grid') tests ──────────────────────────────────────────
+
   // ── 1. Renders HORA header ─────────────────────────────────────────────
-  it('renders HORA column header', () => {
-    render(<ClassCalendarView diasSemana={DIAS_SEMANA} classes={[]} onSelectClass={onSelectClass} onOpenAttendees={onOpenAttendees} />)
+  it('renders HORA column header in grid view', () => {
+    render(
+      <ClassCalendarView
+        diasSemana={DIAS_SEMANA}
+        classes={[]}
+        onSelectClass={onSelectClass}
+        onOpenAttendees={onOpenAttendees}
+        view="grid"
+      />
+    )
     expect(screen.getByText('HORA')).toBeInTheDocument()
   })
 
   // ── 2. Renders day labels ──────────────────────────────────────────────
-  it('renders day labels from diasSemana', () => {
-    render(<ClassCalendarView diasSemana={DIAS_SEMANA} classes={[]} onSelectClass={onSelectClass} onOpenAttendees={onOpenAttendees} />)
+  it('renders day labels from diasSemana in grid view', () => {
+    render(
+      <ClassCalendarView
+        diasSemana={DIAS_SEMANA}
+        classes={[]}
+        onSelectClass={onSelectClass}
+        onOpenAttendees={onOpenAttendees}
+        view="grid"
+      />
+    )
     expect(screen.getAllByText('Lunes').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Sábado').length).toBeGreaterThan(0)
   })
 
   // ── 3. Renders class that matches Lunes slot via dias_recurrencia ──────
   it('renders class name when it matches Lunes slot via dias_recurrencia', () => {
-    render(<ClassCalendarView diasSemana={DIAS_SEMANA} classes={CLASSES} onSelectClass={onSelectClass} onOpenAttendees={onOpenAttendees} />)
+    render(
+      <ClassCalendarView
+        diasSemana={DIAS_SEMANA}
+        classes={CLASSES}
+        onSelectClass={onSelectClass}
+        onOpenAttendees={onOpenAttendees}
+        view="grid"
+      />
+    )
     expect(screen.getAllByText(/Spinning AM/).length).toBeGreaterThan(0)
   })
 
   // ── 4. Renders "LLENO" badge when at capacity ──────────────────────────
   it('renders LLENO badge when cupos_reservados >= cupo_maximo', () => {
-    render(<ClassCalendarView diasSemana={DIAS_SEMANA} classes={CLASSES} onSelectClass={onSelectClass} onOpenAttendees={onOpenAttendees} />)
+    render(
+      <ClassCalendarView
+        diasSemana={DIAS_SEMANA}
+        classes={CLASSES}
+        onSelectClass={onSelectClass}
+        onOpenAttendees={onOpenAttendees}
+        view="grid"
+      />
+    )
     expect(screen.getByText('LLENO')).toBeInTheDocument()
   })
 
   // ── 5. Clicking class calls onSelectClass ──────────────────────────────
   it('calls onSelectClass when a class card is clicked', () => {
-    render(<ClassCalendarView diasSemana={DIAS_SEMANA} classes={[CLASSES[0]]} onSelectClass={onSelectClass} onOpenAttendees={onOpenAttendees} />)
+    render(
+      <ClassCalendarView
+        diasSemana={DIAS_SEMANA}
+        classes={[CLASSES[0]]}
+        onSelectClass={onSelectClass}
+        onOpenAttendees={onOpenAttendees}
+        view="grid"
+      />
+    )
     fireEvent.click(screen.getByText(/Spinning AM/))
     expect(onSelectClass).toHaveBeenCalledWith(CLASSES[0])
   })
 
   // ── 6. Clicking Lista button calls onOpenAttendees ─────────────────────
   it('calls onOpenAttendees when Lista button is clicked', () => {
-    render(<ClassCalendarView diasSemana={DIAS_SEMANA} classes={[CLASSES[0]]} onSelectClass={onSelectClass} onOpenAttendees={onOpenAttendees} />)
+    render(
+      <ClassCalendarView
+        diasSemana={DIAS_SEMANA}
+        classes={[CLASSES[0]]}
+        onSelectClass={onSelectClass}
+        onOpenAttendees={onOpenAttendees}
+        view="grid"
+      />
+    )
     fireEvent.click(screen.getByText('Lista'))
     expect(onOpenAttendees).toHaveBeenCalledWith(CLASSES[0])
   })
@@ -89,19 +139,33 @@ describe('ClassCalendarView', () => {
   // ── 7. Renders with empty classes array (no crash) ─────────────────────
   it('renders without crashing when classes is empty', () => {
     expect(() =>
-      render(<ClassCalendarView diasSemana={DIAS_SEMANA} classes={[]} onSelectClass={onSelectClass} onOpenAttendees={onOpenAttendees} />)
+      render(
+        <ClassCalendarView
+          diasSemana={DIAS_SEMANA}
+          classes={[]}
+          onSelectClass={onSelectClass}
+          onOpenAttendees={onOpenAttendees}
+        />
+      )
     ).not.toThrow()
   })
 
   // ── 8. Renders with empty diasSemana (no crash) ────────────────────────
   it('renders without crashing when diasSemana is empty', () => {
     expect(() =>
-      render(<ClassCalendarView diasSemana={[]} classes={[]} onSelectClass={onSelectClass} onOpenAttendees={onOpenAttendees} />)
+      render(
+        <ClassCalendarView
+          diasSemana={[]}
+          classes={[]}
+          onSelectClass={onSelectClass}
+          onOpenAttendees={onOpenAttendees}
+        />
+      )
     ).not.toThrow()
   })
 
   // ── 9. Matches class via dia string when no dias_recurrencia ──────────
-  it('renders class that matches Lunes via dia string (no recurrencia)', () => {
+  it('renders class that matches Lunes via dia string (no recurrencia) in grid view', () => {
     const cls = {
       id: 3,
       nombre: 'Pilates',
@@ -113,7 +177,97 @@ describe('ClassCalendarView', () => {
       sala: 'C',
       categoria: 'pilates',
     }
-    render(<ClassCalendarView diasSemana={DIAS_SEMANA} classes={[cls]} onSelectClass={onSelectClass} onOpenAttendees={onOpenAttendees} />)
+    render(
+      <ClassCalendarView
+        diasSemana={DIAS_SEMANA}
+        classes={[cls]}
+        onSelectClass={onSelectClass}
+        onOpenAttendees={onOpenAttendees}
+        view="grid"
+      />
+    )
     expect(screen.getAllByText(/Pilates/).length).toBeGreaterThan(0)
+  })
+
+  // ── #198 Agenda view tests ─────────────────────────────────────────────
+
+  it('renders agenda view at <md (view=agenda prop)', () => {
+    render(
+      <ClassCalendarView
+        diasSemana={DIAS_SEMANA}
+        classes={CLASSES}
+        onSelectClass={onSelectClass}
+        onOpenAttendees={onOpenAttendees}
+        view="agenda"
+      />
+    )
+
+    // Should show the day selector and first day by default
+    expect(screen.getByText('Lunes')).toBeInTheDocument()
+    // Navigation buttons
+    expect(screen.getByRole('button', { name: /previous day/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /next day/i })).toBeInTheDocument()
+    // Classes for Monday should be listed
+    expect(screen.getByText('Spinning AM')).toBeInTheDocument()
+  })
+
+  it('renders week grid at ≥ md (view=grid prop)', () => {
+    render(
+      <ClassCalendarView
+        diasSemana={DIAS_SEMANA}
+        classes={CLASSES}
+        onSelectClass={onSelectClass}
+        onOpenAttendees={onOpenAttendees}
+        view="grid"
+      />
+    )
+
+    // Should show the hour grid header
+    expect(screen.getByText('HORA')).toBeInTheDocument()
+    // Week grid has all day columns
+    expect(screen.getAllByText('Lunes').length).toBeGreaterThan(0)
+  })
+
+  it('agenda: next day button navigates to Martes', () => {
+    render(
+      <ClassCalendarView
+        diasSemana={DIAS_SEMANA}
+        classes={CLASSES}
+        onSelectClass={onSelectClass}
+        onOpenAttendees={onOpenAttendees}
+        view="agenda"
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: /next day/i }))
+    expect(screen.getByText('Martes')).toBeInTheDocument()
+  })
+
+  it('agenda: prev button disabled on first day', () => {
+    render(
+      <ClassCalendarView
+        diasSemana={DIAS_SEMANA}
+        classes={[]}
+        onSelectClass={onSelectClass}
+        onOpenAttendees={onOpenAttendees}
+        view="agenda"
+      />
+    )
+
+    expect(screen.getByRole('button', { name: /previous day/i })).toBeDisabled()
+  })
+
+  it('agenda: shows empty state when no classes for selected day', () => {
+    render(
+      <ClassCalendarView
+        diasSemana={DIAS_SEMANA}
+        classes={[]}
+        onSelectClass={onSelectClass}
+        onOpenAttendees={onOpenAttendees}
+        view="agenda"
+      />
+    )
+
+    expect(screen.getByText(/No hay clases este día/)).toBeInTheDocument()
   })
 })
