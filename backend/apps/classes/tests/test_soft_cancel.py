@@ -1,4 +1,5 @@
 """REQ-3.4 — Soft-cancel clases: state, emails, default queryset filtering."""
+from contextlib import contextmanager
 from unittest.mock import patch
 
 from rest_framework import status
@@ -7,6 +8,13 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.classes.models import Clase, InscripcionClase
 from conftest import make_socio_factory, make_user_factory
+
+
+@contextmanager
+def immediate_on_commit():
+    """Patch transaction.on_commit to execute callbacks immediately (TestCase safe)."""
+    with patch('django.db.transaction.on_commit', side_effect=lambda fn: fn()):
+        yield
 
 
 def _auth(client, user):
@@ -99,7 +107,8 @@ class SoftCancelClaseTests(APITestCase):
         # Enroll the test socio
         InscripcionClase.objects.create(clase=self.clase, socio=self.socio)
 
-        with patch('apps.classes.signals.enqueue_email') as mock_enqueue:
+        with patch('apps.classes.signals.enqueue_email') as mock_enqueue, \
+             immediate_on_commit():
             _auth(self.client, self.admin)
             self.client.post(
                 _cancelar_url(self.clase.id),

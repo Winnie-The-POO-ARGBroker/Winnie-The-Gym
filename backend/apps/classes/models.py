@@ -1,5 +1,6 @@
 import datetime
 
+from django.conf import settings
 from django.db import models
 
 
@@ -37,7 +38,7 @@ class Clase(models.Model):
     sala = models.CharField(max_length=80, default='Sala A')
     instructor = models.CharField(max_length=120, default='')
     cupo_maximo = models.PositiveIntegerField(default=20)
-    lista_espera_max = models.PositiveIntegerField(default=5)
+    lista_espera_max = models.PositiveIntegerField(default=0)
     cancelacion_horas = models.PositiveIntegerField(default=2)
     planes_habilitados = models.JSONField(default=list, blank=True)
     recurrencia = models.CharField(max_length=100, default='Semanal - L/M/V')
@@ -45,6 +46,14 @@ class Clase(models.Model):
     estado = models.CharField(max_length=20, choices=Estado.choices, default=Estado.ACTIVA)
     fecha_cancelacion = models.DateTimeField(null=True, blank=True)
     motivo_cancelacion = models.TextField(blank=True, default='')
+    cancelada_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='clases_canceladas',
+        verbose_name='Cancelada por',
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

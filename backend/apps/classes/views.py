@@ -20,7 +20,7 @@ from .serializers import (
     InscripcionClaseSerializer,
 )
 from .services import cancelar_clase as service_cancelar_clase
-from .services import cancelar_inscripcion, inscribir_socio
+from .services import cancelar_inscripcion, inscribir_socio, promover_de_espera, reactivar_clase
 
 
 @extend_schema_view(
@@ -65,8 +65,10 @@ class ClaseViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action == 'destroy':
             return [IsAdminOnly()]
-        if self.action in ('create', 'update', 'partial_update', 'cancelar_clase',
-                           'cerrar_asistencia', 'inscribir_manual'):
+        if self.action in (
+            'create', 'update', 'partial_update', 'cancelar_clase',
+            'cerrar_asistencia', 'inscribir_manual', 'promover_espera', 'reactivar',
+        ):
             return [IsReceptionistOrAdmin()]
         if self.action in ('inscribir', 'cancelar'):
             return [IsSocio()]
@@ -76,6 +78,33 @@ class ClaseViewSet(viewsets.ModelViewSet):
         if self.action == 'retrieve':
             return ClaseDetailSerializer
         return ClaseSerializer
+
+    def partial_update(self, request, *args, **kwargs):
+        """PATCH — reject estado field with a clear 400 message."""
+        if 'estado' in request.data:
+            return Response(
+                {'estado': 'El estado no se puede modificar directamente. Usá /cancelar-clase/ o /reactivar/.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        # After PATCH raises cupo promotion if cupo_maximo increased
+        response = super().partial_update(request, *args, **kwargs)
+        if response.status_code == status.HTTP_200_OK and 'cupo_maximo' in request.data:
+            clase = self.get_object()
+            promover_de_espera(clase)
+        return response
+
+    def update(self, request, *args, **kwargs):
+        """PUT — reject estado field with a clear 400 message."""
+        if 'estado' in request.data:
+            return Response(
+                {'estado': 'El estado no se puede modificar directamente. Usá /cancelar-clase/ o /reactivar/.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        response = super().update(request, *args, **kwargs)
+        if response.status_code == status.HTTP_200_OK and 'cupo_maximo' in request.data:
+            clase = self.get_object()
+            promover_de_espera(clase)
+        return response
 
     @extend_schema(
         tags=['classes'],
@@ -131,7 +160,14 @@ class ClaseViewSet(viewsets.ModelViewSet):
         tags=['classes'],
         summary='Cancelar una clase (staff) — soft cancel con notificación (REQ-3.4)',
         request={'application/json': {'type': 'object', 'properties': {'motivo': {'type': 'string', 'minLength': 10}}}},
-        responses={200: {'type': 'object', 'properties': {'detail': {'type': 'string'}}}},
+        responses={200: {
+            'type': 'object',
+            'properties': {
+                'detail': {'type': 'string'},
+                'confirmados_notificados': {'type': 'integer'},
+                'espera_notificados': {'type': 'integer'},
+            },
+        }},
     )
     @action(
         detail=True,
@@ -143,8 +179,61 @@ class ClaseViewSet(viewsets.ModelViewSet):
     def cancelar_clase(self, request, pk=None):
         clase = self.get_object()
         motivo = request.data.get('motivo', '')
-        service_cancelar_clase(clase, motivo, actor=request.user)
-        return Response({'detail': 'Clase cancelada correctamente.'}, status=status.HTTP_200_OK)
+        counts = service_cancelar_clase(clase, motivo, actor=request.user)
+        return Response(
+            {
+                'detail': 'Clase cancelada correctamente.',
+                **counts,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        tags=['classes'],
+        summary='Reactivar una clase cancelada (staff)',
+        request=None,
+        responses={200: {'type': 'object', 'properties': {'detail': {'type': 'string'}}}},
+    )
+    @action(
+        detail=True,
+        methods=['post'],
+        url_path='reactivar',
+        url_name='reactivar',
+        permission_classes=[IsReceptionistOrAdmin],
+    )
+    def reactivar(self, request, pk=None):
+        clase = self.get_object()
+        reactivar_clase(clase)
+        return Response({'detail': 'Clase reactivada correctamente.'}, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        tags=['classes'],
+        summary='Promover manualmente al primer socio de la lista de espera (staff)',
+        request=None,
+        responses={200: {'type': 'object', 'properties': {
+            'detail': {'type': 'string'},
+            'promovido': {'type': 'boolean'},
+        }}},
+    )
+    @action(
+        detail=True,
+        methods=['post'],
+        url_path='promover-espera',
+        url_name='promover-espera',
+        permission_classes=[IsReceptionistOrAdmin],
+    )
+    def promover_espera(self, request, pk=None):
+        clase = self.get_object()
+        promovido = promover_de_espera(clase)
+        if promovido is None:
+            return Response(
+                {'detail': 'No hay nadie en lista de espera o no hay cupo disponible.', 'promovido': False},
+                status=status.HTTP_200_OK,
+            )
+        return Response(
+            {'detail': f'Socio {promovido.socio} promovido a confirmado.', 'promovido': True},
+            status=status.HTTP_200_OK,
+        )
 
     @extend_schema(
         tags=['classes'],
@@ -176,8 +265,7 @@ class ClaseViewSet(viewsets.ModelViewSet):
         inscripciones = clase.inscripciones.all()
 
         presentes = inscripciones.filter(asistio=True).count()
-        # Mark all NULL → False
-        updated = inscripciones.filter(asistio__isnull=True).update(asistio=False)
+        inscripciones.filter(asistio__isnull=True).update(asistio=False)
         ausentes = inscripciones.filter(asistio=False).count()
 
         return Response({
@@ -222,7 +310,6 @@ class ClaseViewSet(viewsets.ModelViewSet):
         except Socio.DoesNotExist:
             return Response({'detail': 'Socio no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
 
-        # Only admins may forzar
         if forzar and not (request.user.is_staff or getattr(request.user, 'rol', '') == 'administrador'):
             forzar = False
 
@@ -249,3 +336,60 @@ class InscripcionClaseViewSet(viewsets.ModelViewSet):
     ordering = ['-created_at']
     # All inscripcion mutations are staff-only (#171 — socios get 403 on PATCH)
     permission_classes = [IsReceptionistOrAdmin]
+
+    @extend_schema(
+        tags=['classes'],
+        summary='Posición del socio autenticado en la lista de espera',
+        parameters=[
+            OpenApiParameter('clase_id', OpenApiTypes.INT, location=OpenApiParameter.QUERY, required=True,
+                             description='ID de la clase para consultar la posición en espera.'),
+        ],
+        responses={200: {
+            'type': 'object',
+            'properties': {'posicion_en_espera': {'type': 'integer', 'nullable': True}},
+        }},
+    )
+    @action(
+        detail=False,
+        methods=['get'],
+        url_path='mi-posicion',
+        url_name='mi-posicion',
+        permission_classes=[IsSocio],
+    )
+    def mi_posicion(self, request):
+        """Return the authenticated socio's position in the wait-list for a class.
+
+        Query param: ``clase_id`` (required).
+        Returns ``posicion_en_espera: null`` if the socio is not in the wait-list.
+        """
+        clase_id = request.query_params.get('clase_id')
+        if not clase_id:
+            return Response(
+                {'detail': 'El parámetro clase_id es requerido.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            clase_id = int(clase_id)
+            clase = Clase.objects.get(pk=clase_id)
+        except (ValueError, Clase.DoesNotExist):
+            return Response(
+                {'detail': 'Clase no encontrada.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        socio = request.user.socio
+
+        try:
+            inscripcion = InscripcionClase.objects.get(clase=clase, socio=socio, en_espera=True)
+        except InscripcionClase.DoesNotExist:
+            return Response({'posicion_en_espera': None}, status=status.HTTP_200_OK)
+
+        # Count how many wait-listed inscriptions were created before this one
+        posicion = (
+            InscripcionClase.objects
+            .filter(clase=clase, en_espera=True, created_at__lt=inscripcion.created_at)
+            .count()
+        ) + 1
+
+        return Response({'posicion_en_espera': posicion}, status=status.HTTP_200_OK)
