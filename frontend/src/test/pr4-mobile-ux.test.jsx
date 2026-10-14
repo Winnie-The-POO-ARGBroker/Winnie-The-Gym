@@ -275,11 +275,11 @@ describe('index.html > viewport and theme-color meta', () => {
 
   it('has theme-color meta tags', async () => {
     const fs = await import('fs')
-    const candidates = ['/app/index.html', '/Users/rodrigovaldez/Documents/GitHub/Winnie-The-Gym/frontend/index.html']
-    let html = ''
-    for (const p of candidates) {
-      try { html = fs.readFileSync(p, 'utf-8'); break } catch (_e) { /* try next */ }
-    }
+    const path = await import('path')
+    const url = await import('url')
+    const here = url.fileURLToPath(import.meta.url)
+    const indexPath = path.resolve(path.dirname(here), '../../index.html')
+    const html = fs.readFileSync(indexPath, 'utf-8')
     expect(html).toContain('theme-color')
   })
 })
