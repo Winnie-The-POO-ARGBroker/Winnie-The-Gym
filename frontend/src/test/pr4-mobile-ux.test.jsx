@@ -265,12 +265,11 @@ describe('Button > min-h-11', () => {
 describe('index.html > viewport and theme-color meta', () => {
   it('has viewport-fit=cover in the viewport meta', async () => {
     const fs = await import('fs')
-    // Try both Docker container path and host path
-    const candidates = ['/app/index.html', '/Users/rodrigovaldez/Documents/GitHub/Winnie-The-Gym/frontend/index.html']
-    let html = ''
-    for (const p of candidates) {
-      try { html = fs.readFileSync(p, 'utf-8'); break } catch (_e) { /* try next */ }
-    }
+    const path = await import('path')
+    const url = await import('url')
+    const here = url.fileURLToPath(import.meta.url)
+    const indexPath = path.resolve(path.dirname(here), '../../index.html')
+    const html = fs.readFileSync(indexPath, 'utf-8')
     expect(html).toContain('viewport-fit=cover')
   })
 
