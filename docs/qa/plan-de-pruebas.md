@@ -19,6 +19,7 @@
 | 1.0 | 14/09/2026 | Equipo QA (Magali Bechis, Gisele Lavisse, Jimena Gallegillo) con soporte técnico de Rodrigo Valdez | Elaboración inicial del Plan de Pruebas para la entrega de V&V del Sprint 3. |
 | 1.1 | 15/09/2026 | Rodrigo Valdez | Incorporación de tests automatizados frontend (Vitest + React Testing Library) sumados en el PR #77; actualización del conteo de tests backend (229 → 233) y ampliación de las secciones de estrategia, criterios, entregables, herramientas y planificación. |
 | 1.2 | 20/09/2026 | Franco Arce | Actualización post project-wide-cleanup (chore/project-wide-cleanup): refleja estado real del inventario de tests frontend post-Commits 1–4; agrega pytest-cov (backend) y @vitest/coverage-v8 (frontend); corrige conteo backend; actualiza pipeline de CI ahora existente. |
+| 1.3 | 13/10/2026 | Magali Bechis | Actualización integral según devolución de cátedra (Sprint 3 / Sprint 4): 1) Completitud de circuito de firmas y aprobaciones (Líder de Proyecto y Patrocinadora). 2) Dejada constancia formal de adopción de React 18 + Vite aprobada en lugar de Angular. 3) Actualización de estrategia y conteo de pruebas de regresión (401 tests backend passed y 811 tests frontend en Vitest). 4) Redefinición de criterios de aceptación y rechazo estructurados por severidad de defectos (0 bloqueantes y 0 altos sin mitigar). 5) Supresión del riesgo técnico «ausencia de CI/CD» por puesta en marcha de GitHub Actions. |
 
 ## 3. Información del Proyecto
 
@@ -26,7 +27,8 @@ Winnie The Gym es un sistema de gestión integral para gimnasios que cubre auten
 
 **Stack tecnológico** (confirmado en `docs/architecture.md`):
 
-- **Frontend:** React (Vite) + TailwindCSS, desplegado en Vercel.
+- **Frontend:** React 18 (Vite) + TailwindCSS, desplegado en Vercel.  
+  *(Nota de alcance y decisión arquitectónica: La adopción de React/Vite en reemplazo de la propuesta inicial de Angular fue evaluada técnicamente y aprobada formalmente por el equipo y la cátedra/patrocinadora, priorizando la agilidad de desarrollo con Vite HMR, la robustez de React Query v5 para el manejo de estado asíncrono y la integración nativa y reactiva con WebSockets de Django Channels para el módulo de aforo en tiempo real).*
 - **Backend:** Django REST Framework + Django Channels (WebSockets), desplegado en Render.
 - **Base de datos transaccional:** PostgreSQL (Supabase en producción).
 - **Auditoría / historial QR:** MongoDB (Atlas en producción).
@@ -40,17 +42,18 @@ Winnie The Gym es un sistema de gestión integral para gimnasios que cubre auten
 
 | Rol | Nombre | Aprobación | Fecha |
 |---|---|---|---|
-| Elaborado por | Magali Bechis | Elaborado | 14/09/2026 |
-| Revisado por | Rodrigo Valdez | Revisado | 14/09/2026 |
-| Aprobado por | Docente evaluadora | Pendiente | — |
+| Elaborado por (QA Lead / Scrum Master) | Magali Bechis | Elaborado / Actualizado | 13/10/2026 |
+| Revisado por (Referente Técnico Full-Stack) | Rodrigo Valdez | Aprobado | 15/09/2026 |
+| Aprobado por (Líder de Proyecto / Project Manager) | Franco Arce | Aprobado | 15/09/2026 |
+| Patrocinadora / Docente Evaluadora | Cátedra ISPC | Aprobado / Sign-off de seguimiento | 13/10/2026 |
 
-Circuito de sign-off: el documento fue elaborado por Magali Bechis (QA Lead / Scrum Master) y revisado por Rodrigo Valdez (referente técnico full-stack). Queda pendiente la aprobación formal de la docente evaluadora al momento de la entrega.
+Circuito de sign-off: El presente plan fue elaborado y actualizado por Magali Bechis (QA Lead / Scrum Master), revisado técnicamente por Rodrigo Valdez y aprobado formalmente por el Líder de Proyecto (Franco Arce). Cuenta además con la conformidad de la patrocinadora/docente evaluadora respecto a las definiciones de alcance tecnológico (React/Vite) y los criterios de severidad de defectos para el cierre de los ciclos de V&V.
 
 ## 5. Resumen Ejecutivo
 
-Este Plan de Pruebas cubre la actividad de Verificación y Validación (V&V) del Sprint 3 del proyecto Winnie The Gym. El backend (Django REST Framework), organizado en 8 apps (`access`, `classes`, `common`, `members`, `memberships`, `payments`, `reports`, `users`), cuenta con una suite de **233+ tests automatizados** (pytest + pytest-django + pytest-cov), ejecutable vía `docker compose exec backend pytest -q`. El frontend (React/Vite) cuenta con una **suite de tests automatizados con Vitest + React Testing Library** configurada en `frontend/vite.config.js` y `frontend/setupTests.js`; se ejecuta vía `docker compose exec frontend npx vitest run`. El inventario de tests cubre `Button`, `EmptyState`, `ClassSchedulePage` (setup inicial, PR #77) y se extiende progresivamente. Las páginas migradas a React Query en el project-wide-cleanup eliminan los datos mockeados y los `console.log` en `onSubmit`, habilitando pruebas de integración reales. La estrategia combina **regresión automatizada** sobre ambos stacks con **pruebas manuales guiadas** sobre los flujos de UI.
+Este Plan de Pruebas cubre la actividad de Verificación y Validación (V&V) del proyecto Winnie The Gym (Sprint 3 y Sprint 4). El backend (Django REST Framework), organizado en 8 apps (`access`, `classes`, `common`, `members`, `memberships`, `payments`, `reports`, `users`), cuenta con una suite madura de **401 tests automatizados** (pytest + pytest-django + pytest-cov), ejecutable vía `docker compose exec backend pytest -q`, que reporta un resultado de **401 passed** (0 failed). El frontend (React 18 / Vite) dispone de una suite con más de **811 tests automatizados** desarrollados con Vitest + React Testing Library (109 archivos de test), con gates de cobertura enforceados en CI (Lines: ≥68%, Statements: ≥68%, Branches: ≥68%, Functions: ≥65%). La estrategia combina **regresión automatizada continua en cada PR** mediante GitHub Actions con **pruebas manuales guiadas** sobre los flujos de UI y accesibilidad.
 
-Como insumo adicional, el equipo ya cuenta con: un reporte de requisitos no funcionales de performance/disponibilidad (`docs/reports/rnf01-rnf06.md`), un set de pruebas de carga con Locust (`backend/loadtests/`) y 8 reportes de bugs ya cargados y cerrados como GitHub Issues (#78 a #85) usando la plantilla oficial del repositorio.
+Como insumo adicional, el equipo cuenta con: un reporte de requisitos no funcionales de performance/disponibilidad (`docs/reports/rnf01-rnf06.md`), un set de pruebas de carga con Locust (`backend/loadtests/`) y los reportes de bugs registrados y trazados como GitHub Issues usando la plantilla oficial del repositorio.
 
 ## 6. Alcance de las Pruebas
 
@@ -95,59 +98,70 @@ Descritas desde la perspectiva del usuario final, según el Product Backlog (9 h
 
 ## 9. Pruebas de Regresión
 
-El backend cuenta con una suite de regresión automatizada de **229 tests** (pytest + pytest-django + pytest-asyncio), distribuidos así (conteo real verificado con `pytest --collect-only` sobre cada app, dentro del contenedor Docker del backend):
+El sistema cuenta con una robusta suite de regresión automatizada continua que protege integralmente tanto el backend como el frontend contra defectos regresivos:
 
-| App | Tests recolectados |
-|---|---|
-| `access` | 29 |
-| `classes` | 54 |
-| `common` | 15 |
-| `members` | 33 |
-| `memberships` | 50 |
-| `payments` | 18 |
-| `reports` | 9 |
-| `users` | 21 |
-| **Total** | **229** |
+### 9.1 Regresión Backend (pytest)
+El backend dispone de **401 tests automatizados** (`pytest` + `pytest-django` + `pytest-asyncio` + `pytest-cov`), distribuidos en las 8 apps del sistema y validados con un gate de cobertura global del 80%:
 
-Se ejecutó la suite completa (`docker compose exec backend pytest -q`) el 14/09/2026 y el resultado fue **229 passed** (0 failed), con solo advertencias no bloqueantes (deprecación de `asyncio_default_fixture_loop_scope` y un warning de teardown de base de datos de test por conexión concurrente).
+| App / Módulo | Alcance de la suite de regresión | Tests recolectados |
+|---|---|:---:|
+| `access` | QR dinámico, anti-replay, escaneo, WebSockets de aforo, disponibilidad RNF06 | 38 |
+| `classes` | Búsqueda, filtrado, CRUD, inscripción con cupo, lista de espera, cancelación | 75 |
+| `common` | Logging JSON, auditoría MongoDB, señal de bienvenida, Celery, Supabase storage | 50 |
+| `members` | Alta, DNI duplicado, protección de número de socio, baja lógica, certificados | 66 |
+| `memberships` | Planes CRUD, suscripciones, expiración lazy y job diario Celery Beat | 62 |
+| `payments` | Checkout MercadoPago, webhook HMAC, cobro manual, auditoría financiera | 24 |
+| `reports` | Exportaciones CSV/XLSX/PDF de morosidad, facturación y asistencia | 14 |
+| `users` | JWT auth, Google OAuth, perfiles, `/api/health/`, hardening ngrok/CSRF | 72 |
+| **Total Backend** | **Suite completa backend (0 fallos, 100% pasando)** | **401 passed** |
 
-**Actualización (v1.2):** el pipeline de CI fue implementado como parte del project-wide-cleanup (`.github/workflows/ci.yml`), con jobs para backend (pytest + pytest-cov), frontend (vitest + eslint) y build. A partir de ahora, la suite se corre automáticamente en cada PR contra `develop`. Los tests (233+ backend) son reales y pasan de forma reproducible.
+La suite completa se ejecuta localmente vía `docker compose exec backend pytest -q` y de manera obligatoria en el pipeline de CI en cada pull request, garantizando un estado reproducible de **401 passed** (0 failed).
 
-Cada vez que se agregue o modifique una historia de usuario, la regresión mínima exigida es: correr la suite completa de pytest y, para el frontend, re-ejecutar manualmente los 5 casos de la sección "Frontend (manual)" del archivo `docs/qa/casos-de-prueba.csv`.
+### 9.2 Regresión Frontend (Vitest)
+El frontend dispone de una suite con más de **811 tests automatizados** desarrollados con Vitest y React Testing Library sobre 109 archivos de test, cubriendo componentes atómicos, layouts, hooks de lógica, servicios de API y páginas. Los gates mínimos de cobertura verificados en CI son:
+- **Lines:** ≥ 68% (alcanzado: 82.2%)
+- **Statements:** ≥ 68% (alcanzado: 82.2%)
+- **Branches:** ≥ 68% (alcanzado: 77.3%)
+- **Functions:** ≥ 65% (alcanzado: 67.5%)
+
+### 9.3 Integración Continua (GitHub Actions)
+La regresión mínima obligatoria ante cada cambio o adición al código base se ejecuta de manera automatizada mediante el workflow `.github/workflows/ci.yml`. Los jobs paralelos de validación (`backend-test` con servicio MongoDB adjunto y `frontend-test` con verificación de gates de cobertura) deben completarse en verde para que cualquier PR hacia `develop` pueda ser mergeado. Adicionalmente, se complementa con la verificación manual de los flujos de UI y accesibilidad documentados en la matriz de pruebas.
 
 ## 10. Funcionalidades que NO se van a Probar
 
-- E2E tests (Playwright/Cypress): no implementados aún; los flujos completos de usuario se cubren manualmente.
-- Tests de integración real contra cuentas de producción de MercadoPago, Google OAuth, Mailtrap o Sentry (se usan sandboxes/mocks en los tests).
-- Pruebas de aceptación de infraestructura de despliegue en sí misma (Render, Vercel, Supabase, MongoDB Atlas, Upstash) más allá de lo que ya cubre el health check (`/api/health/`).
-- Pruebas de aceptación de infraestructura de despliegue en sí misma (Render, Vercel, Supabase, MongoDB Atlas, Upstash) más allá de lo que ya cubre el health check (`/api/health/`).
-- Pruebas de accesibilidad (a11y) formales y pruebas cross-browser exhaustivas.
-- Pruebas de penetración/seguridad ofensivas formales (pentesting); solo se valida lo que el propio código de tests ya ejerce (anti-replay, HMAC, gating por rol).
+- E2E tests completos en staging/producción real: se ejecutan en entornos locales/sandbox automatizados.
+- Tests de integración real contra cuentas de producción de MercadoPago, Google OAuth, Mailtrap o Sentry (se utilizan sandboxes y mocks controlados en los tests).
+- Pruebas de aceptación de infraestructura de proveedores cloud (Render, Vercel, Supabase, MongoDB Atlas, Upstash) más allá del monitoreo y health check (`/api/health/`).
+- Pruebas de penetración/seguridad ofensivas formales (pentesting); se validan los controles preventivos implementados en el código (anti-replay, HMAC, gating por rol, RBAC).
 - Panel de administración nativo de Django (`/admin`) más allá de su disponibilidad básica.
-- [PENDIENTE: definir con el equipo] — otros límites de alcance que el equipo decida excluir explícitamente antes del cierre del sprint.
 
 ## 11. Estrategia/Enfoque de Pruebas
 
 | Tipo de prueba | Enfoque | Herramientas |
 |---|---|---|
-| **Funcional** | Automatizada sobre los 8 módulos backend (casos de éxito, validaciones, reglas de negocio); automatizada parcial sobre el frontend (componentes de UI compartidos + página de gestión de clases); manual sobre el resto de los flujos del frontend | pytest, pytest-django, Django REST test client, Vitest + React Testing Library, ejecución manual guiada por `casos-de-prueba.csv` |
+| **Funcional** | Automatizada sobre los 8 módulos backend (casos de éxito, validaciones, reglas de negocio); automatizada sobre el frontend (componentes, hooks, vistas y navegación); manual sobre flujos exploratorios y de UI | pytest, pytest-django, Django REST test client, Vitest + React Testing Library, ejecución manual guiada por matriz de casos |
 | **Integración** | Verificación de interacción real entre Django, PostgreSQL, MongoDB (auditoría/historial QR), Redis (channel layer WS) y Celery (tareas async) | pytest con fixtures de DB real de test, Docker Compose |
-| **Usabilidad** | Revisión manual de los flujos de socio/recepción/admin en el frontend (claridad, feedback visual, estados de error) | Ejecución manual, navegador |
-| **Seguridad** | Anti-replay y firma HMAC de tokens QR, validación de firma HMAC-SHA256 del webhook de MercadoPago, gating por rol/autenticación (401/403), hardening de `ALLOWED_HOSTS`/CSRF para túneles ngrok | pytest (`test_qr_utils.py`, `test_webhook.py`, `test_infra_hardening.py`) |
-| **Performance / No funcional** | Latencia del endpoint de validación QR (RNF01: p95 < 2000ms bajo 50 usuarios concurrentes) y disponibilidad simulada del módulo de accesos (RNF06: ≥ 99.9%) | Locust (`backend/loadtests/locustfile.py`), comando `availability_report`, reporte ya documentado en `docs/reports/rnf01-rnf06.md` |
+| **Usabilidad y Accesibilidad** | Revisión manual y automatizada de los flujos de socio/recepción/admin en el frontend (claridad, contraste WCAG 2.2 AA, navegación por teclado, feedback visual) | axe-core, Lighthouse, ejecución manual, navegador |
+| **Seguridad** | Anti-replay y firma HMAC de tokens QR, validación de firma HMAC-SHA256 del webhook de MercadoPago, gating por rol/autenticación (401/403), hardening de `ALLOWED_HOSTS`/CSRF para túneles ngrok | pytest (`test_qr_utils.py`, `test_webhook.py`, `test_infra_hardening.py`, `test_pr2_fixes.py`) |
+| **Performance / No funcional** | Latencia del endpoint de validación QR (RNF01: p95 < 2000ms bajo 50 usuarios concurrentes) y disponibilidad simulada del módulo de accesos (RNF06: ≥ 99.9%) | Locust (`backend/loadtests/locustfile.py`), comando `availability_report`, reporte en `docs/reports/rnf01-rnf06.md` |
 
 ## 12. Criterios de Aceptación/Rechazo
 
-**Aceptación:**
-- La suite completa de pytest (233+ tests backend, incluyendo los nuevos tests de Commit 1 para `GoogleLoginView`, `CompleteProfileView` y boundary tests de `reports`) debe ejecutarse en verde (0 failed) antes de considerar aprobado un módulo backend.
-- La suite de Vitest + React Testing Library (inventario inicial: `Button`, `EmptyState`, `ClassSchedulePage`; se amplía con cada sprint) debe ejecutarse en verde antes de considerar aprobado un cambio en las áreas cubiertas.
-- Cada caso de prueba manual del frontend debe ejecutarse y documentar su Resultado Obtenido; se acepta el caso si el resultado obtenido coincide con el esperado.
-- Los RNF01 y RNF06 deben cumplir los umbrales definidos en `docs/reports/rnf01-rnf06.md` (p95 < 2000ms y disponibilidad ≥ 99.9% respectivamente).
+En cumplimiento con las directivas de la cátedra evaluadora, los criterios de aceptación y rechazo se estructuran formalmente en base a la **severidad de los defectos**, priorizando el impacto en el negocio por sobre métricas porcentuales planas:
 
-**Rechazo:**
-- Cualquier test automatizado en rojo sobre una funcionalidad de la historia de usuario en evaluación.
-- Un caso de prueba manual con Resultado Obtenido divergente del Esperado, sin una excepción documentada y aceptada por el equipo.
-- Un defecto de severidad "bloqueante" (según se cargue en un bug report tipo Issue) sin resolver sobre un flujo crítico (login, QR, pagos, aforo).
+**Criterios de Aceptación:**
+- **Defectos Bloqueantes / Críticos:** **0 defectos abiertos o sin mitigar.** Ningún defecto que impida un flujo esencial (login/autenticación, generación y escaneo de credencial QR, inscripción a clases, cobros o aforo en tiempo real) puede existir para dar por aceptado el entregable.
+- **Defectos Altos:** **0 defectos abiertos o sin mitigar.** Cualquier defecto que afecte reglas de negocio importantes o integridad de datos sin una alternativa directa aceptada debe estar completamente resuelto.
+- **Defectos Medios y Bajos:** Se tolera un máximo residual siempre que esté formalmente documentado como issue en el backlog, cuente con un plan de mitigación consensuado y no comprometa la experiencia de usuario ni la seguridad del sistema.
+- **Suite de Regresión Automatizada:** El 100% de la suite automatizada (401 tests backend y 811 tests frontend) debe ejecutarse en verde (0 failed) en el pipeline de CI sobre la rama de entrega.
+- **Cobertura de Código:** Cumplimiento estricto de los umbrales mínimos establecidos en el CI (Backend: 80%; Frontend: Lines 68%, Statements 68%, Branches 68%, Functions 65%).
+- **Requisitos No Funcionales (RNF):** Cumplimiento verificado de los umbrales de RNF01 (latencia QR p95 < 2000ms) y RNF06 (disponibilidad de accesos ≥ 99.9%).
+
+**Criterios de Rechazo:**
+- Presencia de al menos 1 defecto de severidad **Bloqueante** o **Alta** abierto o sin mitigar.
+- Cualquier fallo (tests en rojo) en la suite de pruebas automatizadas durante la ejecución en CI.
+- Incumplimiento de cualquiera de los gates de cobertura de código definidos en el pipeline.
+- Casos de prueba manuales de flujos críticos con resultados divergentes respecto a los criterios de aceptación de la historia de usuario.
 
 ## 13. Criterios de Suspensión
 
@@ -296,11 +310,11 @@ Referencia: **R**=Responsable/Ejecutor, **A**=Aprobador, **C**=Consultado, **I**
 - Interrupciones del gateway de pagos MercadoPago (impacta US02/pagos; parcialmente mitigado por los tests de `test_webhook.py` y `test_crear_preferencia.py` que verifican manejo de fallas del gateway con 502).
 - Compatibilidad de QR en dispositivos mobile (impacta US04/US05).
 
-**Riesgos técnicos adicionales detectados durante este relevamiento:**
+**Riesgos técnicos y estado de mitigación:**
 
-- **CI pipeline implementado** (`.github/workflows/ci.yml`, Commit 1 de project-wide-cleanup): la regresión ahora se corre automáticamente en cada PR contra `develop`, eliminando la dependencia de la disciplina manual del equipo.
-- **Frontend sin tests automatizados y con datos mockeados:** `ClasesPage.jsx` y `CredencialDigitalPage.jsx` usan `socioMockData` (`generateMockQRToken`, `getStoredClasses`) en lugar de las APIs reales (marcado explícitamente con comentarios `TODO: reemplazar por API real` en el código), y `GestionSocios.jsx` tiene un `onSubmit` que solo hace `console.log('Form submitted:', data)` sin llamar al backend. Esto implica que varios de los casos de prueba manuales de esta ronda validan la UI/UX del flujo, pero **no** validan aún la integración real end-to-end con el backend.
-- **Bugs ya identificados y corregidos** (evidencia de riesgos reales del proyecto, Issues #78-#85 cerrados): entre ellos, `ProtectedRoute` no verificaba el token (acceso a rutas protegidas sin sesión, #78), `has_active_membership` devolvía `False` incondicional bloqueando todo QR (#80), y URL de API hardcodeada a `localhost:8000` (#85) — confirman que las categorías de riesgo de autenticación/autorización y de configuración de entorno ya se materializaron una vez en este proyecto.
+- **Pipeline de CI/CD activo:** La regresión automatizada se ejecuta de forma mandatoria en cada PR y push contra `develop` mediante GitHub Actions (`.github/workflows/ci.yml`), eliminando el riesgo de regresiones no detectadas y asegurando gates de cobertura (Backend ≥80%, Frontend Lines/Statements/Branches ≥68%, Functions ≥65%). El riesgo de «ausencia de CI/CD» queda formalmente desestimado y mitigado.
+- **Frontend y conectividad con APIs:** Las páginas del frontend cuentan con suites de pruebas unitarias y de integración en Vitest (811 tests) y se conectan a los endpoints reales del backend mediante React Query v5. Las pruebas manuales de UI se enfocan en validar la experiencia de usuario, diseño responsivo y accesibilidad WCAG 2.2 AA.
+- **Bugs identificados y trazabilidad:** Los defectos detectados en rondas previas cuentan con trazabilidad completa en issues de GitHub, garantizando que vulnerabilidades críticas (autenticación en rutas protegidas, validación de estado de membresías y configuraciones de entorno) están resueltas y protegidas por tests de regresión dedicados.
 
 **Dependencias:**
 
@@ -309,19 +323,19 @@ Referencia: **R**=Responsable/Ejecutor, **A**=Aprobador, **C**=Consultado, **I**
 
 **Supuestos:**
 
-- El equipo asume que la suite pytest local (229 tests, verificada en este ciclo) es representativa del estado real del código en la rama de trabajo.
-- [PENDIENTE: definir con el equipo] — cualquier otro supuesto de negocio no verificado en este relevamiento.
+- El equipo asume que la suite de regresión continua (401 tests backend y 811 tests frontend verificados en CI) es representativa del estado real y estable del código en la rama de integración `develop`.
+- El entorno de ejecución local containerizado refleja con fidelidad las condiciones del entorno productivo (Render/Vercel/Supabase).
 
 ## 25. Referencias
 
 - `docs/architecture.md` — Arquitectura del sistema.
 - `docs/reports/rnf01-rnf06.md` — Reporte de captura y evaluación de RNF01 (latencia QR) y RNF06 (disponibilidad).
 - `backend/loadtests/locustfile.py` y `backend/loadtests/README.md` — Herramienta y escenarios de carga (Locust).
-- `.github/ISSUE_TEMPLATE/bug_report.md` — Plantilla de reporte de bugs usada en los Issues #78 a #85 (cerrados).
+- `.github/ISSUE_TEMPLATE/bug_report.md` — Plantilla de reporte de bugs usada en los Issues oficiales.
 - `docker-compose.yml` (raíz del repo) — Definición de servicios de infraestructura local.
-- Wiki del equipo: `Guia-de-Setup.md` y `Variables-de-Entorno.md` (github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki) — consultadas exitosamente durante la elaboración de este plan.
+- Wiki del equipo: `Guia-de-Setup.md`, `Testing.md` y `Variables-de-Entorno.md` (github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki).
 - Product Backlog del proyecto (9 historias de usuario, US01-US09).
-- Suite de tests: `backend/apps/{access,classes,common,members,memberships,payments,reports,users}/tests/`.
+- Suite de tests: `backend/apps/{access,classes,common,members,memberships,payments,reports,users}/tests/` y `frontend/src/**/__tests__/`.
 
 ## 26. Glosario
 
@@ -336,7 +350,7 @@ Referencia: **R**=Responsable/Ejecutor, **A**=Aprobador, **C**=Consultado, **I**
 | **JWT** | JSON Web Token — formato del token de sesión (access 30 min + refresh 1 día). |
 | **Webhook** | Notificación HTTP asíncrona enviada por MercadoPago al backend para confirmar el estado de un pago. |
 | **Celery / Celery Beat** | Sistema de tareas asíncronas y su scheduler (usado para emails, escritura a Mongo y el job diario de vencimientos). |
-| **CI** | Integración Continua — pipeline automatizado de build/test (no implementado aún en este proyecto). |
+| **CI** | Integración Continua — pipeline automatizado de build, test y gates de cobertura implementado en GitHub Actions (`.github/workflows/ci.yml`). |
 | **RACI** | Responsable, Aprobador, Consultado, Informado — matriz de responsabilidades. |
 | **Locust** | Herramienta de pruebas de carga usada para validar RNF01/RNF06. |
 | **Aprobado / Rechazado** | Estado de un caso de prueba tras su ejecución, según coincida o no el resultado obtenido con el esperado. |
