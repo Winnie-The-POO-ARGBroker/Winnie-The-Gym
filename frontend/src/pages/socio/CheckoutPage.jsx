@@ -8,6 +8,8 @@ import Button from '../../components/ui/Button'
 import { usePlanesQuery } from '../../hooks/queries/usePlanesAdmin'
 import { useCrearPreferenciaMutation } from '../../hooks/queries/usePagos'
 import { useSocioMembresiaMe } from '../../hooks/queries/useMembresias'
+import useAuth from '../../hooks/useAuth'
+import EstadoBanner from '../../components/socio/EstadoBanner'
 
 // Íconos de beneficios por plan (genérico si el backend no los tiene)
 const BENEFIT_ICONS = [Zap, CheckCircle, ShieldCheck]
@@ -82,6 +84,7 @@ function PlanCard({ plan, onPagar, loading, preselected = false }) {
 }
 
 export default function CheckoutPage() {
+  const { user } = useAuth()
   const [searchParams] = useSearchParams()
   const preselectedPlanId = searchParams.get('plan')
   const [loadingPlanId, setLoadingPlanId] = useState(null)
@@ -112,6 +115,11 @@ export default function CheckoutPage() {
       subtitle="Seleccioná tu plan y pagá con MercadoPago"
     >
       <div className="flex flex-col gap-4 w-full animate-fadeIn">
+
+        {/* Estado suspendido / baja */}
+        {user?.estado && user.estado !== 'activo' && (
+          <EstadoBanner estado={user.estado} motivo={user.motivo_suspension} />
+        )}
 
         {/* Tu plan actual — shown when the socio has an active or recent membership */}
         {membresiaActiva && (
