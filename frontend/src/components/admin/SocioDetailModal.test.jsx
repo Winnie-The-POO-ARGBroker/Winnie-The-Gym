@@ -15,6 +15,14 @@ import { renderWithProviders, resetAllStores } from '../../test/test-utils'
 const mockMutate = vi.fn()
 const mockMutation = { mutate: mockMutate, isPending: false }
 
+// Mock api so CertificadoCard (rendered inside TabDatos) never fires real HTTP
+vi.mock('../../services/api', () => ({
+  default: {
+    get: vi.fn().mockResolvedValue({ data: { url: 'https://signed.example.com/cert.pdf', expires_at: '' } }),
+    patch: vi.fn().mockResolvedValue({ data: {} }),
+  },
+}))
+
 vi.mock('../../hooks/queries/useMembresias', () => ({
   useMembresiasPorSocio: vi.fn(),
   useSuspenderMembresiaMutation: vi.fn(),
