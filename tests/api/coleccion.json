@@ -1,0 +1,623 @@
+{
+  "info": {
+    "_postman_id": "winnie-gym-api-collection",
+    "name": "Winnie The Gym — API Test Suite",
+    "description": "Full CRUD + negative test coverage for Auth, Planes and Socios.\n\nPrerequisite: set `admin_email` and `admin_password` in the environment before running.\nThe Login request captures the `access` token automatically.\n\nRun order: Auth → Planes CRUD → Socios CRUD → Negative Tests.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [],
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Authentication flow — login valid + invalid.",
+      "item": [
+        {
+          "name": "Login (admin) — 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has access token', function () {",
+                  "  var data = pm.response.json();",
+                  "  pm.expect(data).to.have.property('access');",
+                  "  pm.expect(data.access).to.be.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "pm.test('Response has refresh token', function () {",
+                  "  var data = pm.response.json();",
+                  "  pm.expect(data).to.have.property('refresh');",
+                  "});",
+                  "",
+                  "// Capture tokens for subsequent requests",
+                  "var data = pm.response.json();",
+                  "if (data.access) {",
+                  "  pm.environment.set('access', data.access);",
+                  "}",
+                  "if (data.refresh) {",
+                  "  pm.environment.set('refresh', data.refresh);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{admin_email}}\",\n  \"password\": \"{{admin_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login", ""]
+            },
+            "description": "Authenticate as admin and capture access/refresh tokens into environment variables."
+          }
+        },
+        {
+          "name": "Login (invalid credentials) — 400 / 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400 or 401 for invalid credentials', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([400, 401]);",
+                  "});",
+                  "",
+                  "pm.test('Response does not contain access token', function () {",
+                  "  var data = pm.response.json();",
+                  "  pm.expect(data).to.not.have.property('access');",
+                  "});",
+                  "",
+                  "pm.test('Response has error detail', function () {",
+                  "  var data = pm.response.json();",
+                  "  var hasDetail = data.detail || data.non_field_errors;",
+                  "  pm.expect(hasDetail).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"notareal@user.com\",\n  \"password\": \"wrongpassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login", ""]
+            },
+            "description": "Login with wrong credentials — expects 400 or 401."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Planes CRUD",
+      "description": "Full create / read / update / delete cycle for membership plans (admin role required).",
+      "item": [
+        {
+          "name": "Crear plan — 201",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has plan id', function () {",
+                  "  var data = pm.response.json();",
+                  "  pm.expect(data).to.have.property('id');",
+                  "  pm.expect(data.id).to.be.a('number');",
+                  "});",
+                  "",
+                  "pm.test('Response has nombre field', function () {",
+                  "  var data = pm.response.json();",
+                  "  pm.expect(data).to.have.property('nombre');",
+                  "  pm.expect(data.nombre).to.be.a('string');",
+                  "});",
+                  "",
+                  "pm.test('Response has precio field', function () {",
+                  "  var data = pm.response.json();",
+                  "  pm.expect(data).to.have.property('precio');",
+                  "});",
+                  "",
+                  "// Capture plan_id for subsequent requests",
+                  "var data = pm.response.json();",
+                  "if (data.id) {",
+                  "  pm.environment.set('plan_id', data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Plan Newman Test\",\n  \"subtitulo\": \"Creado por suite automatizada\",\n  \"precio\": 15000,\n  \"duracion_dias\": 30,\n  \"clases_asignadas\": 8,\n  \"es_popular\": false,\n  \"activo\": true,\n  \"beneficios\": [\"Acceso libre al gimnasio\", \"Acceso a clases grupales\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/memberships/planes/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "memberships", "planes", ""]
+            },
+            "description": "Create a new membership plan and capture its id into `plan_id`."
+          }
+        },
+        {
+          "name": "Leer plan — 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('id matches plan_id env var', function () {",
+                  "  var data = pm.response.json();",
+                  "  pm.expect(String(data.id)).to.eql(String(pm.environment.get('plan_id')));",
+                  "});",
+                  "",
+                  "pm.test('nombre is a string', function () {",
+                  "  var data = pm.response.json();",
+                  "  pm.expect(data.nombre).to.be.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "pm.test('precio exists', function () {",
+                  "  var data = pm.response.json();",
+                  "  pm.expect(data).to.have.property('precio');",
+                  "});",
+                  "",
+                  "pm.test('activo is boolean', function () {",
+                  "  var data = pm.response.json();",
+                  "  pm.expect(data.activo).to.be.a('boolean');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/memberships/planes/{{plan_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "memberships", "planes", "{{plan_id}}", ""]
+            },
+            "description": "Fetch the plan created in the previous step."
+          }
+        },
+        {
+          "name": "Actualizar plan (PATCH) — 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('nombre was updated', function () {",
+                  "  var data = pm.response.json();",
+                  "  pm.expect(data.nombre).to.include('Actualizado');",
+                  "});",
+                  "",
+                  "pm.test('id is unchanged', function () {",
+                  "  var data = pm.response.json();",
+                  "  pm.expect(String(data.id)).to.eql(String(pm.environment.get('plan_id')));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Plan Newman Test Actualizado\",\n  \"precio\": 18000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/memberships/planes/{{plan_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "memberships", "planes", "{{plan_id}}", ""]
+            },
+            "description": "Partial update — rename the plan and change price."
+          }
+        },
+        {
+          "name": "Eliminar plan — 204",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 204', function () {",
+                  "  pm.response.to.have.status(204);",
+                  "});",
+                  "",
+                  "// Clear the env variable once deleted",
+                  "pm.environment.set('plan_id', '');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/memberships/planes/{{plan_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "memberships", "planes", "{{plan_id}}", ""]
+            },
+            "description": "Delete the test plan created in this folder."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Socios CRUD",
+      "description": "Create / read / update a gym member (socio).",
+      "item": [
+        {
+          "name": "Crear socio — 201",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Generate a unique DNI to avoid duplicate constraint on repeated runs",
+                  "var ts = Date.now().toString().slice(-7);",
+                  "pm.environment.set('test_dni', '55' + ts);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has socio id', function () {",
+                  "  var data = pm.response.json();",
+                  "  pm.expect(data).to.have.property('id');",
+                  "  pm.expect(data.id).to.be.a('number');",
+                  "});",
+                  "",
+                  "pm.test('Response has numero_socio', function () {",
+                  "  var data = pm.response.json();",
+                  "  pm.expect(data).to.have.property('numero_socio');",
+                  "});",
+                  "",
+                  "pm.test('nombre is a string', function () {",
+                  "  var data = pm.response.json();",
+                  "  pm.expect(data.nombre).to.be.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "pm.test('dni field exists', function () {",
+                  "  var data = pm.response.json();",
+                  "  pm.expect(data).to.have.property('dni');",
+                  "});",
+                  "",
+                  "// Capture socio_id",
+                  "var data = pm.response.json();",
+                  "if (data.id) {",
+                  "  pm.environment.set('socio_id', data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Newman\",\n  \"apellido\": \"Test\",\n  \"email\": \"newman.test.{{$timestamp}}@test.local\",\n  \"dni\": \"{{test_dni}}\",\n  \"telefono\": \"+5493511234567\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/members/socios/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "members", "socios", ""]
+            },
+            "description": "Create a test socio with a unique DNI (generated in pre-request script)."
+          }
+        },
+        {
+          "name": "Leer socio — 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('id matches socio_id env var', function () {",
+                  "  var data = pm.response.json();",
+                  "  pm.expect(String(data.id)).to.eql(String(pm.environment.get('socio_id')));",
+                  "});",
+                  "",
+                  "pm.test('nombre is present', function () {",
+                  "  var data = pm.response.json();",
+                  "  pm.expect(data.nombre).to.be.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "pm.test('estado field exists', function () {",
+                  "  var data = pm.response.json();",
+                  "  pm.expect(data).to.have.property('estado');",
+                  "});",
+                  "",
+                  "pm.test('numero_socio field exists', function () {",
+                  "  var data = pm.response.json();",
+                  "  pm.expect(data).to.have.property('numero_socio');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/members/socios/{{socio_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "members", "socios", "{{socio_id}}", ""]
+            },
+            "description": "Fetch the socio created in the previous request."
+          }
+        },
+        {
+          "name": "Actualizar socio (PATCH) — 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('telefono was updated', function () {",
+                  "  var data = pm.response.json();",
+                  "  pm.expect(data.telefono).to.eql('+5493519999999');",
+                  "});",
+                  "",
+                  "pm.test('id is unchanged', function () {",
+                  "  var data = pm.response.json();",
+                  "  pm.expect(String(data.id)).to.eql(String(pm.environment.get('socio_id')));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"telefono\": \"+5493519999999\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/members/socios/{{socio_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "members", "socios", "{{socio_id}}", ""]
+            },
+            "description": "Partial update — change phone number."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Negative Tests",
+      "description": "400 / 401 scenarios to validate authorization and input validation.",
+      "item": [
+        {
+          "name": "Crear plan sin token — 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 401', function () {",
+                  "  pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Response has authentication error', function () {",
+                  "  var data = pm.response.json();",
+                  "  pm.expect(data.detail || data.code).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Plan sin auth\",\n  \"precio\": 10000,\n  \"duracion_dias\": 30\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/memberships/planes/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "memberships", "planes", ""]
+            },
+            "description": "POST without Authorization header — expects 401."
+          }
+        },
+        {
+          "name": "Crear plan con precio negativo — 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', function () {",
+                  "  pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Response has validation error for precio', function () {",
+                  "  var data = pm.response.json();",
+                  "  // The error could be under 'precio' or 'non_field_errors'",
+                  "  var hasError = data.precio || data.non_field_errors || data.detail;",
+                  "  pm.expect(hasError).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Plan Invalido\",\n  \"precio\": -500,\n  \"duracion_dias\": 30\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/memberships/planes/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "memberships", "planes", ""]
+            },
+            "description": "POST with negative precio — expects 400 validation error."
+          }
+        },
+        {
+          "name": "Crear socio sin token — 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 401', function () {",
+                  "  pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Response has authentication error', function () {",
+                  "  var data = pm.response.json();",
+                  "  pm.expect(data.detail || data.code).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"No Auth\",\n  \"apellido\": \"Test\",\n  \"email\": \"noauth@test.local\",\n  \"dni\": \"12345678\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/members/socios/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "members", "socios", ""]
+            },
+            "description": "POST socios without Authorization header — expects 401."
+          }
+        },
+        {
+          "name": "Crear socio con DNI duplicado — 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', function () {",
+                  "  pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Response has validation error for dni', function () {",
+                  "  var data = pm.response.json();",
+                  "  var hasError = data.dni || data.non_field_errors || data.detail;",
+                  "  pm.expect(hasError).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Socio\",\n  \"apellido\": \"Duplicado\",\n  \"email\": \"dup.{{$timestamp}}@test.local\",\n  \"dni\": \"{{test_dni}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/members/socios/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "members", "socios", ""]
+            },
+            "description": "POST socios with the same DNI created earlier — expects 400 duplicate error.\nNote: `test_dni` is set by the Crear socio pre-request script."
+          }
+        }
+      ]
+    }
+  ]
+}
