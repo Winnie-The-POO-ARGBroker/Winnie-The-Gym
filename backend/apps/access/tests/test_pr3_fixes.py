@@ -90,8 +90,9 @@ class ExitMembershipTests(APITestCase):
         self.assertEqual(response.data['access_type'], 'EXIT')
         self.assertEqual(response.data['message'], 'Salida registrada')
 
-    def test_exit_grants_regardless_of_membership_but_blocks_without_entry_today(self):
-        """EXIT is DENIED if socio has no ENTRY today (anti-passback light), even with expired membership."""
+    def test_exit_grants_regardless_of_membership_but_warns_without_entry_today(self):
+        """#149: EXIT with no ENTRY today returns scan_status=warning (NO_FIGURA_ADENTRO),
+        HTTP 200, and status=GRANTED — not DENIED. Updated from PR3 soft-block to PR5 warning."""
         user_socio = make_user_factory(rol='socio')
         socio = make_socio_factory(usuario=user_socio, estado='activo', dni='22222222')
         plan = make_plan_factory()
@@ -102,10 +103,11 @@ class ExitMembershipTests(APITestCase):
         self.client.force_authenticate(user=self.receptionist)
         response = self.client.post(self.url, {'dni': '22222222', 'access_type': 'EXIT'})
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(response.data['status'], 'DENIED')
-        self.assertEqual(response.data['denial_reason'], 'NOT_INSIDE')
-        self.assertEqual(response.data['message'], 'El socio no registra entrada hoy')
+        # Per #149: EXIT is always registered as GRANTED; anti-passback becomes a warning
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['scan_status'], 'warning')
+        self.assertEqual(response.data['status'], 'GRANTED')
+        self.assertEqual(response.data['denial_reason'], 'NO_FIGURA_ADENTRO')
 
     def test_entry_still_denied_for_expired_membership(self):
         """Regression: ENTRY must still be DENIED for an expired membership."""

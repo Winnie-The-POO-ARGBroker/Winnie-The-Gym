@@ -112,6 +112,9 @@ export default function AdminConfiguracionPage() {
                 {errors.aforo_maximo && (
                   <span className="text-xs text-error-500">{errors.aforo_maximo.message}</span>
                 )}
+                <p className="text-xs text-text-tertiary">
+                  El aforo máximo bloquea nuevas entradas cuando se alcanza el límite.
+                </p>
               </div>
 
               {/* Horarios */}
@@ -136,6 +139,9 @@ export default function AdminConfiguracionPage() {
                   )}
                 </div>
               </div>
+              <p className="text-xs text-text-tertiary -mt-2">
+                Fuera del horario configurado se rechaza el acceso de nuevas entradas.
+              </p>
 
               {/* Teléfono de contacto */}
               <div className="flex flex-col gap-1.5">

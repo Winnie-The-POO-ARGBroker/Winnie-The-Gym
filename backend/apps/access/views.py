@@ -7,6 +7,7 @@ from django.db.models import Q
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework import status, generics, permissions
+from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
@@ -15,7 +16,15 @@ from .filters import AccessLogFilter
 from .models import AccessLog
 from .pagination import AccessLogPagination
 from .permissions import IsReceptionistOrAdmin, IsAdminOnly
-from .services import has_active_membership, get_aforo_stats, get_aforo_actual, invalidate_aforo_cache
+from .services import (
+    has_active_membership,
+    get_aforo_stats,
+    get_aforo_actual,
+    invalidate_aforo_cache,
+    get_presencia,
+    check_aforo,
+    check_horario,
+)
 from .serializers import (
     AccessLogSerializer,
     CerrarDiaSerializer,
@@ -34,6 +43,22 @@ from apps.members.models import Socio
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
+
+
+# ---------------------------------------------------------------------------
+# Rate throttles (#159)
+# ---------------------------------------------------------------------------
+
+class AccessScanThrottle(UserRateThrottle):
+    scope = 'access_scan'
+
+
+class AccessManualThrottle(UserRateThrottle):
+    scope = 'access_manual'
+
+
+class AccessCredencialThrottle(UserRateThrottle):
+    scope = 'access_scan'
 
 
 # ---------------------------------------------------------------------------
@@ -114,64 +139,88 @@ def _broadcast_aforo_alert(aforo_actual: int, aforo_maximo: int, umbral_pct: int
         logger.warning('Aforo alert broadcast failed: %s', exc)
 
 
-def _process_scan(user_obj, is_valid, error_code, access_type, jti, scanned_by_user, source):
-    """Shared scan processing: membership check, aforo, persist log.
+def _process_scan(user_obj, is_valid, error_code, access_type, jti, scanned_by_user, source, override=False):
+    """Shared scan processing: membership check, aforo, horario, anti-passback, persist log.
 
-    Returns (access_log, is_valid, error_code, message).
+    Returns (access_log, is_valid, error_code, message, allow_override, scan_status).
+
+    scan_status is one of 'granted', 'denied', 'warning':
+      - 'warning': anti-passback condition — log is persisted as GRANTED with
+        the warning code in denial_reason. Caller returns HTTP 200.
+      - 'granted': access granted normally.
+      - 'denied': access denied, log persisted as DENIED.
+
+    allow_override is True when a staff member may retry with override=True.
     """
     from apps.common.models import GymConfig
 
     gym_cfg = GymConfig.get()
-    aforo_data = get_aforo_actual()
-    aforo_actual = aforo_data.get('aforo_actual', 0)
     aforo_maximo = gym_cfg.aforo_maximo
+
+    allow_override = False
+    scan_status = 'denied'
+    warning_reason = None
 
     if is_valid and user_obj:
         if access_type == AccessLog.AccessType.ENTRY:
-            # ENTRY: validate membership and aforo
-            if not user_obj.is_active:
+            # #220 — Horario check (EXIT always permitted regardless of schedule)
+            horario_ok, horario_error = check_horario(gym_cfg)
+            if not horario_ok:
                 is_valid = False
-                error_code = 'USER_SUSPENDED'
-            elif not has_active_membership(user_obj):
-                is_valid = False
-                error_code = 'MEMBERSHIP_INACTIVE'
-            elif gym_cfg.aforo_bloqueo_al_llegar_max and aforo_actual >= aforo_maximo:
-                is_valid = False
-                error_code = 'AFORO_FULL'
+                error_code = horario_error
+
+            # #220 — Aforo check
+            if is_valid:
+                aforo_ok, aforo_error = check_aforo(gym_cfg)
+                if not aforo_ok:
+                    is_valid = False
+                    error_code = aforo_error
+
+            # Membership & suspension
+            if is_valid:
+                if not user_obj.is_active:
+                    is_valid = False
+                    error_code = 'USER_SUSPENDED'
+                elif not has_active_membership(user_obj):
+                    is_valid = False
+                    error_code = 'MEMBERSHIP_INACTIVE'
+
+            # #149 — Anti-passback ENTRY
+            if is_valid:
+                presencia = get_presencia(user_obj)
+                if presencia == 'inside':
+                    if override:
+                        # Staff override: close the previous open session first
+                        _close_previous_session(user_obj, scanned_by_user)
+                        # Continue — create the new ENTRY below
+                    else:
+                        warning_reason = 'YA_FIGURA_ADENTRO'
+                        allow_override = True
+                        is_valid = False
+
         else:
-            # EXIT: only validate that user is currently inside (anti-passback light)
-            today = timezone.localdate()
-            last_granted = (
-                AccessLog.objects
-                .filter(
-                    user=user_obj,
-                    timestamp__date=today,
-                    status=AccessLog.AccessStatus.GRANTED,
-                    access_type__in=[AccessLog.AccessType.ENTRY, AccessLog.AccessType.EXIT],
-                )
-                .order_by('-timestamp')
-                .first()
-            )
-            if last_granted is None or last_granted.access_type != AccessLog.AccessType.ENTRY:
-                is_valid = False
-                error_code = 'NOT_INSIDE'
+            # EXIT — always allowed from schedule/aforo perspective (#220)
+            # #149 — Warn if socio not inside, but still register the EXIT as GRANTED
+            presencia = get_presencia(user_obj)
+            if presencia != 'inside':
+                warning_reason = 'NO_FIGURA_ADENTRO'
+                # is_valid stays True: log as GRANTED
 
-    access_status = (
-        AccessLog.AccessStatus.GRANTED if is_valid else AccessLog.AccessStatus.DENIED
-    )
-    denial_reason = error_code if not is_valid else None
-
-    # Build message
-    if is_valid:
-        message = 'Entrada registrada' if access_type == AccessLog.AccessType.ENTRY else 'Salida registrada'
-    elif error_code == 'MEMBERSHIP_INACTIVE':
-        message = 'Membresía vencida'
-    elif error_code == 'NOT_INSIDE':
-        message = 'El socio no registra entrada hoy'
-    elif error_code == 'AFORO_FULL':
-        message = 'Aforo completo'
+    # Determine log fields
+    if warning_reason:
+        scan_status = 'warning'
+        access_status = AccessLog.AccessStatus.GRANTED
+        denial_reason = warning_reason
+    elif is_valid:
+        scan_status = 'granted'
+        access_status = AccessLog.AccessStatus.GRANTED
+        denial_reason = None
     else:
-        message = f'Acceso denegado: {denial_reason}'
+        scan_status = 'denied'
+        access_status = AccessLog.AccessStatus.DENIED
+        denial_reason = error_code
+
+    message = _build_message(scan_status, warning_reason, error_code, access_type)
 
     access_log = AccessLog.objects.create(
         user=user_obj,
@@ -183,15 +232,62 @@ def _process_scan(user_obj, is_valid, error_code, access_type, jti, scanned_by_u
         source=source,
     )
 
-    # After a successful ENTRY/EXIT, check aforo alert threshold
-    if is_valid:
+    # Broadcast aforo update for all GRANTED logs (including warnings that are GRANTED)
+    if access_status == AccessLog.AccessStatus.GRANTED:
         _broadcast_aforo_update()
         new_aforo = get_aforo_actual().get('aforo_actual', 0)
         umbral_pct = gym_cfg.aforo_umbral_alerta_pct
         if aforo_maximo > 0 and new_aforo / aforo_maximo * 100 >= umbral_pct:
             _broadcast_aforo_alert(new_aforo, aforo_maximo, umbral_pct, gym_cfg.aforo_bloqueo_al_llegar_max)
 
-    return access_log, is_valid, error_code, message
+    return access_log, is_valid, error_code, message, allow_override, scan_status
+
+
+def _build_message(scan_status, warning_reason, error_code, access_type):
+    """Return a human-readable status message for the scan response."""
+    if scan_status == 'warning':
+        msg_map = {
+            'YA_FIGURA_ADENTRO': 'El socio ya figura dentro del gimnasio',
+            'NO_FIGURA_ADENTRO': 'El socio no figura dentro del gimnasio',
+            'YA_REGISTRADO': 'Acceso registrado recientemente',
+        }
+        return msg_map.get(warning_reason, f'Advertencia: {warning_reason}')
+
+    if scan_status == 'granted':
+        return 'Entrada registrada' if access_type == AccessLog.AccessType.ENTRY else 'Salida registrada'
+
+    # denied
+    msg_map = {
+        'MEMBERSHIP_INACTIVE': 'Membresía vencida',
+        'NOT_INSIDE': 'El socio no registra entrada hoy',
+        'AFORO_FULL': 'Aforo completo',
+        'AFORO_COMPLETO': 'Aforo máximo alcanzado',
+        'FUERA_DE_HORARIO': 'El gimnasio está fuera del horario permitido',
+        'USER_SUSPENDED': 'Usuario suspendido',
+        'UNKNOWN_USER': 'Usuario desconocido',
+    }
+    return msg_map.get(error_code, f'Acceso denegado: {error_code}')
+
+
+def _close_previous_session(user_obj, operator):
+    """#149 — Override: create an EXIT GRANTED to close the socio's open session.
+
+    Called when staff sends override=True for a YA_FIGURA_ADENTRO situation.
+    """
+    AccessLog.objects.create(
+        user=user_obj,
+        access_type=AccessLog.AccessType.EXIT,
+        status=AccessLog.AccessStatus.GRANTED,
+        source=AccessLog.AccessSource.MANUAL_CORRECTION,
+        operator=operator,
+        scanned_by=operator,
+        motivo='Sesión previa cerrada por override de staff (anti-passback)',
+    )
+    logger.info(
+        'Anti-passback override: closed previous session for user %s by operator %s',
+        user_obj.pk,
+        operator.pk if operator else None,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -234,8 +330,12 @@ class ScanQRView(APIView):
     Procesa el escaneo de un código QR en la terminal de recepción.
     [BLOCKER-1 Fix]: Protegido con IsReceptionistOrAdmin para prevenir auto-aprobación por socios.
     [Fix #148]: EXIT no valida membresía activa.
+    [Fix #149]: Anti-passback warning + override support.
+    [Fix #220]: Aforo + horario enforcement.
+    [Fix #159]: Throttled at 60/min.
     """
     permission_classes = [IsReceptionistOrAdmin]
+    throttle_classes = [AccessScanThrottle]
 
     def post(self, request):
         serializer = ScanQRSerializer(data=request.data)
@@ -244,6 +344,7 @@ class ScanQRView(APIView):
 
         qr_token = serializer.validated_data['qr_token']
         access_type = serializer.validated_data['access_type']
+        override = bool(request.data.get('override', False))
         scanned_by_user = request.user
 
         # 1. Verify Token QR and consume atomically (anti-replay)
@@ -259,8 +360,8 @@ class ScanQRView(APIView):
                 error_code = 'UNKNOWN_USER'
                 is_valid = False
 
-        # 2. Process scan (membership, aforo, anti-passback)
-        access_log, is_valid, error_code, message = _process_scan(
+        # 2. Process scan (membership, aforo, horario, anti-passback)
+        access_log, is_valid, error_code, message, allow_override, scan_status = _process_scan(
             user_obj=user_obj,
             is_valid=is_valid,
             error_code=error_code,
@@ -268,11 +369,12 @@ class ScanQRView(APIView):
             jti=jti,
             scanned_by_user=scanned_by_user,
             source=AccessLog.AccessSource.QR_SCAN,
+            override=override,
         )
 
         # 3. Fire async Mongo audit log
-        denial_reason = error_code if not is_valid else None
         access_status = access_log.status
+        denial_reason = access_log.denial_reason
         mongo_payload = {
             "postgres_access_log_id": access_log.id,
             "timestamp": timezone.now().isoformat(),
@@ -288,15 +390,21 @@ class ScanQRView(APIView):
         # 4. Build response
         response_data = {
             "is_valid": is_valid,
+            "scan_status": scan_status,
             "status": access_status,
             "access_type": access_type,
             "message": message,
             "denial_reason": denial_reason,
+            "allow_override": allow_override,
             "socio": _socio_data(user_obj),
             "access_log": AccessLogSerializer(access_log).data,
         }
 
-        response_status = status.HTTP_200_OK if is_valid else status.HTTP_403_FORBIDDEN
+        # Warnings are HTTP 200 so the frontend can display the override button
+        if scan_status in ('granted', 'warning'):
+            response_status = status.HTTP_200_OK
+        else:
+            response_status = status.HTTP_403_FORBIDDEN
         return Response(response_data, status=response_status)
 
 
@@ -315,8 +423,12 @@ class ManualAccessView(APIView):
     """
     POST /api/access/manual/ (DNI scan)
     [Fix #148]: EXIT no valida membresía activa.
+    [Fix #149]: Anti-passback warning + override support.
+    [Fix #220]: Aforo + horario enforcement.
+    [Fix #159]: Throttled at 60/min.
     """
     permission_classes = [IsReceptionistOrAdmin]
+    throttle_classes = [AccessManualThrottle]
 
     def post(self, request):
         serializer = ManualAccessSerializer(data=request.data)
@@ -325,6 +437,7 @@ class ManualAccessView(APIView):
 
         dni = serializer.validated_data['dni']
         access_type = serializer.validated_data['access_type']
+        override = bool(request.data.get('override', False))
         scanned_by_user = request.user
 
         is_valid = True
@@ -338,7 +451,7 @@ class ManualAccessView(APIView):
             is_valid = False
             error_code = 'UNKNOWN_USER'
 
-        access_log, is_valid, error_code, message = _process_scan(
+        access_log, is_valid, error_code, message, allow_override, scan_status = _process_scan(
             user_obj=user_obj,
             is_valid=is_valid,
             error_code=error_code,
@@ -346,10 +459,11 @@ class ManualAccessView(APIView):
             jti=None,
             scanned_by_user=scanned_by_user,
             source=AccessLog.AccessSource.DNI_SCAN,
+            override=override,
         )
 
-        denial_reason = error_code if not is_valid else None
         access_status = access_log.status
+        denial_reason = access_log.denial_reason
         mongo_payload = {
             "postgres_access_log_id": access_log.id,
             "timestamp": timezone.now().isoformat(),
@@ -364,15 +478,20 @@ class ManualAccessView(APIView):
 
         response_data = {
             "is_valid": is_valid,
+            "scan_status": scan_status,
             "status": access_status,
             "access_type": access_type,
             "message": message,
             "denial_reason": denial_reason,
+            "allow_override": allow_override,
             "socio": _socio_data(user_obj),
             "access_log": AccessLogSerializer(access_log).data,
         }
 
-        response_status = status.HTTP_200_OK if is_valid else status.HTTP_403_FORBIDDEN
+        if scan_status in ('granted', 'warning'):
+            response_status = status.HTTP_200_OK
+        else:
+            response_status = status.HTTP_403_FORBIDDEN
         return Response(response_data, status=response_status)
 
 
@@ -662,6 +781,88 @@ class AforoSnapshotView(APIView):
             'egresos_hoy': aforo_data.get('egresos_hoy', 0),
             'timestamp': timezone.now().isoformat(),
         }, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    tags=['access'],
+    summary='Estado de credencial digital del socio autenticado (#157)',
+    description=(
+        'Devuelve si el socio puede generar QR y el motivo en caso contrario. '
+        'Motivos posibles: membresia_vencida, socio_suspendido, socio_baja, sin_plan.'
+    ),
+    responses={200: {
+        'type': 'object',
+        'properties': {
+            'habilitado': {'type': 'boolean'},
+            'motivo': {'type': 'string', 'nullable': True},
+            'cta': {'type': 'object', 'nullable': True,
+                    'properties': {'label': {'type': 'string'}, 'href': {'type': 'string'}}},
+        },
+    }},
+)
+class CredencialEstadoView(APIView):
+    """
+    GET /api/access/credencial/estado/
+    #157 — Returns the credencial state for the authenticated socio.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [AccessCredencialThrottle]
+
+    def get(self, request):
+        from django.conf import settings as django_settings
+        from apps.memberships.models import Membresia  # noqa: PLC0415
+
+        user = request.user
+        frontend_url = getattr(django_settings, 'FRONTEND_URL', '').rstrip('/')
+
+        socio = getattr(user, 'socio', None)
+        if socio is None:
+            return Response({
+                'habilitado': False,
+                'motivo': 'sin_plan',
+                'cta': {'label': 'Contactar recepción', 'href': f'{frontend_url}/contacto'},
+            })
+
+        if socio.estado == 'baja':
+            return Response({
+                'habilitado': False,
+                'motivo': 'socio_baja',
+                'cta': {'label': 'Contactar recepción', 'href': f'{frontend_url}/contacto'},
+            })
+
+        if socio.estado == 'suspendido':
+            return Response({
+                'habilitado': False,
+                'motivo': 'socio_suspendido',
+                'cta': {'label': 'Contactar recepción', 'href': f'{frontend_url}/contacto'},
+            })
+
+        # Check active membership
+        from django.utils import timezone as tz
+        today = tz.localdate()
+        membresia = (
+            Membresia.objects
+            .filter(socio=socio, estado=Membresia.Estado.ACTIVA)
+            .order_by('-fecha_fin')
+            .first()
+        )
+
+        if membresia is None:
+            # No active plan at all
+            return Response({
+                'habilitado': False,
+                'motivo': 'sin_plan',
+                'cta': {'label': 'Ver planes', 'href': f'{frontend_url}/planes'},
+            })
+
+        if membresia.fecha_fin < today:
+            return Response({
+                'habilitado': False,
+                'motivo': 'membresia_vencida',
+                'cta': {'label': 'Renovar membresía', 'href': f'{frontend_url}/perfil/membresia'},
+            })
+
+        return Response({'habilitado': True, 'motivo': None, 'cta': None})
 
 
 # ---------------------------------------------------------------------------

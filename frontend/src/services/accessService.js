@@ -4,12 +4,15 @@ import api from './api';
  * Escanea el código QR para validar el acceso.
  * @param {string} qrToken - El JWT dinámico del QR.
  * @param {string} accessType - 'ENTRY' o 'EXIT'.
+ * @param {Object} [options] - Optional overrides.
+ * @param {boolean} [options.override] - Staff override flag (#149).
  * @returns {Promise<Object>} Resultado del acceso (status, message, etc.)
  */
-export const scanQR = async (qrToken, accessType = 'ENTRY') => {
+export const scanQR = async (qrToken, accessType = 'ENTRY', options = {}) => {
   const response = await api.post('/access/qr/scan/', {
     qr_token: qrToken,
     access_type: accessType,
+    ...(options.override ? { override: true } : {}),
   });
   return response.data;
 };

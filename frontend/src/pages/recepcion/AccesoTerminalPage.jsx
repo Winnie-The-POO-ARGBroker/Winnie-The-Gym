@@ -116,6 +116,12 @@ export default function AccesoTerminalPage() {
     };
   }, []);
 
+  /**
+   * Ref to track the last scan payload so override can resend with override=true (#149).
+   * Shape: { fn: () => Promise } — the bound service call.
+   */
+  const lastScanPayloadRef = useRef(null);
+
   const processAccess = useCallback(async (fn) => {
     if (isProcessing) return;
     setIsProcessing(true);
@@ -127,6 +133,25 @@ export default function AccesoTerminalPage() {
       const data = await fn();
       clearTimeout(timeoutId);
       setIsServerReachable(true);
+
+      if (data.status === 'WARNING') {
+        // Anti-passback or replay warning — keep payload so staff can override (#149)
+        showResult({
+          status: 'warning',
+          message: data.message,
+          denialReason: data.denial_reason,
+          log: data.access_log,
+          accessType: data.access_type,
+          allowOverride: data.allow_override ?? false,
+        });
+        if (!isMuted) {
+          // Distinct double-beep for warnings
+          playBeep(true);
+          setTimeout(() => playBeep(false), 200);
+        }
+        return;
+      }
+
       const granted = data.status === 'GRANTED';
       const result = {
         status: granted ? 'success' : 'error',
@@ -189,7 +214,9 @@ export default function AccesoTerminalPage() {
       toast.error('El DNI debe tener 7 u 8 dígitos numéricos');
       return;
     }
-    processAccess(() => manualAccess(normalized, accessMode));
+    const fn = () => manualAccess(normalized, accessMode);
+    lastScanPayloadRef.current = fn;
+    processAccess(fn);
     setManualDni('');
   }, [manualDni, accessMode, processAccess]);
 
@@ -200,8 +227,22 @@ export default function AccesoTerminalPage() {
     if (now - lastScan < TOKEN_DEBOUNCE_MS) return;
     lastTokenScanRef.current.set(token, now);
 
-    processAccess(() => scanQR(token, accessMode));
+    const fn = () => scanQR(token, accessMode, { override: false });
+    lastScanPayloadRef.current = () => scanQR(token, accessMode, { override: true });
+    processAccess(fn);
   }, [accessMode, processAccess]);
+
+  /**
+   * Override handler (#149): staff resends the last scan with override=true.
+   * Clears the warning result first, then processes.
+   */
+  const handleOverride = useCallback(() => {
+    if (!lastScanPayloadRef.current) return;
+    if (clearTimerRef.current) clearTimeout(clearTimerRef.current);
+    setScanResult(null);
+    processAccess(lastScanPayloadRef.current);
+    lastScanPayloadRef.current = null;
+  }, [processAccess]);
 
   const handleDniKeyDown = useCallback((e) => {
     if (e.key === 'Enter') {
@@ -297,6 +338,8 @@ export default function AccesoTerminalPage() {
                 if (clearTimerRef.current) clearTimeout(clearTimerRef.current);
                 setScanResult(null);
               }}
+              onOverride={handleOverride}
+              isStaff={true}
             />
           </div>
         </div>
