@@ -13,6 +13,7 @@ import { useClasesList } from '../../hooks/queries/useClases'
 import { useInscripcionesMutations } from '../../hooks/queries/useInscripciones'
 import useAuthStore from '../../stores/authStore'
 import EstadoBanner from '../../components/socio/EstadoBanner'
+import { useDisciplinas } from '../../hooks/queries/useCatalogo'
 
 const DIAS_AGENDA = generateDaysAgenda()
 
@@ -120,6 +121,20 @@ export default function ClasesPage() {
   })
 
   const { inscribir, cancelar } = useInscripcionesMutations()
+
+  // API-driven disciplinas for category filter (falls back to CATEGORIAS_CLASES if empty)
+  const { data: disciplinasAPI = [] } = useDisciplinas()
+  const categoriaOptions = useMemo(() => {
+    if (disciplinasAPI.length > 0) {
+      return [
+        { id: 'todas', label: 'Todas' },
+        ...disciplinasAPI
+          .filter((d) => d.activa !== false)
+          .map((d) => ({ id: d.slug ?? d.nombre.toLowerCase(), label: d.nombre })),
+      ]
+    }
+    return CATEGORIAS_CLASES
+  }, [disciplinasAPI])
 
   const isLoading = activeTab === 'catalogo' ? loadingCatalog : loadingAll
 
@@ -346,7 +361,7 @@ export default function ClasesPage() {
 
             {/* SELECTOR DE DISCIPLINAS */}
             <div className="flex items-center gap-1.5 overflow-x-auto pb-2 w-full scrollbar-none">
-              {CATEGORIAS_CLASES.map((cat) => {
+              {categoriaOptions.map((cat) => {
                 const isSelected = selectedCategory === cat.id
                 return (
                   <FilterButton

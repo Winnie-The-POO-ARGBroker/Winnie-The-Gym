@@ -8,6 +8,7 @@ import Button from '../components/ui/Button'
 import { DISCIPLINAS_CONFIG } from '../constants/disciplinas'
 import { DIAS_SEMANA, RECURRENCIA_DIAS } from '../constants/clases'
 import { useClaseDetail, useClasesMutations, useClasesList } from '../hooks/queries/useClases'
+import { useDisciplinas, useSalas } from '../hooks/queries/useCatalogo'
 
 const EMPTY_FORM = {
   nombre: '',
@@ -36,6 +37,9 @@ export default function CreateClassPage() {
   const { create: createClase, update: updateClase } = useClasesMutations()
   const { data: existingClass } = useClaseDetail(editId || cloneId)
   const { data: allClasses = [] } = useClasesList()
+  // API-driven catalogs
+  const { data: disciplinasAPI = [] } = useDisciplinas()
+  const { data: salasAPI = [] } = useSalas()
 
   const [formData, setFormData] = useState(EMPTY_FORM)
   const [fieldErrors, setFieldErrors] = useState({})
@@ -235,13 +239,24 @@ export default function CreateClassPage() {
                     onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus:border-orange-500 transition-colors"
                   >
-                    <option value="funcional">Funcional</option>
-                    <option value="spinning">Spinning</option>
-                    <option value="crossfit">Crossfit</option>
-                    <option value="pilates">Pilates</option>
-                    <option value="yoga">Yoga</option>
-                    <option value="boxeo">Boxeo</option>
-                    <option value="hiit">HIIT</option>
+                    {disciplinasAPI.length > 0 ? (
+                      disciplinasAPI.filter((d) => d.activa !== false).map((d) => (
+                        <option key={d.id} value={d.slug ?? d.nombre.toLowerCase()}>
+                          {d.nombre}
+                        </option>
+                      ))
+                    ) : (
+                      // Fallback to hardcoded options while catalog loads or is empty
+                      <>
+                        <option value="funcional">Funcional</option>
+                        <option value="spinning">Spinning</option>
+                        <option value="crossfit">Crossfit</option>
+                        <option value="pilates">Pilates</option>
+                        <option value="yoga">Yoga</option>
+                        <option value="boxeo">Boxeo</option>
+                        <option value="hiit">HIIT</option>
+                      </>
+                    )}
                   </select>
                   {fieldErrors.categoria && (
                     <p className="text-xs text-error-500 mt-1">{Array.isArray(fieldErrors.categoria) ? fieldErrors.categoria[0] : fieldErrors.categoria}</p>
@@ -322,9 +337,20 @@ export default function CreateClassPage() {
                     onChange={(e) => setFormData({ ...formData, sala: e.target.value })}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus:border-orange-500 transition-colors"
                   >
-                    <option value="Sala A">Sala A (Principal)</option>
-                    <option value="Sala B">Sala B (Spinning / Reformer)</option>
-                    <option value="Sala C">Sala C (Yoga / Meditación)</option>
+                    {salasAPI.length > 0 ? (
+                      salasAPI.filter((s) => s.activa !== false).map((s) => (
+                        <option key={s.id} value={s.nombre}>
+                          {s.nombre} (cap. {s.capacidad})
+                        </option>
+                      ))
+                    ) : (
+                      // Fallback while API loads or catalog is empty
+                      <>
+                        <option value="Sala A">Sala A (Principal)</option>
+                        <option value="Sala B">Sala B (Spinning / Reformer)</option>
+                        <option value="Sala C">Sala C (Yoga / Meditación)</option>
+                      </>
+                    )}
                   </select>
                 </div>
               </div>

@@ -13,12 +13,14 @@ from apps.access.permissions import IsAdminOnly, IsReceptionistOrAdmin, IsSocio
 from apps.members.permissions import IsSocioActivo
 
 from .filters import ClaseFilter, InscripcionClaseFilter
-from .models import Clase, InscripcionClase
+from .models import Clase, Disciplina, InscripcionClase, Sala
 from .pagination import ClasePagination
 from .serializers import (
     ClaseDetailSerializer,
     ClaseSerializer,
+    DisciplinaSerializer,
     InscripcionClaseSerializer,
+    SalaSerializer,
 )
 from .services import cancelar_clase as service_cancelar_clase
 from .services import cancelar_inscripcion, inscribir_socio, promover_de_espera, reactivar_clase
@@ -324,6 +326,116 @@ class ClaseViewSet(viewsets.ModelViewSet):
             InscripcionClaseSerializer(inscripcion).data,
             status=status.HTTP_201_CREATED,
         )
+
+
+# ---------------------------------------------------------------------------
+# #179 — Disciplina and Sala CRUD ViewSets
+# ---------------------------------------------------------------------------
+
+@extend_schema_view(
+    list=extend_schema(tags=['classes'], summary='Listar disciplinas'),
+    retrieve=extend_schema(tags=['classes'], summary='Detalle de disciplina'),
+    create=extend_schema(tags=['classes'], summary='Crear disciplina (admin)'),
+    update=extend_schema(tags=['classes'], summary='Actualizar disciplina (admin)'),
+    partial_update=extend_schema(tags=['classes'], summary='Actualizar parcialmente disciplina (admin)'),
+    destroy=extend_schema(tags=['classes'], summary='Eliminar o desactivar disciplina (admin)'),
+)
+class DisciplinaViewSet(viewsets.ModelViewSet):
+    """CRUD for Disciplina catalog. Admin write, staff/socio read.
+
+    DELETE with active Clases → offers soft-deactivation (activa=False) instead.
+    """
+    queryset = Disciplina.objects.all().order_by('nombre')
+    serializer_class = DisciplinaSerializer
+
+    def get_permissions(self):
+        if self.action in ('create', 'update', 'partial_update', 'destroy'):
+            return [IsAdminOnly()]
+        return [permissions.IsAuthenticated()]
+
+    def destroy(self, request, *args, **kwargs):
+        """#179 — Soft-delete: if Disciplina has associated clases, deactivate instead."""
+        disciplina = self.get_object()
+        if disciplina.clases.exists():
+            if disciplina.activa:
+                disciplina.activa = False
+                disciplina.save(update_fields=['activa'])
+                return Response(
+                    {
+                        'detail': (
+                            f'La disciplina "{disciplina.nombre}" tiene clases asociadas y fue desactivada '
+                            'en lugar de eliminada. Reasigná o eliminá las clases primero para poder '
+                            'eliminarla definitivamente.'
+                        ),
+                        'desactivada': True,
+                    },
+                    status=status.HTTP_200_OK,
+                )
+            return Response(
+                {
+                    'detail': (
+                        f'La disciplina "{disciplina.nombre}" tiene clases asociadas. '
+                        'Reasigná o eliminá las clases primero.'
+                    ),
+                    'desactivada': False,
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+        disciplina.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@extend_schema_view(
+    list=extend_schema(tags=['classes'], summary='Listar salas'),
+    retrieve=extend_schema(tags=['classes'], summary='Detalle de sala'),
+    create=extend_schema(tags=['classes'], summary='Crear sala (admin)'),
+    update=extend_schema(tags=['classes'], summary='Actualizar sala (admin)'),
+    partial_update=extend_schema(tags=['classes'], summary='Actualizar parcialmente sala (admin)'),
+    destroy=extend_schema(tags=['classes'], summary='Eliminar o desactivar sala (admin)'),
+)
+class SalaViewSet(viewsets.ModelViewSet):
+    """CRUD for Sala catalog. Admin write, staff/socio read.
+
+    DELETE with active Clases → offers soft-deactivation (activa=False) instead.
+    """
+    queryset = Sala.objects.all().order_by('nombre')
+    serializer_class = SalaSerializer
+
+    def get_permissions(self):
+        if self.action in ('create', 'update', 'partial_update', 'destroy'):
+            return [IsAdminOnly()]
+        return [permissions.IsAuthenticated()]
+
+    def destroy(self, request, *args, **kwargs):
+        """#179 — Soft-delete: if Sala has associated clases, deactivate instead."""
+        sala = self.get_object()
+        if sala.clases.exists():
+            if sala.activa:
+                sala.activa = False
+                sala.save(update_fields=['activa'])
+                return Response(
+                    {
+                        'detail': (
+                            f'La sala "{sala.nombre}" tiene clases asociadas y fue desactivada '
+                            'en lugar de eliminada. Reasigná o eliminá las clases primero para poder '
+                            'eliminarla definitivamente.'
+                        ),
+                        'desactivada': True,
+                    },
+                    status=status.HTTP_200_OK,
+                )
+            return Response(
+                {
+                    'detail': (
+                        f'La sala "{sala.nombre}" tiene clases asociadas. '
+                        'Reasigná o eliminá las clases primero.'
+                    ),
+                    'desactivada': False,
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+        sala.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @extend_schema_view(
