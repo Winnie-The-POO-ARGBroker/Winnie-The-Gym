@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { IdCard } from 'lucide-react'
+import { IdCard, RefreshCw } from 'lucide-react'
 import MemberLayout from '../../components/layout/MemberLayout'
 import Card from '../../components/ui/Card'
+import Button from '../../components/ui/Button'
 import MembershipExpiredAlert from '../../components/socio/MembershipExpiredAlert'
 import PagoResultadoBanner from '../../components/socio/PagoResultadoBanner'
 import MemberCardHeader from '../../components/socio/MemberCardHeader'
@@ -19,6 +20,7 @@ import useScreenWakeLock from '../../hooks/useScreenWakeLock'
 
 export default function CredencialDigitalPage() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const [qrData, setQrData] = useState(null)
   const [timeLeft, setTimeLeft] = useState(30)
@@ -143,6 +145,34 @@ export default function CredencialDigitalPage() {
         {/* Alerta de Membresía Vencida */}
         {isExpired && (
           <MembershipExpiredAlert fechaVencimiento={member.membresia?.fechaVencimiento} />
+        )}
+
+        {/* CTA Renovar — only when membership is expired or missing */}
+        {isExpired && (
+          <Card className="p-4 flex flex-col gap-3 border-primary/30">
+            <div>
+              <p className="text-sm font-semibold text-text-primary">Renovar membresía</p>
+              {member.membresia?.fechaVencimiento && (
+                <p className="text-xs text-text-secondary mt-0.5">
+                  Venció el{' '}
+                  {new Date(member.membresia.fechaVencimiento).toLocaleDateString('es-AR', {
+                    day: '2-digit',
+                    month: 'long',
+                    year: 'numeric',
+                  })}
+                </p>
+              )}
+            </div>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => navigate('/socio/checkout')}
+              className="w-full gap-2"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Renovar ahora
+            </Button>
+          </Card>
         )}
 
         {/* TARJETA DE CREDENCIAL DIGITAL */}

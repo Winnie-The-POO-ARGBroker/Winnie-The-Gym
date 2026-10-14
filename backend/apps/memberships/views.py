@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import extend_schema, extend_schema_view
+from drf_spectacular.utils import OpenApiTypes, extend_schema, extend_schema_view
 from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -49,7 +49,7 @@ class PlanMembresiaViewSet(viewsets.ModelViewSet):
     destroy=extend_schema(tags=['memberships'], summary='Eliminar membresía (admin)'),
 )
 class MembresiaViewSet(viewsets.ModelViewSet):
-    queryset = Membresia.objects.all().order_by('id')
+    queryset = Membresia.objects.select_related('socio', 'plan').order_by('id')
     filterset_class = MembresiaFilter
     ordering_fields = ['fecha_inicio', 'fecha_fin', 'estado', 'created_at']
     ordering = ['-fecha_inicio']
@@ -82,25 +82,19 @@ class MeView(APIView):
 
 @extend_schema(
     tags=['memberships'],
-    summary='Renovar la membresía del socio autenticado',
-    request={
-        'application/json': {
-            'type': 'object',
-            'properties': {'plan_id': {'type': 'integer'}},
-            'required': ['plan_id'],
-        }
-    },
-    responses={201: MembresiaDetailSerializer},
+    summary='[DEPRECATED] Renovar membresía — use /api/payments/preferencias/',
+    description=(
+        'Este endpoint fue desactivado por riesgo de seguridad (activación sin cobro). '
+        'Use `POST /api/payments/preferencias/` para renovar via MercadoPago.'
+    ),
+    responses={410: OpenApiTypes.OBJECT},
+    deprecated=True,
 )
 class MeRenewView(APIView):
     permission_classes = [IsSocio]
 
     def post(self, request):
-        plan_id = request.data.get('plan_id')
-        plan = get_object_or_404(PlanMembresia, pk=plan_id, activo=True)
-
-        socio = request.user.socio
-        membresia = renovar_membresia(socio, plan)
-
-        serializer = MembresiaDetailSerializer(membresia)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(
+            {'detail': 'Use /api/payments/preferencias/ para renovar via MercadoPago.'},
+            status=status.HTTP_410_GONE,
+        )
