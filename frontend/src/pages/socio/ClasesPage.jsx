@@ -12,6 +12,7 @@ import { generateDaysAgenda } from '../../utils/agenda'
 import { useClasesList } from '../../hooks/queries/useClases'
 import { useInscripcionesMutations } from '../../hooks/queries/useInscripciones'
 import useAuthStore from '../../stores/authStore'
+import EstadoBanner from '../../components/socio/EstadoBanner'
 
 const DIAS_AGENDA = generateDaysAgenda()
 
@@ -85,6 +86,7 @@ function mapClase(c) {
 export default function ClasesPage() {
   const user = useAuthStore((s) => s.user)
   const isAdmin = user?.rol === 'administrador'
+  const isActivo = !user?.estado || user.estado === 'activo'
 
   // Filtros interactivos con fecha de hoy ART por defecto
   const [selectedDay, setSelectedDay] = useState(getTodayART)
@@ -182,6 +184,11 @@ export default function ClasesPage() {
       subtitle="Catálogo semanal y cupos"
     >
       <div className="flex flex-col gap-3 w-full animate-fadeIn">
+
+        {/* Estado suspendido / baja */}
+        {!isActivo && (
+          <EstadoBanner estado={user.estado} motivo={user.motivo_suspension} />
+        )}
 
         {/* SELECTOR DE PESTAÑAS */}
         <div className="w-full bg-bg-surface rounded-lg p-1 flex items-center justify-between gap-1 select-none border border-subtle">

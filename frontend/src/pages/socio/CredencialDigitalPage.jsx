@@ -13,6 +13,7 @@ import QRFullscreenModal from '../../components/socio/QRFullscreenModal'
 import EmptyState from '../../components/ui/EmptyState'
 import HighContrastToggle from '../../components/ui/HighContrastToggle'
 import useAuth from '../../hooks/useAuth'
+import EstadoBanner from '../../components/socio/EstadoBanner'
 import { useSocioMembresiaMe } from '../../hooks/queries/useMembresias'
 import useScreenWakeLock from '../../hooks/useScreenWakeLock'
 import useCredentialState from '../../hooks/useCredentialState'
@@ -138,6 +139,11 @@ export default function CredencialDigitalPage() {
       rightAction={<HighContrastToggle />}
     >
       <div className="credencial-page flex flex-col gap-3 w-full animate-fadeIn">
+
+        {/* Estado suspendido / baja */}
+        {user?.estado && user.estado !== 'activo' && (
+          <EstadoBanner estado={user.estado} motivo={user.motivo_suspension} />
+        )}
 
         {/* Banner de resultado del pago — se muestra al volver de MercadoPago */}
         {pagoResultado && (

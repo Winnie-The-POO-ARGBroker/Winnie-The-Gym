@@ -1,12 +1,14 @@
 import Badge from '../../ui/Badge'
 import Button from '../../ui/Button'
 import Skeleton from '../../ui/Skeleton'
+import EstadoBanner from '../../socio/EstadoBanner'
 import {
   useSocioMembership,
   useSocioUpcomingClasses
 } from '../../../hooks/queries/useDashboardData'
 import { getTimeAgo } from '../../../utils/formatDate'
 import { AlertCircle, RefreshCw } from 'lucide-react'
+import useAuthStore from '../../../stores/authStore'
 
 /**
  * Format a date string as a relative label ("en 5 días", "hace 2 días", "hoy").
@@ -34,6 +36,9 @@ function isTodayBirthday(fechaNacimiento) {
 }
 
 export default function SocioDashboardView({ navigate }) {
+  const authUser = useAuthStore((s) => s.user)
+  const userEstado = authUser?.estado
+
   const {
     data: membershipData,
     isLoading: isLoadingMembership,
@@ -73,8 +78,11 @@ export default function SocioDashboardView({ navigate }) {
   const planName = mem?.plan?.nombre || 'Sin membresía activa'
   const expiration = mem?.fecha_fin || '--'
   const hasMedicalCert = !!membershipData?.certificado_medico_url
+  const aptoEstado = membershipData?.apto_estado ?? (hasMedicalCert ? 'vigente' : 'sin_apto')
+  const aptoVenceEn = membershipData?.certificado_vence_en
   const nombre = membershipData?.nombre || ''
   const fechaNacimiento = membershipData?.fecha_nacimiento
+  const isActivo = !userEstado || userEstado === 'activo'
 
   let statusBadge = null
   if (!mem) {
@@ -89,6 +97,11 @@ export default function SocioDashboardView({ navigate }) {
 
   return (
     <div className="flex flex-col gap-6 max-w-4xl">
+      {/* Estado suspendido / baja — always shown when not activo */}
+      {!isActivo && (
+        <EstadoBanner estado={userEstado} motivo={authUser?.motivo_suspension} />
+      )}
+
       {showBirthdayGreeting && (
         <div className="p-4 rounded-2xl bg-primary/10 border border-primary/30 text-primary font-semibold text-center">
           🎂 ¡Feliz cumpleaños, {nombre}!
@@ -132,14 +145,50 @@ export default function SocioDashboardView({ navigate }) {
             </div>
           </div>
 
-          <Button
-            variant="primary"
-            size="lg"
-            onClick={() => navigate('/socio/credencial')}
-            className="w-full"
-          >
-            Ver Mi Credencial QR
-          </Button>
+          {/* Apto por vencer warning card */}
+          {aptoEstado === 'por_vencer' && aptoVenceEn && (
+            <div
+              className="flex items-center justify-between p-3 rounded-xl bg-warning-500/10 border border-warning-500/30"
+              data-testid="apto-por-vencer-card"
+            >
+              <div>
+                <p className="text-xs font-bold text-warning-500">Tu apto vence el</p>
+                <p className="text-sm font-semibold text-text-primary">
+                  {new Date(`${aptoVenceEn}T12:00:00`).toLocaleDateString('es-AR', {
+                    day: '2-digit',
+                    month: 'long',
+                    year: 'numeric',
+                  })}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => navigate('/socio/perfil')}
+                className="text-xs font-semibold text-warning-500 underline hover:text-warning-400 transition-colors"
+              >
+                Actualizar
+              </button>
+            </div>
+          )}
+
+          {/* QR CTA — hidden for non-activos */}
+          {isActivo ? (
+            <Button
+              variant="primary"
+              size="lg"
+              onClick={() => navigate('/socio/credencial')}
+              className="w-full"
+            >
+              Ver Mi Credencial QR
+            </Button>
+          ) : (
+            <div
+              className="w-full py-3 px-4 rounded-xl bg-bg-raised border border-subtle text-center text-xs text-text-tertiary"
+              title="No disponible mientras tu cuenta no esté activa"
+            >
+              Credencial QR no disponible
+            </div>
+          )}
         </div>
 
         <div className="p-6 rounded-2xl bg-bg-surface border border-subtle flex flex-col justify-between gap-6 shadow-sm">
@@ -196,14 +245,23 @@ export default function SocioDashboardView({ navigate }) {
             </div>
           </div>
 
-          <Button
-            variant="secondary"
-            size="lg"
-            onClick={() => navigate('/socio/clases')}
-            className="w-full"
-          >
-            Reservar Nueva Clase
-          </Button>
+          {isActivo ? (
+            <Button
+              variant="secondary"
+              size="lg"
+              onClick={() => navigate('/socio/clases')}
+              className="w-full"
+            >
+              Reservar Nueva Clase
+            </Button>
+          ) : (
+            <div
+              className="w-full py-3 px-4 rounded-xl bg-bg-raised border border-subtle text-center text-xs text-text-tertiary"
+              title="No disponible mientras tu cuenta no esté activa"
+            >
+              Reservas no disponibles
+            </div>
+          )}
         </div>
       </div>
     </div>
