@@ -48,11 +48,31 @@ def dispatch_activation_email_for_socio(usuario) -> None:
 def dar_baja(socio):
     """Mark a Socio as given de baja, setting estado=BAJA and fecha_baja=today.
 
+    #188: Also cancels all active/suspended memberships so the socio cannot
+    access the gym while on de baja.
+
     Idempotent: calling on an already-baja socio is safe.
     """
+    from apps.memberships.models import Membresia
+    from apps.memberships.services import cancelar_membresia
+
     socio.estado = socio.Estado.BAJA
     socio.fecha_baja = date.today()
     socio.save(update_fields=['estado', 'fecha_baja', 'updated_at'])
+
+    # Cancel all active/suspended memberships
+    cancelable_estados = [Membresia.Estado.ACTIVA, Membresia.Estado.SUSPENDIDA]
+    for membresia in socio.membresias.filter(estado__in=cancelable_estados):
+        try:
+            cancelar_membresia(
+                membresia,
+                actor=None,
+                motivo='Baja automática por dar de baja al socio.',
+            )
+        except Exception:
+            # Log but do not block the baja if cancellation fails for one membership
+            pass
+
     return socio
 
 

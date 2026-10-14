@@ -175,9 +175,23 @@ export default function CredencialDigitalPage() {
           </Card>
         )}
 
+        {/* Fecha de vencimiento prominente para membresía activa */}
+        {!isExpired && member.membresia?.fechaVencimiento && (
+          <div className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-success-500/10 border border-success-500/20">
+            <span className="text-xs font-semibold text-success-500">Membresía activa hasta</span>
+            <span className="text-sm font-bold text-text-primary">
+              {new Date(member.membresia.fechaVencimiento).toLocaleDateString('es-AR', {
+                day: '2-digit',
+                month: 'long',
+                year: 'numeric',
+              })}
+            </span>
+          </div>
+        )}
+
         {/* TARJETA DE CREDENCIAL DIGITAL */}
         <Card className="p-4 flex flex-col">
-          
+
           {/* Header de la Tarjeta */}
           <MemberCardHeader
             nombre={member.nombre}

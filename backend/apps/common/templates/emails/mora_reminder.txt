@@ -1,0 +1,12 @@
+Hola {{ nombre }},
+
+Tu membresía del plan {{ plan_nombre }} venció el {{ fecha_fin|date:"d/m/Y" }} (hace {{ dias_atraso }} {{ dias_atraso|pluralize:"día,días" }}).
+
+Para seguir disfrutando del gimnasio, renová tu membresía desde el portal:
+{{ frontend_url }}
+
+Si ya realizaste el pago, ignorá este mensaje.
+Cualquier consulta comunicate con el gimnasio.
+
+Saludos,
+El equipo de {{ brand_name }}

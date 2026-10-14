@@ -1,8 +1,10 @@
 import datetime
 from decimal import Decimal
 
+from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.db.models import Q
 
 
 class PlanMembresia(models.Model):
@@ -50,6 +52,19 @@ class Membresia(models.Model):
     # Tracks which expiration alerts (7/3/1/0) have already been emailed so the
     # scheduled job does not re-send. Structure: {"7": true, "3": true, ...}.
     avisos_enviados = models.JSONField(default=dict, blank=True)
+
+    # #188 — Lifecycle audit fields
+    motivo_estado = models.CharField(max_length=255, blank=True, default='')
+    cambiado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='membresias_modificadas',
+    )
+    cambiado_en = models.DateTimeField(null=True, blank=True)
+    fecha_suspension = models.DateField(null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -62,4 +77,11 @@ class Membresia(models.Model):
         ordering = ['-fecha_inicio']
         indexes = [
             models.Index(fields=['socio', 'estado'], name='memberships_socio_e_idx'),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['socio'],
+                condition=Q(estado='activa'),
+                name='unique_active_membresia_per_socio',
+            ),
         ]

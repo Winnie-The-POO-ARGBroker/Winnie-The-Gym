@@ -27,11 +27,33 @@ export default function AdminDashboardView() {
 
   const mappedMovements = logsData.map(mapAccessLog)
 
-  const mappedAlerts = alertsData.map(mem => ({
-    id: mem.id,
-    name: mem.socio_nombre ? `${mem.socio_nombre} ${mem.socio_apellido || ''}`.trim() : 'Desconocido',
-    tag: mem.estado === 'vencida' ? 'Vencida' : 'Pendiente'
-  }))
+  const mappedAlerts = alertsData.map(mem => {
+    const nombre = mem.socio_nombre
+      ? `${mem.socio_nombre} ${mem.socio_apellido || ''}`.trim()
+      : mem.nombre
+      ? `${mem.nombre} ${mem.apellido || ''}`.trim()
+      : null
+
+    let diasVencida = null
+    if (mem.fecha_fin) {
+      const hoy = new Date()
+      hoy.setHours(0, 0, 0, 0)
+      const fin = new Date(mem.fecha_fin)
+      fin.setHours(0, 0, 0, 0)
+      const diff = Math.floor((hoy - fin) / (1000 * 60 * 60 * 24))
+      if (diff > 0) diasVencida = diff
+    }
+
+    const tag = mem.estado === 'vencida'
+      ? diasVencida ? `Vencida hace ${diasVencida}d` : 'Vencida'
+      : 'Pendiente'
+
+    return {
+      id: mem.id,
+      name: nombre ?? `Socio #${mem.socio ?? mem.id}`,
+      tag,
+    }
+  })
 
   const mappedClasses = classesData.map(c => ({
     id: c.id,
