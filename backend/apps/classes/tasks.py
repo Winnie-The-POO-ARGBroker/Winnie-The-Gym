@@ -1,9 +1,13 @@
-"""#181 — Celery tasks for classes app.
+"""Celery tasks for classes app.
 
 cerrar_asistencias_vencidas: runs every hour via Celery beat.
 Marks all inscriptions in classes that ended more than 3 hours ago
 as absent (asistio=False) when they are still unregistered (asistio IS NULL).
+
+generate_sesiones_rolling_window (#178): runs daily via Celery beat.
+Ensures SesionClase rows exist for all active clases in the next 60 days.
 """
+import datetime
 import logging
 
 from celery import shared_task
@@ -82,4 +86,47 @@ def cerrar_asistencias_vencidas():
     return {
         'clases_procesadas': clases_procesadas,
         'ausencias_registradas': ausencias_registradas,
+    }
+
+
+@shared_task(name='classes.generate_sesiones_rolling_window')
+def generate_sesiones_rolling_window():
+    """#178 — Ensure SesionClase rows exist for all active clases in the next 60 days.
+
+    Idempotent: get_or_create prevents duplicates.
+    Runs daily via Celery beat.
+
+    Returns a summary dict with ``clases_procesadas`` and ``sesiones_creadas``.
+    """
+    from apps.classes.models import Clase  # noqa: PLC0415
+    from apps.classes.services import generar_sesiones  # noqa: PLC0415
+
+    today = timezone.localdate()
+    hasta = today + datetime.timedelta(days=60)
+
+    clases_activas = Clase.objects.filter(estado=Clase.Estado.ACTIVA).only(
+        'id', 'dia', 'dias_recurrencia', 'hora', 'cupo_maximo',
+    )
+
+    clases_procesadas = 0
+    sesiones_creadas = 0
+
+    for clase in clases_activas:
+        try:
+            creadas = generar_sesiones(clase, today, hasta)
+            sesiones_creadas += creadas
+            clases_procesadas += 1
+        except Exception:
+            logger.exception(
+                'generate_sesiones_rolling_window: error processing clase=%s',
+                clase.pk,
+            )
+
+    logger.info(
+        'generate_sesiones_rolling_window done: clases=%d sesiones=%d',
+        clases_procesadas, sesiones_creadas,
+    )
+    return {
+        'clases_procesadas': clases_procesadas,
+        'sesiones_creadas': sesiones_creadas,
     }

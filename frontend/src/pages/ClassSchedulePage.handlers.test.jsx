@@ -35,6 +35,11 @@ vi.mock('../hooks/queries/useClassAttendees', () => ({
   useClassAttendees: vi.fn(),
 }))
 
+vi.mock('../hooks/queries/useSesiones', () => ({
+  useSesionesByRange: vi.fn(),
+  useSesionesMutations: vi.fn(),
+}))
+
 vi.mock('../components/layout/AppLayout', () => ({
   default: ({ children }) => <div data-testid="app-layout">{children}</div>,
 }))
@@ -94,6 +99,10 @@ vi.mock('../components/classes/CancelarClaseModal', () => ({
     ) : null,
 }))
 
+vi.mock('../components/classes/CancelarSesionModal', () => ({
+  default: () => null,
+}))
+
 vi.mock('../components/ui/EmptyState', () => ({
   default: ({ title }) => <div data-testid="empty-state">{title}</div>,
 }))
@@ -108,6 +117,7 @@ vi.mock('sonner', () => ({
 
 import { useClasesList, useClasesMutations } from '../hooks/queries/useClases'
 import { useClassAttendees } from '../hooks/queries/useClassAttendees'
+import { useSesionesByRange, useSesionesMutations } from '../hooks/queries/useSesiones'
 import { toast } from 'sonner'
 
 const CLASSES = [
@@ -115,7 +125,12 @@ const CLASSES = [
   { id: 2, nombre: 'Yoga', hora: '10:00', dia: 'Martes', cupos_reservados: 3, cupo_maximo: 15, sala: 'B' },
 ]
 
-function setupMocks({ classes = CLASSES, isLoading = false } = {}) {
+const SESIONES = [
+  { id: 101, clase: 1, clase_nombre: 'Spinning', fecha: '2026-10-14', estado: 'activa', hora: '09:00', sala: 'A' },
+  { id: 102, clase: 2, clase_nombre: 'Yoga', fecha: '2026-10-15', estado: 'activa', hora: '10:00', sala: 'B' },
+]
+
+function setupMocks({ classes = CLASSES, sesiones = SESIONES, isLoading = false } = {}) {
   useClasesList.mockReturnValue({ data: classes, isLoading })
   useClasesMutations.mockReturnValue({
     create: { mutate: vi.fn(), isPending: false },
@@ -128,6 +143,10 @@ function setupMocks({ classes = CLASSES, isLoading = false } = {}) {
     isLoading: false,
     toggleStatus: vi.fn(),
     saveAttendees: vi.fn(),
+  })
+  useSesionesByRange.mockReturnValue({ data: sesiones, isLoading })
+  useSesionesMutations.mockReturnValue({
+    cancelarSesion: { mutate: vi.fn(), isPending: false },
   })
 }
 
@@ -247,8 +266,8 @@ describe('ClassSchedulePage — handlers', () => {
   it('renders week offset label in TopBar subtitle', () => {
     renderPage()
     const subtitle = screen.getByTestId('top-bar-subtitle')
-    // weekOffset=0 shows "Plantilla semanal (D–D Mes)"; non-zero shows "Semana del D al D de Mes"
-    expect(subtitle.textContent).toMatch(/Plantilla semanal|Semana del/)
+    // Calendar tab shows "X sesiones · Semana del D al D de Mes"
+    expect(subtitle.textContent).toMatch(/sesiones|Semana del/)
   })
 
   // ── 14. Week prev button decrements offset ───────────────────────────────
@@ -270,16 +289,16 @@ describe('ClassSchedulePage — handlers', () => {
 
   // ── 15. Loading state shows empty state ──────────────────────────────────
   it('shows loading empty state when isLoading is true', () => {
-    setupMocks({ classes: [], isLoading: true })
+    setupMocks({ classes: [], sesiones: [], isLoading: true })
     renderPage()
     expect(screen.getByText('Cargando calendario...')).toBeInTheDocument()
   })
 
-  // ── 16. Zero classes shows empty state ───────────────────────────────────
-  it('shows no-classes empty state when classes is empty and not loading', () => {
-    setupMocks({ classes: [], isLoading: false })
+  // ── 16. Zero sesiones shows empty state ──────────────────────────────────
+  it('shows no-sesiones empty state when sesiones is empty and not loading', () => {
+    setupMocks({ classes: [], sesiones: [], isLoading: false })
     renderPage()
-    expect(screen.getByText('No hay clases programadas')).toBeInTheDocument()
+    expect(screen.getByText('No hay sesiones programadas')).toBeInTheDocument()
   })
 
   // ── 17. List view select updates selectedClass ───────────────────────────
