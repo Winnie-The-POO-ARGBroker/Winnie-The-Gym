@@ -31,17 +31,18 @@ describe('useClassAttendees', () => {
     vi.clearAllMocks()
   })
 
-  // ── 1. Returns attendees from API ─────────────────────────────────────────
+  // ── 1. Returns attendees from API (dedicated /inscripciones/ endpoint) ───────
   it('fetches attendees for a given classId', async () => {
-    api.get.mockResolvedValue({ data: { inscripciones: INSCRIPCIONES } })
+    // Primary endpoint returns an array directly
+    api.get.mockResolvedValue({ data: INSCRIPCIONES })
     const { result } = renderHookWithProviders(() => useClassAttendees(10))
     await waitFor(() => expect(result.current.attendees).toHaveLength(2))
-    expect(api.get).toHaveBeenCalledWith('/classes/clases/10/')
+    expect(api.get).toHaveBeenCalledWith('/classes/clases/10/inscripciones/')
   })
 
-  // ── 2. Returns empty array when inscripciones is missing ──────────────────
+  // ── 2. Returns empty array when API returns empty array ───────────────────
   it('returns empty attendees array when API returns no inscripciones', async () => {
-    api.get.mockResolvedValue({ data: {} })
+    api.get.mockResolvedValue({ data: [] })
     const { result } = renderHookWithProviders(() => useClassAttendees(10))
     await waitFor(() => expect(result.current.isLoading).toBe(false))
     expect(result.current.attendees).toEqual([])
@@ -56,7 +57,7 @@ describe('useClassAttendees', () => {
 
   // ── 4. toggleStatus calls api.patch with correct payload ─────────────────
   it('toggleStatus calls api.patch with asistio: true when newStatus is "presente"', async () => {
-    api.get.mockResolvedValue({ data: { inscripciones: INSCRIPCIONES } })
+    api.get.mockResolvedValue({ data: INSCRIPCIONES })
     api.patch.mockResolvedValue({ data: {} })
     const { result } = renderHookWithProviders(() => useClassAttendees(10))
 
@@ -71,7 +72,7 @@ describe('useClassAttendees', () => {
 
   // ── 5. toggleStatus with "ausente" calls api.patch with asistio: false ────
   it('toggleStatus calls api.patch with asistio: false when newStatus is "ausente"', async () => {
-    api.get.mockResolvedValue({ data: { inscripciones: INSCRIPCIONES } })
+    api.get.mockResolvedValue({ data: INSCRIPCIONES })
     api.patch.mockResolvedValue({ data: {} })
     const { result } = renderHookWithProviders(() => useClassAttendees(10))
 
@@ -86,7 +87,7 @@ describe('useClassAttendees', () => {
 
   // ── 6. toggleStatus error shows toast.error ───────────────────────────────
   it('shows toast.error when toggleStatus fails', async () => {
-    api.get.mockResolvedValue({ data: { inscripciones: INSCRIPCIONES } })
+    api.get.mockResolvedValue({ data: INSCRIPCIONES })
     api.patch.mockRejectedValue({ response: { data: { detail: 'Error de permisos' } } })
     const { result } = renderHookWithProviders(() => useClassAttendees(10))
 
@@ -103,7 +104,7 @@ describe('useClassAttendees', () => {
 
   // ── 7. Hook returns expected API surface ──────────────────────────────────
   it('exposes attendees, isLoading, isError, toggleStatus, saveAttendees', () => {
-    api.get.mockResolvedValue({ data: { inscripciones: [] } })
+    api.get.mockResolvedValue({ data: [] })
     const { result } = renderHookWithProviders(() => useClassAttendees(10))
     expect(typeof result.current.toggleStatus).toBe('function')
     expect(typeof result.current.saveAttendees).toBe('function')
