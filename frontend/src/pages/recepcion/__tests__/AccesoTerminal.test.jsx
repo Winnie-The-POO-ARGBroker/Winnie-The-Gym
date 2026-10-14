@@ -210,6 +210,39 @@ describe('AccesoTerminal', () => {
     expect(await screen.findByText('Error al validar acceso')).toBeInTheDocument();
   });
 
+  // #149 — warning status shows "Registrar igual" override button for staff
+  it('warning status shows "Registrar igual" override button', async () => {
+    manualAccess.mockResolvedValueOnce({
+      status: 'WARNING',
+      message: 'El socio ya figura como adentro',
+      denial_reason: 'YA_FIGURA_ADENTRO',
+      access_type: 'ENTRY',
+      allow_override: true,
+      access_log: {
+        access_type: 'ENTRY',
+        user_nombre: 'Laura',
+        user_apellido: 'Gomez',
+        user_email: 'laura@test.com',
+        timestamp: new Date().toISOString(),
+      },
+    });
+
+    render(<AccesoTerminalPage />);
+
+    // Switch to manual mode and submit
+    fireEvent.click(screen.getByRole('button', { name: /DNI manual/i }));
+    const input = screen.getByPlaceholderText('Ej. 30111222');
+    fireEvent.change(input, { target: { value: '12345678' } });
+    fireEvent.click(screen.getByRole('button', { name: /Validar DNI/i }));
+
+    // Warning card should appear with heading "Atención"
+    expect(await screen.findByText('Atención')).toBeInTheDocument();
+    // Override button must be visible for staff
+    expect(await screen.findByRole('button', { name: /Registrar igual/i })).toBeInTheDocument();
+    // Cancel button also present
+    expect(await screen.findByRole('button', { name: /Cancelar/i })).toBeInTheDocument();
+  });
+
   // #203 — Wake Lock active when scanner is running
   it('uses useScreenWakeLock when scanner is active (camera mode)', () => {
     render(<AccesoTerminalPage />);

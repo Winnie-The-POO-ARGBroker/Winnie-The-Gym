@@ -190,6 +190,12 @@ REST_FRAMEWORK = {
         'rest_framework.filters.OrderingFilter',
     ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    # #159 — Rate limiting for access scan endpoints (60/min per user)
+    'DEFAULT_THROTTLE_CLASSES': [],
+    'DEFAULT_THROTTLE_RATES': {
+        'access_scan': '60/min',
+        'access_manual': '60/min',
+    },
 }
 
 SPECTACULAR_SETTINGS = {

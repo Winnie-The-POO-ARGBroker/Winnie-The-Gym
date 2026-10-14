@@ -1,4 +1,6 @@
+import datetime
 import logging
+import zoneinfo
 
 from django.core.cache import cache
 from django.db import transaction
@@ -6,6 +8,89 @@ from django.db.models import Count, Q
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
+
+ART_TZ = zoneinfo.ZoneInfo('America/Argentina/Buenos_Aires')
+
+
+def get_presencia(socio_user, *, date=None):
+    """Return 'inside', 'outside', or 'unknown' based on the last GRANTED log today.
+
+    #149 — Anti-passback: determines the current presence state of a socio
+    from the most recent ENTRY or EXIT GRANTED log on the local date.
+    """
+    from apps.access.models import AccessLog  # local to avoid circular imports
+
+    if date is None:
+        date = timezone.localdate()
+
+    last_granted = (
+        AccessLog.objects
+        .filter(
+            user=socio_user,
+            timestamp__date=date,
+            status=AccessLog.AccessStatus.GRANTED,
+            access_type__in=[AccessLog.AccessType.ENTRY, AccessLog.AccessType.EXIT],
+        )
+        .order_by('-timestamp')
+        .first()
+    )
+    if last_granted is None:
+        return 'unknown'
+    if last_granted.access_type == AccessLog.AccessType.ENTRY:
+        return 'inside'
+    return 'outside'
+
+
+def check_aforo(gym_config) -> tuple[bool, str | None]:
+    """Return (ok, denial_reason). Denied when aforo_actual >= aforo_maximo.
+
+    #220 — Aforo enforcement.  Returns True when aforo_bloqueo_al_llegar_max
+    is False (feature flag off) to preserve backwards compatibility.
+
+    Returns denial_reason 'AFORO_FULL' (the existing code already in the model)
+    for backwards compatibility with existing tests and frontend denial handling.
+    """
+    if not gym_config.aforo_bloqueo_al_llegar_max:
+        return True, None
+
+    aforo_data = get_aforo_actual(use_cache=False)
+    actual = aforo_data.get('aforo_actual', 0)
+    maximo = gym_config.aforo_maximo
+
+    if maximo > 0 and actual >= maximo:
+        return False, 'AFORO_FULL'
+    return True, None
+
+
+def check_horario(gym_config, now_local: datetime.datetime | None = None) -> tuple[bool, str | None]:
+    """Return (ok, denial_reason). Denied when current local time is outside operating hours.
+
+    #220 — Horario enforcement. Supports closing time past midnight (e.g. 02:00).
+    When hora_cierre is None the gym never closes.
+    """
+    if gym_config.hora_apertura is None:
+        return True, None
+    if gym_config.hora_cierre is None:
+        return True, None
+
+    if now_local is None:
+        now_local = timezone.now().astimezone(ART_TZ)
+
+    current_time = now_local.time().replace(second=0, microsecond=0)
+    apertura = gym_config.hora_apertura
+    cierre = gym_config.hora_cierre
+
+    if cierre > apertura:
+        # Normal range: e.g. 07:00 - 23:00
+        in_range = apertura <= current_time <= cierre
+    else:
+        # Crosses midnight: e.g. 07:00 - 02:00
+        # Valid when time >= apertura (daytime) OR time <= cierre (next day early morning)
+        in_range = current_time >= apertura or current_time <= cierre
+
+    if not in_range:
+        return False, 'FUERA_DE_HORARIO'
+    return True, None
 
 
 AFORO_CACHE_KEY = 'aforo:current'

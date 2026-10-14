@@ -1,14 +1,7 @@
 import Button from '../ui/Button';
 import { QrCode, CheckCircle2, XCircle, AlertCircle, Check, User } from 'lucide-react';
 import { getTimeAgo } from '../../utils/formatDate';
-
-const DENIAL_REASONS = {
-  UNKNOWN_USER: 'Usuario desconocido o DNI incorrecto',
-  USER_SUSPENDED: 'Usuario suspendido',
-  MEMBERSHIP_INACTIVE: 'Membresía inactiva o vencida',
-  REPLAY_ATTACK: 'Código QR ya fue utilizado',
-  TOKEN_EXPIRED: 'Código QR expirado',
-};
+import { getDenialLabel } from '../../constants/accessDenialReasons';
 
 /**
  * Resolves the access type from the result (fix #148).
@@ -19,11 +12,21 @@ function resolveAccessType(result) {
   return result?.accessType || result?.log?.access_type || null;
 }
 
-export default function ValidationResult({ result, onConfirmEntry }) {
+/**
+ * ValidationResult — displays the outcome of a QR or manual access scan.
+ *
+ * Props:
+ *  result         — scan result object (status, message, denialReason, log, allowOverride)
+ *  onConfirmEntry — callback to clear the result panel
+ *  onOverride     — (staff only) callback when "Registrar igual" is clicked
+ *  isStaff        — when false, override button is hidden (socios never see it)
+ */
+export default function ValidationResult({ result, onConfirmEntry, onOverride, isStaff = true }) {
   const status = result?.status || 'idle';
   const message = result?.message || '';
   const denialReason = result?.denialReason || result?.log?.denial_reason;
   const log = result?.log || {};
+  const allowOverride = result?.allowOverride ?? false;
   const isError = status === 'error';
   const isSuccess = status === 'success';
   const isWarning = status === 'warning';
@@ -39,6 +42,9 @@ export default function ValidationResult({ result, onConfirmEntry }) {
       : 'Atención';
 
   const accessTypeLabelText = isExit ? 'Salida' : 'Entrada';
+
+  // Resolved human-readable denial label
+  const denialLabel = getDenialLabel(denialReason, message);
 
   return (
     <div className={`rounded-xl border border-subtle flex flex-col p-8 transition-colors duration-300 ${
@@ -75,7 +81,7 @@ export default function ValidationResult({ result, onConfirmEntry }) {
                 {headingText}
               </h2>
               <p className="text-text-tertiary text-sm mt-1 font-medium max-w-sm">
-                {isError && denialReason ? DENIAL_REASONS[denialReason] || message : message}
+                {isError && denialReason ? denialLabel : message}
               </p>
             </div>
           </div>
@@ -94,6 +100,13 @@ export default function ValidationResult({ result, onConfirmEntry }) {
             </div>
           </div>
 
+          {/* Warning detail — shows denial reason for warnings */}
+          {isWarning && denialReason && (
+            <div className="mb-6 px-4 py-3 rounded-lg bg-warning-500/10 border border-warning-500/30">
+              <p className="text-sm text-warning-500 font-medium">{denialLabel}</p>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4 mb-8">
             <div className="bg-bg-raised rounded-xl p-4 flex flex-col justify-between">
               {/* fix #148: dynamic label based on access_type */}
@@ -101,9 +114,13 @@ export default function ValidationResult({ result, onConfirmEntry }) {
                 {isExit ? 'Tipo de Egreso' : 'Tipo de Ingreso'}
               </p>
               <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium w-fit ${
-                isError ? 'bg-error-500/20 text-error-500' : 'bg-success-500/20 text-success-500'
+                isError ? 'bg-error-500/20 text-error-500' :
+                isWarning ? 'bg-warning-500/20 text-warning-500' :
+                'bg-success-500/20 text-success-500'
               }`}>
-                {isError ? <XCircle className="w-3.5 h-3.5"/> : <CheckCircle2 className="w-3.5 h-3.5"/>}
+                {isError ? <XCircle className="w-3.5 h-3.5"/> :
+                 isWarning ? <AlertCircle className="w-3.5 h-3.5"/> :
+                 <CheckCircle2 className="w-3.5 h-3.5"/>}
                 {/* fix #148: ENTRY → "Entrada", EXIT → "Salida" */}
                 {accessType === 'ENTRY'
                   ? 'Entrada'
@@ -120,11 +137,31 @@ export default function ValidationResult({ result, onConfirmEntry }) {
             </div>
           </div>
 
-          <div className="mt-auto grid grid-cols-1 gap-4">
-            <Button variant="secondary" className="flex gap-2 w-full justify-center py-3" onClick={onConfirmEntry}>
-              <Check className="w-4 h-4" /> Limpiar pantalla
-            </Button>
-          </div>
+          {/* Warning override actions — staff only (#149) */}
+          {isWarning && allowOverride && isStaff && onOverride ? (
+            <div className="mt-auto grid grid-cols-2 gap-3">
+              <Button
+                variant="secondary"
+                className="flex gap-2 w-full justify-center py-3"
+                onClick={onConfirmEntry}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="primary"
+                className="flex gap-2 w-full justify-center py-3 bg-warning-500 hover:bg-warning-600 border-warning-500"
+                onClick={onOverride}
+              >
+                Registrar igual
+              </Button>
+            </div>
+          ) : (
+            <div className="mt-auto grid grid-cols-1 gap-4">
+              <Button variant="secondary" className="flex gap-2 w-full justify-center py-3" onClick={onConfirmEntry}>
+                <Check className="w-4 h-4" /> Limpiar pantalla
+              </Button>
+            </div>
+          )}
         </>
       )}
     </div>

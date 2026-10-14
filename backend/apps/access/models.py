@@ -30,6 +30,13 @@ class AccessLog(models.Model):
         UNKNOWN_USER = 'UNKNOWN_USER', 'Usuario no registrado'
         AFORO_FULL = 'AFORO_FULL', 'Aforo completo'
         NOT_INSIDE = 'NOT_INSIDE', 'Socio no registra entrada hoy'
+        # Anti-passback (#149)
+        YA_FIGURA_ADENTRO = 'YA_FIGURA_ADENTRO', 'El socio ya figura dentro del gimnasio'
+        NO_FIGURA_ADENTRO = 'NO_FIGURA_ADENTRO', 'El socio no figura adentro del gimnasio'
+        YA_REGISTRADO = 'YA_REGISTRADO', 'Acceso registrado recientemente (replay)'
+        # Horario (#220)
+        AFORO_COMPLETO = 'AFORO_COMPLETO', 'Aforo máximo alcanzado'
+        FUERA_DE_HORARIO = 'FUERA_DE_HORARIO', 'El gimnasio está fuera de horario'
 
     class AccessSource(models.TextChoices):
         QR_SCAN = 'QR_SCAN', 'QR Scan'

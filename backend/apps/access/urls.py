@@ -4,6 +4,7 @@ from .views import (
     AforoStatsView,
     AccessLogListView,
     CerrarDiaView,
+    CredencialEstadoView,
     GenerateQRView,
     ManualAccessView,
     PresentesView,
@@ -25,4 +26,6 @@ urlpatterns = [
     path('cerrar-dia/', CerrarDiaView.as_view(), name='cerrar-dia'),
     # fix #152 — REST fallback for aforo snapshot
     path('aforo/snapshot/', AforoSnapshotView.as_view(), name='aforo-snapshot'),
+    # fix #157 — credencial digital state
+    path('credencial/estado/', CredencialEstadoView.as_view(), name='credencial-estado'),
 ]
