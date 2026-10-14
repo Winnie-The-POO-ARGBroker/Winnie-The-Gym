@@ -46,6 +46,8 @@ class Pago(models.Model):
     mp_status_detail = models.CharField(max_length=100, blank=True, default='')
     raw_webhook = models.JSONField(default=dict, blank=True)
 
+    email_enviado = models.BooleanField(default=False)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     paid_at = models.DateTimeField(null=True, blank=True)

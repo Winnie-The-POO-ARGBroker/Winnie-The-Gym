@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, OpenApiTypes, extend_schema, extend_schema_view
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -32,14 +32,17 @@ logger = logging.getLogger(__name__)
     retrieve=extend_schema(tags=['payments'], summary='Detalle de pago (recep/admin)'),
 )
 class PagoViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
-    queryset = Pago.objects.all()
+    queryset = Pago.objects.select_related('socio', 'plan').all()
     serializer_class = PagoSerializer
     filterset_class = PagoFilter
     ordering_fields = ['created_at', 'monto', 'estado']
     ordering = ['-created_at']
+    # Fix #187: allow ?limit=N to override page_size (default 20, max 200)
+    page_size_query_param = 'limit'
+    max_page_size = 200
 
     def get_permissions(self):
-        if self.action == 'mis_pagos':
+        if self.action in ('mis_pagos', 'estado'):
             return [IsSocio()]
         return [IsReceptionistOrAdmin()]
 
@@ -53,6 +56,31 @@ class PagoViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
             return self.get_paginated_response(serializer.data)
         serializer = PagoSerializer(pagos, many=True)
         return Response(serializer.data)
+
+    @extend_schema(
+        tags=['payments'],
+        summary='Estado de un pago (polling retorno MP)',
+        description=(
+            'Devuelve el estado actual del pago. Socios solo pueden consultar '
+            'sus propios pagos. Admins y recepcionistas pueden consultar cualquiera.'
+        ),
+        responses={200: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
+    )
+    @action(detail=True, methods=['get'], url_path='estado', url_name='estado',
+            permission_classes=[IsAuthenticated])
+    def estado(self, request, pk=None):
+        """Fix #190: polling endpoint so the frontend can check payment status after MP return."""
+        pago = get_object_or_404(Pago, pk=pk)
+        # Socios may only inspect their own payments
+        if hasattr(request.user, 'socio') and not request.user.is_staff:
+            if pago.socio_id != request.user.socio.pk:
+                return Response({'detail': 'No tenés permiso para ver este pago.'}, status=status.HTTP_403_FORBIDDEN)
+        return Response({
+            'id': pago.pk,
+            'estado': pago.estado,
+            'mp_payment_id': pago.mp_payment_id,
+            'paid_at': pago.paid_at,
+        })
 
 
 @extend_schema_view(

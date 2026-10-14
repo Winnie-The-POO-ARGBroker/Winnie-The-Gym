@@ -37,7 +37,8 @@ describe('usePagosPorSocio', () => {
     api.get.mockResolvedValue({ data: { results: PAGOS } })
     const { result } = renderHookWithProviders(() => usePagosPorSocio(10))
     await waitFor(() => expect(result.current.data).toEqual(PAGOS))
-    expect(api.get).toHaveBeenCalledWith('/payments/pagos/', expect.objectContaining({ params: { socio_id: 10 } }))
+    // Fix #187/#225: filter uses `socio` (not `socio_id`) to match backend field name
+    expect(api.get).toHaveBeenCalledWith('/payments/pagos/', expect.objectContaining({ params: { socio: 10 } }))
   })
 
   // ── 2. Does not fetch when socioId is null ────────────────────────────────

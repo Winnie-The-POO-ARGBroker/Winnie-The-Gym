@@ -5,15 +5,7 @@ import DataTable from '../../components/ui/DataTable'
 import Badge from '../../components/ui/Badge'
 import EmptyState from '../../components/ui/EmptyState'
 import { useMisPagos } from '../../hooks/queries/useMisPagos'
-
-function estadoBadgeVariant(estado) {
-  switch (estado) {
-    case 'aprobado': return 'success'
-    case 'pendiente': return 'warning'
-    case 'rechazado': return 'danger'
-    default: return 'neutral'
-  }
-}
+import { pagoEstadoVariant, pagoEstadoLabel } from '../../constants/pagos'
 
 function formatDate(dateStr) {
   if (!dateStr) return '—'
@@ -65,7 +57,7 @@ const COLUMNS = [
     label: 'Estado',
     mobile: 'Estado',
     render: (row) => (
-      <Badge variant={estadoBadgeVariant(row.estado)}>{row.estado ?? '—'}</Badge>
+      <Badge variant={pagoEstadoVariant(row.estado)}>{pagoEstadoLabel(row.estado)}</Badge>
     ),
   },
 ]
