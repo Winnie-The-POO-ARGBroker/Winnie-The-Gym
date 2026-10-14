@@ -87,6 +87,9 @@ class Pago(models.Model):
     # #191 — Idempotency for manual charges
     idempotency_key = models.CharField(max_length=128, null=True, blank=True, unique=True)
 
+    # #192 — Sequential annual receipt number R-YYYY-NNNNNN
+    numero_comprobante = models.CharField(max_length=20, blank=True, null=True, unique=True, db_index=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     paid_at = models.DateTimeField(null=True, blank=True)

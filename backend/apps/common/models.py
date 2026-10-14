@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 
 
@@ -20,9 +21,26 @@ class GymConfig(models.Model):
         verbose_name = 'Configuración del Gimnasio'
         verbose_name_plural = 'Configuración del Gimnasio'
 
+    def clean(self):
+        """#158 — Validate that hora_cierre is after hora_apertura (or cross-midnight).
+
+        When both are set and are equal, raise a ValidationError because that
+        would mean the gym is never open. Cross-midnight ranges (cierre < apertura)
+        are explicitly supported and considered valid.
+        """
+        if self.hora_apertura and self.hora_cierre:
+            if self.hora_cierre == self.hora_apertura:
+                raise ValidationError({
+                    'hora_cierre': (
+                        'El horario de cierre debe ser posterior al de apertura '
+                        'o cruzar la medianoche.'
+                    )
+                })
+
     def save(self, *args, **kwargs):
         # Enforce singleton: always write to pk=1.
         self.pk = 1
+        self.full_clean()
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):

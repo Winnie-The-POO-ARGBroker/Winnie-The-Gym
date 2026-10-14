@@ -109,4 +109,26 @@ describe('PlanFormModal', () => {
     const nombreInput = screen.getByPlaceholderText(/Ej. Black, Funcional Plus/i)
     expect(nombreInput.value).toBe('Plan Existente')
   })
+
+  it('renders franja_desde/hasta inputs when enabled', () => {
+    renderModal()
+
+    // The schedule restriction section is always visible in create mode
+    const franjaDesde = screen.getByTestId('plan-form-franja-desde')
+    const franjaHasta = screen.getByTestId('plan-form-franja-hasta')
+    expect(franjaDesde).toBeInTheDocument()
+    expect(franjaDesde).toHaveAttribute('type', 'time')
+    expect(franjaHasta).toBeInTheDocument()
+    expect(franjaHasta).toHaveAttribute('type', 'time')
+  })
+
+  it('renders dias_habilitados chips', () => {
+    renderModal()
+
+    // All 7 day chips should be rendered
+    expect(screen.getByTestId('dia-chip-lun')).toBeInTheDocument()
+    expect(screen.getByTestId('dia-chip-dom')).toBeInTheDocument()
+    const chips = screen.getAllByTestId(/^dia-chip-/)
+    expect(chips).toHaveLength(7)
+  })
 })

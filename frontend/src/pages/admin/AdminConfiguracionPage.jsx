@@ -10,13 +10,27 @@ import Button from '../../components/ui/Button'
 import Skeleton from '../../components/ui/Skeleton'
 import { useGymConfig, useUpdateGymConfig } from '../../hooks/queries/useGymConfig'
 
-const schema = z.object({
-  nombre_gym: z.string().min(2, 'El nombre debe tener al menos 2 caracteres').max(100),
-  aforo_maximo: z.coerce.number().int().min(1, 'El aforo debe ser mayor a 0').max(9999),
-  hora_apertura: z.string().regex(/^\d{2}:\d{2}$/, 'Formato HH:MM requerido'),
-  hora_cierre: z.string().regex(/^\d{2}:\d{2}$/, 'Formato HH:MM requerido'),
-  telefono_contacto: z.string().max(20).optional(),
-})
+const schema = z
+  .object({
+    nombre_gym: z.string().min(2, 'El nombre debe tener al menos 2 caracteres').max(100),
+    aforo_maximo: z.coerce.number().int().min(1, 'El aforo debe ser mayor a 0').max(9999),
+    hora_apertura: z.string().regex(/^\d{2}:\d{2}$/, 'Formato HH:MM requerido'),
+    hora_cierre: z.string().regex(/^\d{2}:\d{2}$/, 'Formato HH:MM requerido'),
+    telefono_contacto: z.string().max(20).optional(),
+  })
+  .refine(
+    (data) => {
+      if (!data.hora_apertura || !data.hora_cierre) return true
+      // Same time is invalid — would mean 0 hours open.
+      // hora_cierre > hora_apertura → same day (valid).
+      // hora_cierre < hora_apertura → cross-midnight (valid).
+      return data.hora_cierre !== data.hora_apertura
+    },
+    {
+      message: 'El horario de cierre debe ser posterior al de apertura o cruzar la medianoche.',
+      path: ['hora_cierre'],
+    }
+  )
 
 const inputCls =
   'w-full px-3 py-2 rounded-lg text-sm outline-none appearance-none transition-colors bg-bg-raised border border-subtle text-text-primary placeholder:text-text-tertiary'

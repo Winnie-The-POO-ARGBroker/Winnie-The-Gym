@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { toast } from 'sonner'
-import { Search, CreditCard, User, FileText, AlertTriangle, CheckCircle2 } from 'lucide-react'
+import { Search, CreditCard, User, FileText, AlertTriangle, CheckCircle2, Download } from 'lucide-react'
 import AppLayout from '../../components/layout/AppLayout'
 import TopBar from '../../components/layout/TopBar'
 import Card from '../../components/ui/Card'
@@ -13,6 +13,7 @@ import useDebounce from '../../hooks/useDebounce'
 import { usePlanesQuery } from '../../hooks/queries/usePlanesAdmin'
 import { useCobrarManualMutation } from '../../hooks/queries/usePagos'
 import { useMembresiaActivaDeSocio } from '../../hooks/queries/useMembresias'
+import { descargarComprobante } from '../../services/pagosService'
 
 const MEDIO_OPTIONS = [
   { value: '', label: '— Seleccioná un medio —' },
@@ -26,6 +27,19 @@ const MEDIO_OPTIONS = [
 // ─── Comprobante ───────────────────────────────────────────────────────────────
 
 function Comprobante({ pago, onNuevoCobro }) {
+  const [descargando, setDescargando] = useState(false)
+
+  const handleDescargar = async () => {
+    setDescargando(true)
+    try {
+      await descargarComprobante(pago.id)
+    } catch {
+      toast.error('No se pudo descargar el comprobante.')
+    } finally {
+      setDescargando(false)
+    }
+  }
+
   return (
     <Card className="p-5 flex flex-col gap-4 border-success-500/30 bg-success-500/5">
       <div className="flex items-center gap-2">
@@ -65,9 +79,22 @@ function Comprobante({ pago, onNuevoCobro }) {
         ))}
       </div>
 
-      <Button variant="secondary" onClick={onNuevoCobro} className="self-start">
-        Registrar otro cobro
-      </Button>
+      <div className="flex gap-3 flex-wrap">
+        <Button variant="secondary" onClick={onNuevoCobro} className="self-start">
+          Registrar otro cobro
+        </Button>
+        {pago.estado === 'aprobado' && (
+          <Button
+            variant="secondary"
+            onClick={handleDescargar}
+            loading={descargando}
+            className="self-start gap-1.5"
+          >
+            <Download className="w-3.5 h-3.5" />
+            Descargar comprobante
+          </Button>
+        )}
+      </div>
     </Card>
   )
 }

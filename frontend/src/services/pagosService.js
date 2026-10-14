@@ -44,3 +44,28 @@ export async function listarPagos(params = {}) {
   const res = await api.get('/payments/pagos/', { params })
   return res.data
 }
+
+/**
+ * Descarga el comprobante PDF de un pago aprobado.
+ * El backend responde con Content-Type: application/pdf.
+ * @param {number} pagoId
+ */
+export async function descargarComprobante(pagoId) {
+  const res = await api.get(`/payments/pagos/${pagoId}/comprobante/`, {
+    responseType: 'blob',
+  })
+
+  // Extract filename from Content-Disposition or use a default
+  const disposition = res.headers?.['content-disposition'] ?? ''
+  const match = disposition.match(/filename=["']?([^"';]+)["']?/i)
+  const filename = match?.[1]?.trim() ?? `comprobante-${pagoId}.pdf`
+
+  const url = URL.createObjectURL(res.data)
+  const link = document.createElement('a')
+  link.href = url
+  link.setAttribute('download', filename)
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
