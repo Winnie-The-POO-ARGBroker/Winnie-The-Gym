@@ -1,0 +1,13 @@
+Hola {{ nombre }} {{ apellido }},
+
+¡Buenas noticias! Se liberó un lugar en la clase y fuiste promovido/a desde la lista de espera.
+Tu inscripción quedó confirmada:
+
+  Clase: {{ clase_nombre }}
+  Día:   {{ clase_dia }}
+  Hora:  {{ clase_hora }}
+
+¡Te esperamos! Si no podés asistir, recordá cancelar con anticipación.
+
+---
+{{ brand_name }}

@@ -1,0 +1,25 @@
+{% extends "emails/_base.html" %}
+
+{% block subject %}¡Tenés lugar! — {{ brand_name }}{% endblock %}
+
+{% block content %}
+  <p style="font-size: 16px; margin: 0 0 12px;">
+    Hola <strong>{{ nombre }} {{ apellido }}</strong>,
+  </p>
+
+  <p style="margin: 0 0 16px; line-height: 1.6;">
+    ¡Buenas noticias! Se liberó un lugar en la clase y fuiste <strong>promovido/a</strong>
+    desde la lista de espera. Tu inscripción quedó confirmada:
+  </p>
+
+  <div style="background: #d4edda; border: 1px solid #28a745; border-radius: 8px; padding: 16px; margin: 0 0 16px;">
+    <p style="margin: 0 0 6px; font-weight: bold; font-size: 16px;">{{ clase_nombre }}</p>
+    <p style="margin: 0; color: #155724; font-size: 14px;">
+      {{ clase_dia }} a las {{ clase_hora }}
+    </p>
+  </div>
+
+  <p style="margin: 0; font-size: 14px; line-height: 1.6;">
+    ¡Te esperamos! Si no podés asistir, recordá cancelar con anticipación.
+  </p>
+{% endblock %}
