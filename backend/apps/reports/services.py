@@ -7,7 +7,7 @@ listing the user was looking at.
 from datetime import date, datetime, time
 from decimal import Decimal, ROUND_HALF_UP
 
-from django.db.models import Q, Sum
+from django.db.models import Count, Q, Sum
 from django.utils import timezone
 
 from apps.access.models import AccessLog
@@ -464,3 +464,219 @@ def build_asistencia(fecha_desde=None, fecha_hasta=None):
         ])
 
     return ASISTENCIA_HEADERS, rows
+
+
+# ---------------------------------------------------------------------------
+# #181 — Reportes de clases
+# ---------------------------------------------------------------------------
+
+OCUPACION_HEADERS = [
+    'clase_id', 'clase_nombre', 'disciplina', 'instructor',
+    'dia', 'hora', 'cupo_maximo', 'confirmados', 'tasa_ocupacion_pct',
+]
+
+NO_SHOWS_HEADERS = [
+    'socio_dni', 'socio_nombre', 'no_shows', 'clases_inscritas',
+]
+
+
+def _parse_dates_range(fecha_desde, fecha_hasta):
+    """Return (desde: date, hasta: date) or raise ValueError for bad format."""
+    fd = date.fromisoformat(fecha_desde) if fecha_desde else None
+    fh = date.fromisoformat(fecha_hasta) if fecha_hasta else None
+    return fd, fh
+
+
+def build_ocupacion_clases(fecha_desde=None, fecha_hasta=None, instructor=None, disciplina=None):
+    """#181 — Occupation report: one row per Clase with fill rate.
+
+    Filters:
+      - fecha_desde / fecha_hasta: filter by Clase.created_at date range.
+      - instructor: substring match on Clase.instructor.
+      - disciplina: match on Clase.categoria or Disciplina.nombre (FK if set).
+
+    Returns (headers, rows).
+    """
+    from apps.classes.models import Clase, InscripcionClase  # noqa: PLC0415
+
+    qs = Clase.objects.all()
+
+    if instructor:
+        qs = qs.filter(instructor__icontains=instructor)
+
+    if disciplina:
+        # Support both legacy categoria and new Disciplina FK (nullable)
+        qs = qs.filter(
+            Q(categoria__icontains=disciplina) |
+            Q(disciplina_fk__nombre__icontains=disciplina)
+        )
+
+    if fecha_desde:
+        try:
+            fd = date.fromisoformat(fecha_desde)
+            tz = timezone.get_current_timezone()
+            qs = qs.filter(created_at__date__gte=fd)
+        except (ValueError, TypeError):
+            pass
+
+    if fecha_hasta:
+        try:
+            fh = date.fromisoformat(fecha_hasta)
+            qs = qs.filter(created_at__date__lte=fh)
+        except (ValueError, TypeError):
+            pass
+
+    rows = []
+    for clase in qs.order_by('id'):
+        confirmados = clase.inscripciones.filter(en_espera=False).count()
+        cupo = clase.cupo_maximo or 1
+        tasa = round(confirmados / cupo * 100, 1)
+
+        # Disciplina: prefer FK if set, fall back to categoria
+        disciplina_nombre = clase.categoria
+        if hasattr(clase, 'disciplina_fk') and clase.disciplina_fk_id:
+            disciplina_nombre = clase.disciplina_fk.nombre
+
+        rows.append([
+            clase.id,
+            clase.nombre,
+            disciplina_nombre,
+            clase.instructor,
+            clase.dia,
+            clase.hora.strftime('%H:%M') if clase.hora else '',
+            clase.cupo_maximo,
+            confirmados,
+            tasa,
+        ])
+
+    return OCUPACION_HEADERS, rows
+
+
+ASISTENCIA_CLASES_HEADERS = [
+    'clase_id', 'clase_nombre', 'instructor', 'dia', 'hora',
+    'confirmados', 'presentes', 'ausentes', 'sin_marcar', 'tasa_asistencia_pct',
+]
+
+
+def build_asistencia_clases(fecha_desde=None, fecha_hasta=None, instructor=None):
+    """#181 — Class attendance report: present/absent/unregistered per class.
+
+    Returns (headers, rows).
+    """
+    from apps.classes.models import Clase, InscripcionClase  # noqa: PLC0415
+
+    qs = Clase.objects.all()
+
+    if instructor:
+        qs = qs.filter(instructor__icontains=instructor)
+
+    if fecha_desde:
+        try:
+            qs = qs.filter(created_at__date__gte=date.fromisoformat(fecha_desde))
+        except (ValueError, TypeError):
+            pass
+
+    if fecha_hasta:
+        try:
+            qs = qs.filter(created_at__date__lte=date.fromisoformat(fecha_hasta))
+        except (ValueError, TypeError):
+            pass
+
+    rows = []
+    for clase in qs.order_by('id'):
+        inscripciones = clase.inscripciones.filter(en_espera=False)
+        confirmados = inscripciones.count()
+        presentes = inscripciones.filter(asistio=True).count()
+        ausentes = inscripciones.filter(asistio=False).count()
+        sin_marcar = inscripciones.filter(asistio__isnull=True).count()
+        tasa = round(presentes / confirmados * 100, 1) if confirmados > 0 else 0
+
+        rows.append([
+            clase.id,
+            clase.nombre,
+            clase.instructor,
+            clase.dia,
+            clase.hora.strftime('%H:%M') if clase.hora else '',
+            confirmados,
+            presentes,
+            ausentes,
+            sin_marcar,
+            tasa,
+        ])
+
+    return ASISTENCIA_CLASES_HEADERS, rows
+
+
+def build_no_shows(fecha_desde=None, fecha_hasta=None, ventana_dias=30, min_ausencias=3):
+    """#181 — No-show report: socios with N+ absences in the last `ventana_dias` days.
+
+    Returns (headers, rows).
+    """
+    from apps.classes.models import InscripcionClase  # noqa: PLC0415
+    from apps.members.models import Socio  # noqa: PLC0415
+
+    today = timezone.localdate()
+    if fecha_desde:
+        try:
+            from_date = date.fromisoformat(fecha_desde)
+        except (ValueError, TypeError):
+            from_date = today - timezone.timedelta(days=ventana_dias)
+    else:
+        from_date = today - timezone.timedelta(days=ventana_dias)
+
+    if fecha_hasta:
+        try:
+            to_date = date.fromisoformat(fecha_hasta)
+        except (ValueError, TypeError):
+            to_date = today
+    else:
+        to_date = today
+
+    tz = timezone.get_current_timezone()
+
+    # Aggregate absences per socio in the date range
+    # InscripcionClase doesn't have a date field — use clase__created_at as proxy
+    ausencias_qs = (
+        InscripcionClase.objects
+        .filter(
+            asistio=False,
+            en_espera=False,
+            clase__created_at__date__gte=from_date,
+            clase__created_at__date__lte=to_date,
+        )
+        .values('socio_id')
+        .annotate(no_shows=Count('id'))
+        .filter(no_shows__gte=min_ausencias)
+        .order_by('-no_shows')
+    )
+
+    socio_ids = [r['socio_id'] for r in ausencias_qs]
+    no_shows_by_socio = {r['socio_id']: r['no_shows'] for r in ausencias_qs}
+
+    rows = []
+    socios = (
+        Socio.objects
+        .filter(pk__in=socio_ids)
+        .select_related('usuario')
+    )
+
+    socio_map = {s.pk: s for s in socios}
+
+    for sid in socio_ids:
+        socio = socio_map.get(sid)
+        if not socio:
+            continue
+        inscritas = InscripcionClase.objects.filter(
+            socio=socio,
+            clase__created_at__date__gte=from_date,
+            clase__created_at__date__lte=to_date,
+            en_espera=False,
+        ).count()
+        rows.append([
+            socio.dni,
+            f'{socio.apellido}, {socio.nombre}',
+            no_shows_by_socio[sid],
+            inscritas,
+        ])
+
+    return NO_SHOWS_HEADERS, rows
