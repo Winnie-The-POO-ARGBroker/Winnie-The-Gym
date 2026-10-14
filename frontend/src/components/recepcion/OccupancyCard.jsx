@@ -1,9 +1,10 @@
 import Card from '../ui/Card';
 import { Activity } from 'lucide-react';
+import { AFORO_THRESHOLD_CRITICAL_PCT } from '../../constants/aforo';
 
 export default function OccupancyCard({ aforo, maxAforo }) {
   const aforoPercentage = (aforo / maxAforo) * 100;
-  const isHighCapacity = aforoPercentage > 85;
+  const isHighCapacity = aforoPercentage >= AFORO_THRESHOLD_CRITICAL_PCT;
 
   return (
     <Card className="md:col-span-2 relative overflow-hidden flex flex-col justify-center min-h-[300px]">

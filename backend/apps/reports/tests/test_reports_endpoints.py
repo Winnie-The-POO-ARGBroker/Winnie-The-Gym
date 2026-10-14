@@ -1,4 +1,4 @@
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
 
 from django.utils import timezone
@@ -134,11 +134,21 @@ class AsistenciaReportTests(APITestCase):
         _auth(self.client, self.admin)
 
     def test_csv_includes_permanence_when_entry_and_exit_paired(self):
+        # Force entry at local noon to prevent the +45min exit from crossing
+        # the local-day boundary when CI runs near midnight UTC (the service
+        # only pairs entries/exits within the same local date).
+        tz = timezone.get_current_timezone()
+        entry_dt = timezone.make_aware(
+            datetime.combine(date.today(), time(12, 0, 0)), tz
+        )
         entry = AccessLog.objects.create(
             user=self.socio_user,
             access_type=AccessLog.AccessType.ENTRY,
             status=AccessLog.AccessStatus.GRANTED,
         )
+        entry.timestamp = entry_dt
+        entry.save(update_fields=['timestamp'])
+
         exit_log = AccessLog.objects.create(
             user=self.socio_user,
             access_type=AccessLog.AccessType.EXIT,

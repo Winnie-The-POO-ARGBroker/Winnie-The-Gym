@@ -8,6 +8,12 @@ Versionado según [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added (PR 3 — Sprint 4)
+
+- **fix #148 — EXIT sin validación de membresía**: `ScanQRView` y `ManualAccessView` ya no validan membresía activa cuando `access_type='EXIT'`. Un socio con membresía vencida que está adentro puede registrar su salida. La validación de token/anti-replay se mantiene. Anti-passback light implementado: EXIT es DENIED (`NOT_INSIDE`) si el socio no tiene una ENTRY GRANTED sin EXIT posterior en el día local.
+- **fix #153 — Aforo máximo backend-enforced + alertas WS**: `GymConfig` añade campos `aforo_umbral_alerta_pct` (int, default 90), `aforo_bloqueo_al_llegar_max` (bool, default False), `cierre_gracia_minutos` (int, default 30) y `hora_cierre` ahora es nullable. Cuando `aforo_bloqueo_al_llegar_max=True` y el aforo actual >= aforo máximo, ENTRY devuelve DENIED con `reason='AFORO_FULL'`. Después de cada ENTRY/EXIT exitoso se emite `aforo.alert` al grupo WS si se supera el umbral configurado. Nuevo handler `aforo_alert` en `AforoConsumer`.
+- **fix #154 — Presentes + salida manual + cierre día**: `AccessLog` añade campos `source` (QR_SCAN/DNI_SCAN/MANUAL_CORRECTION/DAY_CLOSE_AUTO), `operator` (FK a User nullable) y `motivo` (CharField). Tres nuevos endpoints: `GET /api/access/presentes/`, `POST /api/access/salida-manual/` (recep/admin), `POST /api/access/cerrar-dia/` (admin-only). Los scan endpoints (QR y DNI) setean `source` apropiado en cada log.
+
 ### Added
 - **Infraestructura de Tests — Reactivación de coverage gates en Vitest 4 (Issue #119)**:
   - Investigación de la variación en evaluación de branches tras el upgrade a Vitest 4 (`@vitest/coverage-v8` v4).
