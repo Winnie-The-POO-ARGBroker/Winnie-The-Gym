@@ -66,26 +66,28 @@ function MedioCard({ medio, data, loading = false }) {
   const Icon = medio.icon
   const medioData = data?.cobros_por_medio?.[medio.key]
   return (
-    <Card className="p-4 flex flex-col gap-2" data-testid={`card-medio-${medio.key}`}>
-      <div className="flex items-center gap-2">
-        <Icon className={`w-4 h-4 ${medio.color}`} />
-        <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
-          {medio.label}
-        </span>
-      </div>
-      {loading ? (
-        <Skeleton className="h-6 w-24 rounded" />
-      ) : (
-        <>
-          <p className="text-xl font-bold text-text-primary">
-            {formatARS(medioData?.total ?? 0)}
-          </p>
-          <p className="text-xs text-text-tertiary">
-            {medioData?.count ?? 0} cobro{(medioData?.count ?? 0) !== 1 ? 's' : ''}
-          </p>
-        </>
-      )}
-    </Card>
+    <div data-testid={`card-medio-${medio.key}`}>
+      <Card className="p-4 flex flex-col gap-2">
+        <div className="flex items-center gap-2">
+          <Icon className={`w-4 h-4 ${medio.color}`} />
+          <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
+            {medio.label}
+          </span>
+        </div>
+        {loading ? (
+          <Skeleton className="h-6 w-24 rounded" />
+        ) : (
+          <>
+            <p className="text-xl font-bold text-text-primary">
+              {formatARS(medioData?.total ?? 0)}
+            </p>
+            <p className="text-xs text-text-tertiary">
+              {medioData?.count ?? 0} cobro{(medioData?.count ?? 0) !== 1 ? 's' : ''}
+            </p>
+          </>
+        )}
+      </Card>
+    </div>
   )
 }
 
