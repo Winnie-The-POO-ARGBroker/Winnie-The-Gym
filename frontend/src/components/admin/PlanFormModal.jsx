@@ -185,6 +185,7 @@ export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = nu
                 placeholder="Ej. Black, Funcional Plus..."
                 value={formData.nombre}
                 onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                data-testid="plan-form-nombre"
                 className={`w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border text-text-primary text-sm focus:outline-none transition-colors ${errors.nombre ? 'border-error-500 focus:border-error-500' : 'border-subtle focus:border-orange-500'}`}
               />
               {errors.nombre && (
@@ -220,6 +221,7 @@ export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = nu
                 placeholder="12000"
                 value={formData.precio}
                 onChange={(e) => setFormData({ ...formData, precio: e.target.value })}
+                data-testid="plan-form-precio"
                 className={`w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border text-text-primary text-sm font-semibold focus:outline-none transition-colors ${errors.precio ? 'border-error-500 focus:border-error-500' : 'border-subtle focus:border-orange-500'}`}
               />
               {errors.precio && (
@@ -401,6 +403,7 @@ export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = nu
           <Button
             variant="primary"
             onClick={handleSubmit}
+            data-testid="plan-form-submit"
             className="gap-1.5 shadow-md shadow-orange-500/20 hover:scale-[1.02] active:scale-[0.98]"
           >
             {isDuplicate ? 'Duplicar Plan' : planToEdit ? 'Guardar Cambios' : 'Crear Plan'}

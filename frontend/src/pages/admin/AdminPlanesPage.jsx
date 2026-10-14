@@ -101,6 +101,7 @@ export default function AdminPlanesPage() {
                     setModalMode({ planToEdit: null, isDuplicate: false })
                     setIsModalOpen(true)
                   }}
+                  data-testid="btn-nuevo-plan"
                   className="gap-2 shadow-md shadow-orange-500/20 hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <Plus className="w-4 h-4" />
