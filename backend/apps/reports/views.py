@@ -8,7 +8,15 @@ from rest_framework.views import APIView
 from apps.access.permissions import IsReceptionistOrAdmin
 
 from .exporters import export
-from .services import build_asistencia, build_facturacion, build_morosidad, build_resumen
+from .services import (
+    build_asistencia,
+    build_asistencia_clases,
+    build_facturacion,
+    build_morosidad,
+    build_no_shows,
+    build_ocupacion_clases,
+    build_resumen,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -227,3 +235,155 @@ class AsistenciaReportView(APIView):
 
         headers, rows = build_asistencia(fecha_desde=fecha_desde, fecha_hasta=fecha_hasta)
         return export(fmt, slug='asistencia', title='Reporte de Asistencia', headers=headers, rows=rows)
+
+
+# ---------------------------------------------------------------------------
+# #181 — Reportes de clases
+# ---------------------------------------------------------------------------
+
+class OcupacionClasesView(APIView):
+    """GET /api/reports/clases/ocupacion/ — Class occupation fill rate."""
+    permission_classes = [IsReceptionistOrAdmin]
+
+    @extend_schema(
+        tags=['reports'],
+        summary='Reporte de ocupación de clases',
+        description='Tasa de ocupación por clase: cupo máximo vs. inscriptos confirmados.',
+        parameters=[
+            FORMAT_PARAMETER,
+            OpenApiParameter('fecha_desde', OpenApiTypes.DATE, OpenApiParameter.QUERY, required=False),
+            OpenApiParameter('fecha_hasta', OpenApiTypes.DATE, OpenApiParameter.QUERY, required=False),
+            OpenApiParameter('instructor', OpenApiTypes.STR, OpenApiParameter.QUERY, required=False),
+            OpenApiParameter('disciplina', OpenApiTypes.STR, OpenApiParameter.QUERY, required=False),
+        ],
+        responses={200: OpenApiTypes.BINARY, 400: OpenApiTypes.OBJECT},
+    )
+    def get(self, request):
+        fmt = request.query_params.get('formato', 'csv')
+        fecha_desde = request.query_params.get('fecha_desde')
+        fecha_hasta = request.query_params.get('fecha_hasta')
+        instructor = request.query_params.get('instructor')
+        disciplina = request.query_params.get('disciplina')
+
+        errors = {}
+        err = _validate_formato(fmt)
+        if err:
+            errors['formato'] = err
+        err = _validate_date(fecha_desde, 'fecha_desde')
+        if err:
+            errors['fecha_desde'] = err
+        err = _validate_date(fecha_hasta, 'fecha_hasta')
+        if err:
+            errors['fecha_hasta'] = err
+        if errors:
+            return Response({'detail': 'Parámetros inválidos.', 'errors': errors},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        headers, rows = build_ocupacion_clases(
+            fecha_desde=fecha_desde,
+            fecha_hasta=fecha_hasta,
+            instructor=instructor,
+            disciplina=disciplina,
+        )
+        return export(fmt, slug='ocupacion_clases', title='Ocupación de Clases', headers=headers, rows=rows)
+
+
+class AsistenciaClasesView(APIView):
+    """GET /api/reports/clases/asistencia/ — Class attendance (present/absent/unmarked)."""
+    permission_classes = [IsReceptionistOrAdmin]
+
+    @extend_schema(
+        tags=['reports'],
+        summary='Reporte de asistencia a clases',
+        description='Presentes, ausentes y sin marcar por clase.',
+        parameters=[
+            FORMAT_PARAMETER,
+            OpenApiParameter('fecha_desde', OpenApiTypes.DATE, OpenApiParameter.QUERY, required=False),
+            OpenApiParameter('fecha_hasta', OpenApiTypes.DATE, OpenApiParameter.QUERY, required=False),
+            OpenApiParameter('instructor', OpenApiTypes.STR, OpenApiParameter.QUERY, required=False),
+        ],
+        responses={200: OpenApiTypes.BINARY, 400: OpenApiTypes.OBJECT},
+    )
+    def get(self, request):
+        fmt = request.query_params.get('formato', 'csv')
+        fecha_desde = request.query_params.get('fecha_desde')
+        fecha_hasta = request.query_params.get('fecha_hasta')
+        instructor = request.query_params.get('instructor')
+
+        errors = {}
+        err = _validate_formato(fmt)
+        if err:
+            errors['formato'] = err
+        err = _validate_date(fecha_desde, 'fecha_desde')
+        if err:
+            errors['fecha_desde'] = err
+        err = _validate_date(fecha_hasta, 'fecha_hasta')
+        if err:
+            errors['fecha_hasta'] = err
+        if errors:
+            return Response({'detail': 'Parámetros inválidos.', 'errors': errors},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        headers, rows = build_asistencia_clases(
+            fecha_desde=fecha_desde,
+            fecha_hasta=fecha_hasta,
+            instructor=instructor,
+        )
+        return export(fmt, slug='asistencia_clases', title='Asistencia a Clases', headers=headers, rows=rows)
+
+
+class NoShowsClasesView(APIView):
+    """GET /api/reports/clases/no_shows/ — Socios with repeated absences."""
+    permission_classes = [IsReceptionistOrAdmin]
+
+    @extend_schema(
+        tags=['reports'],
+        summary='Reporte de no-shows en clases',
+        description='Socios con ausencias repetidas en la ventana configurada.',
+        parameters=[
+            FORMAT_PARAMETER,
+            OpenApiParameter('fecha_desde', OpenApiTypes.DATE, OpenApiParameter.QUERY, required=False),
+            OpenApiParameter('fecha_hasta', OpenApiTypes.DATE, OpenApiParameter.QUERY, required=False),
+            OpenApiParameter('ventana_dias', OpenApiTypes.INT, OpenApiParameter.QUERY, required=False,
+                             description='Días de ventana (default 30)'),
+            OpenApiParameter('min_ausencias', OpenApiTypes.INT, OpenApiParameter.QUERY, required=False,
+                             description='Mínimo de ausencias para aparecer en reporte (default 3)'),
+        ],
+        responses={200: OpenApiTypes.BINARY, 400: OpenApiTypes.OBJECT},
+    )
+    def get(self, request):
+        fmt = request.query_params.get('formato', 'csv')
+        fecha_desde = request.query_params.get('fecha_desde')
+        fecha_hasta = request.query_params.get('fecha_hasta')
+
+        try:
+            ventana_dias = int(request.query_params.get('ventana_dias', 30))
+        except (ValueError, TypeError):
+            ventana_dias = 30
+
+        try:
+            min_ausencias = int(request.query_params.get('min_ausencias', 3))
+        except (ValueError, TypeError):
+            min_ausencias = 3
+
+        errors = {}
+        err = _validate_formato(fmt)
+        if err:
+            errors['formato'] = err
+        err = _validate_date(fecha_desde, 'fecha_desde')
+        if err:
+            errors['fecha_desde'] = err
+        err = _validate_date(fecha_hasta, 'fecha_hasta')
+        if err:
+            errors['fecha_hasta'] = err
+        if errors:
+            return Response({'detail': 'Parámetros inválidos.', 'errors': errors},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        headers, rows = build_no_shows(
+            fecha_desde=fecha_desde,
+            fecha_hasta=fecha_hasta,
+            ventana_dias=ventana_dias,
+            min_ausencias=min_ausencias,
+        )
+        return export(fmt, slug='no_shows_clases', title='No-Shows en Clases', headers=headers, rows=rows)
