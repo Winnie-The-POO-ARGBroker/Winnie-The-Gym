@@ -1,7 +1,9 @@
-import { FileText, FileSpreadsheet, FileCode } from 'lucide-react';
+import { FileText, FileSpreadsheet, FileCode, TrendingUp } from 'lucide-react';
 import Card from '../ui/Card';
 
 export default function EvolucionIngresosCard({ chartPoints, estesMes, vsAnterior, onExport }) {
+  const hasData = Boolean(chartPoints)
+
   return (
     <Card className="flex flex-col min-h-[300px] p-6">
       <div className="flex items-start justify-between mb-4">
@@ -43,17 +45,25 @@ export default function EvolucionIngresosCard({ chartPoints, estesMes, vsAnterio
       </div>
 
       <div className="flex-1 flex items-center justify-center relative mb-8">
-        <svg viewBox="0 0 400 100" className="w-full h-full overflow-visible">
-          <path
-            d={chartPoints}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="text-success-500"
-          />
-        </svg>
+        {hasData ? (
+          <svg viewBox="0 0 400 100" className="w-full h-full overflow-visible">
+            <path
+              d={chartPoints}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="text-success-500"
+            />
+          </svg>
+        ) : (
+          <div className="flex flex-col items-center gap-2 text-text-tertiary py-4">
+            <TrendingUp className="w-10 h-10 opacity-30" />
+            <p className="text-sm font-medium">Sin datos de ingresos aún</p>
+            <p className="text-xs">Los datos aparecerán cuando haya registros de pagos.</p>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-4">

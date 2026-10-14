@@ -17,12 +17,15 @@ import EstadoBanner from '../../components/socio/EstadoBanner'
 import { useSocioMembresiaMe } from '../../hooks/queries/useMembresias'
 import useScreenWakeLock from '../../hooks/useScreenWakeLock'
 import useCredentialState from '../../hooks/useCredentialState'
+import { useGymConfig } from '../../hooks/queries/useGymConfig'
 
 export default function CredencialDigitalPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const [isFullscreen, setIsFullscreen] = useState(false)
+
+  const { data: gymConfig } = useGymConfig()
 
   // Capture pago result on first render (avoids StrictMode race condition)
   const [pagoResultado] = useState(() => searchParams.get('pago'))
@@ -46,7 +49,7 @@ export default function CredencialDigitalPage() {
     return {
       ...rawProfile,
       socioNumero: rawProfile.numero_socio,
-      sedeHabitual: 'Sede Central',
+      sedeHabitual: gymConfig?.nombre_gimnasio ?? null,
       membresia: rawProfile.membresia_activa
         ? {
             ...rawProfile.membresia_activa,
@@ -55,7 +58,7 @@ export default function CredencialDigitalPage() {
           }
         : null,
     }
-  }, [rawProfile])
+  }, [rawProfile, gymConfig])
 
   const isExpired = !member?.membresia || member.membresia.estado === 'vencida'
   const memberReady = Boolean(member && !isExpired)
@@ -78,12 +81,17 @@ export default function CredencialDigitalPage() {
   }
 
   if (!member) {
+    // Admin and recepcionista should not see the credential page — redirect them
+    if (user?.rol === 'administrador' || user?.rol === 'recepcionista') {
+      navigate('/dashboard', { replace: true })
+      return null
+    }
     return (
       <MemberLayout title="Credencial Digital" subtitle="Acceso al gimnasio por molinete">
         <EmptyState
           icon={IdCard}
-          title={user?.rol === 'administrador' ? 'Vista de Administrador' : 'Credencial no disponible'}
-          message={user?.rol === 'administrador' ? 'Las credenciales digitales son exclusivas para los socios.' : 'Iniciá sesión para ver tu credencial digital.'}
+          title="Credencial no disponible"
+          message="Iniciá sesión para ver tu credencial digital."
         />
       </MemberLayout>
     )
@@ -227,15 +235,25 @@ export default function CredencialDigitalPage() {
           )}
         </Card>
 
-        {/* CARD INFORMACIÓN ADICIONAL */}
+        {/* CARD INFORMACIÓN ADICIONAL — only show "Sede" if gymConfig.nombre_gimnasio is available */}
         <Card className="p-4 flex flex-col gap-2 text-xs">
-          <span className="text-[10px] text-text-tertiary uppercase font-bold tracking-wider">
-            Sede Habilitada
-          </span>
-          <div className="flex items-center justify-between text-text-primary font-medium pt-1">
-            <span>{member.sedeHabitual}</span>
-            <span className="text-primary text-[11px] font-semibold">{member.membresia?.planNombre || 'Sin Plan'}</span>
-          </div>
+          {member.sedeHabitual && (
+            <>
+              <span className="text-[10px] text-text-tertiary uppercase font-bold tracking-wider">
+                Sede Habilitada
+              </span>
+              <div className="flex items-center justify-between text-text-primary font-medium pt-1">
+                <span>{member.sedeHabitual}</span>
+                <span className="text-primary text-[11px] font-semibold">{member.membresia?.planNombre || 'Sin Plan'}</span>
+              </div>
+            </>
+          )}
+          {!member.sedeHabitual && (
+            <div className="flex items-center justify-between text-text-primary font-medium">
+              <span className="text-[10px] text-text-tertiary uppercase font-bold tracking-wider">Plan activo</span>
+              <span className="text-primary text-[11px] font-semibold">{member.membresia?.planNombre || 'Sin Plan'}</span>
+            </div>
+          )}
         </Card>
 
       </div>

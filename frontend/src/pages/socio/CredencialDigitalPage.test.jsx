@@ -17,6 +17,10 @@ vi.mock('../../hooks/queries/useMembresias', () => ({
   useSocioMembresiaMe: vi.fn(),
 }))
 
+vi.mock('../../hooks/queries/useGymConfig', () => ({
+  useGymConfig: vi.fn(() => ({ data: { nombre_gimnasio: 'Winnie Gym' } })),
+}))
+
 vi.mock('../../hooks/useAuth', () => ({
   default: vi.fn(),
 }))
@@ -175,12 +179,15 @@ describe('CredencialDigitalPage', () => {
     })
   })
 
-  // ── 4. No member data → admin sees different message ─────────────────────
-  it('shows admin-specific empty state message for administrador role', async () => {
+  // ── 4. No member data → admin is redirected, NOT shown placeholder ─────────
+  it('does not render empty-state for administrador role — redirects instead', async () => {
     setupMocks({ profile: null, user: { rol: 'administrador' } })
     renderPage()
     await waitFor(() => {
-      expect(screen.getByText('Vista de Administrador')).toBeInTheDocument()
+      // Admin should not see the "Vista de Administrador" placeholder anymore
+      expect(screen.queryByText('Vista de Administrador')).not.toBeInTheDocument()
+      // The component returns null on redirect
+      expect(screen.queryByTestId('empty-state')).not.toBeInTheDocument()
     })
   })
 
@@ -299,11 +306,12 @@ describe('CredencialDigitalPage', () => {
     })
   })
 
-  // ── 15. Sede habitual renders ─────────────────────────────────────────────
-  it('renders "Sede Central" as sede habitual', async () => {
+  // ── 15. Sede habitual renders from gymConfig.nombre_gimnasio ────────────────
+  it('renders gym name from gymConfig as sede habitual', async () => {
     renderPage()
     await waitFor(() => {
-      expect(screen.getByText('Sede Central')).toBeInTheDocument()
+      // useGymConfig mock returns { nombre_gimnasio: 'Winnie Gym' }
+      expect(screen.getByText('Winnie Gym')).toBeInTheDocument()
     })
   })
 

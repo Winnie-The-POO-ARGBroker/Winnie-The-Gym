@@ -7,6 +7,10 @@ vi.mock('../../../hooks/queries/useMembresias', () => ({
   useSocioMembresiaMe: vi.fn(),
 }))
 
+vi.mock('../../../hooks/queries/useGymConfig', () => ({
+  useGymConfig: vi.fn(() => ({ data: { nombre_gimnasio: 'Sede Central' } })),
+}))
+
 vi.mock('../../../hooks/useAuth', () => ({
   default: vi.fn(),
 }))
