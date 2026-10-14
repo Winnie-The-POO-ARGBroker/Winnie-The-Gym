@@ -1,10 +1,35 @@
 from drf_spectacular.utils import OpenApiParameter, OpenApiTypes, extend_schema
+from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.access.permissions import IsReceptionistOrAdmin
 
 from .exporters import export
-from .services import build_asistencia, build_facturacion, build_morosidad
+from .services import build_asistencia, build_facturacion, build_morosidad, build_resumen
+
+
+class ReportesResumenView(APIView):
+    """Server-side dashboard summary (fix #183 — never truncated)."""
+    permission_classes = [IsReceptionistOrAdmin]
+
+    @extend_schema(
+        tags=['reports'],
+        summary='Resumen del dashboard (ingresos, morosos, membresías, asistencia)',
+        description=(
+            'Calcula los KPIs del dashboard server-side. Acepta `mes=YYYY-MM` '
+            'y `plan_id` como filtros opcionales.'
+        ),
+        parameters=[
+            OpenApiParameter('mes', OpenApiTypes.STR, OpenApiParameter.QUERY, required=False, description='YYYY-MM'),
+            OpenApiParameter('plan_id', OpenApiTypes.INT, OpenApiParameter.QUERY, required=False),
+        ],
+        responses={200: OpenApiTypes.OBJECT},
+    )
+    def get(self, request):
+        mes = request.query_params.get('mes')
+        plan_id = request.query_params.get('plan_id')
+        data = build_resumen(mes=mes, plan_id=plan_id)
+        return Response(data)
 
 
 FORMAT_PARAMETER = OpenApiParameter(

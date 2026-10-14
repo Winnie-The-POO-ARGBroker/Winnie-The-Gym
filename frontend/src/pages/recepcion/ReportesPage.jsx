@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { Loader2 } from 'lucide-react'
+import { Loader2, RefreshCw, AlertCircle } from 'lucide-react'
 import FilterButton from '../../components/ui/FilterButton'
 import AppLayout from '../../components/layout/AppLayout'
 import TopBar from '../../components/layout/TopBar'
@@ -11,7 +11,62 @@ import MembresiasActivasCard from '../../components/recepcion/MembresiasActivasC
 import ReportFilters, { INITIAL_FILTERS, CATEGORIAS } from '../../components/recepcion/ReportFilters'
 import ReportExportButtons from '../../components/recepcion/ReportExportButtons'
 import { exportReport } from '../../services/reportsService'
-import { useReportMetrics } from '../../hooks/queries/useReportes'
+import { useReportesResumen } from '../../hooks/queries/useReportes'
+
+/**
+ * Converts an array of monthly income values into an SVG polyline path string.
+ * Maps values onto a 400×100 viewport (inverted Y axis — higher values sit higher).
+ */
+function buildChartPath(serie) {
+  if (!Array.isArray(serie) || serie.length === 0) {
+    return 'M 0,80 L 100,70 L 200,60 L 300,50 L 400,30'
+  }
+  const maxVal = Math.max(...serie, 1)
+  const step = 400 / Math.max(serie.length - 1, 1)
+  return serie
+    .map((val, i) => {
+      const x = Math.round(i * step)
+      const y = Math.round(100 - (val / maxVal) * 90)
+      return `${i === 0 ? 'M' : 'L'} ${x},${y}`
+    })
+    .join(' ')
+}
+
+/**
+ * Maps the server summary shape into the flat metrics object the cards expect.
+ */
+function derivarMetrics(resumen) {
+  if (!resumen) return null
+
+  const { ingresos = {}, morosos = {}, membresias = {}, asistencia = {} } = resumen
+
+  const mesActual = ingresos.mes_actual ?? 0
+  const variacionPct = ingresos.variacion_pct ?? 0
+  const vsAnteriorFormatted = `${variacionPct >= 0 ? '+' : ''}${variacionPct}%`
+
+  const serie = Array.isArray(ingresos.serie_6_meses) ? ingresos.serie_6_meses : []
+  const chartPath = buildChartPath(serie)
+
+  const diasOrden = ['lun', 'mar', 'mie', 'jue', 'vie', 'sab', 'dom']
+  const promedioDia = asistencia.promedio_dia ?? {}
+  const dayCounts = diasOrden.map((d) => promedioDia[d] ?? 0)
+  const maxDay = Math.max(...dayCounts, 1)
+  const asistenciaBars = dayCounts.map((c) => Math.max(12, Math.round((c / maxDay) * 90)))
+
+  return {
+    ingresosMesFormatted: `$ ${mesActual.toLocaleString('es-AR')}`,
+    vsAnteriorFormatted,
+    chartPath,
+    asistenciaBars,
+    morososCount: morosos.cantidad ?? 0,
+    adeudadoFormatted: `$ ${(morosos.monto_total ?? 0).toLocaleString('es-AR')}`,
+    morosidadTasa: `${morosos.tasa_pct ?? 0}%`,
+    morosidadPct: morosos.tasa_pct ?? 0,
+    activasCount: String(membresias.activas ?? 0),
+    porVencerCount: membresias.por_vencer_7d ?? 0,
+    nuevasMesCount: membresias.nuevas_mes ?? 0,
+  }
+}
 
 const DEFAULT_METRICS = {
   ingresosMesFormatted: '$ 0',
@@ -33,7 +88,14 @@ export default function ReportesPage() {
   const [filters, setFilters] = useState(INITIAL_FILTERS)
   const [downloadingFormat, setDownloadingFormat] = useState(null)
 
-  const { data: metrics = DEFAULT_METRICS, isLoading: loadingMetrics } = useReportMetrics()
+  const {
+    data: resumen,
+    isLoading: loadingMetrics,
+    isError: errorMetrics,
+    refetch: refetchMetrics,
+  } = useReportesResumen({ mes: filters.mes, plan_id: filters.plan_id })
+
+  const metrics = derivarMetrics(resumen) ?? DEFAULT_METRICS
 
   // Sincronizar cambio de tab con categoría de reporte
   const handleTabClick = (tab) => {
@@ -135,6 +197,19 @@ export default function ReportesPage() {
           <div className="flex items-center justify-center p-12 text-text-secondary">
             <Loader2 className="w-6 h-6 animate-spin mr-2" />
             <span>Cargando analíticas...</span>
+          </div>
+        ) : errorMetrics ? (
+          <div className="flex flex-col items-center gap-4 p-12 text-center">
+            <AlertCircle className="w-10 h-10 text-error-500" />
+            <p className="text-text-primary font-semibold">No se pudieron cargar las analíticas.</p>
+            <button
+              type="button"
+              onClick={() => refetchMetrics()}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Reintentar
+            </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
