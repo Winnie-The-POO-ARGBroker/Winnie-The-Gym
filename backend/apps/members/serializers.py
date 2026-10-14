@@ -25,6 +25,8 @@ class SocioSerializer(serializers.ModelSerializer):
     email = serializers.SerializerMethodField(read_only=True)
     membresia_activa = serializers.SerializerMethodField(read_only=True)
 
+    apto_estado = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = Socio
         fields = (
@@ -37,6 +39,10 @@ class SocioSerializer(serializers.ModelSerializer):
             'dni',
             'telefono',
             'certificado_medico_url',
+            'certificado_medico_path',
+            'certificado_emitido_en',
+            'certificado_vence_en',
+            'apto_estado',
             'estado',
             'fecha_baja',
             'observaciones',
@@ -47,7 +53,16 @@ class SocioSerializer(serializers.ModelSerializer):
             'contacto_emergencia_nombre',
             'contacto_emergencia_telefono',
         )
-        read_only_fields = ('numero_socio', 'certificado_medico_url', 'created_at')
+        read_only_fields = (
+            'numero_socio',
+            'certificado_medico_url',
+            'certificado_medico_path',
+            'apto_estado',
+            'created_at',
+        )
+
+    def get_apto_estado(self, obj):
+        return obj.apto_estado
 
     def get_usuario_id(self, obj):
         return obj.usuario_id
@@ -161,7 +176,7 @@ class SocioSerializer(serializers.ModelSerializer):
 
 
 class SocioCertificadoUploadSerializer(serializers.Serializer):
-    """Payload for the medical certificate upload endpoint (RF08)."""
+    """Payload for the medical certificate upload endpoint (RF08 / #227 / #228)."""
 
     ALLOWED_MIME_TYPES = {
         'application/pdf',
@@ -174,6 +189,9 @@ class SocioCertificadoUploadSerializer(serializers.Serializer):
     archivo = serializers.FileField(
         help_text='Certificado médico en formato PDF o imagen (JPG/PNG/WEBP). Máximo 5 MB.',
     )
+    # #228 — validity dates
+    emitido_en = serializers.DateField(required=False, allow_null=True)
+    vence_en = serializers.DateField(required=False, allow_null=True)
 
     def validate_archivo(self, value):
         if value.size > self.MAX_SIZE_BYTES:
@@ -191,9 +209,30 @@ class SocioCertificadoUploadSerializer(serializers.Serializer):
 class SocioCertificadoResponseSerializer(serializers.ModelSerializer):
     """Minimal response shape for the certificate upload endpoint."""
 
+    apto_estado = serializers.SerializerMethodField()
+
     class Meta:
         model = Socio
-        fields = ('id', 'certificado_medico_url', 'numero_socio', 'estado')
+        fields = (
+            'id',
+            'certificado_medico_path',
+            'certificado_medico_url',
+            'certificado_emitido_en',
+            'certificado_vence_en',
+            'apto_estado',
+            'numero_socio',
+            'estado',
+        )
+
+    def get_apto_estado(self, obj):
+        return obj.apto_estado
+
+
+class SocioCertificadoSignedUrlSerializer(serializers.Serializer):
+    """Response shape for the signed URL endpoint (#227)."""
+
+    url = serializers.URLField()
+    expires_at = serializers.CharField()
 
 
 class SocioNotaSerializer(serializers.ModelSerializer):

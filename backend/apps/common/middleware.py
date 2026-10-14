@@ -9,6 +9,11 @@ def get_current_user():
     return getattr(_thread_locals, 'user', None)
 
 
+def set_current_user(user):
+    """Set the current user in thread-local storage (called by AuditedJWTAuthentication)."""
+    _thread_locals.user = user if getattr(user, 'is_authenticated', False) else None
+
+
 class CurrentUserMiddleware:
     """Store the request user in thread-local so signals can access it.
 

@@ -29,10 +29,10 @@ class SubirCertificadoMedicoTests(APITestCase):
 
     def _cleanup(self, socio):
         socio.refresh_from_db()
-        if socio.certificado_medico_url:
-            path = socio.certificado_medico_url.split('/media/')[-1]
-            if default_storage.exists(path):
-                default_storage.delete(path)
+        # #227: files now land in certificado_medico_path (UUID-named)
+        path = socio.certificado_medico_path or ''
+        if path and default_storage.exists(path):
+            default_storage.delete(path)
 
     def test_admin_uploads_pdf_successfully(self):
         _auth(self.client, self.admin)
@@ -45,8 +45,10 @@ class SubirCertificadoMedicoTests(APITestCase):
         response = self.client.post(_cert_url(self.socio.id), {'archivo': pdf}, format='multipart')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn('/media/certificados_medicos/', response.data['certificado_medico_url'])
-        self.assertTrue(response.data['certificado_medico_url'].endswith('.pdf'))
+        # #227: path is now a UUID-named key under uploads/certs/
+        path = response.data.get('certificado_medico_path', '')
+        self.assertTrue(path.startswith('uploads/certs/'), f'Unexpected path: {path}')
+        self.assertTrue(path.endswith('.pdf'))
         self._cleanup(self.socio)
 
     def test_admin_uploads_image_successfully(self):
@@ -59,7 +61,9 @@ class SubirCertificadoMedicoTests(APITestCase):
         response = self.client.post(_cert_url(self.socio.id), {'archivo': img}, format='multipart')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertTrue(response.data['certificado_medico_url'].endswith('.jpg'))
+        # #227: path is now a UUID-named key under uploads/certs/
+        path = response.data.get('certificado_medico_path', '')
+        self.assertTrue(path.endswith('.jpg'), f'Expected .jpg extension, got: {path}')
         self._cleanup(self.socio)
 
     def test_upload_rejects_unsupported_extension(self):

@@ -1,0 +1,8 @@
+Hola {{ socio.nombre }},
+
+Te informamos que tu cuenta en {{ brand_name }} ha sido dada de baja a partir de hoy.
+
+Si creés que esto es un error o querés más información, contactá a recepción:
+{{ frontend_url }}/contacto
+
+{{ brand_name }}

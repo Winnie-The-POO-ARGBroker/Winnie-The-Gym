@@ -1,0 +1,32 @@
+{% extends "emails/_base.html" %}
+
+{% block subject %}Recordatorio: apto médico — {{ brand_name }}{% endblock %}
+
+{% block content %}
+<h2 style="color: #2c261d; margin: 0 0 16px;">Recordatorio de apto médico</h2>
+
+<p>Hola <strong>{{ socio.nombre }}</strong>,</p>
+
+<p>
+  Te recordamos que tu certificado médico vence
+  <strong>{{ urgency }}</strong>
+  ({{ vence_en }}).
+</p>
+
+<p>
+  Para seguir accediendo al gimnasio sin interrupciones, necesitás presentar
+  un apto médico vigente en recepción o cargarlo desde tu perfil.
+</p>
+
+<p style="text-align: center; margin: 24px 0;">
+  <a href="{{ frontend_url }}/perfil"
+     style="background: #735d3e; color: #fff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold;">
+    Ir a mi perfil
+  </a>
+</p>
+
+<p style="color: #8a7f6b; font-size: 14px;">
+  Si ya renovaste tu apto, ignorá este mensaje. Ante cualquier duda contactá
+  a recepción.
+</p>
+{% endblock %}

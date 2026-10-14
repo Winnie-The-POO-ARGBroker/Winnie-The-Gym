@@ -10,6 +10,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from apps.access.permissions import IsAdminOnly, IsReceptionistOrAdmin, IsSocio
+from apps.members.permissions import IsSocioActivo
 
 from .filters import ClaseFilter, InscripcionClaseFilter
 from .models import Clase, InscripcionClase
@@ -70,8 +71,12 @@ class ClaseViewSet(viewsets.ModelViewSet):
             'cerrar_asistencia', 'inscribir_manual', 'promover_espera', 'reactivar',
         ):
             return [IsReceptionistOrAdmin()]
-        if self.action in ('inscribir', 'cancelar'):
+        if self.action == 'cancelar':
+            # Suspended socios CAN cancel existing reservations (#230)
             return [IsSocio()]
+        if self.action == 'inscribir':
+            # Suspended/baja socios CANNOT inscribe (#230)
+            return [IsSocio(), IsSocioActivo()]
         return [permissions.IsAuthenticated()]
 
     def get_serializer_class(self):
@@ -111,12 +116,13 @@ class ClaseViewSet(viewsets.ModelViewSet):
         summary='Inscribir al socio autenticado (HU07)',
         description=(
             'Inscribe al socio en la clase seleccionada. Si el cupo está lleno, '
-            'lo coloca en lista de espera hasta el límite configurado.'
+            'lo coloca en lista de espera hasta el límite configurado. '
+            'Socios suspendidos o dados de baja reciben HTTP 403 (#230).'
         ),
         request=None,
         responses={201: InscripcionClaseSerializer},
     )
-    @action(detail=True, methods=['post'], permission_classes=[IsSocio])
+    @action(detail=True, methods=['post'], permission_classes=[IsSocio, IsSocioActivo])
     def inscribir(self, request, pk=None):
         clase = self.get_object()
         socio = request.user.socio

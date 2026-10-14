@@ -1,0 +1,26 @@
+{% extends "emails/_base.html" %}
+
+{% block subject %}Tu cuenta en {{ brand_name }} ha sido dada de baja{% endblock %}
+
+{% block content %}
+<h2 style="color: #2c261d; margin: 0 0 16px;">Tu cuenta ha sido dada de baja</h2>
+
+<p>Hola <strong>{{ socio.nombre }}</strong>,</p>
+
+<p>
+  Te informamos que tu cuenta en <strong>{{ brand_name }}</strong> ha sido
+  dada de baja a partir de hoy.
+</p>
+
+<p>
+  Si creés que esto es un error o querés más información, contactá a
+  recepción o respondé este email.
+</p>
+
+<p style="text-align: center; margin: 24px 0;">
+  <a href="{{ frontend_url }}/contacto"
+     style="background: #735d3e; color: #fff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold;">
+    Contactar recepción
+  </a>
+</p>
+{% endblock %}

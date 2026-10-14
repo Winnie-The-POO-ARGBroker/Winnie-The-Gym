@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 
 from django.conf import settings
 from django.db import connection, models
@@ -17,6 +17,12 @@ class Socio(models.Model):
         NO_BINARIO = 'X', 'No binario'
         PREFIERO_NO_DECIR = 'N', 'Prefiero no decir'
 
+    class AptoEstado(models.TextChoices):
+        SIN_APTO = 'sin_apto', 'Sin apto'
+        VIGENTE = 'vigente', 'Vigente'
+        POR_VENCER = 'por_vencer', 'Por vencer'
+        VENCIDO = 'vencido', 'Vencido'
+
     usuario = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -26,7 +32,10 @@ class Socio(models.Model):
     nombre = models.CharField(max_length=100)
     apellido = models.CharField(max_length=100)
     telefono = models.CharField(max_length=30)
+    # Legacy URL field — kept for backward compat; new uploads use certificado_medico_path
     certificado_medico_url = models.URLField(blank=True)
+    # #227 — private bucket path (UUID-named key, no PII in the name)
+    certificado_medico_path = models.CharField(max_length=500, blank=True, default='')
     numero_socio = models.CharField(max_length=10, unique=True)
     estado = models.CharField(max_length=20, choices=Estado.choices, default=Estado.ACTIVO)
     fecha_baja = models.DateField(blank=True, null=True)
@@ -43,6 +52,50 @@ class Socio(models.Model):
     )
     contacto_emergencia_nombre = models.CharField(max_length=100, blank=True, default='')
     contacto_emergencia_telefono = models.CharField(max_length=30, blank=True, default='')
+    # #228 — medical certificate validity
+    certificado_emitido_en = models.DateField(blank=True, null=True)
+    certificado_vence_en = models.DateField(blank=True, null=True)
+    # #228 — idempotency flags for validity reminder emails (JSON dict stored as text)
+    _aviso_apto_enviado = models.TextField(blank=True, default='{}', db_column='aviso_apto_enviado')
+
+    @property
+    def apto_estado(self):
+        """Compute the medical certificate validity state.
+
+        Returns one of: sin_apto | vigente | por_vencer | vencido.
+
+        Logic (per contract):
+          - sin_apto  → no certificado_medico_path
+          - vigente   → vence_en > today + 30 days
+          - por_vencer → vence_en ∈ (today, today + 30 days]
+          - vencido   → vence_en <= today, or has path but no fecha
+        """
+        if not self.certificado_medico_path and not self.certificado_medico_url:
+            return self.AptoEstado.SIN_APTO
+        if not self.certificado_vence_en:
+            # Has a file but no expiry date recorded
+            return self.AptoEstado.VENCIDO
+        today = date.today()
+        vence = self.certificado_vence_en
+        if vence <= today:
+            return self.AptoEstado.VENCIDO
+        threshold = today + timedelta(days=30)
+        if vence <= threshold:
+            return self.AptoEstado.POR_VENCER
+        return self.AptoEstado.VIGENTE
+
+    def get_aviso_apto_enviado(self):
+        """Return the idempotency dict for apto reminder emails."""
+        import json
+        try:
+            return json.loads(self._aviso_apto_enviado or '{}')
+        except (ValueError, TypeError):
+            return {}
+
+    def set_aviso_apto_enviado(self, data: dict):
+        """Persist the idempotency dict for apto reminder emails."""
+        import json
+        self._aviso_apto_enviado = json.dumps(data)
 
     def save(self, *args, **kwargs):
         if not self.numero_socio:
