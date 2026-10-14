@@ -270,18 +270,44 @@ class WinniePasswordResetSerializer(BasePasswordResetSerializer):
     """Override dj-rest-auth's PasswordResetSerializer to link to FRONTEND_URL.
 
     fix #233: password reset emails must link to FRONTEND_URL (not example.com).
+    fix #212: sends the branded password_reset email template via enqueue_email
+    (Celery with retries) instead of the allauth default template.
     """
 
     def save(self):
-        request = self.context.get('request')
+        from django.utils.encoding import force_bytes
+        from django.utils.http import urlsafe_base64_encode
+        from apps.common.tasks import enqueue_email
+
+        # Use allauth's default_token_generator (same as the parent serializer).
+        if 'allauth' in settings.INSTALLED_APPS:
+            from allauth.account.forms import default_token_generator
+        else:
+            from django.contrib.auth.tokens import default_token_generator
+
         frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:5173').rstrip('/')
-        opts = {
-            'use_https': request.is_secure() if request else True,
-            'from_email': getattr(settings, 'DEFAULT_FROM_EMAIL', None),
-            'request': request,
-            'url_generator': _make_frontend_url_generator(frontend_url),
-        }
-        self.reset_form.save(**opts)
+        brand_name = getattr(settings, 'BRAND_NAME', 'Winnie The Gym')
+
+        # reset_form is an AllAuthPasswordResetForm; after is_valid() its .users
+        # attribute holds the matched User queryset (may be empty list on no match).
+        users = getattr(self.reset_form, 'users', [])
+        for user in users:
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            token = default_token_generator.make_token(user)
+            reset_url = f'{frontend_url}/reset-password/{uid}/{token}/'
+
+            context = {
+                'brand_name': brand_name,
+                'frontend_url': frontend_url,
+                'reset_url': reset_url,
+            }
+            enqueue_email(
+                template_base='password_reset',
+                subject=f'Recuperación de contraseña — {brand_name}',
+                to=[user.email],
+                context=context,
+                category='password_reset',
+            )
 
 
 class StaffListSerializer(serializers.ModelSerializer):
