@@ -8,6 +8,7 @@ vi.mock('../../../hooks/queries/useDashboardData', () => ({
   useAforoStats: () => ({
     data: { aforo_actual: 37, ingresos_hoy: 8, egresos_hoy: 3 },
   }),
+  useAforoSnapshot: () => ({ data: undefined }),
 }))
 
 // WS disconnected

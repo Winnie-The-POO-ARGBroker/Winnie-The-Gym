@@ -7,6 +7,7 @@ import ValidationResult from '../../components/recepcion/ValidationResult';
 import { scanQR, manualAccess } from '../../services/accessService';
 import useWebSocket from '../../hooks/useWebSocket';
 import useScreenWakeLock from '../../hooks/useScreenWakeLock';
+import { useGymConfig } from '../../hooks/queries/useGymConfig';
 import { Wifi, WifiOff } from 'lucide-react';
 
 const SCAN_RESULT_DISPLAY_MS = 8000;
@@ -75,6 +76,8 @@ export default function AccesoTerminalPage() {
 
   const { lastMessage } = useWebSocket('/ws/aforo/');
   const aforoActual = lastMessage?.aforo_actual ?? '--';
+  const { data: gymConfig } = useGymConfig();
+  const aforoMaximo = gymConfig?.aforo_maximo ?? '--';
 
   // Keep screen awake while camera scanner is active (fix #203 — Wake Lock on scanner)
   useScreenWakeLock({ enabled: !isManualMode });
@@ -228,7 +231,7 @@ export default function AccesoTerminalPage() {
             </div>
             <div className="bg-bg-raised border border-subtle px-4 py-2 rounded-lg font-bold text-text-primary text-sm flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-success-500 animate-pulse" />
-              Aforo {aforoActual}/200
+              Aforo {aforoActual}/{aforoMaximo}
             </div>
           </div>
         }

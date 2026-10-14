@@ -13,6 +13,7 @@ from rest_framework.response import Response
 from .consumers import AFORO_GROUP
 from .filters import AccessLogFilter
 from .models import AccessLog
+from .pagination import AccessLogPagination
 from .permissions import IsReceptionistOrAdmin, IsAdminOnly
 from .services import has_active_membership, get_aforo_stats, get_aforo_actual, invalidate_aforo_cache
 from .serializers import (
@@ -389,10 +390,12 @@ class AccessLogListView(generics.ListAPIView):
     """
     GET /api/access/logs/
     [BLOCKER-2 Fix]: Filtro por ownership. Socios sólo ven sus propios logs; staff/admin ven todos.
+    [Fix #152]: AccessLogPagination with page_size_query_param support.
     """
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = AccessLogSerializer
     filterset_class = AccessLogFilter
+    pagination_class = AccessLogPagination
     ordering_fields = ['timestamp']
     ordering = ['-timestamp']
 
@@ -617,6 +620,47 @@ class CerrarDiaView(APIView):
             'closed_count': closed_count,
             'message': f'{closed_count} presentes dieron salida al cierre del día.',
             'timestamp_cierre': now,
+        }, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    tags=['access'],
+    summary='Snapshot REST de aforo actual (fallback cuando WebSocket no conecta)',
+    description=(
+        'Devuelve el estado actual del aforo: aforo_actual, aforo_maximo, '
+        'ingresos_hoy, egresos_hoy y timestamp. Usar como fallback REST '
+        'cuando el WebSocket tarda más de 3 segundos en conectar.'
+    ),
+    responses={200: {
+        'type': 'object',
+        'properties': {
+            'aforo_actual': {'type': 'integer'},
+            'aforo_maximo': {'type': 'integer'},
+            'ingresos_hoy': {'type': 'integer'},
+            'egresos_hoy': {'type': 'integer'},
+            'timestamp': {'type': 'string', 'format': 'date-time'},
+        },
+    }},
+)
+class AforoSnapshotView(APIView):
+    """
+    GET /api/access/aforo/snapshot/
+    Fix #152 — REST fallback for aforo when WebSocket is unavailable.
+    """
+    permission_classes = [IsReceptionistOrAdmin]
+
+    def get(self, request):
+        from apps.common.models import GymConfig  # noqa: PLC0415
+
+        aforo_data = get_aforo_actual()
+        gym_cfg = GymConfig.get()
+
+        return Response({
+            'aforo_actual': aforo_data.get('aforo_actual', 0),
+            'aforo_maximo': gym_cfg.aforo_maximo,
+            'ingresos_hoy': aforo_data.get('ingresos_hoy', 0),
+            'egresos_hoy': aforo_data.get('egresos_hoy', 0),
+            'timestamp': timezone.now().isoformat(),
         }, status=status.HTTP_200_OK)
 
 
