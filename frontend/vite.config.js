@@ -11,10 +11,12 @@ export default defineConfig({
     pool: 'forks',
     poolOptions: {
       forks: {
-        maxForks: 2,
+        maxForks: 1,
         minForks: 1,
+        execArgv: ['--max-old-space-size=4096'],
       },
     },
+    isolate: false,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov', 'html'],
