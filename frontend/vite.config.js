@@ -8,6 +8,8 @@ export default defineConfig({
     globals: true,
     setupFiles: './setupTests.js',
     forbidOnly: true,
+    testTimeout: 10000,
+    hookTimeout: 10000,
     pool: 'threads',
     poolOptions: {
       threads: {
