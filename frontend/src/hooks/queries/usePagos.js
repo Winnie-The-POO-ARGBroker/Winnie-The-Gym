@@ -14,7 +14,8 @@ export function usePagosPorSocio(socioId, options = {}) {
   return useQuery({
     queryKey: PAGOS_POR_SOCIO_KEY(socioId),
     queryFn: async () => {
-      const res = await api.get('/payments/pagos/', { params: { socio_id: socioId } })
+      // Backend filter field is `socio` (not `socio_id` — fix for #187/#225)
+      const res = await api.get('/payments/pagos/', { params: { socio: socioId } })
       return res.data?.results ?? res.data ?? []
     },
     enabled: !!socioId,

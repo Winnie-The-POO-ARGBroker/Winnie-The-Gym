@@ -213,7 +213,8 @@ describe('SocioDetailModal', () => {
     fireEvent.click(screen.getByText('Pagos'))
 
     await waitFor(() => {
-      expect(screen.getByText('aprobado')).toBeInTheDocument()
+      // Badge now renders the human-readable label from PAGO_ESTADO_MAP (fix #187)
+      expect(screen.getByText('Aprobado')).toBeInTheDocument()
     })
   })
 

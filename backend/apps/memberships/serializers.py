@@ -29,11 +29,19 @@ class PlanMembresiaSerializer(serializers.ModelSerializer):
 
 
 class MembresiaSerializer(serializers.ModelSerializer):
+    # Fix #187: human-readable names for list views (avoids raw FK ids in the UI)
+    plan_nombre = serializers.CharField(source='plan.nombre', read_only=True)
+    socio_nombre = serializers.SerializerMethodField()
+
     class Meta:
         model = Membresia
-        fields = ('id', 'socio', 'plan', 'fecha_inicio', 'fecha_fin', 'estado')
+        fields = ('id', 'socio', 'socio_nombre', 'plan', 'plan_nombre', 'fecha_inicio', 'fecha_fin', 'estado')
         # fecha_fin is always computed; estado is writable on PATCH but forced on create.
-        read_only_fields = ('fecha_fin',)
+        read_only_fields = ('fecha_fin', 'plan_nombre', 'socio_nombre')
+
+    def get_socio_nombre(self, obj):
+        socio = obj.socio
+        return f'{socio.apellido}, {socio.nombre}'
 
     def validate_estado(self, value):
         """Reject pendiente_pago as a write value (create or PATCH)."""

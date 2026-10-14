@@ -2,7 +2,6 @@ import hashlib
 import hmac
 import logging
 import uuid
-from datetime import date, timedelta
 from decimal import Decimal
 
 from django.conf import settings
@@ -66,21 +65,10 @@ def _send_payment_confirmation_email(pago):
 
 
 def _activate_membership(pago):
-    """Renew the socio's membership using the plan attached to the pago."""
-    fecha_inicio = date.today()
-    fecha_fin = fecha_inicio + timedelta(days=pago.plan.duracion_dias)
-
+    """Activate the socio's membership via the unified renovar_membresia service (stack policy)."""
+    from apps.memberships.services import renovar_membresia
     with transaction.atomic():
-        pago.socio.membresias.filter(
-            estado=Membresia.Estado.ACTIVA,
-        ).update(estado=Membresia.Estado.VENCIDA)
-
-        membresia = pago.socio.membresias.create(
-            plan=pago.plan,
-            fecha_inicio=fecha_inicio,
-            fecha_fin=fecha_fin,
-            estado=Membresia.Estado.ACTIVA,
-        )
+        membresia = renovar_membresia(pago.socio, pago.plan, politica='stack')
         pago.membresia = membresia
         pago.save(update_fields=['membresia', 'updated_at'])
     return membresia
@@ -252,11 +240,31 @@ def _extract_data_id(payload, query_params):
     return None
 
 
+# States that are considered terminal — only explicit refund/chargeback can move out of APROBADO.
+TERMINAL_STATES = {Pago.Estado.REEMBOLSADO, Pago.Estado.CANCELADO}
+# States that allow progression (non-terminal, non-approved)
+REFUND_TRIGGERS = {'refunded', 'charged_back'}
+
+
 def procesar_webhook(payload, query_params, x_signature, x_request_id):
-    """Main webhook processor.
+    """Main webhook processor — robust idempotent version (fix #190).
+
+    Logic:
+    - Only process ``topic=payment`` / ``type=payment``; respond 200 immediately for others.
+    - Lookup Pago by mp_payment_id first (tightest), then external_reference, then metadata.pago_id.
+    - Terminal-state protection: once APROBADO, only refund/chargeback can change the state.
+    - Accept re-attempts on the same Pago while it is not yet APROBADO (in_process → approved).
+    - Confirmation email sent exactly once, guarded by ``email_enviado`` flag.
+    - Duplicate-approved events (double charge) are logged as warnings.
 
     Returns a tuple (ok: bool, message: str, pago: Optional[Pago]).
     """
+    # Topic filter: only handle payment notifications
+    topic = payload.get('type') or payload.get('topic') or ''
+    if topic and topic != 'payment':
+        logger.info('Webhook topic=%s ignored (non-payment)', topic)
+        return True, f'topic {topic} ignored', None
+
     data_id = _extract_data_id(payload, query_params)
     if not data_id:
         return False, 'missing data.id', None
@@ -266,30 +274,48 @@ def procesar_webhook(payload, query_params, x_signature, x_request_id):
 
     try:
         mp_payment = mercadopago_client.fetch_payment(data_id)
-    except Exception as exc:  # network / API failure
+    except Exception as exc:
         logger.error('Failed to fetch MP payment %s: %s', data_id, exc, exc_info=True)
         return False, 'failed to fetch payment', None
 
-    external_reference = mp_payment.get('external_reference', '')
+    external_reference = mp_payment.get('external_reference', '') or ''
     mp_status = mp_payment.get('status', '')
     mp_status_detail = mp_payment.get('status_detail', '')
 
-    pago = None
-    if external_reference:
+    # Lookup: by mp_payment_id (already assigned) → external_reference → metadata.pago_id
+    pago = Pago.objects.filter(mp_payment_id=str(data_id)).first()
+    if pago is None and external_reference:
         pago = Pago.objects.filter(mp_external_reference=external_reference).first()
-    if pago is None and mp_payment.get('metadata', {}).get('pago_id'):
-        pago = Pago.objects.filter(pk=mp_payment['metadata']['pago_id']).first()
     if pago is None:
-        logger.warning('Webhook received for unknown external_reference=%s', external_reference)
+        meta_pago_id = (mp_payment.get('metadata') or {}).get('pago_id')
+        if meta_pago_id:
+            pago = Pago.objects.filter(pk=meta_pago_id).first()
+    if pago is None:
+        logger.warning('Webhook received for unknown external_reference=%s data_id=%s', external_reference, data_id)
         return False, 'unknown pago', None
 
     new_estado = STATUS_MAP.get(mp_status, Pago.Estado.PENDIENTE)
 
     with transaction.atomic():
-        # Idempotency by mp_payment_id UNIQUE — do not overwrite once terminal.
-        if pago.mp_payment_id and pago.mp_payment_id != str(data_id):
-            logger.info('Ignoring duplicate webhook for pago %s', pago.pk)
-            return True, 'duplicate ignored', pago
+        # Select for update to serialize concurrent webhook deliveries
+        pago = Pago.objects.select_for_update().get(pk=pago.pk)
+
+        # Terminal-state protection: APROBADO can only move to REEMBOLSADO/CANCELADO
+        if pago.estado == Pago.Estado.APROBADO:
+            if mp_status not in REFUND_TRIGGERS:
+                # Duplicate approved event — potential double charge, log and return idempotent
+                logger.warning(
+                    'Duplicate approved webhook for pago %s (mp_payment_id=%s). Possible double charge.',
+                    pago.pk, data_id,
+                )
+                return True, 'already approved', pago
+            # Genuine refund/chargeback: allow state transition
+            new_estado = Pago.Estado.REEMBOLSADO
+
+        # Protect fully terminal states (reembolsado/cancelado) from further changes
+        if pago.estado in TERMINAL_STATES and pago.estado != Pago.Estado.APROBADO:
+            logger.info('Webhook ignored: pago %s already in terminal state %s', pago.pk, pago.estado)
+            return True, 'already terminal', pago
 
         pago.mp_payment_id = str(data_id)
         pago.mp_status_detail = mp_status_detail
@@ -302,7 +328,10 @@ def procesar_webhook(payload, query_params, x_signature, x_request_id):
         if new_estado == Pago.Estado.APROBADO and pago.membresia is None:
             _activate_membership(pago)
 
-    if new_estado == Pago.Estado.APROBADO:
+    # Send confirmation email exactly once, outside the transaction to avoid holding the lock
+    if new_estado == Pago.Estado.APROBADO and not pago.email_enviado:
         _send_payment_confirmation_email(pago)
+        Pago.objects.filter(pk=pago.pk).update(email_enviado=True)
+        pago.email_enviado = True
 
     return True, f'processed ({new_estado})', pago

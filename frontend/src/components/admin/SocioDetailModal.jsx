@@ -20,6 +20,8 @@ import Skeleton from '../ui/Skeleton'
 import Modal from '../ui/Modal'
 import { useMembresiasPorSocio } from '../../hooks/queries/useMembresias'
 import { usePagosPorSocio } from '../../hooks/queries/usePagos'
+import { pagoEstadoVariant, pagoEstadoLabel } from '../../constants/pagos'
+import { membresiaEstadoVariant } from '../../constants/membresias'
 
 const TABS = [
   { key: 'datos', label: 'Datos' },
@@ -36,23 +38,9 @@ function formatDate(str) {
   })
 }
 
-function estadoMembresiaVariant(estado) {
-  switch (estado) {
-    case 'activa': return 'success'
-    case 'vencida': return 'danger'
-    case 'pendiente': return 'warning'
-    default: return 'neutral'
-  }
-}
-
-function estadoPagoVariant(estado) {
-  switch (estado) {
-    case 'aprobado': return 'success'
-    case 'pendiente': return 'warning'
-    case 'rechazado': return 'danger'
-    default: return 'neutral'
-  }
-}
+// Estado helpers now delegate to the shared constants maps
+const estadoMembresiaVariant = membresiaEstadoVariant
+const estadoPagoVariant = pagoEstadoVariant
 
 // ─── Tab: Datos ───────────────────────────────────────────────────────────────
 
@@ -223,7 +211,7 @@ function TabPagos({ socioId }) {
                 ? new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(p.monto)
                 : '—'}
             </span>
-            <Badge variant={estadoPagoVariant(p.estado)}>{p.estado ?? '—'}</Badge>
+            <Badge variant={estadoPagoVariant(p.estado)}>{pagoEstadoLabel(p.estado)}</Badge>
           </div>
         </div>
       ))}
