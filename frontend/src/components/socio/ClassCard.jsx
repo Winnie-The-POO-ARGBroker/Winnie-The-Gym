@@ -24,7 +24,7 @@ export default function ClassCard({ clase, variant, onBook, onCancel }) {
 
         <div className="pt-2 border-t border-subtle flex items-center justify-between">
           <span className="text-[10px] text-text-tertiary">
-            Cancelación permitida hasta 2h antes
+            Cancelación permitida hasta {clase.cancelacion_horas != null ? `${clase.cancelacion_horas}h` : '2h'} antes
           </span>
           <Button
             variant="secondary"

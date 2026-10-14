@@ -39,44 +39,114 @@ DIA_TO_WEEKDAY = {
 }
 
 
-def inscribir_socio(clase, socio):
+def inscribir_socio(clase, socio, *, forzar=False):
     """Enroll a socio in a clase, placing them on the wait-list when cupo is full.
 
+    Validates:
+      1. Class is active (not 'cancelada' or 'finalizada').
+      2. Socio is active (not 'baja' or 'suspendido').
+      3. Socio has an active membership with fecha_inicio <= today <= fecha_fin.
+      4. If clase.planes_habilitados is non-empty: socio's plan must be in the list.
+      5. Concurrency-safe cupo check via select_for_update inside atomic transaction.
+      6. forzar=True (admin only) allows overcapacity enrollment.
+
     Raises:
-        ValidationError: if the socio is already enrolled, or both cupo and
-                         lista de espera are at capacity.
+        ValidationError: for any of the above validation failures, or when both
+                         cupo and lista de espera are at capacity.
 
     Returns:
         The newly created InscripcionClase instance.
     """
+    from datetime import date
+    from django.db import transaction
+    from apps.memberships.models import Membresia  # noqa: PLC0415
+
+    # 1. Class must be active
+    if clase.estado in (Clase.Estado.CANCELADA, Clase.Estado.FINALIZADA):
+        raise ValidationError({'detail': 'No podés inscribirte en una clase cancelada o finalizada.'})
+
+    # 2. Socio must be active
+    if socio.estado in ('baja', 'suspendido'):
+        raise ValidationError({'detail': 'Tu cuenta de socio no está activa.'})
+
+    # 3. Active membership with valid dates
+    today = date.today()
+    membresia = (
+        Membresia.objects
+        .filter(socio=socio, estado=Membresia.Estado.ACTIVA)
+        .select_related('plan')
+        .order_by('-fecha_fin')
+        .first()
+    )
+    if membresia is None or not (membresia.fecha_inicio <= today <= membresia.fecha_fin):
+        raise ValidationError({'detail': 'No tenés una membresía activa vigente.'})
+
+    # 4. Plan filter — empty list means all plans allowed
+    planes_habilitados = clase.planes_habilitados or []
+    if planes_habilitados:
+        plan_id = membresia.plan_id
+        if plan_id not in planes_habilitados:
+            plan_nombre = membresia.plan.nombre
+            raise ValidationError({
+                'detail': f'Tu plan ({plan_nombre}) no incluye esta clase.',
+            })
+
+    # 5. Duplicate check + concurrency-safe cupo enforcement
     if InscripcionClase.objects.filter(clase=clase, socio=socio).exists():
         raise ValidationError({'detail': 'Ya estás inscripto en esta clase.'})
 
-    cupos_ocupados = clase.inscripciones.filter(en_espera=False).count()
-    en_espera = cupos_ocupados >= clase.cupo_maximo
+    with transaction.atomic():
+        # Lock the Clase row to serialize concurrent inscriptions
+        locked_clase = Clase.objects.select_for_update().get(pk=clase.pk)
 
-    if en_espera:
-        en_lista = clase.inscripciones.filter(en_espera=True).count()
-        if en_lista >= clase.lista_espera_max:
-            raise ValidationError({'detail': 'La clase y su lista de espera están completas.'})
+        cupos_ocupados = locked_clase.inscripciones.filter(en_espera=False).count()
+        cupo_lleno = cupos_ocupados >= locked_clase.cupo_maximo
 
-    return InscripcionClase.objects.create(
-        clase=clase,
-        socio=socio,
-        en_espera=en_espera,
-    )
+        if cupo_lleno and forzar:
+            # Admin override — confirm cupo but mark as espera if truly over
+            en_espera = False
+        elif cupo_lleno:
+            en_lista = locked_clase.inscripciones.filter(en_espera=True).count()
+            if en_lista >= locked_clase.lista_espera_max:
+                raise ValidationError({'detail': 'La clase y su lista de espera están completas.'})
+            en_espera = True
+        else:
+            en_espera = False
+
+        return InscripcionClase.objects.create(
+            clase=locked_clase,
+            socio=socio,
+            en_espera=en_espera,
+        )
 
 
 def _next_clase_datetime(clase):
-    """Return the next scheduled datetime for a recurring class in local tz."""
+    """Return the next scheduled datetime for a recurring class in local tz.
+
+    When `dias_recurrencia` is populated (list of Dia values), the next
+    occurrence is the soonest weekday from that list that is strictly after
+    now. Falls back to the single `clase.dia` field when the list is empty.
+    """
     now = timezone.localtime()
-    target_weekday = DIA_TO_WEEKDAY[clase.dia]
-    days_ahead = (target_weekday - now.weekday()) % 7
-    candidate = now.replace(hour=clase.hora.hour, minute=clase.hora.minute, second=0, microsecond=0)
-    candidate = candidate + timedelta(days=days_ahead)
-    if candidate <= now:
-        candidate = candidate + timedelta(days=7)
-    return candidate
+
+    # Build candidate weekdays from dias_recurrencia or fall back to clase.dia
+    dias = clase.dias_recurrencia or []
+    if dias:
+        target_weekdays = sorted({DIA_TO_WEEKDAY[d] for d in dias if d in DIA_TO_WEEKDAY})
+    else:
+        target_weekdays = [DIA_TO_WEEKDAY[clase.dia]]
+
+    best_candidate = None
+    for target_weekday in target_weekdays:
+        days_ahead = (target_weekday - now.weekday()) % 7
+        candidate = now.replace(hour=clase.hora.hour, minute=clase.hora.minute, second=0, microsecond=0)
+        candidate = candidate + timedelta(days=days_ahead)
+        if candidate <= now:
+            candidate = candidate + timedelta(days=7)
+        if best_candidate is None or candidate < best_candidate:
+            best_candidate = candidate
+
+    return best_candidate
 
 
 def cancelar_inscripcion(clase, socio):
