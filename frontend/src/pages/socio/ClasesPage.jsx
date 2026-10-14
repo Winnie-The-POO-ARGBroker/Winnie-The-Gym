@@ -41,6 +41,7 @@ function mapClase(c) {
     cuposReservados: c.cupos_reservados,
     isBooked: c.user_inscrito,
     descripcion: c.descripcion,
+    cancelacion_horas: c.cancelacion_horas,
   }
 }
 
