@@ -26,6 +26,10 @@ vi.mock('../../../hooks/queries/usePagos', () => ({
   })),
 }))
 
+vi.mock('../../../hooks/queries/useMembresias', () => ({
+  useMembresiaActivaDeSocio: vi.fn(() => ({ data: null })),
+}))
+
 // Mock de useDebounce para evitar timers en tests
 vi.mock('../../../hooks/useDebounce', () => ({
   default: (val) => val

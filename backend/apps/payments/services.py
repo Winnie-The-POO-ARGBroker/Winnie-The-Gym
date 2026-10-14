@@ -134,26 +134,53 @@ def crear_preferencia(socio, plan):
     }
 
 
-def cobro_manual(actor, socio, plan, monto, observacion=''):
+def cobro_manual(actor, socio, plan, monto, *, medio, observacion='', motivo='', idempotency_key=None):
     """Register a receptionist-triggered manual payment (PDF risk #3 fallback).
 
     The receptionist is trusted to decide the actual amount (partial payments,
     negotiated discounts, etc.), but we always log any drift from the plan's
     listed price so the admin has a paper trail during audit.
+
+    Args:
+        actor: User triggering the charge.
+        socio: Socio instance.
+        plan: PlanMembresia instance.
+        monto: Amount charged (Decimal-coercible).
+        medio: Payment method (MedioManual choice). Required.
+        observacion: Optional free-text note.
+        motivo: Required when monto != plan.precio; documents the discount/surcharge.
+        idempotency_key: Optional client-generated key; if a pago with the same
+            key already exists, returns it without creating a duplicate.
+
+    Raises:
+        ValueError: When socio is not activo.
+        ValueError: When monto != plan.precio but motivo is missing.
+
+    Returns:
+        Pago instance (existing if idempotency_key matched, new otherwise).
     """
+    from apps.members.models import Socio as SocioModel
+
+    if socio.estado != SocioModel.Estado.ACTIVO:
+        raise ValueError('No se puede registrar un cobro para un socio inactivo.')
+
     monto = Decimal(str(monto))
     plan_precio = Decimal(plan.precio)
     diferencia = monto - plan_precio
 
-    metadata = {
-        'source': 'manual',
-        'actor_id': actor.pk if actor else None,
-        'observacion': observacion,
-        'plan_precio': str(plan_precio),
-        'monto_cobrado': str(monto),
-    }
+    if diferencia != 0 and not (motivo and motivo.strip()):
+        raise ValueError(
+            'El motivo es obligatorio cuando el monto cobrado difiere del precio del plan.'
+        )
+
+    # Idempotency check
+    if idempotency_key:
+        existing = Pago.objects.filter(idempotency_key=idempotency_key).first()
+        if existing:
+            logger.info('cobro_manual idempotency hit: key=%s pago=%s', idempotency_key, existing.pk)
+            return existing
+
     if diferencia != 0:
-        metadata['diferencia_vs_plan'] = str(diferencia)
         logger.warning(
             'Cobro manual con diferencia vs precio del plan: socio=%s plan=%s cobrado=%s esperado=%s diff=%s',
             socio.pk, plan.pk, monto, plan_precio, diferencia,
@@ -169,11 +196,71 @@ def cobro_manual(actor, socio, plan, monto, observacion=''):
             estado=Pago.Estado.APROBADO,
             mp_external_reference=_external_reference(),
             paid_at=timezone.now(),
-            raw_webhook=metadata,
+            cobrado_por=actor,
+            medio_manual=medio,
+            observacion=observacion or '',
+            idempotency_key=idempotency_key or None,
         )
         _activate_membership(pago)
 
     _send_payment_confirmation_email(pago)
+    return pago
+
+
+def anular_pago(pago, actor, motivo):
+    """Cancel an approved payment and revert the activated membership if any.
+
+    Args:
+        pago: Pago instance (must be APROBADO and not already anulado).
+        actor: User triggering the cancellation (admin only; view enforces this).
+        motivo: Non-empty reason string (required).
+
+    Raises:
+        ValueError: When cancellation is not allowed (already anulado, not aprobado, or no motivo).
+
+    Returns:
+        Updated Pago instance.
+    """
+    if not motivo or not motivo.strip():
+        raise ValueError('El motivo de anulación es obligatorio.')
+
+    if pago.anulado:
+        raise ValueError('Este pago ya fue anulado.')
+
+    if pago.estado != Pago.Estado.APROBADO:
+        raise ValueError(
+            f"Solo se pueden anular pagos aprobados. Estado actual: '{pago.estado}'."
+        )
+
+    with transaction.atomic():
+        now = timezone.now()
+        pago.anulado = True
+        pago.anulado_por = actor
+        pago.anulado_en = now
+        pago.motivo_anulacion = motivo.strip()
+        pago.estado = Pago.Estado.CANCELADO
+        pago.save(update_fields=[
+            'anulado', 'anulado_por', 'anulado_en', 'motivo_anulacion', 'estado', 'updated_at'
+        ])
+
+        # Cancel the activated membership if this payment created one
+        if pago.membresia_id:
+            from apps.memberships.models import Membresia
+            from apps.memberships.services import cancelar_membresia
+            try:
+                membresia = pago.membresia
+                if membresia.estado not in (Membresia.Estado.CANCELADA,):
+                    cancelar_membresia(
+                        membresia,
+                        actor,
+                        motivo=f'Anulación de pago #{pago.pk}: {motivo}',
+                    )
+            except Exception as exc:
+                logger.warning(
+                    'anular_pago: could not cancel membresia %s for pago %s: %s',
+                    pago.membresia_id, pago.pk, exc,
+                )
+
     return pago
 
 

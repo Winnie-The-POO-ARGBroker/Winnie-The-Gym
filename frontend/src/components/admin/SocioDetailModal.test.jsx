@@ -12,8 +12,15 @@ import { renderWithProviders, resetAllStores } from '../../test/test-utils'
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
+const mockMutate = vi.fn()
+const mockMutation = { mutate: mockMutate, isPending: false }
+
 vi.mock('../../hooks/queries/useMembresias', () => ({
   useMembresiasPorSocio: vi.fn(),
+  useSuspenderMembresiaMutation: vi.fn(),
+  useReactivarMembresiaMutation: vi.fn(),
+  useCancelarMembresiaMutation: vi.fn(),
+  useRenovarMembresiaMutation: vi.fn(),
 }))
 
 vi.mock('../../hooks/queries/usePagos', () => ({
@@ -30,7 +37,13 @@ vi.mock('../ui/Modal', () => ({
     ) : null,
 }))
 
-import { useMembresiasPorSocio } from '../../hooks/queries/useMembresias'
+import {
+  useMembresiasPorSocio,
+  useSuspenderMembresiaMutation,
+  useReactivarMembresiaMutation,
+  useCancelarMembresiaMutation,
+  useRenovarMembresiaMutation,
+} from '../../hooks/queries/useMembresias'
 import { usePagosPorSocio } from '../../hooks/queries/usePagos'
 
 const mockSocio = {
@@ -58,6 +71,10 @@ const mockPagos = [
 function setupHooks() {
   useMembresiasPorSocio.mockReturnValue({ data: mockMembresias, isPending: false })
   usePagosPorSocio.mockReturnValue({ data: mockPagos, isPending: false })
+  useSuspenderMembresiaMutation.mockReturnValue(mockMutation)
+  useReactivarMembresiaMutation.mockReturnValue(mockMutation)
+  useCancelarMembresiaMutation.mockReturnValue(mockMutation)
+  useRenovarMembresiaMutation.mockReturnValue(mockMutation)
 }
 
 describe('SocioDetailModal', () => {
