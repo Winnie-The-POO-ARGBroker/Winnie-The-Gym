@@ -27,7 +27,6 @@ export const NAV_CONFIG = {
     sidebar: [
       { label: 'Dashboard',         path: '/dashboard',           icon: 'chart' },
       { divider: true, label: 'Administración' },
-      { label: 'Membresías',        path: '/membresias',          icon: 'card' },
       { label: 'Clases',            path: '/admin/clases',        icon: 'calendar' },
       { label: 'Socios',            path: '/admin/socios',        icon: 'people' },
       { label: 'Usuarios',          path: '/admin/usuarios',      icon: 'people' },

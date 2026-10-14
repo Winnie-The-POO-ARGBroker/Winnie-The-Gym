@@ -108,6 +108,20 @@ api.interceptors.response.use(
       return Promise.reject(error)
     }
 
+    // RNF06: 403 handling — redirect based on authentication state
+    if (error.response?.status === 403) {
+      const isAuthenticated = Boolean(useAuthStore.getState().accessToken)
+      if (!isRedirecting) {
+        isRedirecting = true
+        if (isAuthenticated) {
+          if (navigator) navigator('/403', { replace: true })
+        } else {
+          if (navigator) navigator('/login', { replace: true })
+        }
+      }
+      return Promise.reject(error)
+    }
+
     if (error.response?.status === 401 && !isAuthEndpoint && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
@@ -139,7 +153,12 @@ api.interceptors.response.use(
           isRedirecting = true
           useAuthStore.getState().clearAuth()
           toast.error('Tu sesión ha expirado. Por favor, iniciá sesión nuevamente.')
-          if (navigator) navigator('/login', { replace: true })
+          // BK-PLT-04: persist current path so LoginPage can redirect back after login
+          const currentPath = window.location.pathname + window.location.search
+          if (currentPath && currentPath !== '/login') {
+            sessionStorage.setItem('next', currentPath)
+          }
+          if (navigator) navigator('/login?reason=expired', { replace: true })
         }
         return Promise.reject(error)
       }
