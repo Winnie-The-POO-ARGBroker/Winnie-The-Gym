@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Check,
@@ -7,6 +7,7 @@ import {
   Users,
   AlertCircle,
   ArrowLeft,
+  Loader2,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import AppLayout from '../components/layout/AppLayout'
@@ -17,11 +18,19 @@ import EmptyState from '../components/ui/EmptyState'
 import Skeleton from '../components/ui/Skeleton'
 import { useClaseDetail } from '../hooks/queries/useClases'
 import { useClassAttendees } from '../hooks/queries/useClassAttendees'
+import api from '../services/api'
+
+/** Escape a CSV field: wrap in quotes, escape internal quotes. */
+function escapeCsvField(value) {
+  const str = value == null ? '' : String(value)
+  return `"${str.replace(/"/g, '""')}"`
+}
 
 export default function AttendancePage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const classId = searchParams.get('id')
+  const [isClosing, setIsClosing] = useState(false)
 
   const { data: classInfo, isLoading: loading, isError: classError } = useClaseDetail(classId)
   const { attendees, toggleStatus, fetchAttendees } = useClassAttendees(classId)
@@ -47,33 +56,48 @@ export default function AttendancePage() {
     }
   }
 
-  const handleCloseAttendance = () => {
-    toast.success('Asistencia guardada y cerrada correctamente')
-    navigate('/clases')
+  const handleCloseAttendance = async () => {
+    setIsClosing(true)
+    try {
+      await api.post(`/classes/clases/${classId}/cerrar-asistencia/`)
+      toast.success('Asistencia cerrada correctamente')
+      navigate('/admin/clases')
+    } catch (err) {
+      const msg = err?.response?.data?.detail ?? err?.response?.data?.message ?? 'Error al cerrar asistencia'
+      toast.error(msg)
+    } finally {
+      setIsClosing(false)
+    }
   }
 
   const handleExport = () => {
-    const csvContent =
-      'data:text/csv;charset=utf-8,' +
-      'Socio,NumeroSocio,Plan,Hora Reserva,Asistio\n' +
-      confirmedAttendees
-        .map(
-          (a) =>
-            `"${a.socio_nombre} ${a.socio_apellido}","${a.socio_numero || ''}","Pase","${a.hora_reserva || ''}","${a.asistio === true ? 'presente' : a.asistio === false ? 'ausente' : 'sin_marcar'}"`
-        )
-        .join('\n')
+    // BOM for UTF-8 Excel compatibility + proper CSV escaping
+    const BOM = '﻿'
+    const header = ['Nombre', 'Apellido', 'DNI', 'Plan', 'Estado', 'Fecha marcado'].map(escapeCsvField).join(',')
+    const rows = confirmedAttendees.map((a) => [
+      a.socio_nombre ?? '',
+      a.socio_apellido ?? '',
+      a.socio_dni ?? a.socio_numero ?? '',
+      a.plan_nombre ?? '',
+      a.asistio === true ? 'presente' : a.asistio === false ? 'ausente' : 'sin_marcar',
+      a.created_at ? new Date(a.created_at).toLocaleString('es-AR') : '',
+    ].map(escapeCsvField).join(','))
 
-    const encodedUri = encodeURI(csvContent)
+    const csvContent = BOM + header + '\n' + rows.join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
-    link.setAttribute('href', encodedUri)
-    link.setAttribute('download', `asistencia_${classId}.csv`)
+    link.href = url
+    link.download = `asistencia_${classId}.csv`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
+    URL.revokeObjectURL(url)
     toast.success('Archivo CSV exportado exitosamente')
   }
 
-  const presentesCount = confirmedAttendees.filter((a) => a.asistio).length
+  // Tri-state: null = sin marcar, true = presente, false = ausente
+  const presentesCount = confirmedAttendees.filter((a) => a.asistio === true).length
   const ausentesCount = confirmedAttendees.filter((a) => a.asistio === false).length
   const sinMarcarCount = confirmedAttendees.filter((a) => a.asistio === null || a.asistio === undefined).length
   const totalInscriptos = confirmedAttendees.length
@@ -147,9 +171,10 @@ export default function AttendancePage() {
             <Button
               variant="primary"
               onClick={handleCloseAttendance}
+              disabled={isClosing}
               className="gap-2 shadow-md shadow-orange-500/20 hover:scale-[1.02] active:scale-[0.98]"
             >
-              <Check className="w-4 h-4" />
+              {isClosing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
               Cerrar asistencia
             </Button>
           </>
@@ -243,22 +268,23 @@ export default function AttendancePage() {
 
                     {/* DNI */}
                     <div className="text-xs font-mono text-text-secondary">
-                      {att.socio_numero || '—'}
+                      {att.socio_dni ?? att.socio_numero ?? '—'}
                     </div>
 
                     {/* Plan */}
                     <div>
                       <span
-                        className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border bg-bg-raised text-text-secondary border-subtle`}
+                        className="px-2.5 py-0.5 rounded-full text-[11px] font-bold border bg-bg-raised text-text-secondary border-subtle"
                       >
-                        Pase
+                        {att.plan_nombre ?? 'Sin plan'}
                       </span>
                     </div>
 
-                    {/* Asistencia Toggle Buttons */}
+                    {/* Asistencia Toggle Buttons — tri-state: null/undefined = sin marcar */}
                     <div className="flex items-center justify-center gap-2">
                       <button
                         onClick={() => toggleStatus(att.id, 'presente')}
+                        aria-pressed={isPresente}
                         className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                           isPresente
                             ? 'bg-success-500 text-white shadow-sm'
@@ -271,6 +297,7 @@ export default function AttendancePage() {
 
                       <button
                         onClick={() => toggleStatus(att.id, 'ausente')}
+                        aria-pressed={isAusente}
                         className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                           isAusente
                             ? 'bg-error-500 text-white shadow-sm'
@@ -381,9 +408,10 @@ export default function AttendancePage() {
               <Button
                 variant="primary"
                 onClick={handleCloseAttendance}
+                disabled={isClosing}
                 className="w-full gap-2 shadow-md shadow-orange-500/20 hover:scale-[1.01]"
               >
-                <Check className="w-4 h-4" />
+                {isClosing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                 Cerrar y guardar asistencia
               </Button>
             </div>

@@ -6,6 +6,8 @@ class InscripcionClaseSerializer(serializers.ModelSerializer):
     socio_nombre = serializers.ReadOnlyField(source='socio.nombre')
     socio_apellido = serializers.ReadOnlyField(source='socio.apellido')
     socio_numero = serializers.ReadOnlyField(source='socio.numero_socio')
+    socio_dni = serializers.ReadOnlyField(source='socio.dni')
+    plan_nombre = serializers.SerializerMethodField()
 
     class Meta:
         model = InscripcionClase
@@ -16,10 +18,28 @@ class InscripcionClaseSerializer(serializers.ModelSerializer):
             'socio_nombre',
             'socio_apellido',
             'socio_numero',
+            'socio_dni',
+            'plan_nombre',
             'asistio',
             'en_espera',
             'created_at',
         )
+
+    def get_plan_nombre(self, obj):
+        """Return the plan name from the socio's active membership, or None."""
+        from apps.memberships.models import Membresia  # noqa: PLC0415
+
+        try:
+            membresia = (
+                Membresia.objects
+                .filter(socio=obj.socio, estado=Membresia.Estado.ACTIVA)
+                .select_related('plan')
+                .order_by('-fecha_fin')
+                .first()
+            )
+            return membresia.plan.nombre if membresia else None
+        except Exception:
+            return None
 
 
 class ClaseSerializer(serializers.ModelSerializer):

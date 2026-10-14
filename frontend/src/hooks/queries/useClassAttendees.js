@@ -12,7 +12,8 @@ export const ATTENDEES_QUERY_KEYS = {
 
 /**
  * Fetch the attendees list for a given class ID.
- * Returns the `inscripciones` array from the class detail endpoint.
+ * Uses the dedicated /inscripciones/ action which includes socio_dni and plan_nombre.
+ * Falls back to the class detail `inscripciones` field for backward compatibility.
  */
 export function useClassAttendees(classId) {
   const qc = useQueryClient()
@@ -20,8 +21,14 @@ export function useClassAttendees(classId) {
   const query = useQuery({
     queryKey: ATTENDEES_QUERY_KEYS.byClass(classId),
     queryFn: async () => {
-      const res = await api.get(`/classes/clases/${classId}/`)
-      return res.data.inscripciones ?? []
+      try {
+        const res = await api.get(`/classes/clases/${classId}/inscripciones/`)
+        return Array.isArray(res.data) ? res.data : res.data.results ?? []
+      } catch {
+        // Fallback to class detail for environments where dedicated endpoint is not yet deployed
+        const res = await api.get(`/classes/clases/${classId}/`)
+        return res.data.inscripciones ?? []
+      }
     },
     enabled: !!classId,
     retry: 1,
@@ -30,7 +37,8 @@ export function useClassAttendees(classId) {
   // ─── Toggle attendance mutation ─────────────────────────────────────────────
   const toggleMutation = useMutation({
     mutationFn: async ({ attendeeId, newStatus }) => {
-      const asistio = newStatus === 'presente'
+      // Tri-state: 'presente' → true, 'ausente' → false, 'sin_marcar' → null
+      const asistio = newStatus === 'presente' ? true : newStatus === 'ausente' ? false : null
       const res = await api.patch(`/classes/inscripciones/${attendeeId}/`, { asistio })
       return res.data
     },

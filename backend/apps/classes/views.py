@@ -13,6 +13,7 @@ from apps.access.permissions import IsAdminOnly, IsReceptionistOrAdmin, IsSocio
 
 from .filters import ClaseFilter, InscripcionClaseFilter
 from .models import Clase, InscripcionClase
+from .pagination import ClasePagination
 from .serializers import (
     ClaseDetailSerializer,
     ClaseSerializer,
@@ -49,6 +50,7 @@ class ClaseViewSet(viewsets.ModelViewSet):
     queryset = Clase.objects.all().order_by('id')
     serializer_class = ClaseSerializer
     filterset_class = ClaseFilter
+    pagination_class = ClasePagination
     search_fields = ['nombre', 'instructor', 'sala', 'descripcion']
     ordering_fields = ['nombre', 'hora', 'dia', 'cupo_maximo', 'created_at']
     ordering = ['id']
@@ -63,7 +65,8 @@ class ClaseViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action == 'destroy':
             return [IsAdminOnly()]
-        if self.action in ('create', 'update', 'partial_update', 'cancelar_clase'):
+        if self.action in ('create', 'update', 'partial_update', 'cancelar_clase',
+                           'cerrar_asistencia', 'inscribir_manual'):
             return [IsReceptionistOrAdmin()]
         if self.action in ('inscribir', 'cancelar'):
             return [IsSocio()]
@@ -143,6 +146,92 @@ class ClaseViewSet(viewsets.ModelViewSet):
         service_cancelar_clase(clase, motivo, actor=request.user)
         return Response({'detail': 'Clase cancelada correctamente.'}, status=status.HTTP_200_OK)
 
+    @extend_schema(
+        tags=['classes'],
+        summary='Cerrar asistencia de una clase (staff)',
+        description=(
+            'Marca como ausentes (asistio=False) a todos los inscriptos cuya asistencia '
+            'todavía no fue registrada (asistio IS NULL). Retorna resumen de presentes, '
+            'ausentes y sin_marcar.'
+        ),
+        request=None,
+        responses={200: {
+            'type': 'object',
+            'properties': {
+                'presentes': {'type': 'integer'},
+                'ausentes': {'type': 'integer'},
+                'sin_marcar': {'type': 'integer'},
+            },
+        }},
+    )
+    @action(
+        detail=True,
+        methods=['post'],
+        url_path='cerrar-asistencia',
+        url_name='cerrar-asistencia',
+        permission_classes=[IsReceptionistOrAdmin],
+    )
+    def cerrar_asistencia(self, request, pk=None):
+        clase = self.get_object()
+        inscripciones = clase.inscripciones.all()
+
+        presentes = inscripciones.filter(asistio=True).count()
+        # Mark all NULL → False
+        updated = inscripciones.filter(asistio__isnull=True).update(asistio=False)
+        ausentes = inscripciones.filter(asistio=False).count()
+
+        return Response({
+            'presentes': presentes,
+            'ausentes': ausentes,
+            'sin_marcar': 0,
+        }, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        tags=['classes'],
+        summary='Inscribir un socio manualmente (recep/admin)',
+        description=(
+            'Staff puede inscribir cualquier socio pasando su ID en el body. '
+            'Usa las mismas validaciones que la inscripción propia del socio. '
+            'forzar=true permite sobrecupo (admin only).'
+        ),
+        request={'application/json': {'type': 'object', 'properties': {
+            'socio': {'type': 'integer'},
+            'forzar': {'type': 'boolean'},
+        }, 'required': ['socio']}},
+        responses={201: InscripcionClaseSerializer},
+    )
+    @action(
+        detail=True,
+        methods=['post'],
+        url_path='inscribir-manual',
+        url_name='inscribir-manual',
+        permission_classes=[IsReceptionistOrAdmin],
+    )
+    def inscribir_manual(self, request, pk=None):
+        from apps.members.models import Socio  # noqa: PLC0415
+
+        clase = self.get_object()
+        socio_id = request.data.get('socio')
+        forzar = bool(request.data.get('forzar', False))
+
+        if not socio_id:
+            return Response({'detail': 'Se requiere el campo socio.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            socio = Socio.objects.get(pk=socio_id)
+        except Socio.DoesNotExist:
+            return Response({'detail': 'Socio no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Only admins may forzar
+        if forzar and not (request.user.is_staff or getattr(request.user, 'rol', '') == 'administrador'):
+            forzar = False
+
+        inscripcion = inscribir_socio(clase, socio, forzar=forzar)
+        return Response(
+            InscripcionClaseSerializer(inscripcion).data,
+            status=status.HTTP_201_CREATED,
+        )
+
 
 @extend_schema_view(
     list=extend_schema(tags=['classes'], summary='Listar inscripciones a clases (recep/admin)'),
@@ -158,4 +247,5 @@ class InscripcionClaseViewSet(viewsets.ModelViewSet):
     filterset_class = InscripcionClaseFilter
     ordering_fields = ['created_at', 'clase', 'socio']
     ordering = ['-created_at']
+    # All inscripcion mutations are staff-only (#171 — socios get 403 on PATCH)
     permission_classes = [IsReceptionistOrAdmin]

@@ -26,18 +26,20 @@ export default function ClassAttendeesModal({
 
   const filteredAttendees = attendees.filter((att) => {
     const q = searchQuery.toLowerCase()
+    const fullName = att.socio_nombre
+      ? `${att.socio_nombre} ${att.socio_apellido ?? ''}`.toLowerCase()
+      : (att.nombre ?? '').toLowerCase()
     return (
-      att.nombre?.toLowerCase().includes(q) ||
-      att.dni?.includes(q) ||
-      att.socio_id?.toLowerCase().includes(q)
+      fullName.includes(q) ||
+      (att.socio_dni ?? att.dni ?? '').includes(q) ||
+      (att.socio_id ?? '').toLowerCase().includes(q)
     )
   })
 
-  const presentesCount = attendees.filter((a) => a.estado === 'presente').length
-  const ausentesCount = attendees.filter((a) => a.estado === 'ausente').length
-  const sinMarcarCount = attendees.filter(
-    (a) => a.estado === 'sin_marcar' || !a.estado
-  ).length
+  // Tri-state: asistio=true → presente, asistio=false → ausente, asistio=null/undefined → sin marcar
+  const presentesCount = attendees.filter((a) => a.asistio === true).length
+  const ausentesCount = attendees.filter((a) => a.asistio === false).length
+  const sinMarcarCount = attendees.filter((a) => a.asistio === null || a.asistio === undefined).length
 
   return (
     <Modal
@@ -91,8 +93,15 @@ export default function ClassAttendeesModal({
             </div>
           ) : (
             filteredAttendees.map((att) => {
-              const isPresente = att.estado === 'presente'
-              const isAusente = att.estado === 'ausente'
+              // Tri-state: null/undefined = sin marcar (neutral), true = presente, false = ausente
+              const isPresente = att.asistio === true
+              const isAusente = att.asistio === false
+
+              const displayName = att.socio_nombre
+                ? `${att.socio_nombre} ${att.socio_apellido ?? ''}`.trim()
+                : (att.nombre ?? '—')
+              const displayDni = att.socio_dni ?? att.dni ?? '—'
+              const displayPlan = att.plan_nombre ?? att.plan ?? '—'
 
               return (
                 <div
@@ -107,15 +116,15 @@ export default function ClassAttendeesModal({
                 >
                   {/* Member Info */}
                   <div className="flex items-center gap-3">
-                    <Avatar name={att.nombre} size={36} />
+                    <Avatar name={displayName} size={36} />
                     <div>
                       <h4 className="text-sm font-bold text-text-primary">
-                        {att.nombre}
+                        {displayName}
                       </h4>
                       <div className="flex items-center gap-2 text-[11px] text-text-secondary">
-                        <span>DNI: {att.dni || '—'}</span>
+                        <span>DNI: {displayDni}</span>
                         <span>·</span>
-                        <span className="text-text-tertiary">Reserva: {att.hora_reserva}</span>
+                        <span className="text-text-tertiary">Reserva: {att.hora_reserva ?? (att.created_at ? new Date(att.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—')}</span>
                       </div>
                     </div>
                   </div>
@@ -123,15 +132,9 @@ export default function ClassAttendeesModal({
                   {/* Plan & Attendance Toggles */}
                   <div className="flex items-center justify-between sm:justify-end gap-3">
                     <span
-                      className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
-                        att.plan === 'Premium'
-                          ? 'bg-orange-500/10 text-orange-500 border-orange-500/30'
-                          : att.plan === 'Gold'
-                          ? 'bg-warning-500/10 text-warning-500 border-warning-500/30'
-                          : 'bg-bg-raised text-text-secondary border-subtle'
-                      }`}
+                      className="px-2.5 py-0.5 rounded-full text-[11px] font-bold border bg-bg-raised text-text-secondary border-subtle"
                     >
-                      {att.plan}
+                      {displayPlan}
                     </span>
 
                     <div className="flex items-center gap-1.5">

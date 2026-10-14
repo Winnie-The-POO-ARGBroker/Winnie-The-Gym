@@ -72,7 +72,7 @@ class InscripcionClase(models.Model):
         on_delete=models.CASCADE,
         related_name='inscripciones_clases',
     )
-    asistio = models.BooleanField(default=False)
+    asistio = models.BooleanField(null=True, blank=True, default=None)
     en_espera = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

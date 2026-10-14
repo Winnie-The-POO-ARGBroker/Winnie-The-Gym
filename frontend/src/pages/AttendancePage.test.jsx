@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import AttendancePage from './AttendancePage'
 
@@ -24,6 +24,10 @@ vi.mock('react-router-dom', async (importOriginal) => {
 
 vi.mock('../hooks/queries/useClases', () => ({
   useClaseDetail: vi.fn(),
+}))
+
+vi.mock('../services/api', () => ({
+  default: { post: vi.fn().mockResolvedValue({ data: { presentes: 1, ausentes: 0, sin_marcar: 0 } }) },
 }))
 
 vi.mock('../hooks/queries/useClassAttendees', () => ({
@@ -134,19 +138,19 @@ describe('AttendancePage', () => {
     expect(screen.getByText('Lista de espera')).toBeInTheDocument()
   })
 
-  // ── 4. Close attendance button calls navigate ─────────────────────────────
-  it('calls navigate to /clases when "Cerrar asistencia" is clicked', () => {
+  // ── 4. Close attendance button calls navigate (async — calls POST cerrar-asistencia) ─
+  it('calls navigate to /admin/clases when "Cerrar asistencia" is clicked', async () => {
     renderPage()
     const closeBtn = screen.getByText('Cerrar asistencia')
     fireEvent.click(closeBtn)
-    expect(mockNavigate).toHaveBeenCalledWith('/clases')
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/admin/clases'))
   })
 
   // ── 5. Close attendance shows success toast ───────────────────────────────
-  it('shows toast.success when "Cerrar asistencia" is clicked', () => {
+  it('shows toast.success when "Cerrar asistencia" is clicked', async () => {
     renderPage()
     fireEvent.click(screen.getByText('Cerrar asistencia'))
-    expect(toast.success).toHaveBeenCalledWith('Asistencia guardada y cerrada correctamente')
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Asistencia cerrada correctamente'))
   })
 
   // ── 6. No classId shows error and navigates ───────────────────────────────
