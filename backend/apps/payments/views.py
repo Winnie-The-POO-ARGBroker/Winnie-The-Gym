@@ -1,7 +1,9 @@
+import datetime
 import json
 import logging
 
-from django.db.models import Sum
+from django.contrib.auth import get_user_model
+from django.db.models import Count, Q, Sum
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, OpenApiTypes, extend_schema, extend_schema_view
 from rest_framework import mixins, status, viewsets
@@ -25,6 +27,8 @@ from .serializers import (
     PagoSerializer,
 )
 from .services import anular_pago, cobro_manual, crear_preferencia, procesar_webhook
+
+User = get_user_model()
 
 
 logger = logging.getLogger(__name__)
@@ -268,6 +272,107 @@ class CobroManualView(APIView):
             return Response({'detail': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(PagoSerializer(pago).data, status=status.HTTP_201_CREATED)
+
+
+@extend_schema(
+    tags=['payments'],
+    summary='Resumen de caja diaria (recep/admin) #193',
+    description=(
+        'Devuelve totales de cobros manuales agrupados por medio de pago para una fecha dada. '
+        'Recepcionistas solo ven su propia caja. Administradores pueden consultar cualquier '
+        'operador pasando operador_id. El cierre de turno declarativo está diferido al roadmap.'
+    ),
+    parameters=[
+        OpenApiParameter('fecha', OpenApiTypes.DATE, OpenApiParameter.QUERY,
+                         description='Fecha a consultar (YYYY-MM-DD). Defaults a hoy.'),
+        OpenApiParameter('operador_id', OpenApiTypes.INT, OpenApiParameter.QUERY,
+                         description='ID del operador. Solo disponible para admins.'),
+    ],
+    responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
+)
+class CajaView(APIView):
+    """GET /api/payments/caja/ — Daily cash register summary (#193).
+
+    Aggregates manual payments by medio_manual for a given date and operator.
+    Recepcionistas are restricted to their own caja (cobrado_por=request.user).
+    Admins may query any operator via ?operador_id=.
+    """
+    permission_classes = [IsReceptionistOrAdmin]
+
+    def get(self, request):
+        # --- Parse fecha ---
+        fecha_str = request.query_params.get('fecha')
+        if fecha_str:
+            try:
+                fecha = datetime.date.fromisoformat(fecha_str)
+            except (ValueError, TypeError):
+                return Response(
+                    {'detail': 'Formato de fecha inválido. Use YYYY-MM-DD.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        else:
+            from django.utils import timezone
+            fecha = timezone.localdate()
+
+        # --- Determine operator scope ---
+        is_admin = request.user.is_staff or getattr(request.user, 'rol', '') == 'administrador'
+        operador_id_param = request.query_params.get('operador_id')
+
+        if is_admin and operador_id_param:
+            try:
+                operador_id = int(operador_id_param)
+            except (ValueError, TypeError):
+                return Response(
+                    {'detail': 'operador_id debe ser un entero.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            operador = get_object_or_404(User, pk=operador_id)
+        else:
+            # Recepcionistas always see only their own caja
+            operador = request.user
+            operador_id = request.user.pk
+
+        # --- Base queryset: manual payments for this date and operator ---
+        base_qs = Pago.objects.filter(
+            metodo=Pago.Metodo.MANUAL,
+            cobrado_por=operador,
+            created_at__date=fecha,
+        )
+
+        # --- Cobros por medio (non-anulados) ---
+        cobros_qs = base_qs.filter(anulado=False, estado=Pago.Estado.APROBADO)
+
+        medios = [choice[0] for choice in Pago.MedioManual.choices]
+        cobros_por_medio = {}
+        total_cobros = 0
+
+        for medio in medios:
+            agg = cobros_qs.filter(medio_manual=medio).aggregate(
+                count=Count('id'),
+                total=Sum('monto'),
+            )
+            count = agg['count'] or 0
+            total = float(agg['total'] or 0)
+            cobros_por_medio[medio] = {'count': count, 'total': total}
+            total_cobros += total
+
+        # --- Anulaciones ---
+        total_anulaciones = float(
+            base_qs.filter(anulado=True).aggregate(total=Sum('monto'))['total'] or 0
+        )
+
+        return Response({
+            'fecha': fecha.isoformat(),
+            'operador': {
+                'id': operador.pk,
+                'email': operador.email,
+                'nombre': f'{operador.first_name} {operador.last_name}'.strip() or operador.email,
+            },
+            'cobros_por_medio': cobros_por_medio,
+            'total_cobros': total_cobros,
+            'total_anulaciones': total_anulaciones,
+            'diferencia': None,  # cierre de turno declarativo diferido al roadmap
+        }, status=status.HTTP_200_OK)
 
 
 @extend_schema_view(
