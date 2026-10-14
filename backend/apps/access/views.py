@@ -1,7 +1,9 @@
 import logging
+from zoneinfo import ZoneInfo
 
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 from django.utils import timezone
@@ -1138,7 +1140,11 @@ class AforoHistoricoView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        tz = timezone.get_current_timezone()
+        # Use the configured Django TIME_ZONE directly instead of
+        # get_current_timezone(), which can be flipped to UTC by
+        # middlewares or test setup. The analytics bucketing must stay
+        # anchored to the gym's local time.
+        tz = ZoneInfo(settings.TIME_ZONE)
         start_dt = timezone.make_aware(
             timezone.datetime.combine(desde, timezone.datetime.min.time()), tz
         )

@@ -58,19 +58,25 @@ class AforoHistoricoTests(APITestCase):
         peak_ts = now_local.replace(hour=19, minute=30, second=0, microsecond=0)
         low_ts = now_local.replace(hour=10, minute=0, second=0, microsecond=0)
 
+        # AccessLog.timestamp uses auto_now_add=True, which overrides any
+        # timestamp passed to create(). Insert the rows and then update the
+        # timestamp with queryset .update() to bypass the auto_now_add path.
+        peak_ids = []
         for _ in range(5):
-            AccessLog.objects.create(
+            log = AccessLog.objects.create(
                 user=user,
                 access_type=AccessLog.AccessType.ENTRY,
                 status=AccessLog.AccessStatus.GRANTED,
-                timestamp=peak_ts,
             )
-        AccessLog.objects.create(
+            peak_ids.append(log.id)
+        AccessLog.objects.filter(id__in=peak_ids).update(timestamp=peak_ts)
+
+        low_log = AccessLog.objects.create(
             user=user,
             access_type=AccessLog.AccessType.ENTRY,
             status=AccessLog.AccessStatus.GRANTED,
-            timestamp=low_ts,
         )
+        AccessLog.objects.filter(id=low_log.id).update(timestamp=low_ts)
 
         _auth(self.client, self.admin)
         desde = (now_local - datetime.timedelta(days=3)).date().isoformat()
