@@ -9,6 +9,9 @@ import {
   Edit2,
   CreditCard,
   BadgeCheck,
+  Activity,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react'
 import Avatar from '../ui/Avatar'
 import Badge from '../ui/Badge'
@@ -24,14 +27,19 @@ import {
   useRenovarMembresiaMutation,
 } from '../../hooks/queries/useMembresias'
 import { usePagosPorSocio } from '../../hooks/queries/usePagos'
+import { useAccessLogsPorSocio } from '../../hooks/queries/useAccessLogs'
 import { pagoEstadoVariant, pagoEstadoLabel } from '../../constants/pagos'
 import { membresiaEstadoVariant, membresiaEstadoLabel } from '../../constants/membresias'
+import { ACCESS_DENIAL_REASONS } from '../../constants/accessDenialReasons'
 
 const TABS = [
   { key: 'datos', label: 'Datos' },
   { key: 'membresias', label: 'Membresías' },
   { key: 'pagos', label: 'Pagos' },
+  { key: 'actividad', label: 'Actividad' },
 ]
+
+const ACTIVIDAD_PAGE_SIZE = 10
 
 function formatDate(str) {
   if (!str) return '—'
@@ -305,6 +313,126 @@ function TabPagos({ socioId }) {
   )
 }
 
+// ─── Tab: Actividad ───────────────────────────────────────────────────────────
+
+function formatAccessDateTime(str) {
+  if (!str) return '—'
+  return new Date(str).toLocaleString('es-AR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+function TabActividad({ socioId }) {
+  const [page, setPage] = useState(1)
+  const { data, isPending: loading } = useAccessLogsPorSocio(socioId, { page, page_size: ACTIVIDAD_PAGE_SIZE })
+
+  const resumen = data?.resumen ?? {}
+  const logs = data?.results ?? []
+  const totalCount = data?.count ?? 0
+  const totalPages = Math.max(1, Math.ceil(totalCount / ACTIVIDAD_PAGE_SIZE))
+
+  if (loading) {
+    return (
+      <div className="py-4 flex flex-col gap-3">
+        <div className="grid grid-cols-3 gap-2">
+          <Skeleton className="h-14 rounded-xl" />
+          <Skeleton className="h-14 rounded-xl" />
+          <Skeleton className="h-14 rounded-xl" />
+        </div>
+        <Skeleton className="h-32 rounded-xl" />
+      </div>
+    )
+  }
+
+  return (
+    <div className="py-4 flex flex-col gap-3">
+      {/* Summary cards — only shown when backend sends resumen */}
+      {(resumen.accesos_mes != null || resumen.ultimo_acceso || resumen.rechazos_mes != null) && (
+        <div className="grid grid-cols-3 gap-2">
+          <div className="p-2.5 rounded-xl bg-bg-raised border border-subtle flex flex-col gap-0.5">
+            <span className="text-[10px] font-medium text-text-secondary uppercase">Accesos mes</span>
+            <span className="text-xl font-bold text-primary">{resumen.accesos_mes ?? 0}</span>
+          </div>
+          <div className="p-2.5 rounded-xl bg-bg-raised border border-subtle flex flex-col gap-0.5">
+            <span className="text-[10px] font-medium text-text-secondary uppercase">Último</span>
+            <span className="text-xs font-semibold text-text-primary">
+              {resumen.ultimo_acceso
+                ? new Date(resumen.ultimo_acceso).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' })
+                : '—'}
+            </span>
+          </div>
+          <div className="p-2.5 rounded-xl bg-bg-raised border border-subtle flex flex-col gap-0.5">
+            <span className="text-[10px] font-medium text-text-secondary uppercase">Rechazos</span>
+            <span className={`text-xl font-bold ${(resumen.rechazos_mes ?? 0) > 0 ? 'text-error-500' : 'text-text-primary'}`}>
+              {resumen.rechazos_mes ?? 0}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {logs.length === 0 ? (
+        <div className="py-8 text-center text-sm text-text-secondary flex flex-col items-center gap-2">
+          <Activity className="w-8 h-8 text-text-tertiary" />
+          <p>Aún no tenés movimientos de acceso.</p>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-subtle overflow-hidden flex flex-col divide-y divide-subtle">
+          {logs.map((log) => (
+            <div key={log.id} className="flex items-center justify-between px-3 py-2.5 hover:bg-bg-raised/20 transition-colors">
+              <div className="flex flex-col gap-0.5">
+                <span className="text-xs font-semibold text-text-primary">
+                  {formatAccessDateTime(log.timestamp ?? log.created_at)}
+                </span>
+                <span className="text-[11px] text-text-secondary">
+                  {log.access_type ?? '—'}
+                  {log.denial_reason && (
+                    <span className="ml-1 text-error-500">
+                      · {ACCESS_DENIAL_REASONS[log.denial_reason] ?? log.denial_reason}
+                    </span>
+                  )}
+                </span>
+              </div>
+              <Badge variant={log.status === 'GRANTED' ? 'success' : log.status === 'DENIED' ? 'danger' : 'default'}>
+                {log.status === 'GRANTED' ? 'Permitido' : log.status === 'DENIED' ? 'Denegado' : log.status ?? '—'}
+              </Badge>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] text-text-secondary">
+            Pág. {page} / {totalPages}
+          </span>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              className="p-1.5 rounded-lg border border-subtle hover:bg-bg-raised disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages}
+              className="p-1.5 rounded-lg border border-subtle hover:bg-bg-raised disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function SocioDetailModal({ isOpen, onClose, socio, onEditar }) {
@@ -369,6 +497,7 @@ export default function SocioDetailModal({ isOpen, onClose, socio, onEditar }) {
         {activeTab === 'datos' && <TabDatos socio={socio} onRefresh={onClose} />}
         {activeTab === 'membresias' && <TabMembresias socioId={socio.id} />}
         {activeTab === 'pagos' && <TabPagos socioId={socio.id} />}
+        {activeTab === 'actividad' && <TabActividad socioId={socio.id} />}
       </div>
 
       {/* Footer */}

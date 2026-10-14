@@ -1,5 +1,6 @@
 from django.urls import path
 from .views import (
+    AccessLogExportView,
     AforoSnapshotView,
     AforoStatsView,
     AccessLogListView,
@@ -7,6 +8,7 @@ from .views import (
     CredencialEstadoView,
     GenerateQRView,
     ManualAccessView,
+    MiActividadView,
     PresentesView,
     SalidaManualView,
     ScanQRView,
@@ -19,6 +21,8 @@ urlpatterns = [
     path('qr/scan/', ScanQRView.as_view(), name='qr-scan'),
     path('manual/', ManualAccessView.as_view(), name='manual-access'),
     path('logs/', AccessLogListView.as_view(), name='access-logs'),
+    # fix #150 — export endpoint (CSV / XLSX)
+    path('logs/export/', AccessLogExportView.as_view(), name='access-logs-export'),
     path('stats/', AforoStatsView.as_view(), name='access-stats'),
     # fix #154 — presentes, salida manual, cierre día
     path('presentes/', PresentesView.as_view(), name='presentes'),
@@ -28,4 +32,6 @@ urlpatterns = [
     path('aforo/snapshot/', AforoSnapshotView.as_view(), name='aforo-snapshot'),
     # fix #157 — credencial digital state
     path('credencial/estado/', CredencialEstadoView.as_view(), name='credencial-estado'),
+    # fix #151 — mi actividad (socio self-service)
+    path('me/actividad/', MiActividadView.as_view(), name='me-actividad'),
 ]
