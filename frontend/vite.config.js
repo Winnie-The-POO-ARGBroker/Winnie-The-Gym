@@ -8,15 +8,14 @@ export default defineConfig({
     globals: true,
     setupFiles: './setupTests.js',
     forbidOnly: true,
-    pool: 'forks',
+    pool: 'threads',
     poolOptions: {
-      forks: {
-        maxForks: 1,
-        minForks: 1,
+      threads: {
+        maxThreads: 2,
+        minThreads: 1,
         execArgv: ['--max-old-space-size=4096'],
       },
     },
-    isolate: false,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov', 'html'],
