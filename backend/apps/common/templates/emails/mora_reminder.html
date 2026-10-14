@@ -1,0 +1,21 @@
+{% extends 'emails/_base.html' %}
+{% block subject %}Recordatorio: tu membresía en {{ brand_name }} está vencida{% endblock %}
+{% block content %}
+  <p style="font-size: 16px;">Hola <strong>{{ nombre }}</strong>,</p>
+  <p style="font-size: 16px;">
+    Tu membresía del plan <strong>{{ plan_nombre }}</strong> venció el
+    <strong>{{ fecha_fin|date:"d/m/Y" }}</strong>
+    (hace {{ dias_atraso }} {{ dias_atraso|pluralize:"día,días" }}).
+  </p>
+  <p style="font-size: 16px;">
+    Para seguir disfrutando del gimnasio, renová tu membresía desde el portal.
+  </p>
+  <p style="text-align: center; margin: 24px 0;">
+    <a href="{{ frontend_url }}" style="display: inline-block; background-color: #735d3e; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px;">
+      Renovar membresía
+    </a>
+  </p>
+  <p style="font-size: 14px; color: #666;">
+    Si ya realizaste el pago, ignorá este mensaje. Cualquier consulta comunicate con el gimnasio.
+  </p>
+{% endblock %}

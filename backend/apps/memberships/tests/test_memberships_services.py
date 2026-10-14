@@ -55,16 +55,20 @@ def test_renovar_sin_membresia_previa(make_socio, make_plan):
 
 
 @pytest.mark.django_db
-def test_renovar_atomico_vence_todas_las_activas(make_socio, make_plan, make_membresia):
+def test_renovar_atomico_vence_activa_y_crea_nueva(make_socio, make_plan, make_membresia):
+    """Renovar vence la membresía activa y crea una nueva ACTIVA.
+
+    Note: the unique constraint on (socio, estado='activa') prevents two simultaneous
+    active memberships. This test verifies that renovar correctly transitions the
+    existing active membership to VENCIDA before creating the new one.
+    """
     socio = make_socio()
     plan = make_plan()
-    mem1 = make_membresia(socio=socio, plan=plan)
-    mem2 = make_membresia(socio=socio, plan=plan)
+    mem1 = make_membresia(socio=socio, plan=plan, estado=Membresia.Estado.ACTIVA)
 
-    renovar_membresia(socio, plan)
+    nueva = renovar_membresia(socio, plan)
 
     mem1.refresh_from_db()
-    mem2.refresh_from_db()
     assert mem1.estado == Membresia.Estado.VENCIDA
-    assert mem2.estado == Membresia.Estado.VENCIDA
+    assert nueva.estado == Membresia.Estado.ACTIVA
     assert Membresia.objects.filter(socio=socio, estado=Membresia.Estado.ACTIVA).count() == 1
