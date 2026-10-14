@@ -9,6 +9,7 @@ import { DISCIPLINAS_CONFIG } from '../constants/disciplinas'
 import { DIAS_SEMANA, RECURRENCIA_DIAS } from '../constants/clases'
 import { useClaseDetail, useClasesMutations, useClasesList } from '../hooks/queries/useClases'
 import { useDisciplinas, useSalas } from '../hooks/queries/useCatalogo'
+import { useInstructores } from '../hooks/queries/useInstructores'
 
 const EMPTY_FORM = {
   nombre: '',
@@ -40,6 +41,7 @@ export default function CreateClassPage() {
   // API-driven catalogs
   const { data: disciplinasAPI = [] } = useDisciplinas()
   const { data: salasAPI = [] } = useSalas()
+  const { data: instructoresAPI = [] } = useInstructores({ activo: true })
 
   const [formData, setFormData] = useState(EMPTY_FORM)
   const [fieldErrors, setFieldErrors] = useState({})
@@ -365,10 +367,28 @@ export default function CreateClassPage() {
                   onChange={(e) => setFormData({ ...formData, instructor: e.target.value })}
                   className="w-full max-w-sm px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus:border-orange-500 transition-colors"
                 >
-                  <option value="Carlos R.">Carlos R. (Funcional / Crossfit)</option>
-                  <option value="Sofia L.">Sofia L. (Spinning / Pilates)</option>
-                  <option value="Pedro M.">Pedro M. (Crossfit / WOD)</option>
-                  <option value="Ana T.">Ana T. (Yoga / Postural)</option>
+                  {instructoresAPI.length > 0 ? (
+                    <>
+                      <option value="">Sin instructor asignado</option>
+                      {instructoresAPI.map((inst) => (
+                        <option key={inst.id} value={`${inst.nombre} ${inst.apellido}`}>
+                          {inst.nombre} {inst.apellido}
+                          {inst.especialidades?.length > 0
+                            ? ` (${inst.especialidades.slice(0, 2).join(' / ')})`
+                            : ''}
+                        </option>
+                      ))}
+                    </>
+                  ) : (
+                    // Fallback to free-text input when no instructors in API
+                    <>
+                      <option value="">Sin instructor asignado</option>
+                      <option value="Carlos R.">Carlos R. (Funcional / Crossfit)</option>
+                      <option value="Sofia L.">Sofia L. (Spinning / Pilates)</option>
+                      <option value="Pedro M.">Pedro M. (Crossfit / WOD)</option>
+                      <option value="Ana T.">Ana T. (Yoga / Postural)</option>
+                    </>
+                  )}
                 </select>
               </div>
 
