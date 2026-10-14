@@ -161,16 +161,40 @@ export default function ReportFilters({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
         {/* Rango de Fechas / Período */}
         {filters.categoria === 'facturacion' ? (
-          <div>
-            <label htmlFor="filter-mes" className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-              Mes de Facturación
-            </label>
-            <div className="relative">
+          <div className="md:col-span-2 lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="filter-mes" className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
+                Mes de Facturación (preset)
+              </label>
               <input
                 id="filter-mes"
                 type="month"
                 value={filters.mes || ''}
                 onChange={(e) => handleChange('mes', e.target.value)}
+                className="w-full bg-bg-base border border-subtle rounded-lg text-text-primary focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary py-2 px-3 text-sm"
+              />
+            </div>
+            <div>
+              <label htmlFor="factura-desde" className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
+                Fecha Desde
+              </label>
+              <input
+                id="factura-desde"
+                type="date"
+                value={filters.fecha_desde || ''}
+                onChange={(e) => handleChange('fecha_desde', e.target.value)}
+                className="w-full bg-bg-base border border-subtle rounded-lg text-text-primary focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary py-2 px-3 text-sm"
+              />
+            </div>
+            <div>
+              <label htmlFor="factura-hasta" className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
+                Fecha Hasta
+              </label>
+              <input
+                id="factura-hasta"
+                type="date"
+                value={filters.fecha_hasta || ''}
+                onChange={(e) => handleChange('fecha_hasta', e.target.value)}
                 className="w-full bg-bg-base border border-subtle rounded-lg text-text-primary focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary py-2 px-3 text-sm"
               />
             </div>
@@ -238,16 +262,34 @@ export default function ReportFilters({
 
         {/* Filtros específicos de Facturación */}
         {filters.categoria === 'facturacion' && (
-          <Select
-            label="Método de Pago"
-            id="filter-metodo"
-            value={filters.metodo || ''}
-            onChange={(e) => handleChange('metodo', e.target.value)}
-          >
-            <option value="">Todos los métodos</option>
-            <option value="mercado_pago">Mercado Pago</option>
-            <option value="manual">Cobro Manual en Recepción</option>
-          </Select>
+          <>
+            <Select
+              label="Método de Pago"
+              id="filter-metodo"
+              value={filters.metodo || ''}
+              onChange={(e) => handleChange('metodo', e.target.value)}
+            >
+              <option value="">Todos los métodos</option>
+              <option value="mercado_pago">Mercado Pago</option>
+              <option value="manual">Cobro Manual en Recepción</option>
+            </Select>
+
+            <Select
+              label="Plan"
+              id="filter-plan-facturacion"
+              value={filters.plan_id || ''}
+              onChange={(e) => handleChange('plan_id', e.target.value)}
+            >
+              <option value="">
+                {loadingPlanes ? 'Cargando planes...' : 'Todos los planes'}
+              </option>
+              {planes.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.nombre}
+                </option>
+              ))}
+            </Select>
+          </>
         )}
 
         {/* Nota informativa para Asistencia */}
