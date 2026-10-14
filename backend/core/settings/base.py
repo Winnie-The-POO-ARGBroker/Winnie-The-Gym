@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'apps.access',
     'apps.payments',
     'apps.reports',
+    'apps.audit',
 ]
 
 MIDDLEWARE = [
@@ -215,6 +216,7 @@ SPECTACULAR_SETTINGS = {
         {'name': 'payments', 'description': 'Integración con MercadoPago Checkout Pro y cobros manuales.'},
         {'name': 'reports', 'description': 'Reportes exportables en CSV/PDF/XLSX.'},
         {'name': 'health', 'description': 'Endpoints de infraestructura.'},
+        {'name': 'audit', 'description': 'Historial de cambios auditables por admins (#219).'},
     ],
 }
 

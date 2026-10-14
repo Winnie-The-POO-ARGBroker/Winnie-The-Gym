@@ -165,6 +165,7 @@ urlpatterns = [
     path('api/payments/', include(('apps.payments.urls', 'payments'), namespace='payments')),
     path('api/reportes/', include(('apps.reports.urls', 'reports'), namespace='reports')),
     path('api/config/', include(('apps.common.urls', 'config'), namespace='config')),
+    path('api/audit/', include(('apps.audit.urls', 'audit'), namespace='audit')),
 ]
 
 if settings.DEBUG:

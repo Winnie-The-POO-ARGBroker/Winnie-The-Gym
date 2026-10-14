@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from rest_framework import serializers
 
-from .models import Socio
+from .models import Socio, SocioNota
 from .services import dispatch_activation_email_for_socio
 
 User = get_user_model()
@@ -42,6 +42,10 @@ class SocioSerializer(serializers.ModelSerializer):
             'observaciones',
             'membresia_activa',
             'created_at',
+            'fecha_nacimiento',
+            'genero',
+            'contacto_emergencia_nombre',
+            'contacto_emergencia_telefono',
         )
         read_only_fields = ('numero_socio', 'certificado_medico_url', 'created_at')
 
@@ -190,3 +194,17 @@ class SocioCertificadoResponseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Socio
         fields = ('id', 'certificado_medico_url', 'numero_socio', 'estado')
+
+
+class SocioNotaSerializer(serializers.ModelSerializer):
+    """Serializer for internal staff notes on a socio (#234)."""
+
+    autor_email = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = SocioNota
+        fields = ('id', 'socio', 'autor', 'autor_email', 'texto', 'created_at', 'updated_at')
+        read_only_fields = ('id', 'socio', 'autor', 'autor_email', 'created_at', 'updated_at')
+
+    def get_autor_email(self, obj):
+        return obj.autor.email if obj.autor_id else None

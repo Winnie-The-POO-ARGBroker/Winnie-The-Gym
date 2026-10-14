@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import api from '../../services/api'
 import {
   getSocios,
   getSocio,
@@ -174,4 +175,60 @@ export function useSocioMutations() {
   })
 
   return { create, update, patch, remove, baja, certificado, reactivar }
+}
+
+// ─── Actividad (timeline) ─────────────────────────────────────────────────────
+
+export const SOCIO_ACTIVIDAD_KEY = (id) => ['socios', 'actividad', id]
+
+/**
+ * Fetch the merged activity timeline for a socio (audit + reservas + accesos + notas).
+ * Endpoint: GET /api/members/socios/{id}/actividad/
+ */
+export function useSocioActividad(socioId) {
+  return useQuery({
+    queryKey: SOCIO_ACTIVIDAD_KEY(socioId),
+    queryFn: async () => {
+      const res = await api.get(`/members/socios/${socioId}/actividad/`)
+      return res.data?.results ?? res.data ?? []
+    },
+    enabled: !!socioId,
+    retry: 1,
+  })
+}
+
+// ─── Notas internas ───────────────────────────────────────────────────────────
+
+export const SOCIO_NOTAS_KEY = (id) => ['socios', 'notas', id]
+
+/**
+ * Fetch internal notes for a socio.
+ * Endpoint: GET /api/members/socios/{id}/notas/
+ */
+export function useSocioNotas(socioId) {
+  return useQuery({
+    queryKey: SOCIO_NOTAS_KEY(socioId),
+    queryFn: async () => {
+      const res = await api.get(`/members/socios/${socioId}/notas/`)
+      return res.data?.results ?? res.data ?? []
+    },
+    enabled: !!socioId,
+    retry: 1,
+  })
+}
+
+/**
+ * Create a new internal note for a socio.
+ */
+export function useCrearNota(socioId) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (texto) => api.post(`/members/socios/${socioId}/notas/`, { texto }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: SOCIO_NOTAS_KEY(socioId) })
+    },
+    onError: () => {
+      toast.error('No se pudo guardar la nota.')
+    },
+  })
 }

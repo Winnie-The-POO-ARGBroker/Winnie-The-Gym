@@ -1,3 +1,5 @@
+from datetime import date, timedelta
+
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import PasswordResetForm
@@ -58,10 +60,29 @@ class ProfileCompleteSerializer(serializers.ModelSerializer):
         return Socio.objects.create(usuario=user, **validated_data)
 
 
+def _vencimiento_relativo(fecha_fin) -> str | None:
+    """Return a human-readable relative date string for a membership expiry."""
+    if not fecha_fin:
+        return None
+    today = date.today()
+    delta = (fecha_fin - today).days
+    if delta < 0:
+        return 'vencida'
+    if delta == 0:
+        return 'vence hoy'
+    if delta == 1:
+        return 'en 1 día'
+    return f'en {delta} días'
+
+
 class ProfileSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(source='usuario.email', read_only=True)
     foto = serializers.URLField(source='usuario.foto', read_only=True)
     rol = serializers.CharField(source='usuario.rol', read_only=True)
+    # #231 — proximas clases (next 3 confirmed reservations)
+    proximas_clases = serializers.SerializerMethodField(read_only=True)
+    # #231 — relative expiry label for active membership
+    vencimiento_formato_relativo = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Socio
@@ -79,6 +100,14 @@ class ProfileSerializer(serializers.ModelSerializer):
             'fecha_baja',
             'certificado_medico_url',
             'observaciones',
+            # #232 — extended fields
+            'fecha_nacimiento',
+            'genero',
+            'contacto_emergencia_nombre',
+            'contacto_emergencia_telefono',
+            # #231 — computed
+            'proximas_clases',
+            'vencimiento_formato_relativo',
         )
         read_only_fields = (
             'id',
@@ -90,7 +119,50 @@ class ProfileSerializer(serializers.ModelSerializer):
             'estado',
             'fecha_baja',
             'certificado_medico_url',
+            'proximas_clases',
+            'vencimiento_formato_relativo',
         )
+
+    def get_proximas_clases(self, obj):
+        """Return the next 3 confirmed (non-waitlisted) class reservations."""
+        try:
+            from django.utils import timezone
+            now = timezone.now()
+            inscripciones = (
+                obj.inscripciones_clases
+                .filter(en_espera=False, clase__estado='activa')
+                .select_related('clase')
+                .order_by('clase__hora')
+            )
+            result = []
+            for ins in inscripciones:
+                clase = ins.clase
+                result.append({
+                    'clase_id': clase.id,
+                    'nombre': clase.nombre,
+                    'dia': clase.dia,
+                    'hora': clase.hora.strftime('%H:%M') if clase.hora else None,
+                    'instructor': clase.instructor,
+                    'sala': clase.sala,
+                })
+                if len(result) >= 3:
+                    break
+            return result
+        except Exception:
+            return []
+
+    def get_vencimiento_formato_relativo(self, obj):
+        """Return relative expiry label for the active membership."""
+        try:
+            from apps.memberships.models import Membresia
+            m = obj.membresias.filter(
+                estado=Membresia.Estado.ACTIVA,
+            ).order_by('-fecha_inicio').first()
+            if m is None:
+                return None
+            return _vencimiento_relativo(m.fecha_fin)
+        except Exception:
+            return None
 
 
 class StaffCreateSerializer(serializers.ModelSerializer):
