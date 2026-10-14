@@ -1,0 +1,15 @@
+{{ brand_name }} — Invitación de staff
+
+Hola{% if nombre %} {{ nombre }}{% endif %},
+
+Fuiste invitado/a a unirte como staff en {{ brand_name }}.
+
+Para activar tu cuenta y establecer tu contraseña, usá el siguiente enlace.
+El enlace es válido por 72 horas.
+
+{{ activation_url }}
+
+Si no esperabas esta invitación, podés ignorar este mensaje.
+
+---
+Este mensaje fue enviado automáticamente desde {{ brand_name }}.
