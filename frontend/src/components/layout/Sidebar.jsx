@@ -36,20 +36,25 @@ export default function Sidebar() {
 
   return (
     // z-50 stacking order: sidebar (z-50) > bottom-nav (z-40) > header (z-20)
-    <aside className="hidden md:flex w-sidebar bg-bg-surface border-r border-subtle flex-col h-screen sticky top-0 z-50 transition-colors">
+    // Tablet (768-1024px): icon-only compact sidebar. Desktop (≥1024px): full expanded sidebar.
+    <aside className="hidden md:flex md:w-14 lg:w-sidebar bg-bg-surface border-r border-subtle flex-col h-screen sticky top-0 z-50 transition-all duration-200">
       {/* Logo */}
-      <div className="px-5 py-6">
+      <div className="px-3 lg:px-5 py-6 flex justify-center lg:justify-start">
         <NavLink to="/dashboard" className="inline-block transition-transform hover:scale-105">
-          <WinnieLogo size="sm" />
+          <WinnieLogo size="sm" className="hidden lg:block" />
+          {/* Compact icon on tablet */}
+          <div className="block lg:hidden w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+            <span className="text-white font-black text-xs">W</span>
+          </div>
         </NavLink>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 flex flex-col gap-1 px-3 overflow-y-auto">
+      <nav className="flex-1 flex flex-col gap-1 px-1.5 lg:px-3 overflow-y-auto">
         {currentNavItems.map((item, idx) => {
           if (item.divider) {
             return (
-              <div key={`divider-${idx}`} className="px-3 pt-4 pb-1">
+              <div key={`divider-${idx}`} className="px-2 pt-4 pb-1 hidden lg:block">
                 <span className="text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
                   {item.label}
                 </span>
@@ -71,21 +76,22 @@ export default function Sidebar() {
             <NavLink
               key={path}
               to={path}
-              className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+              title={label}
+              className={`group flex items-center justify-center lg:justify-start gap-3 px-2 lg:px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                 isActive
                   ? 'bg-primary text-white shadow-md'
                   : 'text-text-secondary hover:bg-bg-raised hover:text-text-primary'
               }`}
             >
               <Icon {...iconProps} />
-              {label}
+              <span className="hidden lg:inline">{label}</span>
             </NavLink>
           )
         })}
       </nav>
 
       {/* Theme toggle */}
-      <div className="flex justify-end px-4 pb-2">
+      <div className="flex justify-center lg:justify-end px-2 lg:px-4 pb-2">
         <button
           onClick={toggleTheme}
           aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
@@ -160,10 +166,11 @@ export default function Sidebar() {
         {/* Trigger button */}
         <button
           onClick={() => setMenuOpen((v) => !v)}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors hover:bg-bg-raised bg-bg-raised"
+          title={displayName}
+          className="w-full flex items-center justify-center lg:justify-start gap-3 px-2 lg:px-4 py-3 rounded-lg transition-colors hover:bg-bg-raised bg-bg-raised"
         >
           <Avatar name={displayName} size={36} />
-          <div className="flex flex-col min-w-0 flex-1 text-left">
+          <div className="hidden lg:flex flex-col min-w-0 flex-1 text-left">
             <span className="text-sm font-medium text-text-primary truncate">{displayName}</span>
             <span className="text-xs capitalize truncate text-text-secondary">{rol}</span>
           </div>

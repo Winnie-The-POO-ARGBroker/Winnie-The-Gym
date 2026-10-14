@@ -1,4 +1,4 @@
-const BASE = 'inline-flex items-center justify-center font-semibold rounded-xl transition-opacity disabled:opacity-50 disabled:cursor-not-allowed min-h-11 md:min-h-0'
+const BASE = 'inline-flex items-center justify-center font-semibold rounded-xl transition-opacity disabled:opacity-50 disabled:cursor-not-allowed min-h-11 md:min-h-0 outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1'
 
 const VARIANTS = {
   primary:   'bg-primary text-white hover:opacity-90',

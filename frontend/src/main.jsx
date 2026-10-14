@@ -10,6 +10,17 @@ import './index.css'
 
 initSentry()
 
+// Register service worker for PWA shell caching
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .register('/service-worker.js')
+      .catch(() => {
+        // SW registration failed silently (e.g. in dev or unsupported browser)
+      })
+  })
+}
+
 try {
   const stored = localStorage.getItem('theme-storage')
   const theme = stored ? JSON.parse(stored)?.state?.theme : 'dark'
