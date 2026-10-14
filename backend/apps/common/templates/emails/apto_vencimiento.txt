@@ -1,0 +1,12 @@
+Hola {{ socio.nombre }},
+
+Te recordamos que tu certificado médico vence {{ urgency }} ({{ vence_en }}).
+
+Para seguir accediendo al gimnasio sin interrupciones, necesitás presentar
+un apto médico vigente en recepción o cargarlo desde tu perfil:
+{{ frontend_url }}/perfil
+
+Si ya renovaste tu apto, ignorá este mensaje.
+Ante cualquier duda contactá a recepción.
+
+{{ brand_name }}

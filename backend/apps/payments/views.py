@@ -12,6 +12,7 @@ from rest_framework.views import APIView
 
 from apps.access.permissions import IsAdminOnly, IsReceptionistOrAdmin, IsSocio
 from apps.members.models import Socio
+from apps.members.permissions import IsSocioActivo
 from apps.memberships.models import PlanMembresia
 
 from .filters import PagoFilter
@@ -151,7 +152,8 @@ class PagoViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
     ),
 )
 class CrearPreferenciaView(APIView):
-    permission_classes = [IsSocio]
+    # #230 — only active socios can create MP preferences
+    permission_classes = [IsSocio, IsSocioActivo]
 
     def post(self, request):
         input_serializer = CrearPreferenciaSerializer(data=request.data)

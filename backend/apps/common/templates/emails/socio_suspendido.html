@@ -1,0 +1,35 @@
+{% extends "emails/_base.html" %}
+
+{% block subject %}Tu cuenta en {{ brand_name }} ha sido suspendida{% endblock %}
+
+{% block content %}
+<h2 style="color: #2c261d; margin: 0 0 16px;">Tu cuenta ha sido suspendida</h2>
+
+<p>Hola <strong>{{ socio.nombre }}</strong>,</p>
+
+<p>
+  Te informamos que tu cuenta en <strong>{{ brand_name }}</strong> ha sido
+  suspendida temporalmente.
+</p>
+
+{% if motivo %}
+<p><strong>Motivo:</strong> {{ motivo }}</p>
+{% endif %}
+
+<p>
+  Durante la suspensión podés seguir accediendo al portal para ver tu
+  historial y cancelar reservas existentes. No podrás reservar clases,
+  generar QR ni renovar tu membresía hasta que se levante la suspensión.
+</p>
+
+<p>
+  Para más información o para gestionar tu cuenta, contactá a recepción.
+</p>
+
+<p style="text-align: center; margin: 24px 0;">
+  <a href="{{ frontend_url }}/contacto"
+     style="background: #735d3e; color: #fff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold;">
+    Contactar recepción
+  </a>
+</p>
+{% endblock %}

@@ -1,0 +1,14 @@
+Hola {{ socio.nombre }},
+
+Tu cuenta en {{ brand_name }} ha sido suspendida temporalmente.
+
+{% if motivo %}Motivo: {{ motivo }}
+
+{% endif %}Durante la suspensión podés seguir accediendo al portal para ver tu historial
+y cancelar reservas existentes. No podrás reservar clases, generar QR ni
+renovar tu membresía hasta que se levante la suspensión.
+
+Para más información o para gestionar tu cuenta, contactá a recepción:
+{{ frontend_url }}/contacto
+
+{{ brand_name }}

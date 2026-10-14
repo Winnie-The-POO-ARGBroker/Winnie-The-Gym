@@ -177,7 +177,9 @@ LOGGING = {
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        # #218 — AuditedJWTAuthentication sets thread-local after token validation
+        # so audit signals capture the real JWT user instead of 'system'.
+        'apps.common.authentication.AuditedJWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',

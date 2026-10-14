@@ -15,11 +15,12 @@ from .permissions import IsAdminOrOwnSocio
 from .models import Socio, SocioNota
 from .serializers import (
     SocioCertificadoResponseSerializer,
+    SocioCertificadoSignedUrlSerializer,
     SocioCertificadoUploadSerializer,
     SocioNotaSerializer,
     SocioSerializer,
 )
-from .services import dar_baja, guardar_certificado_medico
+from .services import dar_baja, generar_signed_url_certificado, guardar_certificado_medico
 
 
 class SocioPagination(PageNumberPagination):
@@ -55,7 +56,7 @@ class SocioViewSet(viewsets.ModelViewSet):
         if self.action == 'create':
             # fix #223: recepcionista can create socios
             return [IsReceptionistOrAdmin()]
-        if self.action == 'subir_certificado':
+        if self.action in ('subir_certificado', 'certificado_url'):
             return [IsAdminOrOwnSocio()]
         if self.action == 'resend_activation':
             return [IsReceptionistOrAdmin()]
@@ -92,7 +93,8 @@ class SocioViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        dar_baja(socio)
+        socio = dar_baja(socio)
+        socio.refresh_from_db()
 
         serializer = SocioSerializer(socio)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -142,9 +144,12 @@ class SocioViewSet(viewsets.ModelViewSet):
     )
     @action(detail=False, methods=['get'], url_path='stats')
     def stats(self, request):
+        from django.db.models import Q
         total = Socio.objects.count()
         activos = Socio.objects.filter(estado=Socio.Estado.ACTIVO).count()
-        con_certificado = Socio.objects.exclude(certificado_medico_url='').count()
+        con_certificado = Socio.objects.filter(
+            ~Q(certificado_medico_path='') | ~Q(certificado_medico_url='')
+        ).count()
         bajas = Socio.objects.filter(estado=Socio.Estado.BAJA).count()
         return Response({
             'total': total,
@@ -155,15 +160,15 @@ class SocioViewSet(viewsets.ModelViewSet):
 
     @extend_schema(
         tags=['members'],
-        summary='Subir certificado médico del socio (RF08)',
+        summary='Subir certificado médico del socio (RF08 / #227 / #228)',
         description=(
             'Adjunta el certificado médico digital del socio (PDF o imagen, máx. 5 MB). '
-            'El archivo se persiste bajo MEDIA_ROOT/certificados_medicos/ y la URL '
-            'resultante se guarda en `certificado_medico_url`. En producción este flujo '
-            'delega en Supabase Storage.'
+            'El archivo se persiste en un bucket Supabase PRIVADO bajo un nombre UUID '
+            'para proteger la identidad del socio. Las URLs son siempre firmadas (5 min). '
+            'Acepta opcionalmente emitido_en y vence_en para registrar la vigencia.'
         ),
         request={'multipart/form-data': SocioCertificadoUploadSerializer},
-        responses={200: SocioSerializer},
+        responses={200: SocioCertificadoResponseSerializer},
     )
     @action(
         detail=True,
@@ -178,10 +183,40 @@ class SocioViewSet(viewsets.ModelViewSet):
         upload_serializer = SocioCertificadoUploadSerializer(data=request.data)
         upload_serializer.is_valid(raise_exception=True)
         archivo = upload_serializer.validated_data['archivo']
+        emitido_en = upload_serializer.validated_data.get('emitido_en')
+        vence_en = upload_serializer.validated_data.get('vence_en')
 
-        socio = guardar_certificado_medico(socio, archivo, request=request)
+        socio = guardar_certificado_medico(
+            socio, archivo,
+            emitido_en=emitido_en,
+            vence_en=vence_en,
+            request=request,
+        )
 
         return Response(SocioCertificadoResponseSerializer(socio).data, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        tags=['members'],
+        summary='Obtener URL firmada del certificado médico (#227)',
+        description=(
+            'Genera una URL firmada de corta duración (5 minutos) para descargar el '
+            'certificado médico del socio desde el bucket privado de Supabase. '
+            'Admins y recepcionistas pueden obtener el URL de cualquier socio. '
+            'Los socios solo pueden obtener el de su propio perfil.'
+        ),
+        responses={200: SocioCertificadoSignedUrlSerializer},
+    )
+    @action(
+        detail=True,
+        methods=['get'],
+        url_path='certificado/url',
+        url_name='certificado-url',
+    )
+    def certificado_url(self, request, pk=None):
+        socio = self.get_object()
+        result = generar_signed_url_certificado(socio)
+        serializer = SocioCertificadoSignedUrlSerializer(result)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
         tags=['members'],
