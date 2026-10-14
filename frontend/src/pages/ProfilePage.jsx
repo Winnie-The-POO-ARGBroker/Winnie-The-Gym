@@ -23,6 +23,10 @@ const socioSchema = z.object({
   nombre: z.string().min(2, 'Mínimo 2 caracteres'),
   apellido: z.string().min(2, 'Mínimo 2 caracteres'),
   telefono: z.string().min(8, 'Teléfono inválido'),
+  fecha_nacimiento: z.string().optional().nullable(),
+  genero: z.enum(['F', 'M', 'X', 'N', '']).optional().nullable(),
+  contacto_emergencia_nombre: z.string().optional().nullable(),
+  contacto_emergencia_telefono: z.string().optional().nullable(),
 })
 
 const staffSchema = z.object({
@@ -225,14 +229,30 @@ function SocioProfileView({ profile, user, isChangePwdOpen, setIsChangePwdOpen, 
 
   useEffect(() => {
     if (profile) {
-      reset({ nombre: profile.nombre, apellido: profile.apellido, telefono: profile.telefono })
+      reset({
+        nombre: profile.nombre,
+        apellido: profile.apellido,
+        telefono: profile.telefono,
+        fecha_nacimiento: profile.fecha_nacimiento ?? '',
+        genero: profile.genero ?? '',
+        contacto_emergencia_nombre: profile.contacto_emergencia_nombre ?? '',
+        contacto_emergencia_telefono: profile.contacto_emergencia_telefono ?? '',
+      })
     }
   }, [profile, reset])
 
   const onSubmit = async (values) => {
     try {
       const data = await updateProfile.mutateAsync(values)
-      reset({ nombre: data.nombre, apellido: data.apellido, telefono: data.telefono })
+      reset({
+        nombre: data.nombre,
+        apellido: data.apellido,
+        telefono: data.telefono,
+        fecha_nacimiento: data.fecha_nacimiento ?? '',
+        genero: data.genero ?? '',
+        contacto_emergencia_nombre: data.contacto_emergencia_nombre ?? '',
+        contacto_emergencia_telefono: data.contacto_emergencia_telefono ?? '',
+      })
       setAuth({
         access: accessToken,
         refresh: refreshToken,
@@ -451,6 +471,69 @@ function SocioProfileView({ profile, user, isChangePwdOpen, setIsChangePwdOpen, 
                 {errors.telefono.message}
               </span>
             )}
+          </div>
+
+          {/* Extended fields */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
+                Fecha de nacimiento
+              </label>
+              <input
+                {...register('fecha_nacimiento')}
+                type="date"
+                data-testid="fecha-nacimiento-input"
+                className="w-full px-3 py-2 rounded-lg text-sm outline-none appearance-none transition-colors bg-bg-raised border border-subtle text-text-primary placeholder:text-text-tertiary"
+                onFocus={(e) => (e.target.style.borderColor = '#ff5a36')}
+                onBlur={(e) => (e.target.style.borderColor = 'var(--color-border-subtle)')}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
+                Género
+              </label>
+              <select
+                {...register('genero')}
+                className="w-full px-3 py-2 rounded-lg text-sm outline-none appearance-none transition-colors bg-bg-raised border border-subtle text-text-primary cursor-pointer"
+              >
+                <option value="">Sin especificar</option>
+                <option value="F">Femenino</option>
+                <option value="M">Masculino</option>
+                <option value="X">No binario</option>
+                <option value="N">Prefiero no decir</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
+                Contacto emergencia — Nombre
+              </label>
+              <input
+                {...register('contacto_emergencia_nombre')}
+                className="w-full px-3 py-2 rounded-lg text-sm outline-none appearance-none transition-colors bg-bg-raised border border-subtle text-text-primary placeholder:text-text-tertiary"
+                placeholder="Nombre del contacto"
+                onFocus={(e) => (e.target.style.borderColor = '#ff5a36')}
+                onBlur={(e) => (e.target.style.borderColor = 'var(--color-border-subtle)')}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
+                Contacto emergencia — Teléfono
+              </label>
+              <input
+                {...register('contacto_emergencia_telefono')}
+                inputMode="tel"
+                data-testid="contacto-emergencia-telefono-input"
+                className="w-full px-3 py-2 rounded-lg text-sm outline-none appearance-none transition-colors bg-bg-raised border border-subtle text-text-primary placeholder:text-text-tertiary"
+                placeholder="+54 9 351 ..."
+                onFocus={(e) => (e.target.style.borderColor = '#ff5a36')}
+                onBlur={(e) => (e.target.style.borderColor = 'var(--color-border-subtle)')}
+              />
+            </div>
           </div>
 
           <Button type="submit" variant="primary" size="lg" disabled={!isDirty} loading={isSubmitting} className="w-full">

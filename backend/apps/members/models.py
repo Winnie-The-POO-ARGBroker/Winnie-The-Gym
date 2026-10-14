@@ -11,6 +11,12 @@ class Socio(models.Model):
         SUSPENDIDO = 'suspendido', 'Suspendido'
         BAJA = 'baja', 'Baja'
 
+    class Genero(models.TextChoices):
+        FEMENINO = 'F', 'Femenino'
+        MASCULINO = 'M', 'Masculino'
+        NO_BINARIO = 'X', 'No binario'
+        PREFIERO_NO_DECIR = 'N', 'Prefiero no decir'
+
     usuario = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -27,6 +33,16 @@ class Socio(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     observaciones = models.TextField(blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
+    # #232 — extended socio data
+    fecha_nacimiento = models.DateField(blank=True, null=True)
+    genero = models.CharField(
+        max_length=1,
+        choices=Genero.choices,
+        blank=True,
+        null=True,
+    )
+    contacto_emergencia_nombre = models.CharField(max_length=100, blank=True, default='')
+    contacto_emergencia_telefono = models.CharField(max_length=30, blank=True, default='')
 
     def save(self, *args, **kwargs):
         if not self.numero_socio:
@@ -50,3 +66,31 @@ class Socio(models.Model):
         verbose_name = 'Socio'
         verbose_name_plural = 'Socios'
         ordering = ['numero_socio']
+
+
+class SocioNota(models.Model):
+    """Internal staff notes attached to a Socio record (#234)."""
+
+    socio = models.ForeignKey(
+        Socio,
+        on_delete=models.CASCADE,
+        related_name='notas',
+    )
+    autor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='notas_socios',
+    )
+    texto = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Nota de Socio'
+        verbose_name_plural = 'Notas de Socios'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'Nota de {self.autor} sobre {self.socio}'

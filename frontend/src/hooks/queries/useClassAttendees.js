@@ -66,7 +66,7 @@ export function useClassAttendees(classId) {
 
   return {
     attendees: query.data ?? [],
-    isLoading: query.isLoading,
+    isLoading: query.isPending,
     isError: query.isError,
     toggleStatus,
     saveAttendees,

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useId, useRef } from 'react'
 import { X } from 'lucide-react'
 
 /**
@@ -32,6 +32,24 @@ export default function Modal({
   children,
 }) {
   const modalRef = useRef(null)
+  const openerRef = useRef(null)
+  const uid = useId()
+  const titleId = `modal-title-${uid}`
+  const descId = `modal-desc-${uid}`
+
+  // Capture the opener element and restore focus on close
+  useEffect(() => {
+    if (isOpen) {
+      openerRef.current = document.activeElement
+    } else {
+      const opener = openerRef.current
+      if (opener && typeof opener.focus === 'function') {
+        // Defer so the DOM has time to unmount the modal first
+        requestAnimationFrame(() => opener.focus())
+      }
+      openerRef.current = null
+    }
+  }, [isOpen])
 
   // Scroll lock: freeze body scroll while open
   useEffect(() => {
@@ -113,8 +131,8 @@ export default function Modal({
           ref={modalRef}
           role="dialog"
           aria-modal="true"
-          aria-labelledby={title ? 'modal-title' : undefined}
-          aria-describedby={description ? 'modal-desc' : undefined}
+          aria-labelledby={title ? titleId : undefined}
+          aria-describedby={description ? descId : undefined}
           className={`w-full md:${maxWidth} bg-bg-surface border border-subtle rounded-t-2xl md:rounded-2xl shadow-2xl animate-in slide-in-from-bottom-4 md:fade-in md:zoom-in-95 duration-200 flex flex-col max-h-[90dvh]`}
         >
           {/* Drag handle (mobile visual cue) */}
@@ -133,12 +151,12 @@ export default function Modal({
                 )}
                 <div>
                   {title && (
-                    <h3 id="modal-title" className="text-lg font-bold text-text-primary">
+                    <h3 id={titleId} className="text-lg font-bold text-text-primary">
                       {title}
                     </h3>
                   )}
                   {description && (
-                    <p id="modal-desc" className="text-xs text-text-secondary">
+                    <p id={descId} className="text-xs text-text-secondary">
                       {description}
                     </p>
                   )}
@@ -178,8 +196,8 @@ export default function Modal({
           ref={modalRef}
           role="dialog"
           aria-modal="true"
-          aria-labelledby={title ? 'modal-title' : undefined}
-          aria-describedby={description ? 'modal-desc' : undefined}
+          aria-labelledby={title ? titleId : undefined}
+          aria-describedby={description ? descId : undefined}
           className={`w-full h-full md:h-auto md:${maxWidth} md:rounded-2xl md:border md:border-subtle md:shadow-2xl md:animate-in md:fade-in md:zoom-in-95 md:duration-150 bg-bg-surface flex flex-col`}
         >
           {/* Header */}
@@ -192,7 +210,7 @@ export default function Modal({
               )}
               <div>
                 {title && (
-                  <h3 id="modal-title" className="text-lg font-bold text-text-primary">
+                  <h3 id={titleId} className="text-lg font-bold text-text-primary">
                     {title}
                   </h3>
                 )}
@@ -254,7 +272,7 @@ export default function Modal({
               )}
               <div>
                 {title && (
-                  <h3 id="modal-title" className="text-lg font-bold text-text-primary">
+                  <h3 id={titleId} className="text-lg font-bold text-text-primary">
                     {title}
                   </h3>
                 )}

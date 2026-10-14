@@ -20,6 +20,10 @@ export default function SocioFormModal({
     email: '',
     estado: 'activo',
     observaciones: '',
+    fecha_nacimiento: '',
+    genero: '',
+    contacto_emergencia_nombre: '',
+    contacto_emergencia_telefono: '',
   })
   const [certificadoFile, setCertificadoFile] = useState(null)
   const [fileError, setFileError] = useState(null)
@@ -37,6 +41,10 @@ export default function SocioFormModal({
         email: socioToEdit.email || '',
         estado: socioToEdit.estado || 'activo',
         observaciones: socioToEdit.observaciones || '',
+        fecha_nacimiento: socioToEdit.fecha_nacimiento || '',
+        genero: socioToEdit.genero || '',
+        contacto_emergencia_nombre: socioToEdit.contacto_emergencia_nombre || '',
+        contacto_emergencia_telefono: socioToEdit.contacto_emergencia_telefono || '',
       })
     } else {
       setFormData({
@@ -47,6 +55,10 @@ export default function SocioFormModal({
         email: '',
         estado: 'activo',
         observaciones: '',
+        fecha_nacimiento: '',
+        genero: '',
+        contacto_emergencia_nombre: '',
+        contacto_emergencia_telefono: '',
       })
     }
     setCertificadoFile(null)
@@ -81,6 +93,10 @@ export default function SocioFormModal({
       telefono: formData.telefono?.trim() || '',
       estado: formData.estado,
       observaciones: formData.observaciones?.trim() || '',
+      fecha_nacimiento: formData.fecha_nacimiento?.trim() || null,
+      genero: formData.genero || null,
+      contacto_emergencia_nombre: formData.contacto_emergencia_nombre?.trim() || null,
+      contacto_emergencia_telefono: formData.contacto_emergencia_telefono?.trim() || null,
     }
 
     if (formData.email?.trim()) {
@@ -254,6 +270,68 @@ export default function SocioFormModal({
             placeholder="Notas internas sobre el socio, aptitud, restricciones..."
             className="w-full px-3 py-2 rounded-xl text-sm bg-bg-raised border border-subtle text-text-primary focus:outline-none focus:border-orange-500 transition-colors resize-none"
           />
+        </div>
+
+        {/* Datos ampliados */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-medium text-text-secondary mb-1">
+              Fecha de nacimiento
+            </label>
+            <input
+              type="date"
+              value={formData.fecha_nacimiento}
+              onChange={(e) => handleChange('fecha_nacimiento', e.target.value)}
+              data-testid="admin-fecha-nacimiento-input"
+              className="w-full px-3 py-2 rounded-xl text-sm bg-bg-raised border border-subtle text-text-primary focus:outline-none focus:border-orange-500 transition-colors"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-text-secondary mb-1">
+              Género
+            </label>
+            <select
+              value={formData.genero}
+              onChange={(e) => handleChange('genero', e.target.value)}
+              className="w-full px-3 py-2 rounded-xl text-sm bg-bg-raised border border-subtle text-text-primary focus:outline-none focus:border-orange-500 transition-colors cursor-pointer"
+            >
+              <option value="">Sin especificar</option>
+              <option value="F">Femenino</option>
+              <option value="M">Masculino</option>
+              <option value="X">No binario</option>
+              <option value="N">Prefiero no decir</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-medium text-text-secondary mb-1">
+              Contacto emergencia — Nombre
+            </label>
+            <input
+              type="text"
+              value={formData.contacto_emergencia_nombre}
+              onChange={(e) => handleChange('contacto_emergencia_nombre', e.target.value)}
+              placeholder="Nombre del contacto"
+              className="w-full px-3 py-2 rounded-xl text-sm bg-bg-raised border border-subtle text-text-primary focus:outline-none focus:border-orange-500 transition-colors"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-text-secondary mb-1">
+              Contacto emergencia — Teléfono
+            </label>
+            <input
+              type="text"
+              value={formData.contacto_emergencia_telefono}
+              onChange={(e) => handleChange('contacto_emergencia_telefono', e.target.value)}
+              placeholder="+54 9 351 ..."
+              data-testid="admin-contacto-emergencia-telefono-input"
+              className="w-full px-3 py-2 rounded-xl text-sm bg-bg-raised border border-subtle text-text-primary focus:outline-none focus:border-orange-500 transition-colors"
+            />
+          </div>
         </div>
 
         {/* Certificado Médico (RF08) */}

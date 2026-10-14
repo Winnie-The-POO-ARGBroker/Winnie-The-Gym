@@ -13,7 +13,6 @@ import ResetPasswordPage from './pages/ResetPasswordPage'
 import DashboardPage from './pages/DashboardPage'
 import ProfilePage from './pages/ProfilePage'
 import NotFoundPage from './pages/NotFoundPage'
-import ComingSoonPage from './pages/ComingSoonPage'
 import CredencialDigitalPage from './pages/socio/CredencialDigitalPage'
 import ClasesPage from './pages/socio/ClasesPage'
 import ProtectedRoute from './components/routing/ProtectedRoute'
@@ -50,8 +49,6 @@ function LegacyRedirect({ to }) {
   const { search, hash } = useLocation()
   return <Navigate to={`${to}${search}${hash}`} replace />
 }
-
-const COMING_SOON_PATHS = []
 
 function RoleBasedClasesRedirect() {
   const { user } = useAuth()
@@ -152,11 +149,6 @@ export default function App() {
         {/* Admin configuracion */}
         <Route path="/configuracion" element={<ProtectedRoute roles={['administrador']}><AdminConfiguracionPage /></ProtectedRoute>} />
         <Route path="/admin/configuracion" element={<ProtectedRoute roles={['administrador']}><AdminConfiguracionPage /></ProtectedRoute>} />
-
-        {/* Sidebar routes — protected, coming soon */}
-        {COMING_SOON_PATHS.map((path) => (
-          <Route key={path} path={path} element={<ProtectedRoute><ComingSoonPage /></ProtectedRoute>} />
-        ))}
 
         {/* Root → dashboard if logged in, login if not */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />

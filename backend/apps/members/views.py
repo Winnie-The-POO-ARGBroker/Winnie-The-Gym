@@ -12,8 +12,13 @@ from apps.users.services import is_synthetic_email, send_activation_email
 
 from .filters import SocioFilter
 from .permissions import IsAdminOrOwnSocio
-from .models import Socio
-from .serializers import SocioCertificadoResponseSerializer, SocioCertificadoUploadSerializer, SocioSerializer
+from .models import Socio, SocioNota
+from .serializers import (
+    SocioCertificadoResponseSerializer,
+    SocioCertificadoUploadSerializer,
+    SocioNotaSerializer,
+    SocioSerializer,
+)
 from .services import dar_baja, guardar_certificado_medico
 
 
@@ -53,6 +58,9 @@ class SocioViewSet(viewsets.ModelViewSet):
         if self.action == 'subir_certificado':
             return [IsAdminOrOwnSocio()]
         if self.action == 'resend_activation':
+            return [IsReceptionistOrAdmin()]
+        if self.action in ('notas', 'actividad'):
+            # #234: admin + recep only; socios get 403
             return [IsReceptionistOrAdmin()]
         return [IsReceptionistOrAdmin()]
 
@@ -207,3 +215,123 @@ class SocioViewSet(viewsets.ModelViewSet):
 
         send_activation_email(socio.usuario)
         return Response({'detail': 'Email de activación reenviado.'}, status=status.HTTP_200_OK)
+
+    # ------------------------------------------------------------------
+    # #234 — Notas internas + Actividad
+    # ------------------------------------------------------------------
+
+    @extend_schema(
+        tags=['members'],
+        summary='Listar y crear notas internas de un socio (admin/recep)',
+        responses={200: SocioNotaSerializer(many=True), 201: SocioNotaSerializer},
+    )
+    @action(
+        detail=True,
+        methods=['get', 'post'],
+        url_path='notas',
+        url_name='notas',
+    )
+    def notas(self, request, pk=None):
+        """GET: list notes for a socio. POST: create a note."""
+        socio = self.get_object()
+
+        if request.method == 'GET':
+            qs = SocioNota.objects.filter(socio=socio).select_related('autor')
+            serializer = SocioNotaSerializer(qs, many=True)
+            return Response(serializer.data)
+
+        # POST
+        serializer = SocioNotaSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(socio=socio, autor=request.user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @extend_schema(
+        tags=['members'],
+        summary='Actividad del socio: merge de audit + reservas + accesos + notas (admin/recep)',
+        responses={200: dict},
+    )
+    @action(
+        detail=True,
+        methods=['get'],
+        url_path='actividad',
+        url_name='actividad',
+    )
+    def actividad(self, request, pk=None):
+        """Merged timeline of audit logs, class reservations, access logs and notes, ordered desc."""
+        socio = self.get_object()
+        timeline = []
+
+        # Audit logs for this socio entity
+        try:
+            from apps.audit.models import AuditLog
+            entity_label = 'members.Socio'
+            audit_qs = AuditLog.objects.filter(
+                entity_type=entity_label,
+                entity_id=socio.pk,
+            ).select_related('actor').order_by('-timestamp')[:50]
+            for log in audit_qs:
+                timeline.append({
+                    'type': 'audit',
+                    'timestamp': log.timestamp,
+                    'actor_email': log.actor.email if log.actor_id else None,
+                    'action': log.action,
+                    'changes': log.changes_json,
+                })
+        except Exception:
+            pass
+
+        # Class reservations
+        try:
+            inscripciones = (
+                socio.inscripciones_clases
+                .select_related('clase')
+                .order_by('-created_at')[:20]
+            )
+            for ins in inscripciones:
+                timeline.append({
+                    'type': 'reserva',
+                    'timestamp': ins.created_at,
+                    'clase_nombre': ins.clase.nombre,
+                    'en_espera': ins.en_espera,
+                    'asistio': ins.asistio,
+                })
+        except Exception:
+            pass
+
+        # Access logs (via user FK)
+        try:
+            from apps.access.models import AccessLog
+            accesos = (
+                AccessLog.objects
+                .filter(user=socio.usuario)
+                .order_by('-timestamp')[:20]
+            )
+            for acc in accesos:
+                timeline.append({
+                    'type': 'acceso',
+                    'timestamp': acc.timestamp,
+                    'access_type': acc.access_type,
+                    'status': acc.status,
+                    'source': acc.source,
+                })
+        except Exception:
+            pass
+
+        # Internal notes
+        try:
+            notas = SocioNota.objects.filter(socio=socio).select_related('autor').order_by('-created_at')[:20]
+            for nota in notas:
+                timeline.append({
+                    'type': 'nota',
+                    'timestamp': nota.created_at,
+                    'autor_email': nota.autor.email if nota.autor_id else None,
+                    'texto': nota.texto,
+                })
+        except Exception:
+            pass
+
+        # Sort merged timeline descending by timestamp
+        timeline.sort(key=lambda x: x['timestamp'], reverse=True)
+
+        return Response({'results': timeline})
