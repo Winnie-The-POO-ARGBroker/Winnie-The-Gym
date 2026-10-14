@@ -20,6 +20,11 @@ vi.mock('../../hooks/queries/useInscripciones', () => ({
   useInscripcionesMutations: vi.fn(),
 }))
 
+vi.mock('../../hooks/queries/useCatalogo', () => ({
+  useDisciplinas: vi.fn(() => ({ data: [], isPending: false })),
+  useSalas: vi.fn(() => ({ data: [], isPending: false })),
+}))
+
 vi.mock('../../components/layout/MemberLayout', () => ({
   default: ({ children, title }) => (
     <div data-testid="member-layout">

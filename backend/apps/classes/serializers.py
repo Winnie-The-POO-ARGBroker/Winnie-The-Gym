@@ -2,7 +2,25 @@ import datetime
 
 from rest_framework import serializers
 
-from .models import Clase, InscripcionClase
+from .models import Clase, Disciplina, InscripcionClase, Sala
+
+
+# ---------------------------------------------------------------------------
+# #179 — Disciplina and Sala serializers
+# ---------------------------------------------------------------------------
+
+class DisciplinaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Disciplina
+        fields = ('id', 'nombre', 'color_hex', 'slug', 'activa', 'created_at', 'updated_at')
+        read_only_fields = ('id', 'created_at', 'updated_at')
+
+
+class SalaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Sala
+        fields = ('id', 'nombre', 'capacidad', 'activa', 'created_at', 'updated_at')
+        read_only_fields = ('id', 'created_at', 'updated_at')
 
 
 DIAS_VALIDOS = {d.value for d in Clase.Dia}
@@ -69,6 +87,9 @@ class ClaseSerializer(serializers.ModelSerializer):
     fecha_cancelacion = serializers.DateTimeField(read_only=True)
     motivo_cancelacion = serializers.CharField(read_only=True)
     cancelada_por_nombre = serializers.SerializerMethodField()
+    # #179 — Disciplina and Sala FK names (read-only display)
+    disciplina_nombre = serializers.SerializerMethodField()
+    sala_fk_nombre = serializers.SerializerMethodField()
 
     class Meta:
         model = Clase
@@ -76,11 +97,15 @@ class ClaseSerializer(serializers.ModelSerializer):
             'id',
             'nombre',
             'categoria',
+            'disciplina_fk',
+            'disciplina_nombre',
             'descripcion',
             'dia',
             'hora',
             'duracion_min',
             'sala',
+            'sala_fk',
+            'sala_fk_nombre',
             'instructor',
             'instructor_nombre',
             'cupo_maximo',
@@ -102,6 +127,16 @@ class ClaseSerializer(serializers.ModelSerializer):
     def get_instructor_nombre(self, obj):
         """Alias for ``instructor`` field for frontend consumers expecting this key name."""
         return obj.instructor
+
+    def get_disciplina_nombre(self, obj):
+        if obj.disciplina_fk_id:
+            return obj.disciplina_fk.nombre if hasattr(obj, 'disciplina_fk') and obj.disciplina_fk else None
+        return None
+
+    def get_sala_fk_nombre(self, obj):
+        if obj.sala_fk_id:
+            return obj.sala_fk.nombre if hasattr(obj, 'sala_fk') and obj.sala_fk else None
+        return None
 
     def get_user_inscrito(self, obj):
         request = self.context.get('request')
@@ -127,7 +162,7 @@ class ClaseSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, data):
-        """Cross-field validations: cupo, dias_recurrencia, and schedule overlap."""
+        """Cross-field validations: cupo, sala capacity, dias_recurrencia, and schedule overlap."""
         instance = self.instance
 
         # --- cupo_maximo >= current confirmados ---
@@ -139,6 +174,17 @@ class ClaseSerializer(serializers.ModelSerializer):
                     'cupo_maximo': (
                         f'El cupo máximo no puede ser menor al número de inscriptos confirmados '
                         f'({confirmados}).'
+                    )
+                })
+
+        # --- #179: cupo_maximo <= sala_fk.capacidad ---
+        sala_fk = data.get('sala_fk', getattr(instance, 'sala_fk', None))
+        if sala_fk is not None and cupo_maximo is not None:
+            if sala_fk.capacidad > 0 and cupo_maximo > sala_fk.capacidad:
+                raise serializers.ValidationError({
+                    'cupo_maximo': (
+                        f'El cupo máximo ({cupo_maximo}) no puede superar la capacidad '
+                        f'de la sala "{sala_fk.nombre}" ({sala_fk.capacidad}).'
                     )
                 })
 

@@ -23,6 +23,11 @@ vi.mock('../hooks/queries/useClases', () => ({
   useClasesList: vi.fn(),
 }))
 
+vi.mock('../hooks/queries/useCatalogo', () => ({
+  useDisciplinas: vi.fn(() => ({ data: [], isPending: false })),
+  useSalas: vi.fn(() => ({ data: [], isPending: false })),
+}))
+
 vi.mock('react-router-dom', async (importOriginal) => {
   const actual = await importOriginal()
   return {
