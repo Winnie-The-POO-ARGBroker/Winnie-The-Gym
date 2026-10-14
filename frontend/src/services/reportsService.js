@@ -82,11 +82,18 @@ export async function exportMorosidad({ formato = 'csv', estado, plan_id } = {})
 
 /**
  * Export Facturación mensual report (CSV, XLSX, PDF).
+ * Supports mes (YYYY-MM), fecha_desde/fecha_hasta range, plan_id, and metodo filters.
+ * Date range takes priority over mes when both are provided.
  */
-export async function exportFacturacion({ formato = 'csv', mes, metodo } = {}) {
+export async function exportFacturacion({ formato = 'csv', mes, metodo, fecha_desde, fecha_hasta, plan_id, estado } = {}) {
   const params = { formato }
-  if (mes) params.mes = mes
+  // Date range takes priority over mes
+  if (fecha_desde) params.fecha_desde = fecha_desde
+  if (fecha_hasta) params.fecha_hasta = fecha_hasta
+  if (!fecha_desde && !fecha_hasta && mes) params.mes = mes
   if (metodo) params.metodo = metodo
+  if (plan_id) params.plan_id = plan_id
+  if (estado) params.estado = estado
 
   try {
     const response = await api.get('/reportes/facturacion/', {
@@ -158,6 +165,10 @@ export async function exportReport(tipo, filters = {}, formato = 'csv') {
       formato,
       mes: filters.mes,
       metodo: filters.metodo,
+      fecha_desde: filters.fecha_desde,
+      fecha_hasta: filters.fecha_hasta,
+      plan_id: filters.plan_id,
+      estado: filters.estado,
     })
   } else if (normalizedTipo === 'asistencia') {
     return exportAsistencia({

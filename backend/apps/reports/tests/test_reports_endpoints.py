@@ -110,8 +110,8 @@ class FacturacionReportTests(APITestCase):
 
         # Both may or may not appear depending on current month, but the count should be 1 (this month)
         lines = [l for l in body.splitlines() if l.strip()]
-        # header + 1 row
-        self.assertEqual(len(lines), 2)
+        # header + 1 data row + 1 TOTAL row (#184)
+        self.assertEqual(len(lines), 3)
 
     def test_defaults_to_current_month(self):
         response = self.client.get(FACTURACION_URL)

@@ -141,7 +141,9 @@ export default function ReportesPage() {
       toast.success(`Reporte descargado: ${result.filename}`, { id: toastId })
     } catch (error) {
       console.error('Error al exportar reporte:', error)
-      toast.error(error.message || 'Error al exportar el reporte', { id: toastId })
+      // Show the backend error message verbatim when available (backend sends 400 with Spanish text)
+      const msg = error.message || 'Error al exportar el reporte'
+      toast.error(msg, { id: toastId })
     } finally {
       setDownloadingFormat(null)
     }

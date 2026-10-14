@@ -201,30 +201,79 @@ MOROSIDAD_HEADERS = [
 
 
 def build_morosidad(estado=None, plan_id=None):
-    today = timezone.localdate()
-    qs = Membresia.objects.select_related('socio', 'socio__usuario', 'plan').filter(
-        estado__in=[Membresia.Estado.VENCIDA, Membresia.Estado.PENDIENTE_PAGO],
-        fecha_fin__lte=today,
-    )
-    if estado:
-        qs = qs.filter(estado=estado)
-    if plan_id:
-        qs = qs.filter(plan_id=plan_id)
+    """#185: uses socios_morosos_queryset as the single source of truth.
 
-    rows = []
-    for m in qs.order_by('fecha_fin'):
-        dias_atraso = (today - m.fecha_fin).days
+    Falls back to the legacy Membresia-based approach if `estado` filter is set,
+    since socios_morosos_queryset always returns VENCIDA rows (no pendiente_pago
+    differentiation is needed for the delinquency report).
+    """
+    today = timezone.localdate()
+
+    if estado:
+        # Legacy path: explicit estado filter bypasses the selector
+        qs = Membresia.objects.select_related('socio', 'socio__usuario', 'plan').filter(
+            estado__in=[Membresia.Estado.VENCIDA, Membresia.Estado.PENDIENTE_PAGO],
+            fecha_fin__lte=today,
+        )
+        qs = qs.filter(estado=estado)
+        if plan_id:
+            qs = qs.filter(plan_id=plan_id)
+
+        rows = []
+        total_adeudado = Decimal('0')
+        for m in qs.order_by('fecha_fin'):
+            dias_atraso = (today - m.fecha_fin).days
+            monto = Decimal(m.plan.precio)
+            total_adeudado += monto
+            rows.append([
+                m.socio.dni,
+                m.socio.apellido,
+                m.socio.nombre,
+                m.plan.nombre,
+                m.fecha_fin.isoformat(),
+                dias_atraso,
+                f'{monto:.2f}',
+                m.socio.telefono,
+                getattr(m.socio.usuario, 'email', '') or '',
+            ])
+    else:
+        # #185: canonical path — use the selector for correctness
+        from apps.memberships.selectors import socios_morosos_queryset
+        socios_qs = socios_morosos_queryset()
+        if plan_id:
+            socios_qs = socios_qs.filter(membresias__estado=Membresia.Estado.VENCIDA, membresias__plan_id=plan_id).distinct()
+
+        rows = []
+        total_adeudado = Decimal('0')
+        for socio in socios_qs:
+            # Get the latest vencida membership
+            last_mem_qs = socio.membresias.filter(estado=Membresia.Estado.VENCIDA).order_by('-fecha_fin')
+            if plan_id:
+                last_mem_qs = last_mem_qs.filter(plan_id=plan_id)
+            m = last_mem_qs.select_related('plan').first()
+            if not m:
+                continue
+            dias_atraso = (today - m.fecha_fin).days
+            monto = Decimal(m.plan.precio)
+            total_adeudado += monto
+            rows.append([
+                socio.dni,
+                socio.apellido,
+                socio.nombre,
+                m.plan.nombre,
+                m.fecha_fin.isoformat(),
+                dias_atraso,
+                f'{monto:.2f}',
+                socio.telefono,
+                getattr(socio.usuario, 'email', '') or '',
+            ])
+
+    # #184: append TOTAL row
+    if rows:
         rows.append([
-            m.socio.dni,
-            m.socio.apellido,
-            m.socio.nombre,
-            m.plan.nombre,
-            m.fecha_fin.isoformat(),
-            dias_atraso,
-            f'{Decimal(m.plan.precio):.2f}',
-            m.socio.telefono,
-            getattr(m.socio.usuario, 'email', '') or '',
+            'TOTAL', '', '', '', '', '', f'{total_adeudado:.2f}', '', '',
         ])
+
     return MOROSIDAD_HEADERS, rows
 
 
@@ -238,41 +287,83 @@ FACTURACION_HEADERS = [
 ]
 
 
-def build_facturacion(mes=None, metodo=None):
-    """`mes` is a 'YYYY-MM' string. Defaults to the current month."""
-    if mes:
-        year, month = [int(x) for x in mes.split('-', 1)]
-    else:
-        now = timezone.localdate()
-        year, month = now.year, now.month
+def build_facturacion(mes=None, fecha_desde=None, fecha_hasta=None, metodo=None, plan_id=None, estado='aprobado'):
+    """`mes` is a 'YYYY-MM' string. Defaults to the current month.
 
+    #184: Supports `fecha_desde`/`fecha_hasta` range (priority over `mes`),
+    `plan_id` filter, and `estado` filter (default 'aprobado').
+    Range timestamps respect ART timezone.
+    """
     tz = timezone.get_current_timezone()
-    start = datetime(year, month, 1, tzinfo=tz)
-    if month == 12:
-        end = datetime(year + 1, 1, 1, tzinfo=tz)
-    else:
-        end = datetime(year, month + 1, 1, tzinfo=tz)
 
-    qs = Pago.objects.select_related('socio', 'plan').filter(
-        estado=Pago.Estado.APROBADO,
-        paid_at__gte=start,
-        paid_at__lt=end,
-    )
+    if fecha_desde or fecha_hasta:
+        # Range mode: fecha_desde/hasta take priority over mes
+        if fecha_desde:
+            fd = date.fromisoformat(fecha_desde)
+            start = datetime(fd.year, fd.month, fd.day, 0, 0, 0, tzinfo=tz)
+        else:
+            start = None
+        if fecha_hasta:
+            fh = date.fromisoformat(fecha_hasta)
+            # End of day in ART: 23:59:59
+            end = datetime(fh.year, fh.month, fh.day, 23, 59, 59, tzinfo=tz)
+        else:
+            end = None
+    else:
+        # Month mode
+        if mes:
+            year, month = [int(x) for x in mes.split('-', 1)]
+        else:
+            now = timezone.localdate()
+            year, month = now.year, now.month
+
+        start = datetime(year, month, 1, tzinfo=tz)
+        if month == 12:
+            end = datetime(year + 1, 1, 1, tzinfo=tz)
+        else:
+            end = datetime(year, month + 1, 1, tzinfo=tz)
+
+    qs = Pago.objects.select_related('socio', 'plan')
+
+    # Estado filter (default: aprobado)
+    if estado and estado != 'todos':
+        qs = qs.filter(estado=estado)
+
+    if start:
+        qs = qs.filter(paid_at__gte=start)
+    if end:
+        # For range mode we use lte (inclusive end of day), for month mode lt (exclusive month start)
+        if fecha_desde or fecha_hasta:
+            qs = qs.filter(paid_at__lte=end)
+        else:
+            qs = qs.filter(paid_at__lt=end)
     if metodo:
         qs = qs.filter(metodo=metodo)
+    if plan_id:
+        qs = qs.filter(plan_id=int(plan_id))
 
     rows = []
+    total_monto = Decimal('0')
     for p in qs.order_by('paid_at'):
+        monto = Decimal(p.monto)
+        total_monto += monto
         rows.append([
             (p.paid_at.astimezone(tz).date().isoformat() if p.paid_at else ''),
             p.socio.dni,
             f'{p.socio.apellido}, {p.socio.nombre}',
             p.plan.nombre,
-            f'{Decimal(p.monto):.2f}',
+            monto,  # numeric for XLSX (#184)
             p.get_metodo_display(),
             p.get_estado_display(),
             p.mp_payment_id or '',
         ])
+
+    # #184: append TOTAL row
+    if rows:
+        rows.append([
+            'TOTAL', '', '', '', total_monto, '', '', '',
+        ])
+
     return FACTURACION_HEADERS, rows
 
 
