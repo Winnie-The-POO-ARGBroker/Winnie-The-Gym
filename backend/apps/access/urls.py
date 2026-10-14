@@ -1,5 +1,6 @@
 from django.urls import path
 from .views import (
+    AforoSnapshotView,
     AforoStatsView,
     AccessLogListView,
     CerrarDiaView,
@@ -22,4 +23,6 @@ urlpatterns = [
     path('presentes/', PresentesView.as_view(), name='presentes'),
     path('salida-manual/', SalidaManualView.as_view(), name='salida-manual'),
     path('cerrar-dia/', CerrarDiaView.as_view(), name='cerrar-dia'),
+    # fix #152 — REST fallback for aforo snapshot
+    path('aforo/snapshot/', AforoSnapshotView.as_view(), name='aforo-snapshot'),
 ]

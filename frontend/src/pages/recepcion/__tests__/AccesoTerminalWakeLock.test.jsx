@@ -39,6 +39,10 @@ vi.mock('../../../hooks/useScreenWakeLock', () => ({
   default: (...args) => mockUseScreenWakeLock(...args),
 }));
 
+vi.mock('../../../hooks/queries/useGymConfig', () => ({
+  useGymConfig: vi.fn(() => ({ data: { aforo_maximo: 200 } })),
+}));
+
 vi.mock('../../../components/layout/AppLayout', () => ({
   default: ({ children }) => <div data-testid="app-layout">{children}</div>,
 }));

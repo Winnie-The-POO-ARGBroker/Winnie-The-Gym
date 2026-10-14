@@ -15,13 +15,29 @@ export const mapAccessLog = (log) => {
 }
 
 // --- Access Logs ---
-export function useAccessLogs(limit = 5) {
+export function useAccessLogs(limit = 5, page_size) {
   return useQuery({
-    queryKey: ['accessLogs', limit],
+    queryKey: ['accessLogs', limit, page_size],
     queryFn: async () => {
-      const res = await api.get('/access/logs/', { params: { limit } })
+      const params = { limit }
+      if (page_size !== undefined) params.page_size = page_size
+      const res = await api.get('/access/logs/', { params })
       return res.data.results || []
     },
+    retry: 1,
+  })
+}
+
+// --- Aforo Snapshot (REST fallback for WS) ---
+export function useAforoSnapshot(enabled = true) {
+  return useQuery({
+    queryKey: ['aforoSnapshot'],
+    queryFn: async () => {
+      const res = await api.get('/access/aforo/snapshot/')
+      return res.data
+    },
+    enabled,
+    refetchInterval: 30000,
     retry: 1,
   })
 }

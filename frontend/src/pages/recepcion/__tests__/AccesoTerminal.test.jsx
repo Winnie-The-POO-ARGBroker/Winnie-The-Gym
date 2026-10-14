@@ -17,6 +17,10 @@ vi.mock('../../../hooks/useWebSocket', () => ({
   default: vi.fn(() => ({ lastMessage: { aforo_actual: 150 }, isConnected: true, isConnecting: false, isReconnecting: false, sendMessage: vi.fn() })),
 }));
 
+vi.mock('../../../hooks/queries/useGymConfig', () => ({
+  useGymConfig: vi.fn(() => ({ data: { aforo_maximo: 250 } })),
+}));
+
 const mockUseScreenWakeLock = vi.fn(() => ({ isSupported: true, isActive: false, brightnessBoosted: false }));
 vi.mock('../../../hooks/useScreenWakeLock', () => ({
   __esModule: true,
@@ -57,7 +61,16 @@ describe('AccesoTerminal', () => {
 
   it('renders aforo from websocket', () => {
     render(<AccesoTerminalPage />);
-    expect(screen.getByText(/Aforo 150\/200/)).toBeInTheDocument();
+    // aforo_actual from WS (150) / aforo_maximo from backend gymConfig (250) — not hardcoded
+    expect(screen.getByText(/Aforo 150\/250/)).toBeInTheDocument();
+  });
+
+  // fix #152: aforo_maximo reads from backend, not hardcoded 200
+  it('reads aforo_maximo from backend gymConfig, not hardcoded 200', () => {
+    render(<AccesoTerminalPage />);
+    // Should show 250 (from mock gymConfig), NOT 200 (hardcoded)
+    expect(screen.queryByText(/\/200/)).not.toBeInTheDocument();
+    expect(screen.getByText(/\/250/)).toBeInTheDocument();
   });
 
   // fix #148: terminal mode selector — ENTRY by default

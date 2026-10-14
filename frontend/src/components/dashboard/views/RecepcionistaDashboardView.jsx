@@ -1,20 +1,40 @@
+import { useState, useEffect } from 'react'
 import AforoCard from '../AforoCard'
 import MovementList from '../MovementList'
 import Button from '../../ui/Button'
-import { useAccessLogs, mapAccessLog, useAforoStats } from '../../../hooks/queries/useDashboardData'
+import { useAccessLogs, mapAccessLog, useAforoStats, useAforoSnapshot } from '../../../hooks/queries/useDashboardData'
 import useWebSocket from '../../../hooks/useWebSocket'
 import { useGymConfig } from '../../../hooks/queries/useGymConfig'
+
+/** Milliseconds to wait for WS before enabling REST fallback. */
+const WS_CONNECT_TIMEOUT_MS = 3000
 
 export default function RecepcionistaDashboardView({ navigate }) {
   const { data: logsData = [], isLoading: isLoadingLogs, isError: isErrorLogs } = useAccessLogs(5)
 
   const { lastMessage, isConnecting } = useWebSocket('/ws/aforo/')
-  const { data: restStats } = useAforoStats()
   const { data: gymConfig } = useGymConfig()
 
-  const aforoActual = lastMessage?.aforo_actual ?? restStats?.aforo_actual ?? 0
-  const ingresosHoy = lastMessage?.ingresos_hoy ?? restStats?.ingresos_hoy ?? 0
-  const egresosHoy = lastMessage?.egresos_hoy ?? restStats?.egresos_hoy ?? 0
+  // After 3 s without a WS message, activate REST snapshot fallback
+  const [wsTimedOut, setWsTimedOut] = useState(false)
+  useEffect(() => {
+    if (lastMessage) {
+      setWsTimedOut(false)
+      return
+    }
+    const timer = setTimeout(() => setWsTimedOut(true), WS_CONNECT_TIMEOUT_MS)
+    return () => clearTimeout(timer)
+  }, [lastMessage])
+
+  const snapshotEnabled = wsTimedOut && !lastMessage
+  const { data: snapshotData } = useAforoSnapshot(snapshotEnabled)
+  // Legacy stats fallback (keeps existing /access/stats/ working as secondary fallback)
+  const { data: restStats } = useAforoStats()
+
+  const restFallback = snapshotData ?? restStats
+  const aforoActual = lastMessage?.aforo_actual ?? restFallback?.aforo_actual ?? 0
+  const ingresosHoy = lastMessage?.ingresos_hoy ?? restFallback?.ingresos_hoy ?? 0
+  const egresosHoy = lastMessage?.egresos_hoy ?? restFallback?.egresos_hoy ?? 0
 
   const mappedMovements = logsData.map(mapAccessLog)
 
@@ -64,7 +84,7 @@ export default function RecepcionistaDashboardView({ navigate }) {
           max={gymConfig?.aforo_maximo ?? 200}
           entries={ingresosHoy}
           exits={egresosHoy}
-          loading={isConnecting && !lastMessage && restStats === undefined}
+          loading={isConnecting && !lastMessage && restFallback === undefined}
         />
         {isErrorLogs ? <p className="text-danger text-sm">Error al cargar movimientos.</p> : <MovementList movements={mappedMovements} loading={isLoadingLogs} />}
       </div>
