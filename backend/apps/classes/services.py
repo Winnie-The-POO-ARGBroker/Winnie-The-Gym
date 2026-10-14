@@ -196,11 +196,44 @@ def inscribir_socio(clase, socio, *, forzar=False):
         The newly created InscripcionClase instance.
     """
     from datetime import date
+    from apps.common.models import CierreGimnasio  # noqa: PLC0415
     from apps.memberships.models import Membresia  # noqa: PLC0415
 
     # 1. Class must be active
     if clase.estado in (Clase.Estado.CANCELADA, Clase.Estado.FINALIZADA):
         raise ValidationError({'detail': 'No podés inscribirte en una clase cancelada o finalizada.'})
+
+    # 1b. #182 — Gym closure check: deny if a total closure covers the next class occurrence.
+    next_dt = _next_clase_datetime(clase)
+    if next_dt is not None:
+        next_date = next_dt.date()
+        cierre = (
+            CierreGimnasio.objects
+            .filter(
+                afecta=CierreGimnasio.Afecta.TODO,
+                fecha_desde__lte=next_date,
+                fecha_hasta__gte=next_date,
+            )
+            .first()
+        )
+        if cierre is None:
+            # Also check sala-specific closure if clase has a sala FK (#179 sala_fk)
+            sala_fk = getattr(clase, 'sala_fk', None)
+            if sala_fk is not None:
+                cierre = (
+                    CierreGimnasio.objects
+                    .filter(
+                        afecta=CierreGimnasio.Afecta.SALA,
+                        sala=sala_fk,
+                        fecha_desde__lte=next_date,
+                        fecha_hasta__gte=next_date,
+                    )
+                    .first()
+                )
+        if cierre is not None:
+            raise ValidationError({
+                'detail': f'El gimnasio está cerrado en esa fecha: {cierre.motivo}',
+            })
 
     # 2. Socio must be active
     if socio.estado in ('baja', 'suspendido'):
