@@ -26,6 +26,10 @@ import ClassSchedulePage from './pages/ClassSchedulePage'
 import AforoMonitorPage from './pages/recepcion/AforoMonitorPage'
 import GestionSociosPage from './pages/recepcion/GestionSociosPage'
 import ReportesPage from './pages/recepcion/ReportesPage'
+import ForbiddenPage from './pages/ForbiddenPage'
+import InternalErrorPage from './pages/InternalErrorPage'
+import ErrorBoundary from './components/error/ErrorBoundary'
+import ConnectionBanner from './components/system/ConnectionBanner'
 
 import AdminPlanesPage from './pages/admin/AdminPlanesPage'
 import AdminSociosPage from './pages/admin/AdminSociosPage'
@@ -69,7 +73,8 @@ export default function App() {
   }, [theme])
 
   return (
-    <>
+    <ErrorBoundary>
+      <ConnectionBanner />
       <Toaster theme={theme} position="top-right" richColors />
       <Routes>
         {/* Public only — redirect to /dashboard if already logged in */}
@@ -156,9 +161,13 @@ export default function App() {
         {/* Root → dashboard if logged in, login if not */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
+        {/* Error pages */}
+        <Route path="/403" element={<ForbiddenPage />} />
+        <Route path="/500" element={<InternalErrorPage />} />
+
         {/* 404 */}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
-    </>
+    </ErrorBoundary>
   )
 }

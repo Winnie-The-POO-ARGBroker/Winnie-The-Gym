@@ -1,9 +1,13 @@
 import { useGoogleLogin } from '@react-oauth/google'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import WinnieLogo from '../components/ui/WinnieLogo'
 import EmailPasswordForm from '../components/auth/EmailPasswordForm'
 
 export default function LoginPage() {
+  const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
+  const isExpired = searchParams.get('reason') === 'expired'
+
   // auth-code flow with same-tab redirect. Avoids the "Failed to open popup"
   // error caused by Chrome's third-party cookie restrictions on the implicit
   // popup flow. Token exchange happens in AuthCallback + backend.
@@ -12,6 +16,16 @@ export default function LoginPage() {
     ux_mode: 'redirect',
     redirect_uri: `${window.location.origin}/auth/callback`,
   })
+
+  function handleLoginSuccess() {
+    const next = sessionStorage.getItem('next')
+    if (next) {
+      sessionStorage.removeItem('next')
+      navigate(next, { replace: true })
+    } else {
+      navigate('/dashboard', { replace: true })
+    }
+  }
 
   return (
     <div className="min-h-screen flex bg-bg-base">
@@ -43,6 +57,17 @@ export default function LoginPage() {
           <div className="flex md:hidden justify-center">
             <WinnieLogo size="md" />
           </div>
+
+          {/* Session expired banner — shown only when redirected from an expired session */}
+          {isExpired && (
+            <div
+              role="alert"
+              data-testid="session-expired-banner"
+              className="rounded-xl px-4 py-3 bg-yellow-500/10 border border-yellow-500/30 text-yellow-600 text-sm"
+            >
+              Tu sesión expiró. Iniciá sesión de nuevo para continuar.
+            </div>
+          )}
 
           <div className="flex flex-col gap-1">
             <h1 className="text-3xl font-bold text-text-primary">Bienvenido</h1>
@@ -88,7 +113,7 @@ export default function LoginPage() {
           </div>
 
           {/* Email / password login */}
-          <EmailPasswordForm />
+          <EmailPasswordForm onSuccess={handleLoginSuccess} />
 
           {/* Forgot password link */}
           <Link
