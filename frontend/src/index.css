@@ -29,6 +29,12 @@
 
   --color-disciplina-yoga: #10B981;
   --color-disciplina-yoga-bg: rgba(16, 185, 129, 0.15);
+
+  --color-disciplina-boxeo: #F59E0B;
+  --color-disciplina-boxeo-bg: rgba(245, 158, 11, 0.15);
+
+  --color-disciplina-hiit: #8B5CF6;
+  --color-disciplina-hiit-bg: rgba(139, 92, 246, 0.15);
 }
 
 .dark {

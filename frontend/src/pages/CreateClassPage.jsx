@@ -7,62 +7,84 @@ import TopBar from '../components/layout/TopBar'
 import Button from '../components/ui/Button'
 import { DISCIPLINAS_CONFIG } from '../constants/disciplinas'
 import { DIAS_SEMANA, RECURRENCIA_DIAS } from '../constants/clases'
-import { useClaseDetail, useClasesMutations } from '../hooks/queries/useClases'
-import api from '../services/api'
+import { useClaseDetail, useClasesMutations, useClasesList } from '../hooks/queries/useClases'
 
-const IS_DEV = import.meta.env.DEV
+const EMPTY_FORM = {
+  nombre: '',
+  categoria: 'funcional',
+  descripcion: '',
+  dia: '',
+  hora: '08:00',
+  duracion_min: 45,
+  sala: 'Sala A',
+  instructor: '',
+  dias_recurrencia: [],
+  recurrencia: '',
+  cupo_maximo: 20,
+  cupos_reservados: 0,
+  lista_espera_max: 0,
+  cancelacion_horas: 2,
+  planes_habilitados: [],
+}
 
 export default function CreateClassPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const editId = searchParams.get('id')
+  const cloneId = searchParams.get('clone')
 
   const { create: createClase, update: updateClase } = useClasesMutations()
-  const { data: existingClass } = useClaseDetail(editId)
+  const { data: existingClass } = useClaseDetail(editId || cloneId)
+  const { data: allClasses = [] } = useClasesList()
 
-  const [formData, setFormData] = useState({
-    nombre: 'Funcional Intensivo',
-    categoria: 'funcional',
-    descripcion: 'Entrenamiento funcional de alta intensidad con foco en tren superior y core.',
-    dia: 'Lunes',
-    hora: '08:00',
-    duracion_min: 45,
-    sala: 'Sala A',
-    instructor: 'Carlos R.',
-    dias_recurrencia: ['L', 'X', 'V'],
-    recurrencia: 'Semanal - L/M/V',
-    cupo_maximo: 20,
-    cupos_reservados: 0,
-    lista_espera_max: 5,
-    cancelacion_horas: 2,
-    planes_habilitados: ['Premium', 'Gold'],
-  })
+  const [formData, setFormData] = useState(EMPTY_FORM)
+  const [fieldErrors, setFieldErrors] = useState({})
 
-  // Populate form when editing an existing class
+  // Populate form when editing or cloning an existing class
   useEffect(() => {
     if (existingClass) {
-      setFormData({
+      const base = {
+        ...EMPTY_FORM,
         ...existingClass,
         dia: existingClass.dia
           ? existingClass.dia.charAt(0).toUpperCase() + existingClass.dia.slice(1)
-          : 'Lunes',
-      })
+          : '',
+      }
+      if (cloneId && !editId) {
+        // Cloning: strip ID, reset cupos
+        setFormData({ ...base, id: undefined, nombre: `${existingClass.nombre} (Copia)`, cupos_reservados: 0 })
+      } else {
+        setFormData(base)
+      }
     }
-  }, [existingClass])
+  }, [existingClass, editId, cloneId])
 
   const currentCfg =
     DISCIPLINAS_CONFIG[formData.categoria] || DISCIPLINAS_CONFIG.funcional
 
+  const ORDERED_DAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
+  const REVERSE_DIAS_MAP = {
+    L: 'Lunes', M: 'Martes', X: 'Miércoles',
+    J: 'Jueves', V: 'Viernes', S: 'Sábado', D: 'Domingo',
+  }
+
   const handleDayRecurrenceToggle = (dayKey) => {
     const exists = formData.dias_recurrencia.includes(dayKey)
-    const updated = exists
+    const raw = exists
       ? formData.dias_recurrencia.filter((d) => d !== dayKey)
       : [...formData.dias_recurrencia, dayKey]
+
+    // Sort by canonical week order
+    const updated = ORDERED_DAYS.filter((d) => raw.includes(d))
+
+    // Derive dia from first recurrence day
+    const derivedDia = updated.length > 0 ? (REVERSE_DIAS_MAP[updated[0]] ?? '') : ''
 
     setFormData((prev) => ({
       ...prev,
       dias_recurrencia: updated,
-      recurrencia: `Semanal - ${updated.join('/')}`,
+      dia: derivedDia,
+      recurrencia: updated.length > 0 ? `Semanal - ${updated.join('/')}` : '',
     }))
   }
 
@@ -85,58 +107,66 @@ export default function CreateClassPage() {
       return
     }
 
+    setFieldErrors({})
+
     // Strip diacritics for the backend `dia` field
     const normalizeDay = (d) =>
       d.toLowerCase().normalize('NFD').replace(/\p{M}/gu, '')
 
+    // Derive dia from recurrencia (sorted, first day)
     let finalDia = formData.dia
     if (formData.dias_recurrencia && formData.dias_recurrencia.length > 0) {
-      const reverseDiasMap = {
-        L: 'Lunes', M: 'Martes', X: 'Miércoles',
-        J: 'Jueves', V: 'Viernes', S: 'Sábado', D: 'Domingo',
-      }
-      finalDia = reverseDiasMap[formData.dias_recurrencia[0]]
+      finalDia = REVERSE_DIAS_MAP[formData.dias_recurrencia[0]] ?? finalDia
     }
 
     const payload = {
       ...formData,
-      dia: normalizeDay(finalDia),
+      dia: normalizeDay(finalDia || 'lunes'),
       duracion_min: Number(formData.duracion_min),
       cupo_maximo: Number(formData.cupo_maximo),
       lista_espera_max: Number(formData.lista_espera_max),
       cancelacion_horas: Number(formData.cancelacion_horas),
     }
 
+    // Remove read-only fields from payload
+    delete payload.cupos_reservados
+    delete payload.id
+
     const onSuccess = () => navigate('/admin/clases')
 
+    const onError = (err) => {
+      const data = err?.response?.data
+      if (data && typeof data === 'object' && !data.detail) {
+        // DRF field-level errors
+        setFieldErrors(data)
+      }
+    }
+
     if (editId) {
-      updateClase.mutate({ id: editId, data: payload }, { onSuccess })
+      // PATCH with only explicitly modified fields for edit mode
+      updateClase.mutate({ id: editId, data: payload, partial: true }, { onSuccess, onError })
     } else {
-      createClase.mutate(payload, { onSuccess })
+      createClase.mutate(payload, { onSuccess, onError })
     }
   }
 
-  const handleDuplicateFromExisting = async () => {
-    try {
-      const res = await api.get('/classes/clases/')
-      const results = res.data.results || res.data
-      if (results && results.length > 0) {
-        const toClone = results[0]
-        setFormData({
-          ...toClone,
-          id: undefined,
-          dia: toClone.dia ? toClone.dia.charAt(0).toUpperCase() + toClone.dia.slice(1) : 'Lunes',
-          nombre: `${toClone.nombre} (Copia)`,
-          cupos_reservados: 0,
-        })
-        toast.info('Datos copiados de una clase existente')
-      } else {
-        toast.info('No hay clases para copiar')
-      }
-    } catch (error) {
-      toast.error('Error al obtener clases')
-      console.error(error)
+  const [copiarFromId, setCopiarFromId] = useState('')
+
+  const handleDuplicateFromExisting = () => {
+    const source = allClasses.find((c) => String(c.id) === String(copiarFromId)) || allClasses[0]
+    if (!source) {
+      toast.info('No hay clases para copiar')
+      return
     }
+    setFormData({
+      ...EMPTY_FORM,
+      ...source,
+      id: undefined,
+      dia: source.dia ? source.dia.charAt(0).toUpperCase() + source.dia.slice(1) : '',
+      nombre: `${source.nombre} (Copia)`,
+      cupos_reservados: 0,
+    })
+    toast.info(`Datos copiados de "${source.nombre}"`)
   }
 
   return (
@@ -187,10 +217,13 @@ export default function CreateClassPage() {
                     type="text"
                     required
                     value={formData.nombre}
-                    onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                    onChange={(e) => { setFormData({ ...formData, nombre: e.target.value }); setFieldErrors((p) => ({ ...p, nombre: undefined })) }}
                     placeholder="Ej. Funcional Intensivo, Spinning Pro..."
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus:border-orange-500 transition-colors"
+                    className={`w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border text-text-primary text-sm focus:outline-none transition-colors ${fieldErrors.nombre ? 'border-error-500' : 'border-subtle focus:border-orange-500'}`}
                   />
+                  {fieldErrors.nombre && (
+                    <p className="text-xs text-error-500 mt-1">{Array.isArray(fieldErrors.nombre) ? fieldErrors.nombre[0] : fieldErrors.nombre}</p>
+                  )}
                 </div>
 
                 <div>
@@ -207,7 +240,12 @@ export default function CreateClassPage() {
                     <option value="crossfit">Crossfit</option>
                     <option value="pilates">Pilates</option>
                     <option value="yoga">Yoga</option>
+                    <option value="boxeo">Boxeo</option>
+                    <option value="hiit">HIIT</option>
                   </select>
+                  {fieldErrors.categoria && (
+                    <p className="text-xs text-error-500 mt-1">{Array.isArray(fieldErrors.categoria) ? fieldErrors.categoria[0] : fieldErrors.categoria}</p>
+                  )}
                 </div>
               </div>
 
@@ -351,9 +389,12 @@ export default function CreateClassPage() {
                     min="1"
                     inputMode="numeric"
                     value={formData.cupo_maximo}
-                    onChange={(e) => setFormData({ ...formData, cupo_maximo: Number(e.target.value) })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-base md:text-sm min-h-11 font-semibold focus:outline-none focus:border-orange-500 transition-colors"
+                    onChange={(e) => { setFormData({ ...formData, cupo_maximo: Number(e.target.value) }); setFieldErrors((p) => ({ ...p, cupo_maximo: undefined })) }}
+                    className={`w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border text-text-primary text-base md:text-sm min-h-11 font-semibold focus:outline-none transition-colors ${fieldErrors.cupo_maximo ? 'border-error-500' : 'border-subtle focus:border-orange-500'}`}
                   />
+                  {fieldErrors.cupo_maximo && (
+                    <p className="text-xs text-error-500 mt-1">{Array.isArray(fieldErrors.cupo_maximo) ? fieldErrors.cupo_maximo[0] : fieldErrors.cupo_maximo}</p>
+                  )}
                 </div>
 
                 <div>
@@ -506,15 +547,29 @@ export default function CreateClassPage() {
                 {editId ? 'Guardar cambios' : 'Publicar clase'}
               </Button>
 
-              {IS_DEV && (
-                <button
-                  type="button"
-                  onClick={handleDuplicateFromExisting}
-                  className="w-full flex items-center justify-center gap-2 bg-bg-raised hover:bg-bg-surface border border-subtle text-text-primary py-2.5 rounded-xl font-semibold text-xs transition-colors"
-                >
-                  <Copy className="w-3.5 h-3.5 text-text-secondary" />
-                  Copiar de clase existente
-                </button>
+              {allClasses.length > 0 && (
+                <div className="flex flex-col gap-2">
+                  <select
+                    value={copiarFromId}
+                    onChange={(e) => setCopiarFromId(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-bg-raised border border-subtle text-text-primary text-xs focus:outline-none focus:border-orange-500 transition-colors"
+                  >
+                    <option value="">Seleccionar clase a copiar...</option>
+                    {allClasses.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.nombre} ({c.dia} {c.hora})
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={handleDuplicateFromExisting}
+                    className="w-full flex items-center justify-center gap-2 bg-bg-raised hover:bg-bg-surface border border-subtle text-text-primary py-2.5 rounded-xl font-semibold text-xs transition-colors"
+                  >
+                    <Copy className="w-3.5 h-3.5 text-text-secondary" />
+                    Copiar de clase existente
+                  </button>
+                </div>
               )}
             </div>
 

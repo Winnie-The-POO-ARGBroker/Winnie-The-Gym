@@ -7,6 +7,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import ClassListDetailView from './ClassListDetailView'
 
+vi.mock('react-router-dom', async (importOriginal) => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+    useNavigate: () => vi.fn(),
+  }
+})
+
 vi.mock('../ui/Button', () => ({
   default: ({ children, onClick, variant }) => (
     <button onClick={onClick} data-variant={variant}>{children}</button>
