@@ -1,7 +1,9 @@
+from django.db.models import ProtectedError
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiTypes, extend_schema, extend_schema_view
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -26,6 +28,12 @@ from .services import (
 )
 
 
+class PlanMembresiaPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
 @extend_schema_view(
     list=extend_schema(tags=['memberships'], summary='Listar planes de membresía'),
     retrieve=extend_schema(tags=['memberships'], summary='Detalle de plan de membresía'),
@@ -38,14 +46,36 @@ class PlanMembresiaViewSet(viewsets.ModelViewSet):
     queryset = PlanMembresia.objects.all().order_by('id')
     serializer_class = PlanMembresiaSerializer
     filterset_class = PlanMembresiaFilter
-    search_fields = ['nombre']
+    # #165 — subtitulo added to search
+    search_fields = ['nombre', 'subtitulo']
     ordering_fields = ['nombre', 'precio', 'duracion_dias', 'created_at']
     ordering = ['id']
+    pagination_class = PlanMembresiaPagination
 
     def get_permissions(self):
         if self.action in ('create', 'update', 'partial_update', 'destroy'):
             return [IsAdminOnly()]
         return [IsAuthenticated()]
+
+    def destroy(self, request, *args, **kwargs):
+        """#165 — Catch ProtectedError and return 400 instead of 500."""
+        instance = self.get_object()
+        try:
+            self.perform_destroy(instance)
+        except ProtectedError:
+            count = instance.membresias.count()
+            return Response(
+                {
+                    'detail': (
+                        f'No se puede eliminar el plan: tiene {count} '
+                        f'membresía{"s" if count != 1 else ""} asociada'
+                        f'{"s" if count != 1 else ""}. '
+                        'Primero cancelá o cambiá de plan a esas membresías.'
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @extend_schema_view(

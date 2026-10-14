@@ -1,6 +1,6 @@
 import { Edit2, Archive, Trash2, Check, X, Sparkles } from 'lucide-react'
 
-export default function PlanCard({ plan, onEdit, onArchive, onDelete, onDuplicate: _onDuplicate }) {
+export default function PlanCard({ plan, onEdit, onArchive, onDelete, onDuplicate: _onDuplicate, readOnly = false }) {
   const isPopular = plan.es_popular
 
   const formatPrice = (price) => {
@@ -84,35 +84,39 @@ export default function PlanCard({ plan, onEdit, onArchive, onDelete, onDuplicat
         </ul>
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex items-center gap-2 pt-4 border-t border-subtle">
-        <button
-          onClick={() => onEdit(plan)}
-          className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-bg-raised hover:bg-bg-surface hover:border-orange-500/50 border border-subtle text-text-primary text-xs font-semibold transition-colors"
-        >
-          <Edit2 className="w-3.5 h-3.5 text-text-secondary" />
-          Editar
-        </button>
-
-        <button
-          onClick={() => onArchive(plan)}
-          className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-bg-raised hover:bg-bg-surface border border-subtle text-text-secondary hover:text-text-primary text-xs font-semibold transition-colors"
-          title="Archivar plan"
-        >
-          <Archive className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Archivar</span>
-        </button>
-
-        {onDelete && (
+      {/* Action Buttons — hidden for read-only roles (recepcionista) */}
+      {!readOnly && (
+        <div className="flex items-center gap-2 pt-4 border-t border-subtle">
           <button
-            onClick={() => onDelete(plan)}
-            className="flex items-center justify-center p-2.5 rounded-xl bg-bg-raised hover:bg-error-500/10 text-text-tertiary hover:text-error-500 border border-subtle transition-colors"
-            title="Eliminar plan"
+            onClick={() => onEdit(plan)}
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-bg-raised hover:bg-bg-surface hover:border-orange-500/50 border border-subtle text-text-primary text-xs font-semibold transition-colors"
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            <Edit2 className="w-3.5 h-3.5 text-text-secondary" />
+            Editar
           </button>
-        )}
-      </div>
+
+          {onArchive && (
+            <button
+              onClick={() => onArchive(plan)}
+              className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-bg-raised hover:bg-bg-surface border border-subtle text-text-secondary hover:text-text-primary text-xs font-semibold transition-colors"
+              title="Archivar plan"
+            >
+              <Archive className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Archivar</span>
+            </button>
+          )}
+
+          {onDelete && (
+            <button
+              onClick={() => onDelete(plan)}
+              className="flex items-center justify-center p-2.5 rounded-xl bg-bg-raised hover:bg-error-500/10 text-text-tertiary hover:text-error-500 border border-subtle transition-colors"
+              title="Eliminar plan"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+      )}
     </div>
   )
 }

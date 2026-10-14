@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, Trash2, Check, Sparkles } from 'lucide-react'
+import { Plus, Trash2, Check, Sparkles, GripVertical } from 'lucide-react'
 import { z } from 'zod'
 import Modal from '../ui/Modal'
 import Button from '../ui/Button'
@@ -14,8 +14,25 @@ const planSchema = z.object({
     .max(365, 'La duración debe estar entre 30 y 365 días'),
 })
 
+/**
+ * Converts a matriz_comparativa object (key→value) to an editable array of pairs.
+ */
+function matrizToRows(obj) {
+  if (!obj || typeof obj !== 'object') return []
+  return Object.entries(obj).map(([key, value]) => ({ key, value: String(value) }))
+}
+
+function rowsToMatriz(rows) {
+  const result = {}
+  for (const { key, value } of rows) {
+    if (key.trim()) result[key.trim()] = value
+  }
+  return result
+}
+
 export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = null, isDuplicate = false }) {
   const [errors, setErrors] = useState({})
+  const [matrizRows, setMatrizRows] = useState([])
   const [formData, setFormData] = useState({
     nombre: '',
     subtitulo: '',
@@ -29,25 +46,20 @@ export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = nu
       { texto: 'Acceso a clases grupales', incluido: true },
       { texto: 'Seguimiento por entrenador', incluido: false },
     ],
-    matriz_comparativa: {
-      pase_libre: '✔',
-      reservas_clases: 'Todas',
-      entrenador_asignado: false,
-      rutina_personalizada: true,
-      acceso_multisede: '1 sede',
-      invitado_mensual: false,
-      congelar_plan: '1 mes',
-    },
+    matriz_comparativa: {},
   })
 
   useEffect(() => {
     setErrors({})
     if (planToEdit) {
-      setFormData({
+      const data = {
         ...planToEdit,
         nombre: isDuplicate ? `${planToEdit.nombre} (Copia)` : planToEdit.nombre,
         id: isDuplicate ? undefined : planToEdit.id,
-      })
+        matriz_comparativa: planToEdit.matriz_comparativa ?? {},
+      }
+      setFormData(data)
+      setMatrizRows(matrizToRows(data.matriz_comparativa))
     } else {
       setFormData({
         nombre: '',
@@ -62,16 +74,9 @@ export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = nu
           { texto: 'Acceso a clases grupales', incluido: true },
           { texto: 'Seguimiento por entrenador', incluido: false },
         ],
-        matriz_comparativa: {
-          pase_libre: '✔',
-          reservas_clases: 'Todas',
-          entrenador_asignado: false,
-          rutina_personalizada: true,
-          acceso_multisede: '1 sede',
-          invitado_mensual: false,
-          congelar_plan: '1 mes',
-        },
+        matriz_comparativa: {},
       })
+      setMatrizRows([])
     }
   }, [planToEdit, isDuplicate, isOpen])
 
@@ -97,6 +102,22 @@ export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = nu
     }))
   }
 
+  const handleMatrizRowChange = (index, field, value) => {
+    setMatrizRows((prev) => {
+      const updated = [...prev]
+      updated[index] = { ...updated[index], [field]: value }
+      return updated
+    })
+  }
+
+  const addMatrizRow = () => {
+    setMatrizRows((prev) => [...prev, { key: '', value: '' }])
+  }
+
+  const removeMatrizRow = (index) => {
+    setMatrizRows((prev) => prev.filter((_, i) => i !== index))
+  }
+
   const handleSubmit = (e) => {
     e.preventDefault()
     setErrors({})
@@ -119,14 +140,27 @@ export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = nu
       return
     }
 
-    onSave({
+    // Validate beneficios max 10 items
+    if ((formData.beneficios ?? []).length > 10) {
+      setErrors({ beneficios: 'Máximo 10 beneficios permitidos' })
+      return
+    }
+
+    const payload = {
       ...formData,
       precio: Number(formData.precio),
       clases_asignadas: Number(formData.clases_asignadas) || 0,
       duracion_dias: Number(formData.duracion_dias) || 30,
       socios_activos: formData.socios_activos || (isDuplicate ? 0 : 15),
-    })
-    onClose()
+      // Beneficios as list of strings (backend expects list of strings)
+      beneficios: (formData.beneficios ?? [])
+        .filter((b) => b.incluido && b.texto?.trim())
+        .map((b) => b.texto.trim()),
+      matriz_comparativa: rowsToMatriz(matrizRows),
+    }
+
+    // onSave is responsible for calling onClose() only on success (via AdminPlanesPage)
+    onSave(payload)
   }
 
   return (
@@ -301,7 +335,58 @@ export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = nu
                   </button>
                 </div>
               ))}
+              {errors.beneficios && (
+                <p className="text-xs text-error-500">{errors.beneficios}</p>
+              )}
             </div>
+          </div>
+
+          {/* Matriz Comparativa Editor */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-bold uppercase tracking-wider text-text-secondary">
+                Matriz comparativa
+              </label>
+              <button
+                type="button"
+                onClick={addMatrizRow}
+                className="flex items-center gap-1 text-xs font-semibold text-orange-500 hover:text-orange-600 transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" /> Agregar fila
+              </button>
+            </div>
+            {matrizRows.length === 0 ? (
+              <p className="text-xs text-text-tertiary italic">Sin datos de comparativa. Agregá filas para definir características.</p>
+            ) : (
+              <div className="space-y-2">
+                {matrizRows.map((row, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <GripVertical className="w-4 h-4 text-text-tertiary shrink-0" />
+                    <input
+                      type="text"
+                      value={row.key}
+                      onChange={(e) => handleMatrizRowChange(idx, 'key', e.target.value)}
+                      placeholder="Característica (ej: pase_libre)"
+                      className="flex-1 px-3 py-2 rounded-xl bg-bg-raised border border-subtle text-text-primary text-xs focus:outline-none focus:border-orange-500 transition-colors font-mono"
+                    />
+                    <input
+                      type="text"
+                      value={row.value}
+                      onChange={(e) => handleMatrizRowChange(idx, 'value', e.target.value)}
+                      placeholder="Valor (ej: ✔, 3x/sem)"
+                      className="flex-1 px-3 py-2 rounded-xl bg-bg-raised border border-subtle text-text-primary text-xs focus:outline-none focus:border-orange-500 transition-colors"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeMatrizRow(idx)}
+                      className="p-2 rounded-lg text-text-tertiary hover:text-error-500 hover:bg-bg-raised transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

@@ -9,11 +9,17 @@ from django.db.models import Q
 
 class PlanMembresia(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
+    # #165 — optional marketing subtitle
+    subtitulo = models.CharField(max_length=255, blank=True, default='')
     duracion_dias = models.PositiveIntegerField()
     precio = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal('0'))])
     clases_asignadas = models.PositiveIntegerField(default=0)
     activo = models.BooleanField(default=True)
     es_popular = models.BooleanField(default=False)
+    # #165 — ordered list of feature strings shown in plan card (max 10)
+    beneficios = models.JSONField(default=list, blank=True)
+    # #165 — free-form feature → value mapping for the comparison matrix
+    matriz_comparativa = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

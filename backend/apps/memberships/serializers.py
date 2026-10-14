@@ -15,7 +15,11 @@ class PlanMembresiaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PlanMembresia
-        fields = ('id', 'nombre', 'duracion_dias', 'precio', 'clases_asignadas', 'activo', 'es_popular', 'socios_activos')
+        fields = (
+            'id', 'nombre', 'subtitulo', 'duracion_dias', 'precio',
+            'clases_asignadas', 'activo', 'es_popular', 'socios_activos',
+            'beneficios', 'matriz_comparativa',
+        )
 
     def get_socios_activos(self, obj):
         return obj.membresias.filter(estado='activa').count()
@@ -25,6 +29,23 @@ class PlanMembresiaSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 f'La duración debe estar entre {DURACION_DIAS_MIN} y {DURACION_DIAS_MAX} días.',
             )
+        return value
+
+    def validate_beneficios(self, value):
+        """beneficios must be a list of strings with at most 10 items."""
+        if not isinstance(value, list):
+            raise serializers.ValidationError('beneficios debe ser una lista.')
+        if len(value) > 10:
+            raise serializers.ValidationError('beneficios admite como máximo 10 ítems.')
+        for item in value:
+            if not isinstance(item, str):
+                raise serializers.ValidationError('Cada beneficio debe ser un string.')
+        return value
+
+    def validate_matriz_comparativa(self, value):
+        """matriz_comparativa must be a dict."""
+        if not isinstance(value, dict):
+            raise serializers.ValidationError('matriz_comparativa debe ser un objeto (dict).')
         return value
 
 

@@ -63,6 +63,10 @@ vi.mock('../../components/admin/PlanDistributionChart', () => ({
 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() } }))
 
+vi.mock('../../hooks/useAuth', () => ({
+  default: vi.fn(() => ({ user: { rol: 'administrador' } })),
+}))
+
 import { usePlanesQuery, usePlanesMutations } from '../../hooks/queries/usePlanesAdmin'
 
 const mockPlanes = [
@@ -182,7 +186,8 @@ describe('AdminPlanesPage', () => {
     fireEvent.click(screen.getAllByText('Eliminar')[0])
 
     await waitFor(() => {
-      expect(deleteFn).toHaveBeenCalledWith(mockPlanes[0])
+      // mutate is called with (plan, options) — first arg is the plan
+      expect(deleteFn).toHaveBeenCalledWith(mockPlanes[0], expect.any(Object))
     })
   })
 

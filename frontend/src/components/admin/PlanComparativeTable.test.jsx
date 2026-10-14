@@ -80,14 +80,15 @@ describe('PlanComparativeTable', () => {
     expect(screen.getByText('CARACTERÍSTICA')).toBeInTheDocument()
   })
 
-  // ── 3. Feature row labels are rendered ────────────────────────────────────
+  // ── 3. Feature row labels are rendered (from matriz_comparativa keys)
   it('renders feature row labels', () => {
     render(<PlanComparativeTable planes={mockPlanes} />)
 
-    expect(screen.getByText('Pase libre al gym')).toBeInTheDocument()
-    expect(screen.getByText('Reservas de clases')).toBeInTheDocument()
-    expect(screen.getByText('Entrenador asignado')).toBeInTheDocument()
-    expect(screen.getByText('Rutina personalizada')).toBeInTheDocument()
+    // Keys are humanized: pase_libre → "Pase Libre", reservas_clases → "Reservas Clases"
+    expect(screen.getByText('Pase Libre')).toBeInTheDocument()
+    expect(screen.getByText('Reservas Clases')).toBeInTheDocument()
+    expect(screen.getByText('Entrenador Asignado')).toBeInTheDocument()
+    expect(screen.getByText('Rutina Personalizada')).toBeInTheDocument()
   })
 
   // ── 4. Precio mensual row is rendered ─────────────────────────────────────
@@ -97,21 +98,23 @@ describe('PlanComparativeTable', () => {
     expect(screen.getByText('Precio mensual')).toBeInTheDocument()
   })
 
-  // ── 5. Empty planes array — table still renders headers ───────────────────
+  // ── 5. Empty planes array — table still renders header with no rows ───────
   it('renders feature rows even when planes is empty', () => {
     render(<PlanComparativeTable planes={[]} />)
 
     expect(screen.getByText('CARACTERÍSTICA')).toBeInTheDocument()
-    expect(screen.getByText('Pase libre al gym')).toBeInTheDocument()
+    // When planes is empty there are no keys → no rows rendered (only the header)
+    expect(screen.queryByText('Pase libre al gym')).not.toBeInTheDocument()
   })
 
-  // ── 6. Premium colored dot appears for popular plan ───────────────────────
+  // ── 6. Popular plan gets a dot marker in header ───────────────────────────
   it('renders colored dot markers for plan headers', () => {
-    render(<PlanComparativeTable planes={mockPlanes} />)
+    const { container } = render(<PlanComparativeTable planes={mockPlanes} />)
 
-    // colored dots are rendered as spans
-    const dotSpans = document.querySelectorAll('span[style*="background-color"]')
-    expect(dotSpans.length).toBeGreaterThan(0)
+    // Popular plan (es_popular=true → Premium) gets an orange dot span
+    // The dot is a w-2.5 h-2.5 rounded-full span inside the th
+    const dots = container.querySelectorAll('th span.rounded-full')
+    expect(dots.length).toBeGreaterThan(0)
   })
 
   // ── 7. Feature value from matrix is shown ─────────────────────────────────

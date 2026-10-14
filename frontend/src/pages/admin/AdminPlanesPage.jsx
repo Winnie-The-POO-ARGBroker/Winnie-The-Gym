@@ -10,8 +10,12 @@ import PlanFormModal from '../../components/admin/PlanFormModal'
 import EmptyState from '../../components/ui/EmptyState'
 import Button from '../../components/ui/Button'
 import { usePlanesMutations, usePlanesQuery } from '../../hooks/queries/usePlanesAdmin'
+import useAuth from '../../hooks/useAuth'
 
 export default function AdminPlanesPage() {
+  const { user } = useAuth()
+  const isRecepcionista = user?.rol === 'recepcionista'
+
   const [activeTab, setActiveTab] = useState('tarjetas') // 'tarjetas' | 'comparativa'
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalMode, setModalMode] = useState({ planToEdit: null, isDuplicate: false })
@@ -31,7 +35,16 @@ export default function AdminPlanesPage() {
       toast.error('Debe existir al menos un plan activo en el sistema')
       return
     }
-    deletePlan.mutate(plan)
+    deletePlan.mutate(plan, {
+      onError: (err) => {
+        // Backend returns 400 with detail message when plan has associated memberships
+        const msg =
+          err?.response?.data?.detail ??
+          err?.response?.data?.message ??
+          'Error al eliminar el plan'
+        toast.error(msg)
+      },
+    })
   }
 
   const handleArchivePlan = (plan) => toggleActive.mutate(plan)
@@ -73,24 +86,28 @@ export default function AdminPlanesPage() {
                 Comparativa
               </button>
             </div>
-            <button
-              onClick={handleOpenDuplicate}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-bg-surface border border-subtle hover:bg-bg-raised text-text-primary text-xs font-semibold transition-colors"
-            >
-              <Copy className="w-4 h-4 text-text-secondary" />
-              Duplicar
-            </button>
-            <Button
-              variant="primary"
-              onClick={() => {
-                setModalMode({ planToEdit: null, isDuplicate: false })
-                setIsModalOpen(true)
-              }}
-              className="gap-2 shadow-md shadow-orange-500/20 hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <Plus className="w-4 h-4" />
-              Nuevo plan
-            </Button>
+            {!isRecepcionista && (
+              <>
+                <button
+                  onClick={handleOpenDuplicate}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-bg-surface border border-subtle hover:bg-bg-raised text-text-primary text-xs font-semibold transition-colors"
+                >
+                  <Copy className="w-4 h-4 text-text-secondary" />
+                  Duplicar
+                </button>
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    setModalMode({ planToEdit: null, isDuplicate: false })
+                    setIsModalOpen(true)
+                  }}
+                  className="gap-2 shadow-md shadow-orange-500/20 hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  <Plus className="w-4 h-4" />
+                  Nuevo plan
+                </Button>
+              </>
+            )}
           </>
         }
       />
@@ -111,13 +128,16 @@ export default function AdminPlanesPage() {
                   <PlanCard
                     key={plan.id}
                     plan={plan}
+                    readOnly={isRecepcionista}
                     onEdit={(p) => {
+                      if (isRecepcionista) return
                       setModalMode({ planToEdit: p, isDuplicate: false })
                       setIsModalOpen(true)
                     }}
-                    onArchive={handleArchivePlan}
-                    onDelete={handleDeletePlan}
+                    onArchive={isRecepcionista ? undefined : handleArchivePlan}
+                    onDelete={isRecepcionista ? undefined : handleDeletePlan}
                     onDuplicate={(p) => {
+                      if (isRecepcionista) return
                       setModalMode({ planToEdit: p, isDuplicate: true })
                       setIsModalOpen(true)
                     }}
