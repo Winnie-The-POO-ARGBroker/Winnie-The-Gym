@@ -34,14 +34,14 @@ class CobroManualTests(APITestCase):
         mail.outbox = []
 
     def _payload(self, **overrides):
-        payload = {'socio_id': self.socio.pk, 'plan_id': self.plan.pk, 'monto': '500.00'}
+        payload = {'socio_id': self.socio.pk, 'plan_id': self.plan.pk, 'monto': '500.00', 'medio': 'efectivo'}
         payload.update(overrides)
         return payload
 
     def test_receptionist_charges_manually_and_activates_membership(self):
         _auth(self.client, self.recep)
 
-        response = self.client.post(URL, self._payload(observacion='efectivo'), format='json')
+        response = self.client.post(URL, self._payload(observacion='pago en mostrador'), format='json')
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         pago = Pago.objects.get(pk=response.data['id'])

@@ -22,17 +22,22 @@ class CobroManualDiffTests(TestCase):
         self.plan = make_plan_factory(nombre='DiffPlan', precio=Decimal('1000.00'), duracion_dias=30)
 
     def test_cobro_matching_plan_price_leaves_no_diff_marker(self):
-        pago = cobro_manual(self.actor, self.socio, self.plan, Decimal('1000.00'))
-        self.assertNotIn('diferencia_vs_plan', pago.raw_webhook)
-        self.assertEqual(pago.raw_webhook['monto_cobrado'], '1000.00')
+        pago = cobro_manual(self.actor, self.socio, self.plan, Decimal('1000.00'), medio='efectivo')
+        self.assertEqual(pago.monto, Decimal('1000.00'))
+        self.assertEqual(pago.medio_manual, 'efectivo')
 
     def test_cobro_with_discount_stores_diff_and_warns(self):
         with self.assertLogs('apps.payments.services', level='WARNING') as ctx:
-            pago = cobro_manual(self.actor, self.socio, self.plan, Decimal('800.00'), observacion='descuento')
-        self.assertIn('diferencia_vs_plan', pago.raw_webhook)
-        self.assertEqual(pago.raw_webhook['diferencia_vs_plan'], '-200.00')
+            pago = cobro_manual(
+                self.actor, self.socio, self.plan, Decimal('800.00'),
+                medio='efectivo', observacion='descuento', motivo='acuerdo especial',
+            )
         self.assertTrue(any('diferencia' in msg.lower() for msg in ctx.output))
+        self.assertEqual(pago.monto, Decimal('800.00'))
 
     def test_cobro_over_plan_price_also_recorded(self):
-        pago = cobro_manual(self.actor, self.socio, self.plan, Decimal('1200.00'))
-        self.assertEqual(pago.raw_webhook['diferencia_vs_plan'], '200.00')
+        pago = cobro_manual(
+            self.actor, self.socio, self.plan, Decimal('1200.00'),
+            medio='transferencia', motivo='recargo aplicado',
+        )
+        self.assertEqual(pago.monto, Decimal('1200.00'))

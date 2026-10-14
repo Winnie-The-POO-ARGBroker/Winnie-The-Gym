@@ -34,6 +34,8 @@ import AdminPlanesPage from './pages/admin/AdminPlanesPage'
 import AdminSociosPage from './pages/admin/AdminSociosPage'
 import AdminUsuariosPage from './pages/admin/AdminUsuariosPage'
 import AdminConfiguracionPage from './pages/admin/AdminConfiguracionPage'
+import MembresiasAdminPage from './pages/admin/MembresiasAdminPage'
+import PagosAdminPage from './pages/admin/PagosAdminPage'
 import CheckoutPage from './pages/socio/CheckoutPage'
 import HistorialPagosPage from './pages/socio/HistorialPagosPage'
 import PagoRetornoPage from './pages/socio/PagoRetornoPage'
@@ -147,6 +149,19 @@ export default function App() {
         <Route path="/socio/pago-retorno" element={<ProtectedRoute roles={['socio']}><PagoRetornoPage /></ProtectedRoute>} />
         <Route path="/socio/pagos" element={<ProtectedRoute roles={['socio']}><HistorialPagosPage /></ProtectedRoute>} />
         <Route path="/socio" element={<ProtectedRoute roles={['administrador', 'socio']}><Navigate to="/socio/credencial" replace /></ProtectedRoute>} />
+
+        {/* Admin membresias */}
+        <Route path="/admin/membresias" element={
+          <ProtectedRoute roles={['administrador', 'recepcionista']}><MembresiasAdminPage /></ProtectedRoute>
+        } />
+
+        {/* Admin / recepcion pagos — alias /recepcion/pagos */}
+        <Route path="/admin/pagos" element={
+          <ProtectedRoute roles={['administrador', 'recepcionista']}><PagosAdminPage /></ProtectedRoute>
+        } />
+        <Route path="/recepcion/pagos" element={
+          <ProtectedRoute roles={['administrador', 'recepcionista']}><PagosAdminPage /></ProtectedRoute>
+        } />
 
         {/* Admin configuracion */}
         <Route path="/configuracion" element={<ProtectedRoute roles={['administrador']}><AdminConfiguracionPage /></ProtectedRoute>} />

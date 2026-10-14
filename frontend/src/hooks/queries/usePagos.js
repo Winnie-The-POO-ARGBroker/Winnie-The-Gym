@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { crearPreferencia, resolverInitPoint, cobrarManual } from '../../services/pagosService'
 import api from '../../services/api'
@@ -6,6 +6,38 @@ import api from '../../services/api'
 // ─── Queries ───────────────────────────────────────────────────────────────────
 
 export const PAGOS_POR_SOCIO_KEY = (socioId) => ['pagos', 'porSocio', socioId]
+export const PAGOS_ADMIN_KEY = (params = {}) => ['pagos', 'admin', params]
+export const PAGOS_TOTALES_KEY = (params = {}) => ['pagos', 'totales', params]
+
+/**
+ * Fetch all pagos for admin/recep page with filters and pagination.
+ */
+export function usePagosAdmin(params = {}, options = {}) {
+  return useQuery({
+    queryKey: PAGOS_ADMIN_KEY(params),
+    queryFn: async () => {
+      const res = await api.get('/payments/pagos/', { params })
+      return res.data
+    },
+    retry: 1,
+    ...options,
+  })
+}
+
+/**
+ * Fetch pagos totales (sum by estado) respecting same filters as the list.
+ */
+export function usePagosTotales(params = {}, options = {}) {
+  return useQuery({
+    queryKey: PAGOS_TOTALES_KEY(params),
+    queryFn: async () => {
+      const res = await api.get('/payments/pagos/totales/', { params })
+      return res.data
+    },
+    retry: 1,
+    ...options,
+  })
+}
 
 /**
  * Fetch pagos for a specific socio (admin/recep use — for SocioDetailModal).
@@ -60,6 +92,25 @@ export function useCobrarManualMutation(options = {}) {
     mutationFn: (payload) => cobrarManual(payload),
     onError: (err) => {
       toast.error(extractErrorMessage(err, 'Error al registrar el cobro'))
+    },
+    ...options,
+  })
+}
+
+/**
+ * Mutation: anular an approved payment by ID.
+ */
+export function useAnularPagoMutation(options = {}) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, motivo }) =>
+      api.post(`/payments/pagos/${id}/anular/`, { motivo }),
+    onSuccess: () => {
+      toast.success('Pago anulado correctamente')
+      queryClient.invalidateQueries({ queryKey: ['pagos'] })
+    },
+    onError: (err) => {
+      toast.error(extractErrorMessage(err, 'Error al anular el pago'))
     },
     ...options,
   })

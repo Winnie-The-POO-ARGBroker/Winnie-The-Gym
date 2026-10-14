@@ -18,10 +18,16 @@ import Badge from '../ui/Badge'
 import Button from '../ui/Button'
 import Skeleton from '../ui/Skeleton'
 import Modal from '../ui/Modal'
-import { useMembresiasPorSocio } from '../../hooks/queries/useMembresias'
+import {
+  useMembresiasPorSocio,
+  useSuspenderMembresiaMutation,
+  useReactivarMembresiaMutation,
+  useCancelarMembresiaMutation,
+  useRenovarMembresiaMutation,
+} from '../../hooks/queries/useMembresias'
 import { usePagosPorSocio } from '../../hooks/queries/usePagos'
 import { pagoEstadoVariant, pagoEstadoLabel } from '../../constants/pagos'
-import { membresiaEstadoVariant } from '../../constants/membresias'
+import { membresiaEstadoVariant, membresiaEstadoLabel } from '../../constants/membresias'
 
 const TABS = [
   { key: 'datos', label: 'Datos' },
@@ -128,8 +134,57 @@ function TabDatos({ socio }) {
 
 // ─── Tab: Membresías ──────────────────────────────────────────────────────────
 
+function MiniAccionModal({ isOpen, onClose, membresia, accion, onConfirm, isPending }) {
+  const [motivo, setMotivo] = useState('')
+  const handleClose = () => { setMotivo(''); onClose() }
+  const handleConfirm = () => { onConfirm({ id: membresia.id, motivo, socioId: membresia.socio }); setMotivo('') }
+  if (!membresia || !accion) return null
+  const labels = { suspender: 'Suspender', reactivar: 'Reactivar', cancelar: 'Cancelar', renovar: 'Renovar' }
+  const requiresMotivo = accion === 'suspender' || accion === 'cancelar'
+  return (
+    <Modal isOpen={isOpen} onClose={handleClose} title={`${labels[accion]} membresía`} maxWidth="max-w-sm">
+      <div className="flex flex-col gap-3">
+        <textarea
+          rows={2}
+          maxLength={300}
+          placeholder={requiresMotivo ? 'Motivo (requerido)' : 'Motivo (opcional)'}
+          value={motivo}
+          onChange={(e) => setMotivo(e.target.value)}
+          className="w-full bg-bg-base border border-subtle rounded-lg text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-1 focus:ring-primary py-2 px-3 text-sm resize-none"
+        />
+        <div className="flex justify-end gap-2">
+          <Button variant="secondary" size="sm" onClick={handleClose} disabled={isPending}>Cancelar</Button>
+          <Button
+            variant="primary"
+            size="sm"
+            loading={isPending}
+            disabled={isPending || (requiresMotivo && !motivo.trim())}
+            onClick={handleConfirm}
+          >
+            Confirmar
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
 function TabMembresias({ socioId }) {
   const { data: membresias = [], isPending: loading } = useMembresiasPorSocio(socioId)
+  const [accionModal, setAccionModal] = useState(null) // { accion, membresia }
+
+  const suspender = useSuspenderMembresiaMutation({ onSuccess: () => setAccionModal(null) })
+  const reactivar = useReactivarMembresiaMutation({ onSuccess: () => setAccionModal(null) })
+  const cancelar = useCancelarMembresiaMutation({ onSuccess: () => setAccionModal(null) })
+  const renovar = useRenovarMembresiaMutation({ onSuccess: () => setAccionModal(null) })
+
+  const mutMap = { suspender, reactivar, cancelar, renovar }
+  const pending = accionModal ? (mutMap[accionModal.accion]?.isPending ?? false) : false
+
+  const handleConfirm = (payload) => {
+    if (!accionModal) return
+    mutMap[accionModal.accion].mutate(payload)
+  }
 
   if (loading) {
     return (
@@ -152,20 +207,64 @@ function TabMembresias({ socioId }) {
   return (
     <div className="py-4 flex flex-col gap-3">
       {membresias.map((m) => (
-        <div key={m.id} className="p-3 rounded-xl bg-bg-raised border border-subtle flex items-center justify-between gap-3">
-          <div className="flex flex-col gap-0.5">
-            <span className="text-sm font-semibold text-text-primary">
-              {m.plan_nombre ?? m.plan ?? '—'}
-            </span>
-            <span className="text-xs text-text-secondary">
-              {formatDate(m.fecha_inicio)} → {formatDate(m.fecha_fin)}
-            </span>
+        <div key={m.id} className="p-3 rounded-xl bg-bg-raised border border-subtle flex flex-col gap-2">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-sm font-semibold text-text-primary">
+                {m.plan_nombre ?? m.plan ?? '—'}
+              </span>
+              <span className="text-xs text-text-secondary">
+                {formatDate(m.fecha_inicio)} → {formatDate(m.fecha_fin)}
+              </span>
+            </div>
+            <Badge variant={estadoMembresiaVariant(m.estado)}>
+              {membresiaEstadoLabel(m.estado)}
+            </Badge>
           </div>
-          <Badge variant={estadoMembresiaVariant(m.estado)}>
-            {m.estado ?? '—'}
-          </Badge>
+          {/* Action buttons */}
+          <div className="flex flex-wrap gap-1.5 pt-1 border-t border-subtle">
+            {m.estado === 'activa' && (
+              <>
+                <button type="button" onClick={() => setAccionModal({ accion: 'suspender', membresia: m })}
+                  className="text-[11px] px-2 py-0.5 rounded-md bg-warning-500/10 text-warning-500 border border-warning-500/20 hover:bg-warning-500/20">
+                  Suspender
+                </button>
+                <button type="button" onClick={() => setAccionModal({ accion: 'cancelar', membresia: m })}
+                  className="text-[11px] px-2 py-0.5 rounded-md bg-error-500/10 text-error-500 border border-error-500/20 hover:bg-error-500/20">
+                  Cancelar
+                </button>
+              </>
+            )}
+            {m.estado === 'suspendida' && (
+              <>
+                <button type="button" onClick={() => setAccionModal({ accion: 'reactivar', membresia: m })}
+                  className="text-[11px] px-2 py-0.5 rounded-md bg-success-500/10 text-success-500 border border-success-500/20 hover:bg-success-500/20">
+                  Reactivar
+                </button>
+                <button type="button" onClick={() => setAccionModal({ accion: 'cancelar', membresia: m })}
+                  className="text-[11px] px-2 py-0.5 rounded-md bg-error-500/10 text-error-500 border border-error-500/20 hover:bg-error-500/20">
+                  Cancelar
+                </button>
+              </>
+            )}
+            {(m.estado === 'vencida' || m.estado === 'pendiente_pago') && (
+              <button type="button" onClick={() => setAccionModal({ accion: 'renovar', membresia: m })}
+                className="text-[11px] px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20">
+                Renovar
+              </button>
+            )}
+          </div>
         </div>
       ))}
+
+      <MiniAccionModal
+        isOpen={!!accionModal}
+        onClose={() => setAccionModal(null)}
+        membresia={accionModal?.membresia}
+        accion={accionModal?.accion}
+        onConfirm={handleConfirm}
+        isPending={pending}
+      />
     </div>
   )
 }
@@ -196,23 +295,32 @@ function TabPagos({ socioId }) {
   return (
     <div className="py-4 flex flex-col gap-3">
       {pagos.map((p) => (
-        <div key={p.id} className="p-3 rounded-xl bg-bg-raised border border-subtle flex items-center justify-between gap-3">
-          <div className="flex flex-col gap-0.5">
-            <span className="text-sm font-semibold text-text-primary">
-              {p.plan_nombre ?? p.plan ?? '—'}
-            </span>
-            <span className="text-xs text-text-secondary font-mono">
-              {formatDate(p.created_at)} · {p.metodo ?? ''}
-            </span>
+        <div key={p.id} className="p-3 rounded-xl bg-bg-raised border border-subtle flex flex-col gap-1.5">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-sm font-semibold text-text-primary">
+                {p.plan_nombre ?? p.plan ?? '—'}
+              </span>
+              <span className="text-xs text-text-secondary font-mono">
+                {formatDate(p.created_at)} · {p.medio_manual ?? p.metodo ?? '—'}
+              </span>
+            </div>
+            <div className="flex flex-col items-end gap-1">
+              <span className="text-sm font-bold text-text-primary">
+                {p.monto != null
+                  ? new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(p.monto)
+                  : '—'}
+              </span>
+              <Badge variant={estadoPagoVariant(p.estado)}>{pagoEstadoLabel(p.estado)}</Badge>
+            </div>
           </div>
-          <div className="flex flex-col items-end gap-1">
-            <span className="text-sm font-bold text-text-primary">
-              {p.monto != null
-                ? new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(p.monto)
-                : '—'}
-            </span>
-            <Badge variant={estadoPagoVariant(p.estado)}>{pagoEstadoLabel(p.estado)}</Badge>
-          </div>
+          {/* Audit fields */}
+          {(p.cobrado_por_nombre || p.observacion) && (
+            <div className="text-[11px] text-text-tertiary flex flex-col gap-0.5 pt-1 border-t border-subtle">
+              {p.cobrado_por_nombre && <span>Cobrado por: {p.cobrado_por_nombre}</span>}
+              {p.observacion && <span className="italic">{p.observacion}</span>}
+            </div>
+          )}
         </div>
       ))}
     </div>

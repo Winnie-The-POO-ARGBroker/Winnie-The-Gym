@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
 
@@ -16,6 +17,13 @@ class Pago(models.Model):
     class Metodo(models.TextChoices):
         MERCADO_PAGO = 'mercado_pago', 'MercadoPago'
         MANUAL = 'manual', 'Cobro Manual'
+
+    class MedioManual(models.TextChoices):
+        EFECTIVO = 'efectivo', 'Efectivo'
+        TRANSFERENCIA = 'transferencia', 'Transferencia'
+        DEBITO = 'debito', 'Débito'
+        CREDITO = 'credito', 'Crédito'
+        OTRO = 'otro', 'Otro'
 
     # ADR-7: string form for cross-app FKs
     socio = models.ForeignKey(
@@ -47,6 +55,37 @@ class Pago(models.Model):
     raw_webhook = models.JSONField(default=dict, blank=True)
 
     email_enviado = models.BooleanField(default=False)
+
+    # #191 — Manual charge audit fields
+    cobrado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='pagos_cobrados',
+    )
+    medio_manual = models.CharField(
+        max_length=20,
+        choices=MedioManual.choices,
+        null=True,
+        blank=True,
+    )
+    observacion = models.TextField(blank=True, default='')
+
+    # #191 — Cancellation fields
+    anulado = models.BooleanField(default=False)
+    anulado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='pagos_anulados',
+    )
+    anulado_en = models.DateTimeField(null=True, blank=True)
+    motivo_anulacion = models.TextField(blank=True, default='')
+
+    # #191 — Idempotency for manual charges
+    idempotency_key = models.CharField(max_length=128, null=True, blank=True, unique=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

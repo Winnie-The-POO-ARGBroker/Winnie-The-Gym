@@ -48,8 +48,17 @@ const COLUMNS = [
     key: 'metodo',
     label: 'Método',
     mobile: 'Método',
+    render: (row) => {
+      const medio = row.medio_manual ?? row.metodo
+      return <span className="capitalize">{medio ?? '—'}</span>
+    },
+  },
+  {
+    key: 'cobrado_por',
+    label: 'Cobrado por',
+    mobile: 'Cobrado por',
     render: (row) => (
-      <span className="capitalize">{row.metodo ?? '—'}</span>
+      <span className="text-xs text-text-secondary">{row.cobrado_por_nombre ?? '—'}</span>
     ),
   },
   {
