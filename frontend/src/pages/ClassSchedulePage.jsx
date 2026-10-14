@@ -29,9 +29,13 @@ export default function ClassSchedulePage() {
   const [weekOffset, setWeekOffset] = useState(0)
   const [cancelarModalOpen, setCancelarModalOpen] = useState(false)
   const [claseParaCancelar, setClaseParaCancelar] = useState(null)
+  const [showCanceladas, setShowCanceladas] = useState(false)
 
-  const { data: classes = [], isLoading } = useClasesList()
+  const { data: allClasses = [], isLoading } = useClasesList()
   const { cancelar: cancelarClase } = useClasesMutations()
+
+  // Filter canceladas unless toggle is on
+  const classes = showCanceladas ? allClasses : allClasses.filter((c) => c.estado !== 'cancelada')
 
   const {
     attendees,
@@ -55,6 +59,7 @@ export default function ClassSchedulePage() {
       { key: 'Jueves', diaNum: 4, label: 'Jueves', short: 'Jue' },
       { key: 'Viernes', diaNum: 5, label: 'Viernes', short: 'Vie' },
       { key: 'Sábado', diaNum: 6, label: 'Sábado', short: 'Sáb' },
+      { key: 'Domingo', diaNum: 7, label: 'Domingo', short: 'Dom' },
     ].map((d, index) => {
       const dDate = new Date(monday)
       dDate.setDate(monday.getDate() + index)
@@ -64,15 +69,18 @@ export default function ClassSchedulePage() {
       return { ...d, fecha: fechaStr }
     })
 
-    // Sábado de la semana seleccionada
-    const saturday = new Date(monday)
-    saturday.setDate(monday.getDate() + 5)
+    // Domingo de la semana seleccionada
+    const sunday = new Date(monday)
+    sunday.setDate(monday.getDate() + 6)
     const startDay = monday.getDate()
-    const endDay = saturday.getDate()
-    const monthName = saturday.toLocaleDateString('es-ES', { month: 'long' })
+    const endDay = sunday.getDate()
+    const monthName = sunday.toLocaleDateString('es-ES', { month: 'long' })
     const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1)
-    
-    const calculatedWeekLabel = `Semana del ${startDay} al ${endDay} de ${capitalizedMonth}`
+
+    // If weekOffset === 0, show "Plantilla semanal" since no real dates
+    const calculatedWeekLabel = weekOffset === 0
+      ? `Plantilla semanal (${startDay}–${endDay} ${capitalizedMonth})`
+      : `Semana del ${startDay} al ${endDay} de ${capitalizedMonth}`
     return { diasSemana: calculatedDiasSemana, weekLabel: calculatedWeekLabel }
   }, [weekOffset])
 
@@ -125,20 +133,39 @@ export default function ClassSchedulePage() {
                   className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-text-secondary hover:text-text-primary hover:bg-bg-raised transition-colors"
                 >
                   <ChevronLeft className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Sem ant.</span>
+                  <span className="hidden sm:inline">Ant.</span>
                 </button>
-                <span className="px-2 text-xs font-bold text-text-primary">
-                  {weekOffset === 0 ? 'Hoy' : weekOffset > 0 ? `+${weekOffset}` : weekOffset}
+                {weekOffset !== 0 && (
+                  <button
+                    onClick={() => setWeekOffset(0)}
+                    className="px-2 py-1 rounded-lg text-xs font-semibold text-orange-500 hover:bg-orange-500/10 transition-colors"
+                  >
+                    Hoy
+                  </button>
+                )}
+                <span className="px-2 text-xs font-bold text-text-primary hidden sm:inline">
+                  {weekOffset === 0 ? 'Esta semana' : weekOffset > 0 ? `+${weekOffset} sem` : `${weekOffset} sem`}
                 </span>
                 <button
                   onClick={() => setWeekOffset((prev) => prev + 1)}
                   className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-text-secondary hover:text-text-primary hover:bg-bg-raised transition-colors"
                 >
-                  <span className="hidden sm:inline">Sem sig.</span>
+                  <span className="hidden sm:inline">Sig.</span>
                   <ChevronRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             )}
+            <button
+              onClick={() => setShowCanceladas((v) => !v)}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                showCanceladas
+                  ? 'bg-error-500/10 border-error-500/40 text-error-500'
+                  : 'bg-bg-surface border-subtle text-text-secondary hover:text-text-primary hover:bg-bg-raised'
+              }`}
+            >
+              {showCanceladas ? 'Ocultar canceladas' : 'Ver canceladas'}
+            </button>
+
             <div className="flex items-center p-1 rounded-xl bg-bg-surface border border-subtle">
               <button
                 onClick={() => setActiveTab('calendario')}
@@ -252,6 +279,8 @@ export default function ClassSchedulePage() {
           clase={claseParaCancelar}
           onConfirm={handleConfirmCancelar}
           loading={cancelarClase.isPending}
+          confirmados={attendees.filter((a) => a.estado !== 'en_espera')}
+          enEspera={attendees.filter((a) => a.estado === 'en_espera')}
         />
       </div>
     </AppLayout>

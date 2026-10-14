@@ -7,7 +7,10 @@ import {
   CheckCircle2,
   Edit2,
   Trash2,
+  Copy,
+  XCircle,
 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { DISCIPLINAS_CONFIG } from '../../constants/disciplinas'
 import Button from '../ui/Button'
 
@@ -18,6 +21,8 @@ const CATEGORIAS_FILTRO = [
   { key: 'crossfit', label: 'Crossfit' },
   { key: 'yoga', label: 'Yoga' },
   { key: 'pilates', label: 'Pilates' },
+  { key: 'boxeo', label: 'Boxeo' },
+  { key: 'hiit', label: 'HIIT' },
 ]
 
 export default function ClassListDetailView({
@@ -28,6 +33,7 @@ export default function ClassListDetailView({
   onEditClass,
   onDeleteClass,
 }) {
+  const navigate = useNavigate()
   const [activeCategory, setActiveCategory] = useState('todas')
 
   const filteredClasses = classes.filter((cls) => {
@@ -90,7 +96,7 @@ export default function ClassListDetailView({
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span
                         style={{
                           backgroundColor: cfg.bgLight,
@@ -104,10 +110,16 @@ export default function ClassListDetailView({
                       <span className="text-xs font-medium text-text-secondary">
                         {cls.dia} · {cls.hora}
                       </span>
+                      {cls.estado === 'cancelada' && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-error-500/10 text-error-500 border border-error-500/30 flex items-center gap-0.5">
+                          <XCircle className="w-2.5 h-2.5" />
+                          Cancelada
+                        </span>
+                      )}
                     </div>
 
                     <span
-                      className={`px-2 py-0.5 rounded-lg text-xs font-bold ${
+                      className={`px-2 py-0.5 rounded-lg text-xs font-bold flex-shrink-0 ${
                         isFull
                           ? 'bg-error-500/10 text-error-500 border border-error-500/30'
                           : 'bg-bg-raised text-text-primary border border-subtle'
@@ -149,7 +161,7 @@ export default function ClassListDetailView({
             {/* Header */}
             <div>
               <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span
                     style={{
                       backgroundColor: currentCfg.bgLight,
@@ -160,10 +172,17 @@ export default function ClassListDetailView({
                   >
                     {currentCfg.label}
                   </span>
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-success-500/10 text-success-500 border border-success-500/20 flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" />
-                    Activa
-                  </span>
+                  {current.estado === 'cancelada' ? (
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-error-500/10 text-error-500 border border-error-500/20 flex items-center gap-1">
+                      <XCircle className="w-3 h-3" />
+                      Cancelada
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-success-500/10 text-success-500 border border-success-500/20 flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Activa
+                    </span>
+                  )}
                 </div>
 
                 <span className="text-xs font-semibold text-text-secondary bg-bg-raised px-3 py-1 rounded-xl border border-subtle">
@@ -177,6 +196,11 @@ export default function ClassListDetailView({
               <p className="text-xs md:text-sm text-text-secondary mt-1.5">
                 {current.descripcion || 'Entrenamiento grupal de alto rendimiento y acondicionamiento.'}
               </p>
+              {current.estado === 'cancelada' && current.motivo_cancelacion && (
+                <div className="mt-2 p-2 rounded-lg bg-error-500/5 border border-error-500/20 text-xs text-error-500">
+                  <strong>Motivo:</strong> {current.motivo_cancelacion}
+                </div>
+              )}
             </div>
 
             {/* Metadata Grid */}
@@ -313,9 +337,18 @@ export default function ClassListDetailView({
               </button>
 
               <button
+                onClick={() => navigate(`/admin/clases/crear?clone=${current.id}`)}
+                className="flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl bg-bg-raised hover:bg-bg-surface border border-subtle text-text-primary text-xs font-semibold transition-colors"
+                title="Duplicar clase"
+              >
+                <Copy className="w-3.5 h-3.5 text-text-secondary" />
+                Duplicar
+              </button>
+
+              <button
                 onClick={() => onDeleteClass(current)}
                 className="flex items-center justify-center p-2.5 rounded-xl bg-bg-raised hover:bg-error-500/10 text-text-tertiary hover:text-error-500 border border-subtle transition-colors"
-                title="Eliminar clase"
+                title="Cancelar clase"
               >
                 <Trash2 className="w-4 h-4" />
               </button>

@@ -29,4 +29,16 @@ export const DISCIPLINAS_CONFIG = {
     bgLight: 'var(--color-disciplina-yoga-bg)',
     border: 'var(--color-disciplina-yoga)',
   },
+  boxeo: {
+    label: 'Boxeo',
+    color: 'var(--color-disciplina-boxeo)',
+    bgLight: 'var(--color-disciplina-boxeo-bg)',
+    border: 'var(--color-disciplina-boxeo)',
+  },
+  hiit: {
+    label: 'HIIT',
+    color: 'var(--color-disciplina-hiit)',
+    bgLight: 'var(--color-disciplina-hiit-bg)',
+    border: 'var(--color-disciplina-hiit)',
+  },
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Users, Clock, MapPin, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Users, Clock, MapPin, ChevronLeft, ChevronRight, XCircle } from 'lucide-react'
 import { DISCIPLINAS_CONFIG } from '../../constants/disciplinas'
 
 // Dates are passed in as diasSemana prop
@@ -238,11 +238,23 @@ export default function ClassCalendarView({
   )
 }
 
+/** Normalize "8:00" or "08:00:00" to "HH:MM" */
+function normalizeHora(hora) {
+  if (!hora) return '00:00'
+  const parts = hora.split(':')
+  const hh = String(parseInt(parts[0], 10)).padStart(2, '0')
+  const mm = String(parseInt(parts[1] ?? '0', 10)).padStart(2, '0')
+  return `${hh}:${mm}`
+}
+
 function WeekGrid({ diasSemana, onSelectClass, onOpenAttendees, getClassesForSlot }) {
   return (
     <div className="w-full bg-bg-surface border border-subtle rounded-2xl overflow-hidden shadow-sm transition-all animate-fadeIn">
       {/* Calendar Grid Header */}
-      <div className="grid grid-cols-7 border-b border-subtle bg-bg-raised/40 divide-x divide-subtle">
+      <div
+        className="border-b border-subtle bg-bg-raised/40 divide-x divide-subtle"
+        style={{ display: 'grid', gridTemplateColumns: `80px repeat(${diasSemana.length}, 1fr)` }}
+      >
         <div className="p-3.5 text-center text-xs font-bold text-text-tertiary uppercase tracking-wider flex items-center justify-center">
           <Clock className="w-3.5 h-3.5 mr-1" />
           HORA
@@ -260,7 +272,11 @@ function WeekGrid({ diasSemana, onSelectClass, onOpenAttendees, getClassesForSlo
       {/* Calendar Grid Body */}
       <div className="divide-y divide-subtle">
         {HORAS_GRILLA.map((hora) => (
-          <div key={hora} className="grid grid-cols-7 divide-x divide-subtle min-h-[110px]">
+          <div
+            key={hora}
+            className="divide-x divide-subtle min-h-[110px]"
+            style={{ display: 'grid', gridTemplateColumns: `80px repeat(${diasSemana.length}, 1fr)` }}
+          >
             {/* Time label */}
             <div className="p-3 text-center flex flex-col justify-start items-center bg-bg-raised/20 text-xs font-bold text-text-secondary">
               <span>{hora}</span>
@@ -274,11 +290,13 @@ function WeekGrid({ diasSemana, onSelectClass, onOpenAttendees, getClassesForSlo
               return (
                 <div
                   key={`${dia.key}-${hora}`}
-                  className="p-1.5 flex flex-col gap-1.5 transition-colors hover:bg-bg-raised/10"
+                  className="relative p-1.5 flex flex-col gap-1.5 transition-colors hover:bg-bg-raised/10"
                 >
                   {slotClasses.map((cls) => {
                     const cfg = DISCIPLINAS_CONFIG[cls.categoria] || DISCIPLINAS_CONFIG.funcional
                     const isFull = cls.cupos_reservados >= cls.cupo_maximo
+                    const isCancelada = cls.estado === 'cancelada'
+                    const horaDisplay = normalizeHora(cls.hora)
 
                     return (
                       <div
@@ -288,10 +306,11 @@ function WeekGrid({ diasSemana, onSelectClass, onOpenAttendees, getClassesForSlo
                           borderLeftWidth: '4px',
                           borderLeftColor: cfg.border,
                           backgroundColor: 'var(--color-bg-raised)',
+                          opacity: isCancelada ? 0.6 : 1,
                         }}
                         className="group relative rounded-xl p-2.5 cursor-pointer border border-subtle hover:border-orange-500/50 shadow-sm transition-all hover:scale-[1.01]"
                       >
-                        {/* Top: Tag + Full badge */}
+                        {/* Top: Tag + Full/Cancelada badge */}
                         <div className="flex items-center justify-between gap-1 mb-1">
                           <span
                             style={{ color: cfg.color }}
@@ -299,17 +318,22 @@ function WeekGrid({ diasSemana, onSelectClass, onOpenAttendees, getClassesForSlo
                           >
                             {cls.nombre}
                           </span>
-                          {isFull && (
+                          {isCancelada ? (
+                            <span className="px-1.5 rounded text-[9px] font-extrabold bg-error-500/20 text-error-500 border border-error-500/30 flex items-center gap-0.5">
+                              <XCircle className="w-2.5 h-2.5" />
+                              CANCEL.
+                            </span>
+                          ) : isFull ? (
                             <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-error-500/20 text-error-500 border border-error-500/30">
                               LLENO
                             </span>
-                          )}
+                          ) : null}
                         </div>
 
                         {/* Room & Time */}
                         <p className="text-[11px] text-text-secondary flex items-center gap-1 font-medium">
                           <MapPin className="w-2.5 h-2.5 text-text-tertiary" />
-                          {cls.sala} · {cls.hora}
+                          {cls.sala} · {horaDisplay}
                         </p>
 
                         {/* Attendees Count & Action */}
@@ -318,15 +342,17 @@ function WeekGrid({ diasSemana, onSelectClass, onOpenAttendees, getClassesForSlo
                             <Users className="w-3 h-3 text-text-tertiary" />
                             {cls.cupos_reservados}/{cls.cupo_maximo}
                           </span>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              onOpenAttendees(cls)
-                            }}
-                            className="px-2 py-0.5 rounded text-[10px] font-bold text-orange-500 hover:bg-orange-500/10 transition-colors"
-                          >
-                            Lista
-                          </button>
+                          {!isCancelada && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                onOpenAttendees(cls)
+                              }}
+                              className="px-2 py-0.5 rounded text-[10px] font-bold text-orange-500 hover:bg-orange-500/10 transition-colors"
+                            >
+                              Lista
+                            </button>
+                          )}
                         </div>
                       </div>
                     )

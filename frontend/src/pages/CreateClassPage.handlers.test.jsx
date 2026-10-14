@@ -20,6 +20,7 @@ const mockUpdateMutate = vi.fn()
 vi.mock('../hooks/queries/useClases', () => ({
   useClasesMutations: vi.fn(),
   useClaseDetail: vi.fn(),
+  useClasesList: vi.fn(),
 }))
 
 vi.mock('react-router-dom', async (importOriginal) => {
@@ -53,7 +54,7 @@ vi.mock('../services/api', () => ({
 
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn(), info: vi.fn() } }))
 
-import { useClasesMutations, useClaseDetail } from '../hooks/queries/useClases'
+import { useClasesMutations, useClaseDetail, useClasesList } from '../hooks/queries/useClases'
 import { toast } from 'sonner'
 import api from '../services/api'
 
@@ -62,8 +63,10 @@ function setupMocks() {
     create: { mutate: mockCreateMutate, isPending: false },
     update: { mutate: mockUpdateMutate, isPending: false },
     cancelar: { mutate: vi.fn(), isPending: false },
+    promoverEspera: { mutate: vi.fn(), isPending: false },
   })
   useClaseDetail.mockReturnValue({ data: null, isLoading: false })
+  useClasesList.mockReturnValue({ data: [], isFetching: false })
 }
 
 describe('CreateClassPage — handlers', () => {
@@ -135,8 +138,11 @@ describe('CreateClassPage — handlers', () => {
   it('calls createClase.mutate when form is submitted with valid nombre', async () => {
     renderWithProviders(<CreateClassPage />)
     await waitFor(() => {
-      expect(screen.getByDisplayValue('Funcional Intensivo')).toBeInTheDocument()
+      expect(screen.getByPlaceholderText(/Funcional Intensivo/i)).toBeInTheDocument()
     })
+    // Fill nombre so validation passes
+    const nombreInput = screen.getByPlaceholderText(/Funcional Intensivo/i)
+    fireEvent.change(nombreInput, { target: { value: 'Clase Test' } })
     // Click Publicar clase
     const publishBtns = screen.getAllByText('Publicar clase')
     fireEvent.click(publishBtns[0])
@@ -149,10 +155,9 @@ describe('CreateClassPage — handlers', () => {
   it('shows error toast when nombre is empty on submit', async () => {
     renderWithProviders(<CreateClassPage />)
     await waitFor(() => {
-      expect(screen.getByDisplayValue('Funcional Intensivo')).toBeInTheDocument()
+      expect(screen.getAllByText('Publicar clase').length).toBeGreaterThan(0)
     })
-    const nombreInput = screen.getByDisplayValue('Funcional Intensivo')
-    fireEvent.change(nombreInput, { target: { value: '' } })
+    // nombre starts empty — click publish directly
     const publishBtns = screen.getAllByText('Publicar clase')
     fireEvent.click(publishBtns[0])
     await waitFor(() => {
