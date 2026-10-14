@@ -1,3 +1,4 @@
+import datetime as dt
 from datetime import datetime, timedelta
 
 from django.db import transaction
@@ -6,7 +7,7 @@ from rest_framework.exceptions import ValidationError
 
 from apps.common.tasks import enqueue_email
 
-from .models import Clase, InscripcionClase
+from .models import Clase, InscripcionClase, SesionClase
 
 
 # ---------------------------------------------------------------------------
@@ -321,3 +322,160 @@ def eliminar_inscripcion(inscripcion):
 
         promovido = promover_de_espera(clase)
         return promovido is not None
+
+
+# ---------------------------------------------------------------------------
+# #178 — SesionClase services
+# ---------------------------------------------------------------------------
+
+def generar_sesiones(clase, desde, hasta):
+    """Create SesionClase rows for each matching weekday between desde and hasta.
+
+    Uses select_for_update + atomic to prevent duplicate rows under concurrency.
+    Already-existing rows are skipped (idempotent).
+
+    Args:
+        clase: Clase instance.
+        desde: date — start of the window (inclusive).
+        hasta: date — end of the window (inclusive).
+
+    Returns:
+        int — number of new SesionClase rows created.
+    """
+    dias = clase.dias_recurrencia or []
+    if dias:
+        target_weekdays = {DIA_TO_WEEKDAY[d] for d in dias if d in DIA_TO_WEEKDAY}
+    else:
+        target_weekdays = {DIA_TO_WEEKDAY[clase.dia]}
+
+    # Collect all candidate dates in the window that match the target weekdays
+    candidate_dates = []
+    current = desde
+    while current <= hasta:
+        if current.weekday() in target_weekdays:
+            candidate_dates.append(current)
+        current += dt.timedelta(days=1)
+
+    created_count = 0
+
+    with transaction.atomic():
+        # Lock the Clase row to prevent concurrent duplicates
+        Clase.objects.select_for_update().get(pk=clase.pk)
+
+        for fecha in candidate_dates:
+            _, created = SesionClase.objects.get_or_create(
+                clase=clase,
+                fecha=fecha,
+                defaults={'estado': SesionClase.Estado.ACTIVA},
+            )
+            if created:
+                created_count += 1
+
+    return created_count
+
+
+def cancelar_sesion(sesion, motivo, actor=None):
+    """Cancel a single SesionClase occurrence without touching the series.
+
+    Raises:
+        ValidationError: if already cancelled or motivo < 10 chars.
+
+    Returns:
+        The updated SesionClase instance.
+    """
+    if sesion.estado == SesionClase.Estado.CANCELADA:
+        raise ValidationError({'detail': 'La sesión ya está cancelada.'})
+    if len((motivo or '').strip()) < 10:
+        raise ValidationError({'motivo': 'El motivo debe tener al menos 10 caracteres.'})
+
+    sesion.estado = SesionClase.Estado.CANCELADA
+    sesion.motivo_cancelacion = motivo.strip()
+    sesion.cancelada_por = actor
+    sesion.fecha_cancelacion = timezone.now()
+    sesion.save(update_fields=[
+        'estado', 'motivo_cancelacion', 'cancelada_por', 'fecha_cancelacion',
+    ])
+    return sesion
+
+
+def editar_serie(clase, cambios, alcance, fecha_pivote=None):
+    """Edit a recurring class series with configurable scope.
+
+    Args:
+        clase: Clase instance — the template class being edited.
+        cambios: dict of field → new value to apply.
+        alcance: one of 'solo_esta' | 'esta_y_siguientes' | 'toda'.
+        fecha_pivote: date — required for 'solo_esta' and 'esta_y_siguientes'.
+
+    Alcance semantics:
+        'solo_esta': apply cambios as override fields on the SesionClase
+            for fecha_pivote (creates it if not present).
+        'esta_y_siguientes': create a new Clase clone with cambios applied,
+            re-assign future SesionClase rows (>= fecha_pivote) to the new clone.
+        'toda': apply cambios directly to the Clase (legacy full-series edit).
+
+    Returns:
+        dict with keys 'alcance', 'clase_id', and optionally 'nueva_clase_id'.
+
+    Raises:
+        ValidationError: on invalid alcance or missing fecha_pivote.
+    """
+    VALID_ALCANCES = {'solo_esta', 'esta_y_siguientes', 'toda'}
+    if alcance not in VALID_ALCANCES:
+        raise ValidationError({'alcance': f'Valor inválido. Opciones: {", ".join(VALID_ALCANCES)}.'})
+
+    if alcance in ('solo_esta', 'esta_y_siguientes') and fecha_pivote is None:
+        raise ValidationError({'fecha_pivote': 'Se requiere fecha_pivote para este alcance.'})
+
+    # Field → SesionClase override attribute mapping
+    OVERRIDE_MAP = {
+        'hora': 'hora_override',
+        'cupo_maximo': 'cupo_override',
+        'instructor_fk': 'instructor_override_fk',
+    }
+
+    with transaction.atomic():
+        if alcance == 'solo_esta':
+            sesion, _ = SesionClase.objects.get_or_create(
+                clase=clase,
+                fecha=fecha_pivote,
+                defaults={'estado': SesionClase.Estado.ACTIVA},
+            )
+            update_fields = []
+            for campo, valor in cambios.items():
+                override_attr = OVERRIDE_MAP.get(campo)
+                if override_attr:
+                    setattr(sesion, override_attr, valor)
+                    update_fields.append(override_attr)
+            if update_fields:
+                update_fields.append('updated_at')
+                sesion.save(update_fields=update_fields)
+            return {'alcance': alcance, 'clase_id': clase.pk}
+
+        elif alcance == 'esta_y_siguientes':
+            # Clone the Clase applying the changes
+            nueva_clase = Clase.objects.get(pk=clase.pk)
+            nueva_clase.pk = None  # force INSERT
+            nueva_clase.id = None
+            for campo, valor in cambios.items():
+                setattr(nueva_clase, campo, valor)
+            nueva_clase.save()
+
+            # Re-assign future sesiones to the new clase
+            SesionClase.objects.filter(
+                clase=clase,
+                fecha__gte=fecha_pivote,
+                estado=SesionClase.Estado.ACTIVA,
+            ).update(clase=nueva_clase)
+
+            return {
+                'alcance': alcance,
+                'clase_id': clase.pk,
+                'nueva_clase_id': nueva_clase.pk,
+            }
+
+        else:  # 'toda'
+            for campo, valor in cambios.items():
+                setattr(clase, campo, valor)
+            clase.save()
+            return {'alcance': alcance, 'clase_id': clase.pk}

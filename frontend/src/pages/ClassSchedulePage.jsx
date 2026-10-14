@@ -15,10 +15,20 @@ import ClassCalendarView from '../components/classes/ClassCalendarView'
 import ClassListDetailView from '../components/classes/ClassListDetailView'
 import ClassAttendeesModal from '../components/classes/ClassAttendeesModal'
 import CancelarClaseModal from '../components/classes/CancelarClaseModal'
+import CancelarSesionModal from '../components/classes/CancelarSesionModal'
 import EmptyState from '../components/ui/EmptyState'
 import Button from '../components/ui/Button'
 import { useClasesList, useClasesMutations } from '../hooks/queries/useClases'
 import { useClassAttendees } from '../hooks/queries/useClassAttendees'
+import { useSesionesByRange, useSesionesMutations } from '../hooks/queries/useSesiones'
+
+/** Format a Date to YYYY-MM-DD in local time (avoids UTC shift). */
+function toDateStr(date) {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
 
 export default function ClassSchedulePage() {
   const navigate = useNavigate()
@@ -29,28 +39,16 @@ export default function ClassSchedulePage() {
   const [weekOffset, setWeekOffset] = useState(0)
   const [cancelarModalOpen, setCancelarModalOpen] = useState(false)
   const [claseParaCancelar, setClaseParaCancelar] = useState(null)
+  const [cancelarSesionModalOpen, setCancelarSesionModalOpen] = useState(false)
+  const [sesionParaCancelar, setSesionParaCancelar] = useState(null)
   const [showCanceladas, setShowCanceladas] = useState(false)
 
-  const { data: allClasses = [], isLoading } = useClasesList()
-  const { cancelar: cancelarClase } = useClasesMutations()
-
-  // Filter canceladas unless toggle is on
-  const classes = showCanceladas ? allClasses : allClasses.filter((c) => c.estado !== 'cancelada')
-
-  const {
-    attendees,
-    toggleStatus,
-    saveAttendees,
-  } = useClassAttendees(classForModal?.id)
-
-  const { diasSemana, weekLabel } = useMemo(() => {
-    // Generar fechas de la semana actual + offset
+  // ── Week date range derived from weekOffset ────────────────────────────────
+  const { diasSemana, weekLabel, fechaDesde, fechaHasta } = useMemo(() => {
     const today = new Date()
-    const dayOfWeek = today.getDay() === 0 ? 7 : today.getDay() // Lunes = 1, Domingo = 7
-    
-    // Lunes de la semana seleccionada
+    const dayOfWeek = today.getDay() === 0 ? 7 : today.getDay() // Mon=1, Sun=7
     const monday = new Date(today)
-    monday.setDate(today.getDate() - dayOfWeek + 1 + (weekOffset * 7))
+    monday.setDate(today.getDate() - dayOfWeek + 1 + weekOffset * 7)
 
     const calculatedDiasSemana = [
       { key: 'Lunes', diaNum: 1, label: 'Lunes', short: 'Lun' },
@@ -66,23 +64,51 @@ export default function ClassSchedulePage() {
       const options = { day: '2-digit', month: 'short' }
       let fechaStr = dDate.toLocaleDateString('es-ES', options).replace('.', '')
       fechaStr = fechaStr.charAt(0).toUpperCase() + fechaStr.slice(1)
-      return { ...d, fecha: fechaStr }
+      return { ...d, fecha: fechaStr, isoDate: toDateStr(dDate) }
     })
 
-    // Domingo de la semana seleccionada
     const sunday = new Date(monday)
     sunday.setDate(monday.getDate() + 6)
     const startDay = monday.getDate()
     const endDay = sunday.getDate()
     const monthName = sunday.toLocaleDateString('es-ES', { month: 'long' })
     const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1)
+    const calculatedWeekLabel = `Semana del ${startDay} al ${endDay} de ${capitalizedMonth}`
 
-    // If weekOffset === 0, show "Plantilla semanal" since no real dates
-    const calculatedWeekLabel = weekOffset === 0
-      ? `Plantilla semanal (${startDay}–${endDay} ${capitalizedMonth})`
-      : `Semana del ${startDay} al ${endDay} de ${capitalizedMonth}`
-    return { diasSemana: calculatedDiasSemana, weekLabel: calculatedWeekLabel }
+    return {
+      diasSemana: calculatedDiasSemana,
+      weekLabel: calculatedWeekLabel,
+      fechaDesde: toDateStr(monday),
+      fechaHasta: toDateStr(sunday),
+    }
   }, [weekOffset])
+
+  // ── Sesiones by real date range (primary data source for calendar) ───────────
+  const { data: sesiones = [], isLoading: isLoadingSesiones } = useSesionesByRange(
+    { fechaDesde, fechaHasta },
+    { enabled: activeTab === 'calendario' }
+  )
+  const { cancelarSesion } = useSesionesMutations()
+
+  // Fallback: still fetch all clases for the lista tab and other consumers
+  const { data: allClasses = [], isLoading: isLoadingClases } = useClasesList()
+  const { cancelar: cancelarClase } = useClasesMutations()
+
+  const isLoading = activeTab === 'calendario' ? isLoadingSesiones : isLoadingClases
+
+  // Filter canceladas unless toggle is on
+  const classes = showCanceladas ? allClasses : allClasses.filter((c) => c.estado !== 'cancelada')
+
+  // Sesiones filtered for calendar (no canceladas unless toggle)
+  const sesionesFiltered = showCanceladas
+    ? sesiones
+    : sesiones.filter((s) => s.estado !== 'cancelada')
+
+  const {
+    attendees,
+    toggleStatus,
+    saveAttendees,
+  } = useClassAttendees(classForModal?.id)
 
   const handleOpenAttendees = (cls) => {
     setClassForModal(cls)
@@ -101,6 +127,23 @@ export default function ClassSchedulePage() {
     // Open soft-cancel modal instead of hard-deleting
     setClaseParaCancelar(cls)
     setCancelarModalOpen(true)
+  }
+
+  const handleCancelarSesion = (sesion) => {
+    setSesionParaCancelar(sesion)
+    setCancelarSesionModalOpen(true)
+  }
+
+  const handleConfirmCancelarSesion = ({ scope, motivo }) => {
+    cancelarSesion.mutate(
+      { id: sesionParaCancelar.id, motivo, scope },
+      {
+        onSuccess: () => {
+          setCancelarSesionModalOpen(false)
+          setSesionParaCancelar(null)
+        },
+      }
+    )
   }
 
   const handleConfirmCancelar = (motivo) => {
@@ -123,7 +166,11 @@ export default function ClassSchedulePage() {
     <AppLayout>
       <TopBar
         title={activeTab === 'calendario' ? 'Calendario de clases' : 'Gestión de Clases'}
-        subtitle={`${classes.length} clases programadas · ${weekLabel}`}
+        subtitle={
+          activeTab === 'calendario'
+            ? `${sesionesFiltered.length} sesiones · ${weekLabel}`
+            : `${classes.length} clases programadas · ${weekLabel}`
+        }
         rightContent={
           <>
             {activeTab === 'calendario' && (
@@ -202,7 +249,7 @@ export default function ClassSchedulePage() {
         }
       />
       <div className="w-full flex flex-col p-6 md:p-10 gap-7 max-w-[1840px] mx-auto transition-all animate-fadeIn">
-        {/* TAB 1: PANTALLA 1 FIGMA (Calendario Semanal de Clases) */}
+        {/* TAB 1: Calendario — consume sesiones endpoint with real date range */}
         {activeTab === 'calendario' && (
           isLoading ? (
             <EmptyState
@@ -210,21 +257,22 @@ export default function ClassSchedulePage() {
               title="Cargando calendario..."
               message="Por favor esperá unos segundos."
             />
-          ) : classes.length === 0 ? (
+          ) : sesionesFiltered.length === 0 ? (
             <EmptyState
               icon={Calendar}
-              title="No hay clases programadas"
-              message="Aún no se cargaron clases al calendario."
+              title="No hay sesiones programadas"
+              message="No hay sesiones para esta semana. Avanzá a otra semana o creá una nueva clase."
             />
           ) : (
             <ClassCalendarView
-              classes={classes}
+              classes={sesionesFiltered}
               diasSemana={diasSemana}
               onSelectClass={(cls) => {
                 setSelectedClass(cls)
                 setActiveTab('lista')
               }}
               onOpenAttendees={handleOpenAttendees}
+              onCancelarSesion={handleCancelarSesion}
             />
           )
         )}
@@ -269,7 +317,7 @@ export default function ClassSchedulePage() {
           }}
         />
 
-        {/* Modal de Cancelar Clase */}
+        {/* Modal de Cancelar Clase (toda la serie — desde lista) */}
         <CancelarClaseModal
           isOpen={cancelarModalOpen}
           onClose={() => {
@@ -281,6 +329,18 @@ export default function ClassSchedulePage() {
           loading={cancelarClase.isPending}
           confirmados={attendees.filter((a) => a.estado !== 'en_espera')}
           enEspera={attendees.filter((a) => a.estado === 'en_espera')}
+        />
+
+        {/* Modal de Cancelar Sesion (con scope: solo_esta / esta_y_siguientes / toda) */}
+        <CancelarSesionModal
+          isOpen={cancelarSesionModalOpen}
+          onClose={() => {
+            setCancelarSesionModalOpen(false)
+            setSesionParaCancelar(null)
+          }}
+          sesion={sesionParaCancelar}
+          onConfirm={handleConfirmCancelarSesion}
+          loading={cancelarSesion.isPending}
         />
       </div>
     </AppLayout>

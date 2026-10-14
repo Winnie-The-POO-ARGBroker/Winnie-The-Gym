@@ -13,17 +13,27 @@ from apps.access.permissions import IsAdminOnly, IsReceptionistOrAdmin, IsSocio
 from apps.members.permissions import IsSocioActivo
 
 from .filters import ClaseFilter, InscripcionClaseFilter
-from .models import Clase, Disciplina, InscripcionClase, Sala
+from .models import Clase, Disciplina, InscripcionClase, Instructor, Sala, SesionClase
 from .pagination import ClasePagination
 from .serializers import (
     ClaseDetailSerializer,
     ClaseSerializer,
     DisciplinaSerializer,
     InscripcionClaseSerializer,
+    InstructorSerializer,
     SalaSerializer,
+    SesionClaseSerializer,
 )
 from .services import cancelar_clase as service_cancelar_clase
-from .services import cancelar_inscripcion, inscribir_socio, promover_de_espera, reactivar_clase
+from .services import (
+    cancelar_inscripcion,
+    cancelar_sesion,
+    editar_serie,
+    generar_sesiones,
+    inscribir_socio,
+    promover_de_espera,
+    reactivar_clase,
+)
 
 
 @extend_schema_view(
@@ -71,6 +81,7 @@ class ClaseViewSet(viewsets.ModelViewSet):
         if self.action in (
             'create', 'update', 'partial_update', 'cancelar_clase',
             'cerrar_asistencia', 'inscribir_manual', 'promover_espera', 'reactivar',
+            'editar_serie',
         ):
             return [IsReceptionistOrAdmin()]
         if self.action == 'cancelar':
@@ -281,6 +292,43 @@ class ClaseViewSet(viewsets.ModelViewSet):
             'ausentes': ausentes,
             'sin_marcar': 0,
         }, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        tags=['classes'],
+        summary='Editar una serie recurrente (staff) — #178',
+        request={'application/json': {'type': 'object', 'properties': {
+            'cambios': {'type': 'object'},
+            'alcance': {'type': 'string', 'enum': ['solo_esta', 'esta_y_siguientes', 'toda']},
+            'fecha_pivote': {'type': 'string', 'format': 'date'},
+        }, 'required': ['cambios', 'alcance']}},
+        responses={200: {'type': 'object'}},
+    )
+    @action(
+        detail=True,
+        methods=['post'],
+        url_path='editar-serie',
+        url_name='editar-serie',
+        permission_classes=[IsReceptionistOrAdmin],
+    )
+    def editar_serie(self, request, pk=None):
+        from datetime import date  # noqa: PLC0415
+
+        clase = self.get_object()
+        cambios = request.data.get('cambios', {})
+        alcance = request.data.get('alcance', '')
+        fecha_pivote_str = request.data.get('fecha_pivote')
+        fecha_pivote = None
+        if fecha_pivote_str:
+            try:
+                fecha_pivote = date.fromisoformat(fecha_pivote_str)
+            except ValueError:
+                return Response(
+                    {'fecha_pivote': 'Formato inválido. Use YYYY-MM-DD.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        result = editar_serie(clase, cambios, alcance, fecha_pivote=fecha_pivote)
+        return Response(result, status=status.HTTP_200_OK)
 
     @extend_schema(
         tags=['classes'],
@@ -511,3 +559,128 @@ class InscripcionClaseViewSet(viewsets.ModelViewSet):
         ) + 1
 
         return Response({'posicion_en_espera': posicion}, status=status.HTTP_200_OK)
+
+
+# ---------------------------------------------------------------------------
+# #178 — SesionClase ViewSet
+# ---------------------------------------------------------------------------
+
+@extend_schema_view(
+    list=extend_schema(
+        tags=['classes'],
+        summary='Listar sesiones de clase por rango de fechas (#178)',
+        parameters=[
+            OpenApiParameter('fecha_desde', OpenApiTypes.DATE, description='Fecha inicio del rango (YYYY-MM-DD).'),
+            OpenApiParameter('fecha_hasta', OpenApiTypes.DATE, description='Fecha fin del rango (YYYY-MM-DD).'),
+            OpenApiParameter('clase_id', OpenApiTypes.INT, description='Filtrar por clase.'),
+        ],
+    ),
+    retrieve=extend_schema(tags=['classes'], summary='Detalle de sesión'),
+)
+class SesionClaseViewSet(viewsets.ReadOnlyModelViewSet):
+    """Read-only list/retrieve for SesionClase + cancelar action (staff).
+
+    Supports filtering by ?fecha_desde=, ?fecha_hasta=, ?clase_id=.
+    """
+    serializer_class = SesionClaseSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        qs = SesionClase.objects.select_related(
+            'clase', 'cancelada_por', 'instructor_override_fk',
+        ).order_by('fecha', 'clase')
+
+        fecha_desde = self.request.query_params.get('fecha_desde')
+        fecha_hasta = self.request.query_params.get('fecha_hasta')
+        clase_id = self.request.query_params.get('clase_id')
+
+        if fecha_desde:
+            qs = qs.filter(fecha__gte=fecha_desde)
+        if fecha_hasta:
+            qs = qs.filter(fecha__lte=fecha_hasta)
+        if clase_id:
+            qs = qs.filter(clase_id=clase_id)
+
+        return qs
+
+    @extend_schema(
+        tags=['classes'],
+        summary='Cancelar una sesión específica (staff) — #178',
+        request={'application/json': {'type': 'object', 'properties': {
+            'motivo': {'type': 'string', 'minLength': 10},
+        }, 'required': ['motivo']}},
+        responses={200: {'type': 'object', 'properties': {'detail': {'type': 'string'}}}},
+    )
+    @action(
+        detail=True,
+        methods=['post'],
+        url_path='cancelar',
+        url_name='cancelar',
+        permission_classes=[IsReceptionistOrAdmin],
+    )
+    def cancelar(self, request, pk=None):
+        sesion = self.get_object()
+        motivo = request.data.get('motivo', '')
+        cancelar_sesion(sesion, motivo, actor=request.user)
+        return Response({'detail': 'Sesión cancelada correctamente.'}, status=status.HTTP_200_OK)
+
+
+# ---------------------------------------------------------------------------
+# #180 Fase 1 — Instructor ViewSet
+# ---------------------------------------------------------------------------
+
+@extend_schema_view(
+    list=extend_schema(tags=['classes'], summary='Listar instructores'),
+    retrieve=extend_schema(tags=['classes'], summary='Detalle de instructor'),
+    create=extend_schema(tags=['classes'], summary='Crear instructor (admin)'),
+    update=extend_schema(tags=['classes'], summary='Actualizar instructor (admin)'),
+    partial_update=extend_schema(tags=['classes'], summary='Actualizar parcialmente instructor (admin)'),
+    destroy=extend_schema(tags=['classes'], summary='Eliminar o desactivar instructor (admin)'),
+)
+class InstructorViewSet(viewsets.ModelViewSet):
+    """CRUD for Instructor catalog. Admin write, staff/socio read.
+
+    DELETE with assigned Clases → offers soft-deactivation (activo=False) instead
+    of raising a ProtectedError.
+    """
+    queryset = Instructor.objects.all().order_by('apellido', 'nombre')
+    serializer_class = InstructorSerializer
+
+    def get_permissions(self):
+        if self.action in ('create', 'update', 'partial_update', 'destroy'):
+            return [IsAdminOnly()]
+        return [permissions.IsAuthenticated()]
+
+    def destroy(self, request, *args, **kwargs):
+        """#180 Fase 1 — Soft-delete: if Instructor has assigned Clases, deactivate instead."""
+        instructor = self.get_object()
+        has_clases = instructor.clases.exists()
+
+        if has_clases:
+            if instructor.activo:
+                instructor.activo = False
+                instructor.save(update_fields=['activo'])
+                return Response(
+                    {
+                        'detail': (
+                            f'El instructor "{instructor.nombre} {instructor.apellido}" tiene '
+                            'clases asignadas y fue desactivado en lugar de eliminado. '
+                            'Reasigná o eliminá las clases primero para poder eliminarlo definitivamente.'
+                        ),
+                        'desactivado': True,
+                    },
+                    status=status.HTTP_200_OK,
+                )
+            return Response(
+                {
+                    'detail': (
+                        f'El instructor "{instructor.nombre} {instructor.apellido}" tiene '
+                        'clases asignadas. Reasigná o eliminá las clases primero.'
+                    ),
+                    'desactivado': False,
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        instructor.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
