@@ -29,7 +29,7 @@ export default function AdminSociosPage() {
   const [page, setPage] = useState(1)
   const pageSize = 10
   const [search, setSearch] = useState('')
-  const [filters, setFilters] = useState({ estado: '', con_certificado: '' })
+  const [filters, setFilters] = useState({ estado: '', con_certificado: '', apto_estado: '' })
   const [ordering, setOrdering] = useState('-created_at')
   const [socioABajar, setSocioABajar] = useState(null)
   const [socioAReactivar, setSocioAReactivar] = useState(null)
@@ -45,6 +45,7 @@ export default function AdminSociosPage() {
     search,
     estado: filters.estado,
     con_certificado: filters.con_certificado,
+    apto_estado: filters.apto_estado,
     ordering,
   })
 
@@ -68,7 +69,7 @@ export default function AdminSociosPage() {
   }
 
   const handleClearFilters = () => {
-    setFilters({ estado: '', con_certificado: '' })
+    setFilters({ estado: '', con_certificado: '', apto_estado: '' })
     setPage(1)
   }
 
@@ -227,6 +228,7 @@ export default function AdminSociosPage() {
             filters={filters}
             onChange={handleFilterChange}
             onClear={handleClearFilters}
+            showAptoEstado
           />
         </div>
 

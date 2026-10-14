@@ -4,12 +4,9 @@ import {
   User,
   Phone,
   Calendar,
-  FileCheck,
-  FileX,
   FileText,
   Clock,
   Edit2,
-  ExternalLink,
   CreditCard,
   BadgeCheck,
 } from 'lucide-react'
@@ -18,6 +15,7 @@ import Badge from '../ui/Badge'
 import Button from '../ui/Button'
 import Skeleton from '../ui/Skeleton'
 import Modal from '../ui/Modal'
+import CertificadoCard from '../socio/CertificadoCard'
 import {
   useMembresiasPorSocio,
   useSuspenderMembresiaMutation,
@@ -50,9 +48,7 @@ const estadoPagoVariant = pagoEstadoVariant
 
 // ─── Tab: Datos ───────────────────────────────────────────────────────────────
 
-function TabDatos({ socio }) {
-  const tieneCertificado = !!socio.certificado_medico_url
-
+function TabDatos({ socio, onRefresh }) {
   return (
     <div className="py-4 flex flex-col gap-4">
       <div className="grid grid-cols-2 gap-3">
@@ -93,32 +89,14 @@ function TabDatos({ socio }) {
         </div>
       </div>
 
-      <div className="p-3.5 rounded-xl bg-bg-raised border border-subtle flex flex-col gap-2">
-        <span className="text-[11px] font-medium text-text-secondary uppercase tracking-wider">
-          Certificado Médico (Apto Físico)
-        </span>
-        {tieneCertificado ? (
-          <div className="flex items-center justify-between p-2.5 rounded-lg bg-success-500/10 border border-success-500/20 text-success-500">
-            <div className="flex items-center gap-2 text-xs font-medium">
-              <FileCheck className="w-4 h-4" />
-              <span>Certificado vigente cargado</span>
-            </div>
-            <a
-              href={socio.certificado_medico_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-xs font-semibold underline hover:text-emerald-400 transition-colors"
-            >
-              Abrir archivo <ExternalLink className="w-3 h-3" />
-            </a>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2 p-2.5 rounded-lg bg-error-500/10 border border-error-500/20 text-error-500 text-xs font-medium">
-            <FileX className="w-4 h-4" />
-            <span>No posee certificado médico cargado en el sistema</span>
-          </div>
-        )}
-      </div>
+      {/* Certificado médico with signed URL + apto_estado badge */}
+      <CertificadoCard
+        socioId={socio.id}
+        aptoEstado={socio.apto_estado ?? (socio.certificado_medico_url ? 'vigente' : 'sin_apto')}
+        certificadoEmitidoEn={socio.certificado_emitido_en ?? null}
+        certificadoVenceEn={socio.certificado_vence_en ?? null}
+        onUploadSuccess={onRefresh}
+      />
 
       <div className="p-3.5 rounded-xl bg-bg-raised border border-subtle flex flex-col gap-1.5">
         <span className="text-[11px] font-medium text-text-secondary flex items-center gap-1.5 uppercase tracking-wider">
@@ -388,7 +366,7 @@ export default function SocioDetailModal({ isOpen, onClose, socio, onEditar }) {
 
       {/* Tab content */}
       <div className="min-h-[200px]">
-        {activeTab === 'datos' && <TabDatos socio={socio} />}
+        {activeTab === 'datos' && <TabDatos socio={socio} onRefresh={onClose} />}
         {activeTab === 'membresias' && <TabMembresias socioId={socio.id} />}
         {activeTab === 'pagos' && <TabPagos socioId={socio.id} />}
       </div>

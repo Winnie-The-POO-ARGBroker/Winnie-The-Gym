@@ -5,12 +5,13 @@ import { Filter, ChevronDown, X } from 'lucide-react'
  * Panel de filtros colapsable para el listado de socios.
  *
  * @param {Object}   props
- * @param {Object}   props.filters  - Estado actual de los filtros { estado, con_certificado }
+ * @param {Object}   props.filters  - Estado actual de los filtros { estado, con_certificado, apto_estado? }
  * @param {function} props.onChange  - Callback (key, value)
  * @param {function} props.onClear  - Callback para limpiar todos los filtros
  * @param {'left'|'right'} [props.align='left'] - Align the dropdown to the left or right of the toggle
+ * @param {boolean}  [props.showAptoEstado=false] - Whether to show the apto_estado filter section
  */
-export default function FilterPanel({ filters, onChange, onClear, align = 'left' }) {
+export default function FilterPanel({ filters, onChange, onClear, align = 'left', showAptoEstado = false }) {
   const [open, setOpen] = useState(false)
 
   const activeCount = Object.values(filters).filter(
@@ -99,6 +100,36 @@ export default function FilterPanel({ filters, onChange, onClear, align = 'left'
               ))}
             </div>
           </div>
+
+          {/* Apto estado — shown only when explicitly enabled by the caller */}
+          {showAptoEstado && (
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-text-secondary mb-2">
+                Estado del apto médico
+              </label>
+              <div className="flex gap-2 flex-wrap">
+                {[
+                  { value: '', label: 'Todos' },
+                  { value: 'sin_apto', label: 'Sin apto' },
+                  { value: 'vigente', label: 'Vigente' },
+                  { value: 'por_vencer', label: 'Por vencer' },
+                  { value: 'vencido', label: 'Vencido' },
+                ].map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => onChange('apto_estado', opt.value)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                      (filters.apto_estado || '') === opt.value
+                        ? 'bg-primary text-white shadow-sm'
+                        : 'bg-bg-raised text-text-secondary hover:text-text-primary'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Limpiar */}
           {activeCount > 0 && (

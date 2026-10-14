@@ -1,6 +1,7 @@
 import Avatar from '../ui/Avatar'
 import Badge from '../ui/Badge'
 import { FileCheck, FileText } from 'lucide-react'
+import { AptoEstadoBadge } from '../socio/CertificadoCard'
 
 /**
  * Definición centralizada de columnas para tablas de socios (Admin y Recepción).
@@ -63,9 +64,14 @@ export function getSocioColumns() {
     },
     {
       key: 'certificado',
-      label: 'Certificado Médico',
+      label: 'Apto Médico',
       sortable: false,
       render: (row) => {
+        // Prefer the explicit apto_estado field when available
+        if (row.apto_estado) {
+          return <AptoEstadoBadge aptoEstado={row.apto_estado} />
+        }
+        // Fallback: derive from certificado_medico_url presence
         const tiene = !!row.certificado_medico_url
         return tiene ? (
           <a

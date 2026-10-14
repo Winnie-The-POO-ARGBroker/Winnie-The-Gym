@@ -107,3 +107,31 @@ export function uploadCertificado(id, archivo) {
     })
     .then((r) => r.data)
 }
+
+/**
+ * Sube el certificado médico via PATCH con fechas de emisión y vencimiento.
+ * @param {number|string} id
+ * @param {File} archivo
+ * @param {string} certificadoEmitidoEn - YYYY-MM-DD
+ * @param {string} certificadoVenceEn   - YYYY-MM-DD
+ */
+export function patchCertificado(id, archivo, certificadoEmitidoEn, certificadoVenceEn) {
+  const formData = new FormData()
+  formData.append('archivo', archivo)
+  formData.append('certificado_emitido_en', certificadoEmitidoEn)
+  formData.append('certificado_vence_en', certificadoVenceEn)
+  return api
+    .patch(`${SOCIOS_URL}${id}/certificado/`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    .then((r) => r.data)
+}
+
+/**
+ * Genera una URL firmada para el certificado médico (válida 5 min).
+ * @param {number|string} id
+ * @returns {Promise<{url: string, expires_at: string}>}
+ */
+export function getCertificadoSignedUrl(id) {
+  return api.get(`${SOCIOS_URL}${id}/certificado/url/`).then((r) => r.data)
+}
