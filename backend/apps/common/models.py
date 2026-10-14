@@ -1,5 +1,54 @@
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+
+
+class CierreGimnasio(models.Model):
+    """Planned gym closure or holiday — blocks reservations and physical access.
+
+    A closure can affect the entire gym ('todo') or a single sala ('sala').
+    date ranges are inclusive: [fecha_desde, fecha_hasta].
+    Overlapping ranges are intentionally permitted (e.g. partial + full day).
+    """
+
+    class Afecta(models.TextChoices):
+        TODO = 'todo', 'Todo el gym'
+        SALA = 'sala', 'Una sala'
+
+    fecha_desde = models.DateField(verbose_name='Fecha desde')
+    fecha_hasta = models.DateField(verbose_name='Fecha hasta')
+    motivo = models.CharField(max_length=200, verbose_name='Motivo')
+    afecta = models.CharField(
+        max_length=10,
+        choices=Afecta.choices,
+        default=Afecta.TODO,
+        verbose_name='Ámbito',
+    )
+    sala = models.ForeignKey(
+        'classes.Sala',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='cierres',
+        verbose_name='Sala',
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='cierres_creados',
+        verbose_name='Creado por',
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Creado en')
+
+    class Meta:
+        verbose_name = 'Cierre del Gimnasio'
+        verbose_name_plural = 'Cierres del Gimnasio'
+        ordering = ['-fecha_desde']
+
+    def __str__(self):
+        return f'Cierre {self.fecha_desde} → {self.fecha_hasta}: {self.motivo}'
 
 
 class GymConfig(models.Model):

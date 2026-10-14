@@ -301,6 +301,42 @@ def check_horario_plan(socio, plan, now_local: datetime.datetime | None = None) 
     return True, None
 
 
+def check_cierre_gimnasio(now_local: datetime.datetime | None = None) -> tuple[bool, str | None]:
+    """Return (ok, denial_reason). Denied when a CierreGimnasio with afecta='todo' covers today.
+
+    #182 — Gym closure enforcement on physical ENTRY.
+    Only 'todo' closures are checked here; sala-level closures are handled
+    at the class enrollment layer (inscribir_socio).
+
+    Args:
+        now_local: current local datetime. Defaults to timezone.now() in ART.
+
+    Returns:
+        (True, None) when no active total closure exists for today.
+        (False, 'GYM_CERRADO') when a closure covers today.
+    """
+    from apps.common.models import CierreGimnasio  # local to avoid circular imports
+
+    if now_local is None:
+        now_local = timezone.now().astimezone(ART_TZ)
+
+    today = now_local.date()
+
+    cierre = (
+        CierreGimnasio.objects
+        .filter(
+            afecta=CierreGimnasio.Afecta.TODO,
+            fecha_desde__lte=today,
+            fecha_hasta__gte=today,
+        )
+        .first()
+    )
+
+    if cierre is not None:
+        return False, 'GYM_CERRADO'
+    return True, None
+
+
 def has_active_membership(user) -> bool:
     """
     Returns True only when all of the following hold:

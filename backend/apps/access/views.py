@@ -25,6 +25,7 @@ from .services import (
     invalidate_aforo_cache,
     get_presencia,
     check_aforo,
+    check_cierre_gimnasio,
     check_horario,
     check_horario_plan,
 )
@@ -168,11 +169,18 @@ def _process_scan(user_obj, is_valid, error_code, access_type, jti, scanned_by_u
 
     if is_valid and user_obj:
         if access_type == AccessLog.AccessType.ENTRY:
-            # #220 — Horario check (EXIT always permitted regardless of schedule)
-            horario_ok, horario_error = check_horario(gym_cfg)
-            if not horario_ok:
+            # #182 — Gym closure check (before horario/aforo)
+            cierre_ok, cierre_error = check_cierre_gimnasio()
+            if not cierre_ok:
                 is_valid = False
-                error_code = horario_error
+                error_code = cierre_error
+
+            # #220 — Horario check (EXIT always permitted regardless of schedule)
+            if is_valid:
+                horario_ok, horario_error = check_horario(gym_cfg)
+                if not horario_ok:
+                    is_valid = False
+                    error_code = horario_error
 
             # #220 — Aforo check
             if is_valid:
@@ -290,6 +298,7 @@ def _build_message(scan_status, warning_reason, error_code, access_type):
         'UNKNOWN_USER': 'Usuario desconocido',
         'PLAN_FUERA_DE_HORARIO': 'Tu plan no permite acceso en este horario',
         'PLAN_DIA_NO_HABILITADO': 'Tu plan no permite acceso este día',
+        'GYM_CERRADO': 'El gimnasio está cerrado en esta fecha',
     }
     return msg_map.get(error_code, f'Acceso denegado: {error_code}')
 

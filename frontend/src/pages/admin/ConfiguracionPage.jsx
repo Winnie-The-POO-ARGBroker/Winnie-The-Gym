@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Edit2, Trash2, PowerOff } from 'lucide-react'
+import { Plus, Edit2, Trash2, PowerOff, CalendarOff } from 'lucide-react'
 import { toast } from 'sonner'
 import AppLayout from '../../components/layout/AppLayout'
 import TopBar from '../../components/layout/TopBar'
@@ -11,6 +11,7 @@ import FilterButton from '../../components/ui/FilterButton'
 import DisciplinaFormModal from '../../components/admin/DisciplinaFormModal'
 import SalaFormModal from '../../components/admin/SalaFormModal'
 import InstructorFormModal from '../../components/admin/InstructorFormModal'
+import CierreFormModal from '../../components/admin/CierreFormModal'
 import {
   useDisciplinas,
   useCreateDisciplina,
@@ -30,6 +31,12 @@ import {
   useDeleteInstructor,
   useDesactivarInstructor,
 } from '../../hooks/queries/useInstructores'
+import {
+  useCierres,
+  useCreateCierre,
+  useUpdateCierre,
+  useDeleteCierre,
+} from '../../hooks/queries/useCierres'
 import useAuthStore from '../../stores/authStore'
 
 // ─── Disciplinas sub-tab ──────────────────────────────────────────────────────
@@ -528,12 +535,149 @@ function InstructoresTab({ isAdmin }) {
   )
 }
 
+// ─── Feriados y cierres sub-tab ───────────────────────────────────────────────
+
+const AFECTA_LABEL = { todo: 'Todo el gym', sala: 'Una sala' }
+
+function CierresTab() {
+  const { data: cierres = [], isPending: loading } = useCierres()
+  const crear = useCreateCierre()
+  const actualizar = useUpdateCierre()
+  const eliminar = useDeleteCierre()
+
+  const [modalOpen, setModalOpen] = useState(false)
+  const [editTarget, setEditTarget] = useState(null)
+  const [confirmDelete, setConfirmDelete] = useState(null)
+
+  const handleSave = async (payload) => {
+    try {
+      if (editTarget) {
+        await actualizar.mutateAsync({ id: editTarget.id, data: payload })
+        toast.success('Cierre actualizado.')
+      } else {
+        await crear.mutateAsync(payload)
+        toast.success('Cierre creado.')
+      }
+      setModalOpen(false)
+      setEditTarget(null)
+    } catch (err) {
+      const msg = err?.response?.data?.detail ?? 'Error al guardar el cierre.'
+      toast.error(msg)
+    }
+  }
+
+  const handleDelete = async (id) => {
+    try {
+      await eliminar.mutateAsync(id)
+      toast.success('Cierre eliminado.')
+    } catch (err) {
+      toast.error(err?.response?.data?.detail ?? 'No se pudo eliminar el cierre.')
+    } finally {
+      setConfirmDelete(null)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex flex-col gap-3">
+        {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-14 rounded-xl" />)}
+      </div>
+    )
+  }
+
+  return (
+    <>
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-sm text-text-secondary">{cierres.length} cierres registrados</p>
+        <Button
+          variant="primary"
+          size="sm"
+          className="gap-1.5"
+          onClick={() => { setEditTarget(null); setModalOpen(true) }}
+        >
+          <Plus className="w-3.5 h-3.5" />
+          Nuevo cierre
+        </Button>
+      </div>
+
+      {cierres.length === 0 ? (
+        <div className="flex flex-col items-center gap-3 py-10 text-center">
+          <CalendarOff className="w-8 h-8 text-text-tertiary" />
+          <p className="text-sm text-text-tertiary">No hay cierres o feriados registrados.</p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {cierres.map((c) => (
+            <Card key={c.id} className="p-3.5 flex items-center justify-between gap-3">
+              <div className="flex flex-col gap-0.5">
+                <span className="text-sm font-semibold text-text-primary">{c.motivo}</span>
+                <span className="text-xs text-text-tertiary">
+                  {c.fecha_desde === c.fecha_hasta
+                    ? c.fecha_desde
+                    : `${c.fecha_desde} → ${c.fecha_hasta}`}
+                </span>
+                <Badge variant="neutral" className="self-start mt-1">
+                  {AFECTA_LABEL[c.afecta] ?? c.afecta}
+                </Badge>
+              </div>
+              <div className="flex gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => { setEditTarget(c); setModalOpen(true) }}
+                  className="p-1.5 rounded-lg text-text-tertiary hover:text-primary hover:bg-bg-raised transition-colors"
+                  aria-label="Editar cierre"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmDelete(c.id)}
+                  className="p-1.5 rounded-lg text-text-tertiary hover:text-error-500 hover:bg-bg-raised transition-colors"
+                  aria-label="Eliminar cierre"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {confirmDelete !== null && (
+        <div className="mt-4 p-4 rounded-xl bg-error-500/10 border border-error-500/20 flex flex-col gap-3">
+          <p className="text-sm text-error-500 font-semibold">
+            ¿Confirmar eliminación de este cierre?
+          </p>
+          <div className="flex gap-2">
+            <Button variant="secondary" size="sm" onClick={() => setConfirmDelete(null)}>Cancelar</Button>
+            <Button
+              size="sm"
+              className="bg-error-500 hover:bg-error-600 text-white"
+              onClick={() => handleDelete(confirmDelete)}
+            >
+              Eliminar
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <CierreFormModal
+        isOpen={modalOpen}
+        onClose={() => { setModalOpen(false); setEditTarget(null) }}
+        onSave={handleSave}
+        cierreToEdit={editTarget}
+      />
+    </>
+  )
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 const SUB_TABS = [
   { key: 'disciplinas', label: 'Disciplinas' },
   { key: 'salas', label: 'Salas' },
   { key: 'instructores', label: 'Instructores' },
+  { key: 'feriados', label: 'Feriados y cierres' },
 ]
 
 export default function ConfiguracionPage() {
@@ -570,6 +714,7 @@ export default function ConfiguracionPage() {
             {activeTab === 'disciplinas' && <DisciplinasTab />}
             {activeTab === 'salas' && <SalasTab />}
             {activeTab === 'instructores' && <InstructoresTab isAdmin={isAdmin} />}
+            {activeTab === 'feriados' && <CierresTab />}
           </div>
         </div>
       </div>

@@ -40,6 +40,8 @@ class AccessLog(models.Model):
         # Plan horario (#158)
         PLAN_FUERA_DE_HORARIO = 'PLAN_FUERA_DE_HORARIO', 'Tu plan no permite acceso en este horario'
         PLAN_DIA_NO_HABILITADO = 'PLAN_DIA_NO_HABILITADO', 'Tu plan no permite acceso este día'
+        # Gym closure (#182)
+        GYM_CERRADO = 'GYM_CERRADO', 'El gimnasio está cerrado en esta fecha'
 
     class AccessSource(models.TextChoices):
         QR_SCAN = 'QR_SCAN', 'QR Scan'
