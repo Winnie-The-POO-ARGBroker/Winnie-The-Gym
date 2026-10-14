@@ -10,8 +10,11 @@ class GymConfig(models.Model):
     nombre_gym = models.CharField(max_length=100, default='Winnie The Gym')
     aforo_maximo = models.IntegerField(default=200)
     hora_apertura = models.TimeField(default='07:00')
-    hora_cierre = models.TimeField(default='23:00')
+    hora_cierre = models.TimeField(null=True, blank=True, default=None)
+    cierre_gracia_minutos = models.IntegerField(default=30)
     telefono_contacto = models.CharField(max_length=20, blank=True, default='')
+    aforo_umbral_alerta_pct = models.IntegerField(default=90)
+    aforo_bloqueo_al_llegar_max = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Configuración del Gimnasio'

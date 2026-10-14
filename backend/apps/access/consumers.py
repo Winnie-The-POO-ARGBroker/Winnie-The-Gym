@@ -51,6 +51,10 @@ class AforoConsumer(AsyncJsonWebsocketConsumer):
         # event is expected to contain all keys
         await self.send_json(event)
 
+    async def aforo_alert(self, event):
+        """Handler for aforo threshold alert messages (fix #153)."""
+        await self.send_json(event)
+
     # -----------------------------------------------------------------------
     # Helpers
     # -----------------------------------------------------------------------

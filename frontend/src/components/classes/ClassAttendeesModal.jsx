@@ -171,7 +171,8 @@ export default function ClassAttendeesModal({
           <button
             onClick={() => {
               onClose()
-              navigate(`/clases/asistencia?id=${selectedClass.id}`)
+              // fix #163: navigate directly to canonical route to preserve ?id= query param
+              navigate(`/admin/clases/asistencia?id=${selectedClass.id}`)
             }}
             className="flex items-center gap-1.5 text-xs font-semibold text-text-secondary hover:text-orange-500 transition-colors"
           >

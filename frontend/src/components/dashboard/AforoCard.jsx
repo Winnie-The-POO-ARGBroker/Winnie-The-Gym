@@ -1,5 +1,6 @@
 import CircularProgress from '../ui/CircularProgress'
 import Skeleton from '../ui/Skeleton'
+import { AFORO_THRESHOLD_WARNING_PCT, AFORO_THRESHOLD_CRITICAL_PCT } from '../../constants/aforo'
 
 export default function AforoCard({ current, max, entries, exits, loading = false }) {
   if (loading) {
@@ -27,9 +28,9 @@ export default function AforoCard({ current, max, entries, exits, loading = fals
   }
 
   const pct = Math.round((current / max) * 100)
-  const gaugeColor = pct >= 90
+  const gaugeColor = pct >= AFORO_THRESHOLD_CRITICAL_PCT
     ? 'var(--color-error)'
-    : pct >= 70
+    : pct >= AFORO_THRESHOLD_WARNING_PCT
     ? 'var(--color-warning)'
     : 'var(--color-success)'
 

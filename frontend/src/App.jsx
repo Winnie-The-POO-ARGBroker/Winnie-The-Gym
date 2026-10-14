@@ -1,5 +1,5 @@
 import { useEffect, Suspense, lazy } from 'react'
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import useThemeStore from './stores/themeStore'
 import Skeleton from './components/ui/Skeleton'
@@ -37,6 +37,15 @@ import CobroManualPage from './pages/recepcion/CobroManualPage'
 import AuthActivationExpiredPage from './pages/AuthActivationExpiredPage'
 
 const AccesoTerminalPage = lazy(() => import('./pages/recepcion/AccesoTerminalPage'))
+
+/**
+ * LegacyRedirect — preserves search params and hash when redirecting legacy routes (fix #163).
+ * Replaces plain <Navigate> so ?id= and other query params are not discarded.
+ */
+function LegacyRedirect({ to }) {
+  const { search, hash } = useLocation()
+  return <Navigate to={`${to}${search}${hash}`} replace />
+}
 
 const COMING_SOON_PATHS = []
 
@@ -92,10 +101,10 @@ export default function App() {
           <ProtectedRoute roles={['administrador', 'recepcionista']}><AttendancePage /></ProtectedRoute>
         } />
 
-        {/* Legacy redirects */}
-        <Route path="/clases/crear" element={<Navigate to="/admin/clases/crear" replace />} />
-        <Route path="/clases/asistencia" element={<Navigate to="/admin/clases/asistencia" replace />} />
-        <Route path="/membresias" element={<Navigate to="/admin/planes" replace />} />
+        {/* Legacy redirects — use LegacyRedirect to preserve search params (fix #163) */}
+        <Route path="/clases/crear" element={<LegacyRedirect to="/admin/clases/crear" />} />
+        <Route path="/clases/asistencia" element={<LegacyRedirect to="/admin/clases/asistencia" />} />
+        <Route path="/membresias" element={<LegacyRedirect to="/admin/planes" />} />
 
         {/* Admin planes */}
         <Route path="/admin/planes" element={
@@ -111,7 +120,7 @@ export default function App() {
         <Route path="/admin/usuarios" element={
           <ProtectedRoute roles={['administrador']}><AdminUsuariosPage /></ProtectedRoute>
         } />
-        <Route path="/socios" element={<Navigate to="/admin/socios" replace />} />
+        <Route path="/socios" element={<LegacyRedirect to="/admin/socios" />} />
 
         {/* Recepcion routes */}
         <Route path="/recepcion/acceso" element={
@@ -125,7 +134,7 @@ export default function App() {
         <Route path="/recepcion/socios" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><GestionSociosPage /></ProtectedRoute>} />
         <Route path="/recepcion/reportes" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><ReportesPage /></ProtectedRoute>} />
         <Route path="/admin/reportes" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><ReportesPage /></ProtectedRoute>} />
-        <Route path="/reportes" element={<Navigate to="/admin/reportes" replace />} />
+        <Route path="/reportes" element={<LegacyRedirect to="/admin/reportes" />} />
         <Route path="/recepcion/cobros" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><CobroManualPage /></ProtectedRoute>} />
 
         {/* Socio routes — mobile first */}

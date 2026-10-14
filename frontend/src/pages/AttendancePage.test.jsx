@@ -88,9 +88,9 @@ const ATTENDEES = [
 const mockToggleStatus = vi.fn()
 const mockFetchAttendees = vi.fn()
 
-function setupMocks({ classId = '5', classInfo = CLASS_INFO, loading = false, attendees = ATTENDEES } = {}) {
+function setupMocks({ classId = '5', classInfo = CLASS_INFO, loading = false, isError = false, attendees = ATTENDEES } = {}) {
   useSearchParams.mockReturnValue([new URLSearchParams(`id=${classId}`)], vi.fn())
-  useClaseDetail.mockReturnValue({ data: classInfo, isLoading: loading })
+  useClaseDetail.mockReturnValue({ data: classInfo, isLoading: loading, isError })
   useClassAttendees.mockReturnValue({
     attendees,
     toggleStatus: mockToggleStatus,

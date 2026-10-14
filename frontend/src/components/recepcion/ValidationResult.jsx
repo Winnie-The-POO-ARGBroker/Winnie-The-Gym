@@ -10,7 +10,16 @@ const DENIAL_REASONS = {
   TOKEN_EXPIRED: 'Código QR expirado',
 };
 
-export default function ValidationResult({ result, onConfirmEntry, onRegisterExit: _onRegisterExit }) {
+/**
+ * Resolves the access type from the result (fix #148).
+ * Prefers result.accessType (set by AccesoTerminalPage from response),
+ * then falls back to log.access_type.
+ */
+function resolveAccessType(result) {
+  return result?.accessType || result?.log?.access_type || null;
+}
+
+export default function ValidationResult({ result, onConfirmEntry }) {
   const status = result?.status || 'idle';
   const message = result?.message || '';
   const denialReason = result?.denialReason || result?.log?.denial_reason;
@@ -18,6 +27,18 @@ export default function ValidationResult({ result, onConfirmEntry, onRegisterExi
   const isError = status === 'error';
   const isSuccess = status === 'success';
   const isWarning = status === 'warning';
+
+  const accessType = resolveAccessType(result);
+  const isExit = accessType === 'EXIT';
+
+  // fix #148: dynamic heading and badge label based on access_type
+  const headingText = isSuccess
+    ? (isExit ? 'Salida registrada' : 'Entrada registrada')
+    : isError
+      ? 'Acceso denegado'
+      : 'Atención';
+
+  const accessTypeLabelText = isExit ? 'Salida' : 'Entrada';
 
   return (
     <div className={`rounded-xl border border-subtle flex flex-col p-8 transition-colors duration-300 ${
@@ -51,9 +72,7 @@ export default function ValidationResult({ result, onConfirmEntry, onRegisterExi
                 isError ? 'text-error-500' :
                 'text-warning-500'
               }`}>
-                {isSuccess ? 'Acceso permitido' :
-                 isError ? 'Acceso denegado' :
-                 'Atención'}
+                {headingText}
               </h2>
               <p className="text-text-tertiary text-sm mt-1 font-medium max-w-sm">
                 {isError && denialReason ? DENIAL_REASONS[denialReason] || message : message}
@@ -77,12 +96,20 @@ export default function ValidationResult({ result, onConfirmEntry, onRegisterExi
 
           <div className="grid grid-cols-2 gap-4 mb-8">
             <div className="bg-bg-raised rounded-xl p-4 flex flex-col justify-between">
-              <p className="text-xs text-text-secondary font-semibold mb-2 uppercase">Tipo de Ingreso</p>
+              {/* fix #148: dynamic label based on access_type */}
+              <p className="text-xs text-text-secondary font-semibold mb-2 uppercase">
+                {isExit ? 'Tipo de Egreso' : 'Tipo de Ingreso'}
+              </p>
               <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium w-fit ${
                 isError ? 'bg-error-500/20 text-error-500' : 'bg-success-500/20 text-success-500'
               }`}>
                 {isError ? <XCircle className="w-3.5 h-3.5"/> : <CheckCircle2 className="w-3.5 h-3.5"/>}
-                {log.access_type === 'ENTRY' ? 'Entrada' : log.access_type === 'EXIT' ? 'Salida' : 'Desconocido'}
+                {/* fix #148: ENTRY → "Entrada", EXIT → "Salida" */}
+                {accessType === 'ENTRY'
+                  ? 'Entrada'
+                  : accessType === 'EXIT'
+                    ? 'Salida'
+                    : accessTypeLabelText}
               </div>
             </div>
             <div className="bg-bg-raised rounded-xl p-4 flex flex-col justify-between">
