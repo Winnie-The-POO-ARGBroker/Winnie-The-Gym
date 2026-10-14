@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { CreditCard, CheckCircle, ShieldCheck, Zap } from 'lucide-react'
 import MemberLayout from '../../components/layout/MemberLayout'
 import Card from '../../components/ui/Card'
@@ -6,27 +7,35 @@ import EmptyState from '../../components/ui/EmptyState'
 import Button from '../../components/ui/Button'
 import { usePlanesQuery } from '../../hooks/queries/usePlanesAdmin'
 import { useCrearPreferenciaMutation } from '../../hooks/queries/usePagos'
+import { useSocioMembresiaMe } from '../../hooks/queries/useMembresias'
 
 // Íconos de beneficios por plan (genérico si el backend no los tiene)
 const BENEFIT_ICONS = [Zap, CheckCircle, ShieldCheck]
 
-function PlanCard({ plan, onPagar, loading }) {
+function PlanCard({ plan, onPagar, loading, preselected = false }) {
   const beneficios = plan.descripcion
     ? plan.descripcion.split('\n').filter(Boolean)
     : []
 
+  const highlighted = plan.es_popular || preselected
+
   return (
     <Card
       className={`p-5 flex flex-col gap-4 transition-all ${
-        plan.es_popular
+        highlighted
           ? 'border-primary ring-1 ring-primary/30'
           : ''
       }`}
     >
-      {/* Badge popular */}
+      {/* Badge popular / preselected */}
       {plan.es_popular && (
         <div className="self-start px-2 py-0.5 rounded-full bg-primary text-white text-[10px] font-bold uppercase tracking-wider">
           Más popular
+        </div>
+      )}
+      {preselected && !plan.es_popular && (
+        <div className="self-start px-2 py-0.5 rounded-full bg-primary/20 text-primary text-[10px] font-bold uppercase tracking-wider border border-primary/40">
+          Seleccionado
         </div>
       )}
 
@@ -59,7 +68,7 @@ function PlanCard({ plan, onPagar, loading }) {
       {/* Botón de pago */}
       <Button
         id={`btn-pagar-plan-${plan.id}`}
-        variant={plan.es_popular ? 'primary' : 'secondary'}
+        variant={highlighted ? 'primary' : 'secondary'}
         size="md"
         loading={loading}
         onClick={() => onPagar(plan)}
@@ -73,10 +82,16 @@ function PlanCard({ plan, onPagar, loading }) {
 }
 
 export default function CheckoutPage() {
+  const [searchParams] = useSearchParams()
+  const preselectedPlanId = searchParams.get('plan')
   const [loadingPlanId, setLoadingPlanId] = useState(null)
 
   const { data: allPlanes = [], isLoading: isLoadingPlanes } = usePlanesQuery()
   const planes = allPlanes.filter((p) => p.activo)
+
+  // Fetch the socio's current/last membership to display "Tu plan actual"
+  const { data: membresiaData } = useSocioMembresiaMe()
+  const membresiaActiva = membresiaData?.membresia_activa
 
   const crearPreferencia = useCrearPreferenciaMutation()
 
@@ -87,12 +102,38 @@ export default function CheckoutPage() {
     })
   }
 
+  // Determine which plan card should be highlighted as preselected
+  const isPreselected = (plan) =>
+    preselectedPlanId != null && String(plan.id) === String(preselectedPlanId)
+
   return (
     <MemberLayout
       title="Renovar membresía"
       subtitle="Seleccioná tu plan y pagá con MercadoPago"
     >
       <div className="flex flex-col gap-4 w-full animate-fadeIn">
+
+        {/* Tu plan actual — shown when the socio has an active or recent membership */}
+        {membresiaActiva && (
+          <Card className="p-4 flex flex-col gap-1 bg-bg-raised">
+            <span className="text-[10px] text-text-tertiary uppercase font-bold tracking-wider">
+              Tu plan actual
+            </span>
+            <p className="text-sm font-semibold text-text-primary">
+              {membresiaActiva.plan?.nombre ?? '—'}
+            </p>
+            {membresiaActiva.fecha_fin && (
+              <p className="text-xs text-text-secondary">
+                Vence el{' '}
+                {new Date(membresiaActiva.fecha_fin).toLocaleDateString('es-AR', {
+                  day: '2-digit',
+                  month: 'long',
+                  year: 'numeric',
+                })}
+              </p>
+            )}
+          </Card>
+        )}
 
         {/* Encabezado informativo */}
         <div className="flex items-center gap-2 px-1">
@@ -129,6 +170,7 @@ export default function CheckoutPage() {
             plan={plan}
             loading={loadingPlanId === plan.id}
             onPagar={handlePagar}
+            preselected={isPreselected(plan)}
           />
         ))}
 

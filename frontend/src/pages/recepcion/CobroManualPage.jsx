@@ -250,7 +250,7 @@ export default function CobroManualPage() {
                 </div>
               )}
 
-              {/* Warning banner — active membership */}
+              {/* Warning banner — active membership with estimated new expiration */}
               {socioSeleccionado && membresiaActiva && (
                 <div
                   role="alert"
@@ -264,6 +264,18 @@ export default function CobroManualPage() {
                       <> hasta el <span className="font-semibold">{new Date(membresiaActiva.fecha_fin).toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' })}</span></>
                     )}
                     . El cobro extenderá desde esa fecha.
+                    {/* Estimated new expiration — stack policy: current fecha_fin + plan duracion_dias */}
+                    {membresiaActiva.fecha_fin && planActual?.duracion_dias && (() => {
+                      const base = new Date(membresiaActiva.fecha_fin)
+                      base.setDate(base.getDate() + planActual.duracion_dias)
+                      return (
+                        <> Nueva vencimiento estimado:{' '}
+                          <span className="font-semibold">
+                            {base.toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                          </span>
+                        </>
+                      )
+                    })()}
                   </p>
                 </div>
               )}
