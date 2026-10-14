@@ -24,19 +24,28 @@ def generate_dynamic_qr_token(user) -> dict:
     """
     Genera un token QR dinámico firmado con HMAC-SHA256 con tiempo de expiración (defecto 30 segundos).
     Elimina PII (email) del payload expuesto en el código QR.
+
+    #157: `expires_at` is included as both a UNIX timestamp (int) and an ISO-8601
+    string so the client can synchronise its countdown without relying on local clock drift.
     """
     secret = settings.QR_SECRET_KEY.encode('utf-8')
     ttl = getattr(settings, 'QR_TOKEN_EXPIRATION_SECONDS', 30)
 
     now = int(time.time())
     jti = str(uuid.uuid4())
+    exp = now + ttl
 
     # CRITICAL-2 Fix: PII (user_email) omitida del payload del token QR público
+    # #157: expires_at_iso included for client countdown synchronisation
+    import datetime as _dt
+    expires_at_iso = _dt.datetime.fromtimestamp(exp, tz=_dt.timezone.utc).isoformat()
+
     payload = {
         'user_id': user.id,
         'jti': jti,
         'iat': now,
-        'exp': now + ttl
+        'exp': exp,
+        'expires_at': expires_at_iso,
     }
 
     payload_json = json.dumps(payload, separators=(',', ':')).encode('utf-8')
@@ -50,8 +59,9 @@ def generate_dynamic_qr_token(user) -> dict:
     return {
         'qr_token': qr_token,
         'expires_in': ttl,
-        'expires_at': payload['exp'],
-        'jti': jti
+        'expires_at': exp,
+        'expires_at_iso': expires_at_iso,
+        'jti': jti,
     }
 
 
@@ -122,8 +132,9 @@ def verify_dynamic_qr_token(qr_token_str: str, consume: bool = True) -> tuple[bo
         now = int(time.time())
         exp = payload.get('exp', 0)
 
-        # 3. Validar expiración (30s)
-        if now > exp:
+        # 3. Validar expiración con 2s de leeway para tolerar skew de reloj (#157)
+        LEEWAY_SECONDS = 2
+        if now > exp + LEEWAY_SECONDS:
             return False, 'TOKEN_EXPIRED', payload
 
         # 4. Validar y consumir anti-replay atómicamente si consume=True

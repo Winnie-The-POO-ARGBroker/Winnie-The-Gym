@@ -11,6 +11,10 @@ vi.mock('../../../hooks/useAuth', () => ({
   default: vi.fn(),
 }))
 
+vi.mock('../../../hooks/useCredentialState', () => ({
+  default: vi.fn(),
+}))
+
 vi.mock('../../../services/api', () => ({
   default: { get: vi.fn() },
 }))
@@ -21,6 +25,7 @@ vi.mock('sonner', () => ({
 
 import { useSocioMembresiaMe } from '../../../hooks/queries/useMembresias'
 import useAuth from '../../../hooks/useAuth'
+import useCredentialState from '../../../hooks/useCredentialState'
 import api from '../../../services/api'
 
 const MOCK_PROFILE = {
@@ -45,6 +50,15 @@ describe('CredencialDigital - Validación multi-dispositivo y comportamiento mó
     vi.clearAllMocks()
     useSocioMembresiaMe.mockReturnValue({ data: MOCK_PROFILE, isLoading: false })
     useAuth.mockReturnValue({ user: { rol: 'socio' } })
+    useCredentialState.mockReturnValue({
+      qrToken: 'qr-token-test-dispositivos-110',
+      timeLeft: 25,
+      maxTime: 30,
+      isRefreshing: false,
+      isStale: false,
+      credentialState: null,
+      refresh: vi.fn(),
+    })
     api.get.mockResolvedValue({ data: { qr_token: 'qr-token-test-dispositivos-110' } })
 
     originalNavigator = globalThis.navigator
@@ -208,7 +222,7 @@ describe('CredencialDigital - Validación multi-dispositivo y comportamiento mó
 
       await waitFor(() => {
         expect(screen.getByRole('dialog')).toBeInTheDocument()
-        expect(screen.getByText(/Fondo optimizado al máximo contraste visual/i)).toBeInTheDocument()
+        expect(screen.getByText(/Subí el brillo al máximo/i)).toBeInTheDocument()
       })
     })
   })

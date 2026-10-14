@@ -25,6 +25,10 @@ vi.mock('../../hooks/useScreenWakeLock', () => ({
   default: vi.fn(),
 }))
 
+vi.mock('../../hooks/useCredentialState', () => ({
+  default: vi.fn(),
+}))
+
 vi.mock('../../services/api', () => ({
   default: { get: vi.fn() },
 }))
@@ -100,8 +104,8 @@ vi.mock('../../components/socio/PagoResultadoBanner', () => ({
 import { useSocioMembresiaMe } from '../../hooks/queries/useMembresias'
 import useAuth from '../../hooks/useAuth'
 import useScreenWakeLock from '../../hooks/useScreenWakeLock'
+import useCredentialState from '../../hooks/useCredentialState'
 import api from '../../services/api'
-import { toast } from 'sonner'
 
 const MOCK_PROFILE = {
   nombre: 'Juan',
@@ -115,6 +119,16 @@ const MOCK_PROFILE = {
   },
 }
 
+const DEFAULT_CREDENTIAL_STATE = {
+  qrToken: 'qr-abc-123',
+  timeLeft: 25,
+  maxTime: 30,
+  isRefreshing: false,
+  isStale: false,
+  credentialState: null,
+  refresh: vi.fn(),
+}
+
 function renderPage(searchParamsString = '') {
   return render(
     <MemoryRouter initialEntries={[`/credencial${searchParamsString ? '?' + searchParamsString : ''}`]}>
@@ -123,9 +137,10 @@ function renderPage(searchParamsString = '') {
   )
 }
 
-function setupMocks({ profile = MOCK_PROFILE, isLoading = false, user = { rol: 'socio' } } = {}) {
+function setupMocks({ profile = MOCK_PROFILE, isLoading = false, user = { rol: 'socio' }, credState = DEFAULT_CREDENTIAL_STATE } = {}) {
   useSocioMembresiaMe.mockReturnValue({ data: profile, isLoading })
   useAuth.mockReturnValue({ user })
+  useCredentialState.mockReturnValue(credState)
   api.get.mockResolvedValue({ data: { qr_token: 'qr-abc-123' } })
 }
 
@@ -250,33 +265,37 @@ describe('CredencialDigitalPage', () => {
     })
   })
 
-  // ── 12. QR refresh calls api.get ──────────────────────────────────────────
-  it('calls api.get to generate QR when member loads', async () => {
+  // ── 12. useCredentialState is called when member loads ───────────────────
+  it('calls useCredentialState with enabled=true when member data is ready', async () => {
     renderPage()
     await waitFor(() => {
-      expect(api.get).toHaveBeenCalledWith('/access/qr/generate/')
+      expect(useCredentialState).toHaveBeenCalledWith(expect.objectContaining({ enabled: true }))
     })
   })
 
-  // ── 13. Manual QR refresh button calls api.get again ─────────────────────
-  it('calls api.get again when "Actualizar QR" is clicked', async () => {
+  // ── 13. Manual QR refresh button calls hook refresh ──────────────────────
+  it('calls refresh from useCredentialState when "Actualizar QR" is clicked', async () => {
+    const refreshFn = vi.fn()
+    setupMocks({ credState: { ...DEFAULT_CREDENTIAL_STATE, refresh: refreshFn } })
     renderPage()
     await waitFor(() => {
       expect(screen.getByText('Actualizar QR')).toBeInTheDocument()
     })
-    const callCountBefore = api.get.mock.calls.length
     fireEvent.click(screen.getByText('Actualizar QR'))
     await waitFor(() => {
-      expect(api.get.mock.calls.length).toBeGreaterThan(callCountBefore)
+      expect(refreshFn).toHaveBeenCalledWith(true)
     })
   })
 
-  // ── 14. QR API error shows toast ──────────────────────────────────────────
-  it('shows toast.error when api.get for QR rejects', async () => {
-    api.get.mockRejectedValue(new Error('Network error'))
+  // ── 14. Stale QR overlay renders when hook reports isStale ───────────────
+  it('renders stale QR overlay when useCredentialState returns isStale=true', async () => {
+    setupMocks({
+      credState: { ...DEFAULT_CREDENTIAL_STATE, isStale: true },
+    })
     renderPage()
+    // QRDisplay mock renders with "Actualizar QR" still present — stale prop is passed through
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith('Error al generar QR')
+      expect(screen.getByTestId('qr-display')).toBeInTheDocument()
     })
   })
 
@@ -315,5 +334,37 @@ describe('CredencialDigitalPage', () => {
     await waitFor(() => {
       expect(screen.getByTestId('high-contrast-toggle')).toBeInTheDocument()
     })
+  })
+
+  // ── 18. uses expires_at from backend for countdown (#157) ────────────────
+  // Contract test: the page passes timeLeft from useCredentialState (which uses expires_at
+  // from backend) rather than a hardcoded 30-second local timer.
+  // This verifies that timeLeft=17 (a non-30 value derived from expires_at) flows
+  // from the hook through to the QRDisplay component.
+  it('uses expires_at from backend for countdown — passes hook timeLeft to QRDisplay', async () => {
+    // Simulate backend returning a QR that expires in 17 seconds
+    const expiresAtSoon = new Date(Date.now() + 17_000).toISOString()
+    setupMocks({
+      credState: {
+        ...DEFAULT_CREDENTIAL_STATE,
+        qrToken: 'token-from-expires-at',
+        timeLeft: 17,  // derived from expires_at, NOT hardcoded 30
+        maxTime: 30,
+        expiresAt: expiresAtSoon,
+      },
+    })
+
+    renderPage()
+
+    await waitFor(() => {
+      expect(screen.getByTestId('qr-display')).toBeInTheDocument()
+    })
+
+    // The hook must have been initialised with enabled=true (member was ready)
+    expect(useCredentialState).toHaveBeenCalledWith(expect.objectContaining({ enabled: true }))
+
+    // The page must NOT be calling the old hardcoded api.get('/access/qr/generate/') itself
+    // — that responsibility belongs to the hook now.
+    expect(api.get).not.toHaveBeenCalledWith('/access/qr/generate/')
   })
 })

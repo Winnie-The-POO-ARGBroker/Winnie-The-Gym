@@ -1,6 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import { toast } from 'sonner'
 import { IdCard, RefreshCw } from 'lucide-react'
 import MemberLayout from '../../components/layout/MemberLayout'
 import Card from '../../components/ui/Card'
@@ -13,18 +12,15 @@ import MemberPlanDetails from '../../components/socio/MemberPlanDetails'
 import QRFullscreenModal from '../../components/socio/QRFullscreenModal'
 import EmptyState from '../../components/ui/EmptyState'
 import HighContrastToggle from '../../components/ui/HighContrastToggle'
-import api from '../../services/api'
 import useAuth from '../../hooks/useAuth'
 import { useSocioMembresiaMe } from '../../hooks/queries/useMembresias'
 import useScreenWakeLock from '../../hooks/useScreenWakeLock'
+import useCredentialState from '../../hooks/useCredentialState'
 
 export default function CredencialDigitalPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const [qrData, setQrData] = useState(null)
-  const [timeLeft, setTimeLeft] = useState(30)
-  const [isRefreshing, setIsRefreshing] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
 
   // Capture pago result on first render (avoids StrictMode race condition)
@@ -61,52 +57,16 @@ export default function CredencialDigitalPage() {
   }, [rawProfile])
 
   const isExpired = !member?.membresia || member.membresia.estado === 'vencida'
-  const hasValidQR = Boolean(member && qrData && !isExpired)
+  const memberReady = Boolean(member && !isExpired)
 
-  // Wake Lock API & Screen Brightness Boost para maximizar visibilidad del QR en molinete
-  // Solo se activa si hay un QR válido que presentar (evita consumo innecesario de batería)
+  // QR credential state — uses the new hook that handles expires_at, visibilitychange, stale overlay
+  const { qrToken, timeLeft, maxTime, isRefreshing, isStale, credentialState, refresh } =
+    useCredentialState({ enabled: Boolean(member) })
+
+  const hasValidQR = Boolean(memberReady && qrToken)
+
+  // Wake Lock API — only when a valid QR is presented
   useScreenWakeLock({ enabled: hasValidQR })
-
-  const refreshQR = useCallback(async (manual = false) => {
-    setIsRefreshing(true)
-    try {
-      const res = await api.get('/access/qr/generate/')
-      setQrData(res.data.qr_token)
-      setTimeLeft(30)
-      if (manual) {
-        toast.success('Código QR actualizado')
-      }
-    } catch (error) {
-      console.error('Error al generar QR:', error)
-      toast.error('Error al generar QR')
-    } finally {
-      setIsRefreshing(false)
-    }
-  }, [])
-
-  // Cargar QR inicial cuando el miembro está listo
-  useEffect(() => {
-    if (member) {
-      refreshQR()
-    }
-  }, [member, refreshQR])
-
-  // Temporizador de expiración de 30 segundos
-  useEffect(() => {
-    if (!qrData) return
-
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          refreshQR(false)
-          return 30
-        }
-        return prev - 1
-      })
-    }, 1000)
-
-    return () => clearInterval(timer)
-  }, [qrData, refreshQR])
 
   if (isLoading) {
     return (
@@ -124,6 +84,48 @@ export default function CredencialDigitalPage() {
           title={user?.rol === 'administrador' ? 'Vista de Administrador' : 'Credencial no disponible'}
           message={user?.rol === 'administrador' ? 'Las credenciales digitales son exclusivas para los socios.' : 'Iniciá sesión para ver tu credencial digital.'}
         />
+      </MemberLayout>
+    )
+  }
+
+  // Credential disabled state — render motivo + CTA from backend (#157)
+  if (credentialState && credentialState.habilitado === false) {
+    return (
+      <MemberLayout
+        member={member}
+        title="Credencial Digital"
+        subtitle="Acceso al gimnasio por molinete"
+        rightAction={<HighContrastToggle />}
+      >
+        <Card className="p-6 flex flex-col gap-4 border-error-500/30">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-error-500/10 flex items-center justify-center">
+              <IdCard className="w-5 h-5 text-error-500" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-error-500">Acceso no disponible</p>
+              <p className="text-xs text-text-secondary mt-0.5">
+                {credentialState.motivo === 'membresia_vencida' && 'Tu membresía está vencida.'}
+                {credentialState.motivo === 'socio_suspendido' && 'Tu cuenta está suspendida.'}
+                {credentialState.motivo === 'socio_baja' && 'Tu cuenta ha sido dada de baja.'}
+                {credentialState.motivo === 'sin_plan' && 'No tenés un plan activo.'}
+                {!['membresia_vencida', 'socio_suspendido', 'socio_baja', 'sin_plan'].includes(credentialState.motivo) &&
+                  'Consultá con recepción para más información.'}
+              </p>
+            </div>
+          </div>
+          {credentialState.cta && (
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => navigate(credentialState.cta.href)}
+              className="w-full gap-2"
+            >
+              <RefreshCw className="w-4 h-4" />
+              {credentialState.cta.label}
+            </Button>
+          )}
+        </Card>
       </MemberLayout>
     )
   }
@@ -203,12 +205,13 @@ export default function CredencialDigitalPage() {
 
           {/* CÓDIGO QR DINÁMICO */}
           <QRDisplay
-            qrToken={qrData}
+            qrToken={qrToken}
             timeLeft={timeLeft}
-            maxTime={30}
+            maxTime={maxTime}
             isRefreshing={isRefreshing}
             isExpired={isExpired}
-            onRefresh={() => refreshQR(true)}
+            isStale={isStale}
+            onRefresh={() => refresh(true)}
             onOpenFullscreen={() => setIsFullscreen(true)}
           />
 
@@ -232,12 +235,12 @@ export default function CredencialDigitalPage() {
       </div>
 
       {/* MODAL QR PANTALLA COMPLETA */}
-      {qrData && (
+      {qrToken && (
         <QRFullscreenModal
           isOpen={isFullscreen}
           onClose={() => setIsFullscreen(false)}
           member={member}
-          qrToken={qrData}
+          qrToken={qrToken}
           timeLeft={timeLeft}
           isExpired={isExpired}
         />

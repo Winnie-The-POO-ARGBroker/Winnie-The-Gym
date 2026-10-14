@@ -103,24 +103,29 @@ export default function QRFullscreenModal({
           {member.socioNumero} • DNI {member.dni}
         </p>
 
-        {/* QR Maximizado */}
+        {/* QR Maximizado — ≥280px, #000 alto contraste (RNF07) */}
         <div className="my-5 p-3 rounded-lg bg-white border border-neutral-200 shadow-sm">
           <QRCode
             value={qrToken}
-            size={220}
+            size={280}
             fgColor="#000000"
             bgColor="#FFFFFF"
             includeLogo={!isExpired}
           />
         </div>
 
-        <div className="flex items-center justify-center gap-2 px-3 py-1 rounded-full bg-bg-raised text-text-secondary text-xs font-medium mb-2.5">
+        <div className="flex items-center justify-center gap-2 px-3 py-1 rounded-full bg-gray-100 text-neutral-700 text-xs font-medium mb-2.5">
           <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
           Válido por: <strong className="font-mono text-neutral-900">{timeLeft}s</strong>
         </div>
 
-        <p className="text-[10.5px] text-text-tertiary leading-tight">
-          Presentá este código frente al lector óptico del molinete para ingresar. Fondo optimizado al máximo contraste visual.
+        {/* Brightness hint — replaces fake brightness boost */}
+        <p className="text-[10.5px] text-neutral-500 leading-tight mb-1 font-medium">
+          Subí el brillo al máximo para mejorar la lectura.
+        </p>
+
+        <p className="text-[10px] text-neutral-400 leading-tight">
+          Presentá este código frente al lector óptico del molinete.
         </p>
 
         <Button
