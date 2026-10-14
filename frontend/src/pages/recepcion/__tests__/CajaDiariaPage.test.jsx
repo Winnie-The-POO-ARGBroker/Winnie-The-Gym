@@ -5,6 +5,14 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import CajaDiariaPage from '../CajaDiariaPage'
 import api from '../../../services/api'
 
+// Stub AppLayout + TopBar to speed up renders and avoid Sidebar noise.
+vi.mock('../../../components/layout/AppLayout', () => ({
+  default: ({ children }) => <div data-testid="app-layout">{children}</div>,
+}))
+vi.mock('../../../components/layout/TopBar', () => ({
+  default: ({ title }) => <div data-testid="top-bar">{title}</div>,
+}))
+
 vi.mock('../../../services/api', () => ({
   default: { get: vi.fn() },
 }))
@@ -57,12 +65,7 @@ describe('CajaDiariaPage', () => {
     currentUser = { rol: 'recepcionista', id: 1 }
   })
 
-  // TODO: this test fails in CI because the mock responds synchronously
-  // but the AppLayout wrapper requires a few extra render cycles to flush
-  // the Skeleton -> MedioCard transition. Covered implicitly by
-  // 'muestra el total de cobros y anulaciones' which also depends on the
-  // same data payload rendering.
-  it.skip('renderiza cards por medio de pago', async () => {
+  it('renderiza cards por medio de pago', async () => {
     renderWithProviders()
 
     expect(await screen.findByTestId('card-medio-efectivo')).toBeInTheDocument()
