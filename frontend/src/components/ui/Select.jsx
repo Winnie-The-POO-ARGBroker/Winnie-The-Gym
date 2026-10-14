@@ -12,7 +12,7 @@ export default function Select({ label, id, className = '', children, ...rest })
       <div className="relative">
         <select
           id={id}
-          className="w-full bg-bg-base border border-subtle rounded-lg text-text-primary focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary text-base md:text-sm min-h-11 py-2.5 px-3 appearance-none"
+          className="w-full bg-bg-base border border-subtle rounded-lg text-text-primary outline-none focus:ring-1 focus:ring-primary focus:border-primary focus-visible:ring-2 focus-visible:ring-primary-500 text-base md:text-sm min-h-11 py-2.5 px-3 appearance-none"
           {...rest}
         >
           {children}

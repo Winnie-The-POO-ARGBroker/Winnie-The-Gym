@@ -40,7 +40,7 @@ const Input = forwardRef(function Input(
           enterKeyHint={enterKeyHint}
           autoComplete={autoComplete}
           maxLength={maxLength}
-          className={`w-full bg-bg-base border border-subtle rounded-lg text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-colors text-base md:text-sm min-h-11 py-2 ${
+          className={`w-full bg-bg-base border border-subtle rounded-lg text-text-primary placeholder:text-text-tertiary outline-none focus:ring-1 focus:ring-primary focus:border-primary focus-visible:ring-2 focus-visible:ring-primary-500 transition-colors text-base md:text-sm min-h-11 py-2 ${
             Icon ? 'pl-10' : 'pl-3'
           } pr-3`}
           {...props}

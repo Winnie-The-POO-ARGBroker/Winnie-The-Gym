@@ -17,6 +17,12 @@ vi.mock('../../../hooks/useWebSocket', () => ({
   default: vi.fn(() => ({ lastMessage: { aforo_actual: 150 }, isConnected: true, isConnecting: false, isReconnecting: false, sendMessage: vi.fn() })),
 }));
 
+const mockUseScreenWakeLock = vi.fn(() => ({ isSupported: true, isActive: false, brightnessBoosted: false }));
+vi.mock('../../../hooks/useScreenWakeLock', () => ({
+  __esModule: true,
+  default: (...args) => mockUseScreenWakeLock(...args),
+}));
+
 // Mock layout components so we don't need router context
 vi.mock('../../../components/layout/AppLayout', () => ({
   default: ({ children }) => <div data-testid="app-layout">{children}</div>,
@@ -189,5 +195,27 @@ describe('AccesoTerminal', () => {
 
     expect(await screen.findByText('Acceso denegado')).toBeInTheDocument();
     expect(await screen.findByText('Error al validar acceso')).toBeInTheDocument();
+  });
+
+  // #203 — Wake Lock active when scanner is running
+  it('uses useScreenWakeLock when scanner is active (camera mode)', () => {
+    render(<AccesoTerminalPage />);
+
+    // By default camera mode is active (isManualMode = false)
+    // useScreenWakeLock should be called with enabled: true
+    expect(mockUseScreenWakeLock).toHaveBeenCalledWith({ enabled: true });
+  });
+
+  // #203 — Wake Lock disabled in manual (DNI) mode
+  it('disables useScreenWakeLock when manual mode is active', () => {
+    render(<AccesoTerminalPage />);
+
+    fireEvent.click(screen.getByRole('button', { name: /DNI manual/i }));
+
+    // After switching to manual mode, enabled should be false
+    const calls = mockUseScreenWakeLock.mock.calls;
+    // The last call should have enabled: false
+    const lastCall = calls[calls.length - 1]
+    expect(lastCall[0]).toEqual({ enabled: false });
   });
 });

@@ -54,7 +54,7 @@ export default function Pagination({ currentPage, totalCount, pageSize = 10, onP
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage <= 1}
-          className="p-2 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed hover:bg-bg-raised text-text-secondary hover:text-text-primary"
+          className="p-2 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed hover:bg-bg-raised text-text-secondary hover:text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
           aria-label="Página anterior"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -87,7 +87,7 @@ export default function Pagination({ currentPage, totalCount, pageSize = 10, onP
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage >= totalPages}
-          className="p-2 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed hover:bg-bg-raised text-text-secondary hover:text-text-primary"
+          className="p-2 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed hover:bg-bg-raised text-text-secondary hover:text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
           aria-label="Página siguiente"
         >
           <ChevronRight className="w-4 h-4" />
@@ -102,7 +102,7 @@ function PageButton({ page, current, onClick }) {
   return (
     <button
       onClick={() => onClick(page)}
-      className={`min-w-[36px] h-9 rounded-lg text-sm font-medium transition-all ${
+      className={`min-w-[36px] h-9 rounded-lg text-sm font-medium transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${
         isActive
           ? 'bg-primary text-white shadow-md'
           : 'text-text-secondary hover:bg-bg-raised hover:text-text-primary'

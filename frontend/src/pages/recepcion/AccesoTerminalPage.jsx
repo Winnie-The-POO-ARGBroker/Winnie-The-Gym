@@ -6,6 +6,7 @@ import ScannerPanel from '../../components/recepcion/ScannerPanel';
 import ValidationResult from '../../components/recepcion/ValidationResult';
 import { scanQR, manualAccess } from '../../services/accessService';
 import useWebSocket from '../../hooks/useWebSocket';
+import useScreenWakeLock from '../../hooks/useScreenWakeLock';
 import { Wifi, WifiOff } from 'lucide-react';
 
 const SCAN_RESULT_DISPLAY_MS = 8000;
@@ -74,6 +75,9 @@ export default function AccesoTerminalPage() {
 
   const { lastMessage } = useWebSocket('/ws/aforo/');
   const aforoActual = lastMessage?.aforo_actual ?? '--';
+
+  // Keep screen awake while camera scanner is active (fix #203 — Wake Lock on scanner)
+  useScreenWakeLock({ enabled: !isManualMode });
 
   const toggleMute = useCallback(() => {
     setIsMuted((prev) => {
