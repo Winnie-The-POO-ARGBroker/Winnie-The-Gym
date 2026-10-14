@@ -8,6 +8,13 @@ export default defineConfig({
     globals: true,
     setupFiles: './setupTests.js',
     forbidOnly: true,
+    pool: 'forks',
+    poolOptions: {
+      forks: {
+        maxForks: 2,
+        minForks: 1,
+      },
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov', 'html'],
