@@ -440,7 +440,9 @@ function SocioProfileView({ profile, user, isChangePwdOpen, setIsChangePwdOpen, 
             </label>
             <input
               {...register('telefono')}
-              className="w-full px-3 py-2 rounded-lg text-sm outline-none appearance-none transition-colors bg-bg-raised border border-subtle text-text-primary placeholder:text-text-tertiary"
+              inputMode="tel"
+              autoComplete="tel"
+              className="w-full px-3 py-2 rounded-lg text-base md:text-sm min-h-11 outline-none appearance-none transition-colors bg-bg-raised border border-subtle text-text-primary placeholder:text-text-tertiary"
               onFocus={(e) => (e.target.style.borderColor = '#ff5a36')}
               onBlur={(e) => (e.target.style.borderColor = 'var(--color-border-subtle)')}
             />
