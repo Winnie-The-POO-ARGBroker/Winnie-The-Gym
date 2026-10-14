@@ -27,8 +27,10 @@ from .services import (
 )
 from .serializers import (
     AccessLogSerializer,
+    AccessLogSocioSerializer,
     CerrarDiaSerializer,
     GenerateQRResponseSerializer,
+    MiActividadResumenSerializer,
     PresenteSerializer,
     SalidaManualSerializer,
     ScanQRSerializer,
@@ -525,6 +527,10 @@ class AccessLogListView(generics.ListAPIView):
         user = self.request.user
         is_privileged = user.rol in ('administrador', 'recepcionista') or user.is_staff
 
+        # #150 — select_related covers all FK traversals used by AccessLogSerializer
+        # (user__socio for nombre/apellido, membresias__plan for user_plan_nombre).
+        # prefetch_related on membresias__plan avoids the N+1 that previously hit
+        # the DB once per row when calling socio.membresias.filter(...).first().
         base_qs = AccessLog.objects.select_related(
             'user__socio',
             'scanned_by',
@@ -863,6 +869,176 @@ class CredencialEstadoView(APIView):
             })
 
         return Response({'habilitado': True, 'motivo': None, 'cta': None})
+
+
+# ---------------------------------------------------------------------------
+# #151 — Mi actividad (socio self-service)
+# ---------------------------------------------------------------------------
+
+@extend_schema(
+    tags=['access'],
+    summary='Mi actividad de acceso (socio autenticado)',
+    description=(
+        'Devuelve un resumen mensual (accesos_mes, ultimo_acceso, rechazos_mes) '
+        'más el historial paginado de logs propios. No expone campos internos '
+        '(scanned_by_email, qr_jti).'
+    ),
+    responses={200: {
+        'type': 'object',
+        'properties': {
+            'resumen': {'type': 'object'},
+            'count': {'type': 'integer'},
+            'next': {'type': 'string', 'nullable': True},
+            'previous': {'type': 'string', 'nullable': True},
+            'results': {'type': 'array', 'items': {}},
+        },
+    }},
+)
+class MiActividadView(generics.ListAPIView):
+    """
+    GET /api/access/me/actividad/
+    #151 — Socio-only endpoint: resumen + paginación de propios logs.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = AccessLogSocioSerializer
+    pagination_class = AccessLogPagination
+
+    def get_queryset(self):
+        return (
+            AccessLog.objects
+            .filter(user=self.request.user)
+            .order_by('-timestamp')
+        )
+
+    def list(self, request, *args, **kwargs):
+        from django.utils import timezone as tz
+
+        user = request.user
+        start_of_month = tz.localdate().replace(day=1)
+
+        # Resumen aggregates
+        logs_mes = AccessLog.objects.filter(
+            user=user,
+            timestamp__date__gte=start_of_month,
+        )
+        accesos_mes = logs_mes.filter(
+            access_type=AccessLog.AccessType.ENTRY,
+            status=AccessLog.AccessStatus.GRANTED,
+        ).count()
+        rechazos_mes = logs_mes.filter(
+            status=AccessLog.AccessStatus.DENIED,
+        ).count()
+        ultimo_log = (
+            AccessLog.objects
+            .filter(
+                user=user,
+                access_type=AccessLog.AccessType.ENTRY,
+                status=AccessLog.AccessStatus.GRANTED,
+            )
+            .order_by('-timestamp')
+            .first()
+        )
+        ultimo_acceso = ultimo_log.timestamp if ultimo_log else None
+
+        resumen = {
+            'accesos_mes': accesos_mes,
+            'ultimo_acceso': ultimo_acceso,
+            'rechazos_mes': rechazos_mes,
+        }
+
+        # Standard paginated logs
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            paginated = self.get_paginated_response(serializer.data)
+            paginated.data['resumen'] = resumen
+            return paginated
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'resumen': resumen, 'results': serializer.data})
+
+
+# ---------------------------------------------------------------------------
+# #150 — Access log export (CSV / XLSX)
+# ---------------------------------------------------------------------------
+
+@extend_schema(
+    tags=['access'],
+    summary='Exportar historial de accesos (recep/admin)',
+    description=(
+        'Exporta los registros de acceso aplicando los mismos filtros de '
+        'AccessLogFilter. Soporta ?format=csv (default) y ?format=xlsx. '
+        'Incluye filas DENIED con su motivo.'
+    ),
+    responses={200: {}},
+)
+class AccessLogExportView(generics.GenericAPIView):
+    """
+    GET /api/access/logs/export/
+    #150 — Export access logs as CSV or XLSX.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    filterset_class = AccessLogFilter
+
+    def get_queryset(self):
+        user = self.request.user
+        is_privileged = user.rol in ('administrador', 'recepcionista') or user.is_staff
+
+        base_qs = AccessLog.objects.select_related(
+            'user__socio',
+            'scanned_by',
+            'operator',
+        ).prefetch_related(
+            'user__socio__membresias__plan',
+        ).order_by('-timestamp')
+
+        if is_privileged:
+            return base_qs
+        return base_qs.filter(user=user)
+
+    def get(self, request, *args, **kwargs):
+        from apps.reports.exporters import export as do_export
+
+        fmt = (request.query_params.get('fmt') or 'csv').lower()
+        if fmt not in ('csv', 'xlsx'):
+            return Response(
+                {'detail': f"Formato '{fmt}' no soportado. Use csv o xlsx."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        queryset = self.filter_queryset(self.get_queryset())
+
+        headers = [
+            'ID', 'Timestamp', 'DNI', 'Nombre', 'Apellido', 'Plan',
+            'Tipo', 'Estado', 'Motivo denegación', 'Fuente', 'Operador',
+        ]
+
+        def _row(log):
+            socio = getattr(getattr(log, 'user', None), 'socio', None)
+            membresia = None
+            if socio:
+                membresia = socio.membresias.filter(estado='activa').first()
+            return [
+                log.id,
+                log.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+                socio.dni if socio else '',
+                socio.nombre if socio else '',
+                socio.apellido if socio else '',
+                membresia.plan.nombre if membresia else '',
+                log.access_type,
+                log.status,
+                log.denial_reason or '',
+                log.source,
+                (
+                    f'{log.operator.first_name} {log.operator.last_name}'.strip()
+                    if log.operator else ''
+                ),
+            ]
+
+        rows = [_row(log) for log in queryset]
+
+        return do_export(fmt, 'historial_accesos', 'Historial de Accesos', headers, rows)
 
 
 # ---------------------------------------------------------------------------

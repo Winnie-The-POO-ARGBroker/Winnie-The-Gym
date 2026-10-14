@@ -114,3 +114,34 @@ class SalidaManualSerializer(serializers.Serializer):
 
 class CerrarDiaSerializer(serializers.Serializer):
     confirm = serializers.BooleanField()
+
+
+# ---------------------------------------------------------------------------
+# #151 — Socio-facing serializers (reduced, no internal fields)
+# ---------------------------------------------------------------------------
+
+class AccessLogSocioSerializer(serializers.ModelSerializer):
+    """Reduced serializer for socios — hides internal/staff-only fields."""
+
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+
+    class Meta:
+        model = AccessLog
+        fields = [
+            'id',
+            'timestamp',
+            'access_type',
+            'status',
+            'status_display',
+            'denial_reason',
+            'source',
+        ]
+        # Explicitly excluded: scanned_by_email, qr_jti, fingerprint (never stored in DB),
+        # operator, operator_name, user, user_email, user_nombre, user_apellido, user_plan_nombre
+
+
+class MiActividadResumenSerializer(serializers.Serializer):
+    """Summary block returned by GET /api/access/me/actividad/."""
+    accesos_mes = serializers.IntegerField()
+    ultimo_acceso = serializers.DateTimeField(allow_null=True)
+    rechazos_mes = serializers.IntegerField()

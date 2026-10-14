@@ -40,6 +40,8 @@ import CheckoutPage from './pages/socio/CheckoutPage'
 import HistorialPagosPage from './pages/socio/HistorialPagosPage'
 import PagoRetornoPage from './pages/socio/PagoRetornoPage'
 import CobroManualPage from './pages/recepcion/CobroManualPage'
+import HistorialAccesosPage from './pages/recepcion/HistorialAccesosPage'
+import MiActividadPage from './pages/socio/MiActividadPage'
 import AuthActivationExpiredPage from './pages/AuthActivationExpiredPage'
 
 const AccesoTerminalPage = lazy(() => import('./pages/recepcion/AccesoTerminalPage'))
@@ -141,6 +143,8 @@ export default function App() {
         <Route path="/admin/reportes" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><ReportesPage /></ProtectedRoute>} />
         <Route path="/reportes" element={<LegacyRedirect to="/admin/reportes" />} />
         <Route path="/recepcion/cobros" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><CobroManualPage /></ProtectedRoute>} />
+        <Route path="/recepcion/accesos" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><HistorialAccesosPage /></ProtectedRoute>} />
+        <Route path="/admin/accesos" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><HistorialAccesosPage /></ProtectedRoute>} />
 
         {/* Socio routes — mobile first */}
         <Route path="/socio/credencial" element={<ProtectedRoute roles={['administrador', 'socio']}><CredencialDigitalPage /></ProtectedRoute>} />
@@ -148,6 +152,7 @@ export default function App() {
         <Route path="/socio/checkout" element={<ProtectedRoute roles={['socio']}><CheckoutPage /></ProtectedRoute>} />
         <Route path="/socio/pago-retorno" element={<ProtectedRoute roles={['socio']}><PagoRetornoPage /></ProtectedRoute>} />
         <Route path="/socio/pagos" element={<ProtectedRoute roles={['socio']}><HistorialPagosPage /></ProtectedRoute>} />
+        <Route path="/socio/actividad" element={<ProtectedRoute roles={['socio']}><MiActividadPage /></ProtectedRoute>} />
         <Route path="/socio" element={<ProtectedRoute roles={['administrador', 'socio']}><Navigate to="/socio/credencial" replace /></ProtectedRoute>} />
 
         {/* Admin membresias */}
