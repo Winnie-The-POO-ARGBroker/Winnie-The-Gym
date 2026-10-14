@@ -41,6 +41,7 @@ import HistorialPagosPage from './pages/socio/HistorialPagosPage'
 import PagoRetornoPage from './pages/socio/PagoRetornoPage'
 import CobroManualPage from './pages/recepcion/CobroManualPage'
 import HistorialAccesosPage from './pages/recepcion/HistorialAccesosPage'
+import CajaDiariaPage from './pages/recepcion/CajaDiariaPage'
 import MiActividadPage from './pages/socio/MiActividadPage'
 import AuthActivationExpiredPage from './pages/AuthActivationExpiredPage'
 
@@ -143,6 +144,7 @@ export default function App() {
         <Route path="/admin/reportes" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><ReportesPage /></ProtectedRoute>} />
         <Route path="/reportes" element={<LegacyRedirect to="/admin/reportes" />} />
         <Route path="/recepcion/cobros" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><CobroManualPage /></ProtectedRoute>} />
+        <Route path="/recepcion/caja" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><CajaDiariaPage /></ProtectedRoute>} />
         <Route path="/recepcion/accesos" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><HistorialAccesosPage /></ProtectedRoute>} />
         <Route path="/admin/accesos" element={<ProtectedRoute roles={['administrador', 'recepcionista']}><HistorialAccesosPage /></ProtectedRoute>} />
 
