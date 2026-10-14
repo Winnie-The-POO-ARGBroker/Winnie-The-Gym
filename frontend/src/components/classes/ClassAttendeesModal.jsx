@@ -5,11 +5,14 @@ import {
   X as XIcon,
   ExternalLink,
   Save,
+  UserCheck,
+  Loader2,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import Avatar from '../ui/Avatar'
 import Button from '../ui/Button'
 import Modal from '../ui/Modal'
+import { useClasesMutations } from '../../hooks/queries/useClases'
 
 export default function ClassAttendeesModal({
   isOpen,
@@ -21,6 +24,7 @@ export default function ClassAttendeesModal({
 }) {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
+  const { promoverEspera } = useClasesMutations()
 
   if (!isOpen || !selectedClass) return null
 
@@ -37,9 +41,10 @@ export default function ClassAttendeesModal({
   })
 
   // Tri-state: asistio=true → presente, asistio=false → ausente, asistio=null/undefined → sin marcar
-  const presentesCount = attendees.filter((a) => a.asistio === true).length
-  const ausentesCount = attendees.filter((a) => a.asistio === false).length
-  const sinMarcarCount = attendees.filter((a) => a.asistio === null || a.asistio === undefined).length
+  const confirmadosAttendees = attendees.filter((a) => a.estado !== 'en_espera')
+  const presentesCount = confirmadosAttendees.filter((a) => a.asistio === true).length
+  const ausentesCount = confirmadosAttendees.filter((a) => a.asistio === false).length
+  const sinMarcarCount = confirmadosAttendees.filter((a) => a.asistio === null || a.asistio === undefined).length
 
   return (
     <Modal
@@ -93,6 +98,7 @@ export default function ClassAttendeesModal({
             </div>
           ) : (
             filteredAttendees.map((att) => {
+              const isEnEspera = att.estado === 'en_espera'
               // Tri-state: null/undefined = sin marcar (neutral), true = presente, false = ausente
               const isPresente = att.asistio === true
               const isAusente = att.asistio === false
@@ -107,7 +113,9 @@ export default function ClassAttendeesModal({
                 <div
                   key={att.id}
                   className={`pt-3 first:pt-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl transition-colors ${
-                    isPresente
+                    isEnEspera
+                      ? 'bg-warning-500/5 border border-warning-500/20'
+                      : isPresente
                       ? 'bg-success-500/5 border border-success-500/20'
                       : isAusente
                       ? 'bg-error-500/5 border border-error-500/20'
@@ -124,7 +132,13 @@ export default function ClassAttendeesModal({
                       <div className="flex items-center gap-2 text-[11px] text-text-secondary">
                         <span>DNI: {displayDni}</span>
                         <span>·</span>
-                        <span className="text-text-tertiary">Reserva: {att.hora_reserva ?? (att.created_at ? new Date(att.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—')}</span>
+                        {isEnEspera ? (
+                          <span className="text-warning-500 font-semibold">
+                            Espera #{att.posicion_en_espera ?? '—'}
+                          </span>
+                        ) : (
+                          <span className="text-text-tertiary">Reserva: {att.hora_reserva ?? (att.created_at ? new Date(att.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—')}</span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -137,31 +151,46 @@ export default function ClassAttendeesModal({
                       {displayPlan}
                     </span>
 
-                    <div className="flex items-center gap-1.5">
+                    {isEnEspera ? (
                       <button
-                        onClick={() => onToggleStatus(att.id, 'presente')}
-                        className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                          isPresente
-                            ? 'bg-success-500 text-white shadow-sm'
-                            : 'bg-bg-raised border border-subtle text-text-secondary hover:text-text-primary hover:bg-success-500/20'
-                        }`}
+                        onClick={() => promoverEspera.mutate(selectedClass.id)}
+                        disabled={promoverEspera.isPending}
+                        data-testid="promover-espera-btn"
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-warning-500/10 border border-warning-500/40 text-warning-500 hover:bg-warning-500/20 disabled:opacity-50"
                       >
-                        <Check className="w-3.5 h-3.5 stroke-[3]" />
-                        Presente
+                        {promoverEspera.isPending
+                          ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          : <UserCheck className="w-3.5 h-3.5" />
+                        }
+                        Habilitar
                       </button>
+                    ) : (
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => onToggleStatus(att.id, 'presente')}
+                          className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                            isPresente
+                              ? 'bg-success-500 text-white shadow-sm'
+                              : 'bg-bg-raised border border-subtle text-text-secondary hover:text-text-primary hover:bg-success-500/20'
+                          }`}
+                        >
+                          <Check className="w-3.5 h-3.5 stroke-[3]" />
+                          Presente
+                        </button>
 
-                      <button
-                        onClick={() => onToggleStatus(att.id, 'ausente')}
-                        className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                          isAusente
-                            ? 'bg-error-500 text-white shadow-sm'
-                            : 'bg-bg-raised border border-subtle text-text-secondary hover:text-text-primary hover:bg-error-500/20'
-                        }`}
-                      >
-                        <XIcon className="w-3.5 h-3.5 stroke-[3]" />
-                        Ausente
-                      </button>
-                    </div>
+                        <button
+                          onClick={() => onToggleStatus(att.id, 'ausente')}
+                          className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                            isAusente
+                              ? 'bg-error-500 text-white shadow-sm'
+                              : 'bg-bg-raised border border-subtle text-text-secondary hover:text-text-primary hover:bg-error-500/20'
+                          }`}
+                        >
+                          <XIcon className="w-3.5 h-3.5 stroke-[3]" />
+                          Ausente
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               )

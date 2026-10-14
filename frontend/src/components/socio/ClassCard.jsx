@@ -2,7 +2,7 @@ import Badge from '../ui/Badge'
 import Button from '../ui/Button'
 import Card from '../ui/Card'
 
-export default function ClassCard({ clase, variant, onBook, onCancel }) {
+export default function ClassCard({ clase, variant, onBook, onCancel, hideBooking = false }) {
   if (variant === 'booked') {
     return (
       <Card className="border-primary/40 p-3.5 flex flex-col gap-2">
@@ -124,33 +124,58 @@ export default function ClassCard({ clase, variant, onBook, onCancel }) {
       </div>
 
       {/* Acción de Reserva */}
-      <div className="pt-2 border-t border-subtle flex items-center justify-between">
-        {clase.isBooked ? (
-          <>
-            <div className="flex items-center gap-1 text-xs text-success-500 font-semibold">
-              <span>✓ Reservada</span>
-            </div>
+      {!hideBooking && (
+        <div className="pt-2 border-t border-subtle flex items-center justify-between">
+          {clase.isBooked ? (
+            <>
+              <div className="flex items-center gap-1 text-xs text-success-500 font-semibold">
+                <span>✓ Reservada</span>
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => onCancel(clase.id)}
+                className="text-xs text-error-500 hover:text-error-600 hover:bg-error-500/10 border-error-500/30 py-1"
+              >
+                Cancelar
+              </Button>
+            </>
+          ) : clase.enEspera ? (
+            <>
+              <div className="flex items-center gap-1 text-xs text-warning-500 font-semibold">
+                <span>⏳ Estás #{clase.posicionEspera ?? '—'} en lista de espera</span>
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => onCancel(clase.id)}
+                className="text-xs text-error-500 hover:text-error-600 hover:bg-error-500/10 border-error-500/30 py-1"
+              >
+                Salir de la lista
+              </Button>
+            </>
+          ) : isFull && clase.listaEsperaMax > 0 ? (
             <Button
               variant="secondary"
               size="sm"
-              onClick={() => onCancel(clase.id)}
-              className="text-xs text-error-500 hover:text-error-600 hover:bg-error-500/10 border-error-500/30 py-1"
+              onClick={() => onBook(clase.id)}
+              className="w-full py-1.5 text-xs font-bold border-warning-500/40 text-warning-500 hover:bg-warning-500/10"
             >
-              Cancelar
+              Anotarme en lista de espera ({clase.cuposReservados - clase.cuposTotales}/{clase.listaEsperaMax})
             </Button>
-          </>
-        ) : (
-          <Button
-            variant="primary"
-            size="sm"
-            disabled={isFull}
-            onClick={() => onBook(clase.id)}
-            className="w-full py-1.5 text-xs font-bold shadow-sm"
-          >
-            {isFull ? 'Sin cupos disponibles' : 'Reservar mi cupo'}
-          </Button>
-        )}
-      </div>
+          ) : (
+            <Button
+              variant="primary"
+              size="sm"
+              disabled={isFull}
+              onClick={() => onBook(clase.id)}
+              className="w-full py-1.5 text-xs font-bold shadow-sm"
+            >
+              {isFull ? 'Sin cupos disponibles' : 'Reservar mi cupo'}
+            </Button>
+          )}
+        </div>
+      )}
     </Card>
   )
 }

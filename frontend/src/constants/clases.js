@@ -2,7 +2,7 @@
  * Days of the week used by the class schedule form and recurrence selector.
  * Extracted from CreateClassPage to be shared across class-related components.
  */
-export const DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+export const DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 
 /** Abbreviated recurrence day keys with their display labels. */
 export const RECURRENCIA_DIAS = [

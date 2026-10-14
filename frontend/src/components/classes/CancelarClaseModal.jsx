@@ -16,14 +16,24 @@ const schema = z.object({
 /**
  * Modal for staff to soft-cancel a class with a mandatory reason.
  *
- * @param {boolean}  isOpen
- * @param {function} onClose
- * @param {object}   clase   — the Clase object being cancelled
- * @param {function} onConfirm(motivo) — called with the motivo string when submitted;
- *                                        the parent handles the API call + toast.
- * @param {boolean}  [loading=false] — show loading state while the mutation is in flight
+ * @param {boolean}   isOpen
+ * @param {function}  onClose
+ * @param {object}    clase       — the Clase object being cancelled
+ * @param {function}  onConfirm(motivo) — called with the motivo string when submitted;
+ *                                         the parent handles the API call + toast.
+ * @param {boolean}   [loading=false]   — show loading state while the mutation is in flight
+ * @param {Array}     [confirmados=[]]  — list of confirmed attendees to display
+ * @param {Array}     [enEspera=[]]     — list of waitlist attendees to display
  */
-export default function CancelarClaseModal({ isOpen, onClose, clase, onConfirm, loading = false }) {
+export default function CancelarClaseModal({
+  isOpen,
+  onClose,
+  clase,
+  onConfirm,
+  loading = false,
+  confirmados = [],
+  enEspera = [],
+}) {
   const {
     register,
     handleSubmit,
@@ -52,6 +62,36 @@ export default function CancelarClaseModal({ isOpen, onClose, clase, onConfirm, 
           Esta acción cancela la clase y notifica a todos los socios inscriptos por email.
           No es reversible desde el panel.
         </div>
+
+        {/* Affected attendees summary */}
+        {(confirmados.length > 0 || enEspera.length > 0) && (
+          <div className="p-3 rounded-xl bg-bg-raised border border-subtle text-xs flex flex-col gap-2">
+            {confirmados.length > 0 && (
+              <div>
+                <span className="font-semibold text-text-primary">
+                  {confirmados.length} confirmados a notificar:
+                </span>{' '}
+                <span className="text-text-secondary">
+                  {confirmados.map((a) =>
+                    a.socio_nombre ? `${a.socio_nombre} ${a.socio_apellido ?? ''}`.trim() : (a.nombre ?? '—')
+                  ).join(', ')}
+                </span>
+              </div>
+            )}
+            {enEspera.length > 0 && (
+              <div>
+                <span className="font-semibold text-text-primary">
+                  {enEspera.length} en espera a notificar:
+                </span>{' '}
+                <span className="text-text-secondary">
+                  {enEspera.map((a) =>
+                    a.socio_nombre ? `${a.socio_nombre} ${a.socio_apellido ?? ''}`.trim() : (a.nombre ?? '—')
+                  ).join(', ')}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-medium uppercase tracking-wide text-text-tertiary">

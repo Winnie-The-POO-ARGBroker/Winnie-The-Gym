@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { Calendar } from 'lucide-react'
+import { toast } from 'sonner'
 import MemberLayout from '../../components/layout/MemberLayout'
 import Button from '../../components/ui/Button'
 import Card from '../../components/ui/Card'
@@ -10,14 +11,41 @@ import { CATEGORIAS_CLASES } from '../../constants/clases'
 import { generateDaysAgenda } from '../../utils/agenda'
 import { useClasesList } from '../../hooks/queries/useClases'
 import { useInscripcionesMutations } from '../../hooks/queries/useInscripciones'
+import useAuthStore from '../../stores/authStore'
 
 const DIAS_AGENDA = generateDaysAgenda()
 
-/** Map a YYYY-MM-DD date string to its lowercase Spanish weekday name. */
+/** ART (America/Argentina/Buenos_Aires) aware "today" date string YYYY-MM-DD */
+function getTodayART() {
+  try {
+    const now = new Date()
+    const artStr = now.toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' })
+    return artStr // en-CA gives YYYY-MM-DD format
+  } catch {
+    return new Date().toISOString().split('T')[0]
+  }
+}
+
+/** Map a YYYY-MM-DD date string to its lowercase Spanish weekday name using ART timezone. */
 function getDiaParam(dateStr) {
-  const d = new Date(`${dateStr}T00:00:00`)
+  // Append T12:00:00 to avoid any DST/UTC shift when parsing
+  const d = new Date(`${dateStr}T12:00:00`)
   const diasMap = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado']
   return diasMap[d.getDay()]
+}
+
+/** Get discipline label from backend categoria value */
+function getDisciplinaLabel(categoria) {
+  const map = {
+    funcional: 'Funcional',
+    spinning: 'Spinning',
+    crossfit: 'CrossFit',
+    pilates: 'Pilates',
+    yoga: 'Yoga',
+    boxeo: 'Boxeo',
+    hiit: 'HIIT',
+  }
+  return map[categoria] ?? categoria?.toUpperCase() ?? '—'
 }
 
 /** Convert a raw API class object to the shape ClassCard expects. */
@@ -31,6 +59,7 @@ function mapClase(c) {
     fecha: undefined,
     nombre: c.nombre,
     categoria: c.categoria,
+    disciplinaLabel: getDisciplinaLabel(c.categoria),
     instructor: c.instructor,
     instructorAvatar: '',
     horaInicio: c.hora.substring(0, 5),
@@ -39,19 +68,31 @@ function mapClase(c) {
     sala: c.sala,
     cuposTotales: c.cupo_maximo,
     cuposReservados: c.cupos_reservados,
+    listaEsperaMax: c.lista_espera_max ?? 0,
     isBooked: c.user_inscrito,
+    enEspera: c.user_en_espera,
+    posicionEspera: c.posicion_en_espera,
     descripcion: c.descripcion,
     cancelacion_horas: c.cancelacion_horas,
+    // Reservation + class state
+    estado: c.estado,
+    motivo_cancelacion: c.motivo_cancelacion,
+    dia: c.dia,
+    proximaFecha: c.proxima_fecha ?? undefined,
   }
 }
 
 export default function ClasesPage() {
-  // Filtros interactivos con fecha de hoy por defecto
-  const [selectedDay, setSelectedDay] = useState(
-    () => new Date().toISOString().split('T')[0]
-  )
+  const user = useAuthStore((s) => s.user)
+  const isAdmin = user?.rol === 'administrador'
+
+  // Filtros interactivos con fecha de hoy ART por defecto
+  const [selectedDay, setSelectedDay] = useState(getTodayART)
   const [selectedCategory, setSelectedCategory] = useState('todas')
-  const [selectedTurno, setSelectedTurno] = useState('todos') // 'todos' | 'manana' | 'tarde'
+  const [selectedTurno, setSelectedTurno] = useState('todos') // 'todos' | 'manana' | 'tarde' | 'noche'
+  const [selectedSala, setSelectedSala] = useState('todas')
+  const [selectedInstructor, setSelectedInstructor] = useState('todos')
+  const [soloConLugar, setSoloConLugar] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeTab, setActiveTab] = useState('catalogo') // 'catalogo' | 'mis_reservas'
 
@@ -62,6 +103,7 @@ export default function ClasesPage() {
     if (searchQuery.trim()) params.search = searchQuery
     if (selectedTurno === 'manana') params.hora_hasta = '11:59:59'
     if (selectedTurno === 'tarde') params.hora_desde = '12:00:00'
+    if (selectedTurno === 'noche') params.hora_desde = '19:00:00'
     return params
   }, [selectedDay, selectedCategory, searchQuery, selectedTurno])
 
@@ -79,18 +121,56 @@ export default function ClasesPage() {
 
   const isLoading = activeTab === 'catalogo' ? loadingCatalog : loadingAll
 
+  // Derive available salas and instructors from catalog data for filter chips
+  const availableSalas = useMemo(() => {
+    const salas = [...new Set(rawCatalog.map((c) => c.sala).filter(Boolean))]
+    return salas
+  }, [rawCatalog])
+
+  const availableInstructors = useMemo(() => {
+    const instructors = [...new Set(rawCatalog.map((c) => c.instructor).filter(Boolean))]
+    return instructors
+  }, [rawCatalog])
+
+  // Apply client-side extra filters (sala, instructor, soloConLugar)
+  const filteredCatalog = useMemo(() => {
+    return rawCatalog.filter((c) => {
+      if (soloConLugar && c.cupos_reservados >= c.cupo_maximo) return false
+      if (selectedSala !== 'todas' && c.sala !== selectedSala) return false
+      if (selectedInstructor !== 'todos' && c.instructor !== selectedInstructor) return false
+      return true
+    })
+  }, [rawCatalog, soloConLugar, selectedSala, selectedInstructor])
+
   // Map raw API data to ClassCard shape
   const filteredClasses = useMemo(
-    () => (activeTab === 'catalogo' ? rawCatalog : rawAll.filter((c) => c.user_inscrito)).map(mapClase),
-    [activeTab, rawCatalog, rawAll]
+    () => (activeTab === 'catalogo' ? filteredCatalog : rawAll.filter((c) => c.user_inscrito || c.user_en_espera)).map(mapClase),
+    [activeTab, filteredCatalog, rawAll]
   )
 
   const myBookings = useMemo(
-    () => rawAll.filter((c) => c.user_inscrito).map(mapClase),
+    () => rawAll.filter((c) => c.user_inscrito || c.user_en_espera).map(mapClase),
     [rawAll]
   )
 
-  const handleBookClass = (classId) => inscribir.mutate(classId)
+  const handleBookClass = (classId) => {
+    const clase = rawCatalog.find((c) => c.id === classId)
+    const isFull = clase && clase.cupos_reservados >= clase.cupo_maximo
+    if (isFull && clase?.lista_espera_max > 0) {
+      inscribir.mutate(classId, {
+        onSuccess: (data) => {
+          if (data?.en_espera) {
+            toast.info(`Quedaste #${data.posicion_en_espera ?? '—'} en espera`)
+          } else if (data?.promovido_de_espera) {
+            toast.success('¡Fuiste promovido de la lista de espera! Tu cupo está confirmado.')
+          }
+        },
+      })
+    } else {
+      inscribir.mutate(classId)
+    }
+  }
+
   const handleCancelBooking = (classId) => cancelar.mutate(classId)
 
   // Info del día seleccionado
@@ -212,6 +292,7 @@ export default function ClasesPage() {
                   { id: 'todos', label: 'Todos' },
                   { id: 'manana', label: 'Mañana' },
                   { id: 'tarde', label: 'Tarde / Noche' },
+                  { id: 'noche', label: 'Noche' },
                 ].map((t) => (
                   <FilterButton
                     key={t.id}
@@ -220,6 +301,37 @@ export default function ClasesPage() {
                     className="px-2 py-1 text-xs"
                   >
                     {t.label}
+                  </FilterButton>
+                ))}
+              </div>
+
+              {/* Extra filters row: Solo con lugar + Sala + Instructor */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <FilterButton
+                  active={soloConLugar}
+                  onClick={() => setSoloConLugar((v) => !v)}
+                  className="px-2 py-1 text-xs"
+                >
+                  Solo con lugar
+                </FilterButton>
+                {availableSalas.length > 1 && availableSalas.map((sala) => (
+                  <FilterButton
+                    key={sala}
+                    active={selectedSala === sala}
+                    onClick={() => setSelectedSala(selectedSala === sala ? 'todas' : sala)}
+                    className="px-2 py-1 text-xs"
+                  >
+                    {sala}
+                  </FilterButton>
+                ))}
+                {availableInstructors.length > 1 && availableInstructors.map((inst) => (
+                  <FilterButton
+                    key={inst}
+                    active={selectedInstructor === inst}
+                    onClick={() => setSelectedInstructor(selectedInstructor === inst ? 'todos' : inst)}
+                    className="px-2 py-1 text-xs"
+                  >
+                    {inst}
                   </FilterButton>
                 ))}
               </div>
@@ -281,8 +393,9 @@ export default function ClasesPage() {
                     key={clase.id}
                     clase={clase}
                     variant="catalog"
-                    onBook={handleBookClass}
-                    onCancel={handleCancelBooking}
+                    onBook={isAdmin ? undefined : handleBookClass}
+                    onCancel={isAdmin ? undefined : handleCancelBooking}
+                    hideBooking={isAdmin}
                   />
                 ))
               )}
@@ -321,15 +434,48 @@ export default function ClasesPage() {
                 </Button>
               </Card>
             ) : (
-              myBookings.map((clase) => (
-                <ClassCard
-                  key={clase.id}
-                  clase={clase}
-                  variant="booked"
-                  onBook={handleBookClass}
-                  onCancel={handleCancelBooking}
-                />
-              ))
+              myBookings.map((clase) => {
+                const isCancelada = clase.estado === 'cancelada'
+                const dayName = clase.dia
+                  ? clase.dia.charAt(0).toUpperCase() + clase.dia.slice(1)
+                  : undefined
+                return (
+                  <div key={clase.id} className="flex flex-col gap-1">
+                    {/* Day + próxima fecha row */}
+                    {(dayName || clase.proximaFecha) && (
+                      <div className="flex items-center gap-2 px-1 text-[10px] text-text-tertiary font-semibold uppercase tracking-wide">
+                        {dayName && <span>{dayName}s</span>}
+                        {clase.proximaFecha && (
+                          <span className="text-text-secondary normal-case">
+                            · Próxima: {new Date(`${clase.proximaFecha}T12:00:00`).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {isCancelada ? (
+                      <Card className="p-3.5 border-error-500/30 bg-error-500/5 flex flex-col gap-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-error-500">Clase cancelada</span>
+                          <span className="text-xs text-text-tertiary">{clase.horaInicio}h</span>
+                        </div>
+                        <span className="text-sm font-bold text-text-primary">{clase.nombre}</span>
+                        {clase.motivo_cancelacion && (
+                          <p className="text-xs text-text-secondary italic">
+                            Motivo: {clase.motivo_cancelacion}
+                          </p>
+                        )}
+                      </Card>
+                    ) : (
+                      <ClassCard
+                        clase={clase}
+                        variant="booked"
+                        onBook={isAdmin ? undefined : handleBookClass}
+                        onCancel={isAdmin ? undefined : handleCancelBooking}
+                      />
+                    )}
+                  </div>
+                )
+              })
             )}
           </div>
         )}
