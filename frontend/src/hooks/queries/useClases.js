@@ -73,12 +73,17 @@ export function useClasesMutations() {
   })
 
   const update = useMutation({
-    mutationFn: ({ id, data }) => api.put(`/classes/clases/${id}/`, data).then((r) => r.data),
+    mutationFn: ({ id, data, partial = false }) =>
+      (partial
+        ? api.patch(`/classes/clases/${id}/`, data)
+        : api.put(`/classes/clases/${id}/`, data)
+      ).then((r) => r.data),
     onSuccess: (data) => {
       invalidate()
       toast.success(`Clase "${data.nombre}" actualizada con éxito`)
     },
     onError: (err) => {
+      // Return raw error so callers can handle per-field DRF errors
       toast.error(extractErrorMessage(err, 'Error al actualizar la clase'))
     },
   })
@@ -96,14 +101,34 @@ export function useClasesMutations() {
   const cancelar = useMutation({
     mutationFn: ({ id, motivo }) =>
       api.post(`/classes/clases/${id}/cancelar-clase/`, { motivo }).then((r) => r.data),
-    onSuccess: () => {
+    onSuccess: (data) => {
       invalidate()
-      toast.success('Clase cancelada correctamente.')
+      const confirmados = data?.confirmados_notificados ?? 0
+      const espera = data?.espera_notificados ?? 0
+      if (confirmados > 0 || espera > 0) {
+        toast.success(
+          `Clase cancelada. Se notificaron ${confirmados} confirmados + ${espera} en espera.`
+        )
+      } else {
+        toast.success('Clase cancelada correctamente.')
+      }
     },
     onError: (err) => {
       toast.error(extractErrorMessage(err, 'Error al cancelar la clase'))
     },
   })
 
-  return { create, update, remove, cancelar }
+  const promoverEspera = useMutation({
+    mutationFn: (id) =>
+      api.post(`/classes/clases/${id}/promover-espera/`).then((r) => r.data),
+    onSuccess: () => {
+      invalidate()
+      toast.success('Socio promovido de la lista de espera.')
+    },
+    onError: (err) => {
+      toast.error(extractErrorMessage(err, 'Error al promover de la lista de espera'))
+    },
+  })
+
+  return { create, update, remove, cancelar, promoverEspera }
 }

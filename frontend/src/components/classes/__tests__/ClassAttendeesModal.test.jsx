@@ -13,6 +13,19 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import ClassAttendeesModal from '../ClassAttendeesModal'
 
+// Mock useClasesMutations so ClassAttendeesModal doesn't need a QueryClientProvider
+vi.mock('../../../hooks/queries/useClases', () => ({
+  useClasesMutations: vi.fn(() => ({
+    promoverEspera: { mutate: vi.fn(), isPending: false },
+    create: { mutate: vi.fn() },
+    update: { mutate: vi.fn() },
+    remove: { mutate: vi.fn() },
+    cancelar: { mutate: vi.fn() },
+  })),
+  useClasesList: vi.fn(() => ({ data: [], isFetching: false })),
+  useClaseDetail: vi.fn(() => ({ data: undefined })),
+}))
+
 vi.mock('../../ui/Avatar', () => ({
   default: ({ name }) => <div data-testid="avatar">{name}</div>,
 }))
