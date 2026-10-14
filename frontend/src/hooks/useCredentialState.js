@@ -29,6 +29,8 @@ export default function useCredentialState({ enabled = false } = {}) {
   /** Tracks retry count per failure cycle (reset on success) */
   const retryCountRef = useRef(0);
   const MAX_RETRIES = 1;
+  /** StrictMode guard — prevents double-fire on initial mount */
+  const initialFetchDoneRef = useRef(false);
 
   // Derived maxTime from the first QR response — default 30s
   const maxTimeRef = useRef(30);
@@ -91,11 +93,18 @@ export default function useCredentialState({ enabled = false } = {}) {
     }
   }, [isRefreshing]);
 
-  // Initial load
+  // Initial load — guarded against StrictMode double-fire
   useEffect(() => {
     if (!enabled) return;
+    if (initialFetchDoneRef.current) return;
+    initialFetchDoneRef.current = true;
     refreshQR();
     fetchCredencialEstado();
+    return () => {
+      // On cleanup (StrictMode unmount/remount), reset the guard so the
+      // second mount still fires but the duplicate call from the first is blocked.
+      initialFetchDoneRef.current = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled]);
 

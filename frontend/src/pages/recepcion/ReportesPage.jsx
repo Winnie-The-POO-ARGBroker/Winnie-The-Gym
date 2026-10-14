@@ -17,9 +17,13 @@ import { useReportesResumen } from '../../hooks/queries/useReportes'
  * Converts an array of monthly income values into an SVG polyline path string.
  * Maps values onto a 400×100 viewport (inverted Y axis — higher values sit higher).
  */
+/**
+ * Returns null when serie is empty — callers must render an empty state instead
+ * of a fabricated fallback curve.
+ */
 function buildChartPath(serie) {
   if (!Array.isArray(serie) || serie.length === 0) {
-    return 'M 0,80 L 100,70 L 200,60 L 300,50 L 400,30'
+    return null
   }
   const maxVal = Math.max(...serie, 1)
   const step = 400 / Math.max(serie.length - 1, 1)
@@ -71,7 +75,7 @@ function derivarMetrics(resumen) {
 const DEFAULT_METRICS = {
   ingresosMesFormatted: '$ 0',
   vsAnteriorFormatted: '+0%',
-  chartPath: 'M 0,80 L 100,70 L 200,60 L 300,50 L 400,30',
+  chartPath: null,
   asistenciaBars: [10, 10, 10, 10, 10, 10, 10],
   morososCount: 0,
   adeudadoFormatted: '$ 0',
