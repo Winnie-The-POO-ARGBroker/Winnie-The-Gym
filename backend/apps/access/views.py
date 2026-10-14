@@ -24,6 +24,7 @@ from .services import (
     get_presencia,
     check_aforo,
     check_horario,
+    check_horario_plan,
 )
 from .serializers import (
     AccessLogSerializer,
@@ -187,6 +188,24 @@ def _process_scan(user_obj, is_valid, error_code, access_type, jti, scanned_by_u
                     is_valid = False
                     error_code = 'MEMBERSHIP_INACTIVE'
 
+            # #158 — Plan horario/día check (after membership confirmed active)
+            if is_valid:
+                from apps.memberships.models import Membresia  # noqa: PLC0415
+                socio = getattr(user_obj, 'socio', None)
+                if socio is not None:
+                    membresia = (
+                        Membresia.objects
+                        .filter(socio=socio, estado=Membresia.Estado.ACTIVA)
+                        .select_related('plan')
+                        .order_by('-fecha_fin')
+                        .first()
+                    )
+                    if membresia is not None:
+                        plan_ok, plan_error = check_horario_plan(socio, membresia.plan)
+                        if not plan_ok:
+                            is_valid = False
+                            error_code = plan_error
+
             # #149 — Anti-passback ENTRY
             if is_valid:
                 presencia = get_presencia(user_obj)
@@ -267,6 +286,8 @@ def _build_message(scan_status, warning_reason, error_code, access_type):
         'FUERA_DE_HORARIO': 'El gimnasio está fuera del horario permitido',
         'USER_SUSPENDED': 'Usuario suspendido',
         'UNKNOWN_USER': 'Usuario desconocido',
+        'PLAN_FUERA_DE_HORARIO': 'Tu plan no permite acceso en este horario',
+        'PLAN_DIA_NO_HABILITADO': 'Tu plan no permite acceso este día',
     }
     return msg_map.get(error_code, f'Acceso denegado: {error_code}')
 
@@ -1039,6 +1060,232 @@ class AccessLogExportView(generics.GenericAPIView):
         rows = [_row(log) for log in queryset]
 
         return do_export(fmt, 'historial_accesos', 'Historial de Accesos', headers, rows)
+
+
+# ---------------------------------------------------------------------------
+# #155 — Analítica histórica de aforo
+# ---------------------------------------------------------------------------
+
+@extend_schema(
+    tags=['access'],
+    summary='Analítica histórica de aforo (admin/recep)',
+    description=(
+        'Devuelve la serie histórica de ingresos agrupada por hora o día, '
+        'junto con un heatmap día-de-semana × hora. Rango máximo: 92 días. '
+        'Parámetros: desde, hasta (YYYY-MM-DD), granularidad (hora|dia).'
+    ),
+    parameters=[
+        {
+            'name': 'desde',
+            'in': 'query',
+            'required': True,
+            'schema': {'type': 'string', 'format': 'date'},
+        },
+        {
+            'name': 'hasta',
+            'in': 'query',
+            'required': True,
+            'schema': {'type': 'string', 'format': 'date'},
+        },
+        {
+            'name': 'granularidad',
+            'in': 'query',
+            'required': False,
+            'schema': {'type': 'string', 'enum': ['hora', 'dia'], 'default': 'dia'},
+        },
+    ],
+    responses={200: {}, 400: {}},
+)
+class AforoHistoricoView(APIView):
+    """
+    GET /api/access/aforo/historico/
+    #155 — Historical aforo analytics: time series + heatmap.
+    """
+    permission_classes = [IsReceptionistOrAdmin]
+
+    def get(self, request):
+        import datetime
+        from django.db.models import Count
+
+        desde_str = request.query_params.get('desde')
+        hasta_str = request.query_params.get('hasta')
+        granularidad = request.query_params.get('granularidad', 'dia').lower()
+
+        if not desde_str or not hasta_str:
+            return Response(
+                {'detail': 'Los parámetros desde y hasta son obligatorios (YYYY-MM-DD).'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            desde = datetime.date.fromisoformat(desde_str)
+            hasta = datetime.date.fromisoformat(hasta_str)
+        except (ValueError, TypeError):
+            return Response(
+                {'detail': 'Formato de fecha inválido. Use YYYY-MM-DD.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if (hasta - desde).days > 92:
+            return Response(
+                {'detail': 'El rango máximo es 92 días.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if granularidad not in ('hora', 'dia'):
+            return Response(
+                {'detail': "granularidad debe ser 'hora' o 'dia'."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        tz = timezone.get_current_timezone()
+        start_dt = timezone.make_aware(
+            timezone.datetime.combine(desde, timezone.datetime.min.time()), tz
+        )
+        end_dt = timezone.make_aware(
+            timezone.datetime.combine(hasta + datetime.timedelta(days=1), timezone.datetime.min.time()), tz
+        )
+
+        granted_entries = (
+            AccessLog.objects
+            .filter(
+                access_type=AccessLog.AccessType.ENTRY,
+                status=AccessLog.AccessStatus.GRANTED,
+                timestamp__gte=start_dt,
+                timestamp__lt=end_dt,
+            )
+            .values('timestamp', 'user_id')
+            .order_by('timestamp')
+        )
+
+        granted_exits = (
+            AccessLog.objects
+            .filter(
+                access_type=AccessLog.AccessType.EXIT,
+                status=AccessLog.AccessStatus.GRANTED,
+                timestamp__gte=start_dt,
+                timestamp__lt=end_dt,
+            )
+            .values('timestamp', 'user_id')
+            .order_by('timestamp')
+        )
+
+        # Build serie: bucket ingresos + pico concurrente + permanencia promedio
+        # and heatmap: dia_semana (0=Mon) x hora -> avg ingresos
+        from collections import defaultdict
+
+        all_logs = list(
+            AccessLog.objects
+            .filter(
+                status=AccessLog.AccessStatus.GRANTED,
+                access_type__in=[AccessLog.AccessType.ENTRY, AccessLog.AccessType.EXIT],
+                timestamp__gte=start_dt,
+                timestamp__lt=end_dt,
+            )
+            .values('timestamp', 'user_id', 'access_type')
+            .order_by('timestamp')
+        )
+
+        # --- Serie computation ---
+        if granularidad == 'hora':
+            def _bucket_key(ts_local):
+                return ts_local.strftime('%Y-%m-%dT%H:00')
+        else:
+            def _bucket_key(ts_local):
+                return ts_local.strftime('%Y-%m-%d')
+
+        bucket_ingresos = defaultdict(int)
+        bucket_exit_times = defaultdict(list)  # user_id -> list of exit timestamps
+        entry_per_user = {}  # user_id -> last entry timestamp (for permanencia)
+
+        for log in all_logs:
+            ts_local = log['timestamp'].astimezone(tz)
+            uid = log['user_id']
+            if log['access_type'] == AccessLog.AccessType.ENTRY:
+                bk = _bucket_key(ts_local)
+                bucket_ingresos[bk] += 1
+                entry_per_user[uid] = log['timestamp']
+            else:
+                if uid in entry_per_user:
+                    bucket_exit_times[uid].append(log['timestamp'])
+
+        # Compute pico concurrente per bucket and permanencia
+        # Walk logs in order to track concurrency
+        concurrencia = 0
+        bucket_picos = defaultdict(int)
+        active_users = {}  # uid -> entry ts
+
+        for log in all_logs:
+            ts_local = log['timestamp'].astimezone(tz)
+            bk = _bucket_key(ts_local)
+            uid = log['user_id']
+            if log['access_type'] == AccessLog.AccessType.ENTRY:
+                concurrencia += 1
+                active_users[uid] = log['timestamp']
+            else:
+                concurrencia = max(0, concurrencia - 1)
+                active_users.pop(uid, None)
+            if concurrencia > bucket_picos[bk]:
+                bucket_picos[bk] = concurrencia
+
+        # Compute permanencias
+        user_permanencias = defaultdict(list)
+        entry_times_per_user = {}
+        for log in all_logs:
+            uid = log['user_id']
+            if log['access_type'] == AccessLog.AccessType.ENTRY:
+                entry_times_per_user[uid] = log['timestamp']
+            elif uid in entry_times_per_user:
+                delta = (log['timestamp'] - entry_times_per_user.pop(uid)).total_seconds() / 60
+                ts_local = log['timestamp'].astimezone(tz)
+                bk = _bucket_key(ts_local)
+                user_permanencias[bk].append(delta)
+
+        # Collect all buckets
+        all_buckets = sorted(set(list(bucket_ingresos.keys()) + list(bucket_picos.keys())))
+        serie = []
+        for bk in all_buckets:
+            perms = user_permanencias.get(bk, [])
+            perm_avg = round(sum(perms) / len(perms)) if perms else 0
+            serie.append({
+                'bucket': bk,
+                'ingresos': bucket_ingresos.get(bk, 0),
+                'pico_concurrente': bucket_picos.get(bk, 0),
+                'permanencia_promedio_min': perm_avg,
+            })
+
+        # --- Heatmap computation: dia_semana (0=Mon..6=Sun) x hora -> avg ingresos ---
+        heatmap_counts = defaultdict(lambda: defaultdict(list))  # dia -> hora -> [count per day]
+        # Group entries by (dia_semana, hora, date)
+        heatmap_raw = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
+        for log in all_logs:
+            if log['access_type'] != AccessLog.AccessType.ENTRY:
+                continue
+            ts_local = log['timestamp'].astimezone(tz)
+            dow = ts_local.weekday()  # 0=Mon
+            hour = ts_local.hour
+            date_key = ts_local.date()
+            heatmap_raw[dow][hour][date_key] += 1
+
+        heatmap = {}
+        dia_names = ['lun', 'mar', 'mie', 'jue', 'vie', 'sab', 'dom']
+        for dow in range(7):
+            for hour in range(24):
+                day_counts = heatmap_raw[dow][hour]
+                if day_counts:
+                    avg = round(sum(day_counts.values()) / len(day_counts), 1)
+                else:
+                    avg = 0
+                if avg > 0:
+                    heatmap[f'{dia_names[dow]}_{hour:02d}'] = avg
+
+        return Response({
+            'serie': serie,
+            'heatmap': heatmap,
+            'desde': desde_str,
+            'hasta': hasta_str,
+            'granularidad': granularidad,
+        }, status=status.HTTP_200_OK)
 
 
 # ---------------------------------------------------------------------------

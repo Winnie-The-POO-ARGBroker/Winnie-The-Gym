@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CreditCard, Search, Download, X, Eye } from 'lucide-react'
+import { CreditCard, Search, Download, X, Eye, FileDown } from 'lucide-react'
 import AppLayout from '../../components/layout/AppLayout'
 import TopBar from '../../components/layout/TopBar'
 import Card from '../../components/ui/Card'
@@ -11,6 +11,7 @@ import EmptyState from '../../components/ui/EmptyState'
 import { usePagosAdmin, usePagosTotales, useAnularPagoMutation } from '../../hooks/queries/usePagos'
 import { pagoEstadoVariant, pagoEstadoLabel } from '../../constants/pagos'
 import { exportReport } from '../../services/reportsService'
+import { descargarComprobante } from '../../services/pagosService'
 import { toast } from 'sonner'
 
 // ─── Formatters ────────────────────────────────────────────────────────────────
@@ -71,7 +72,20 @@ function TotalesCards({ totales, loading }) {
 function PagoDetalleModal({ isOpen, onClose, pago }) {
   const [motivoAnular, setMotivoAnular] = useState('')
   const [confirmandoAnular, setConfirmandoAnular] = useState(false)
+  const [descargando, setDescargando] = useState(false)
   const anular = useAnularPagoMutation({ onSuccess: () => { setConfirmandoAnular(false); onClose() } })
+
+  const handleDescargarComprobante = async () => {
+    if (!pago) return
+    setDescargando(true)
+    try {
+      await descargarComprobante(pago.id)
+    } catch {
+      toast.error('No se pudo descargar el comprobante.')
+    } finally {
+      setDescargando(false)
+    }
+  }
 
   const handleClose = () => {
     setMotivoAnular('')
@@ -108,6 +122,20 @@ function PagoDetalleModal({ isOpen, onClose, pago }) {
             </div>
           ))}
         </div>
+
+        {/* Comprobante — only for approved payments */}
+        {pago.estado === 'aprobado' && (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleDescargarComprobante}
+            loading={descargando}
+            className="gap-1.5 self-start"
+          >
+            <FileDown className="w-3.5 h-3.5" />
+            Descargar comprobante
+          </Button>
+        )}
 
         {/* Observacion */}
         {pago.observacion && (

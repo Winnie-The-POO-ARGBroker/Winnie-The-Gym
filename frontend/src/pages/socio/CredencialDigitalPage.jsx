@@ -254,6 +254,17 @@ export default function CredencialDigitalPage() {
               <span className="text-primary text-[11px] font-semibold">{member.membresia?.planNombre || 'Sin Plan'}</span>
             </div>
           )}
+          {/* Gym schedule from config */}
+          {(gymConfig?.hora_apertura || gymConfig?.hora_cierre) && (
+            <div className="flex items-center justify-between text-text-primary font-medium pt-1 border-t border-subtle mt-1">
+              <span className="text-[10px] text-text-tertiary uppercase font-bold tracking-wider">
+                Horario del gimnasio
+              </span>
+              <span className="text-[11px] font-semibold text-text-primary">
+                {gymConfig.hora_apertura ?? '—'} – {gymConfig.hora_cierre ?? '—'}
+              </span>
+            </div>
+          )}
         </Card>
 
       </div>

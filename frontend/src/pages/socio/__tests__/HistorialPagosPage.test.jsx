@@ -17,6 +17,10 @@ vi.mock('../../../components/layout/TopBar', () => ({
   default: ({ title }) => <div data-testid="topbar">{title}</div>,
 }))
 
+vi.mock('../../../services/pagosService', () => ({
+  descargarComprobante: vi.fn().mockResolvedValue(undefined),
+}))
+
 import { useMisPagos } from '../../../hooks/queries/useMisPagos'
 
 function renderPage() {
@@ -60,5 +64,22 @@ describe('HistorialPagosPage', () => {
     useMisPagos.mockReturnValue({ data: [], isPending: false })
     renderPage()
     expect(screen.getByTestId('topbar')).toHaveTextContent('Mis Pagos')
+  })
+
+  it('comprobante button only shown for aprobado', () => {
+    useMisPagos.mockReturnValue({
+      data: [
+        { id: 1, monto: 1000, estado: 'aprobado', metodo: 'manual', plan_nombre: 'Plan Mensual', created_at: '2026-09-01T10:00:00Z' },
+        { id: 2, monto: 500, estado: 'pendiente', metodo: 'manual', plan_nombre: 'Plan Básico', created_at: '2026-09-02T10:00:00Z' },
+        { id: 3, monto: 200, estado: 'rechazado', metodo: 'mercado_pago', plan_nombre: 'Plan Gold', created_at: '2026-09-03T10:00:00Z' },
+      ],
+      isPending: false,
+    })
+    renderPage()
+
+    // Should show comprobante button only for the aprobado pago (id=1)
+    expect(screen.getByTestId('comprobante-btn-1')).toBeInTheDocument()
+    expect(screen.queryByTestId('comprobante-btn-2')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('comprobante-btn-3')).not.toBeInTheDocument()
   })
 })

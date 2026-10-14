@@ -252,6 +252,55 @@ def invalidate_aforo_cache():
     cache.delete(AFORO_CACHE_KEY)
 
 
+def check_horario_plan(socio, plan, now_local: datetime.datetime | None = None) -> tuple[bool, str | None]:
+    """Return (ok, denial_reason) for plan-level time and day restrictions.
+
+    #158 — Called during ENTRY after gym-level horario/aforo checks pass.
+
+    Rules:
+      - If plan.franja_desde and plan.franja_hasta are both set: deny when
+        now_local.time() is outside [franja_desde, franja_hasta].
+        Supports cross-midnight ranges (franja_hasta < franja_desde).
+      - If plan.dias_habilitados is a non-empty list: deny when today's
+        weekday abbreviation is not in the list.
+        Valid values: 'lun','mar','mie','jue','vie','sab','dom'.
+
+    Args:
+        socio: Socio instance (unused directly, reserved for future per-socio overrides).
+        plan: PlanMembresia instance — carries franja_desde/hasta/dias_habilitados.
+        now_local: current local datetime. Defaults to timezone.now() in ART.
+
+    Returns:
+        (True, None) when access is allowed; (False, denial_reason) otherwise.
+    """
+    if now_local is None:
+        now_local = timezone.now().astimezone(ART_TZ)
+
+    # Day check
+    dias = getattr(plan, 'dias_habilitados', None)
+    if dias:
+        day_map = ['lun', 'mar', 'mie', 'jue', 'vie', 'sab', 'dom']
+        today_abbr = day_map[now_local.weekday()]
+        if today_abbr not in dias:
+            return False, 'PLAN_DIA_NO_HABILITADO'
+
+    # Time-slot check (only when BOTH bounds are defined)
+    franja_desde = getattr(plan, 'franja_desde', None)
+    franja_hasta = getattr(plan, 'franja_hasta', None)
+    if franja_desde is not None and franja_hasta is not None:
+        current_time = now_local.time().replace(second=0, microsecond=0)
+        if franja_hasta >= franja_desde:
+            # Normal range: e.g. 07:00 - 12:00
+            in_range = franja_desde <= current_time <= franja_hasta
+        else:
+            # Cross-midnight: e.g. 22:00 - 06:00
+            in_range = current_time >= franja_desde or current_time <= franja_hasta
+        if not in_range:
+            return False, 'PLAN_FUERA_DE_HORARIO'
+
+    return True, None
+
+
 def has_active_membership(user) -> bool:
     """
     Returns True only when all of the following hold:

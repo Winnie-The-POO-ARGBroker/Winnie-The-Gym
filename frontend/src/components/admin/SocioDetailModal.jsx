@@ -12,7 +12,9 @@ import {
   Activity,
   ChevronLeft,
   ChevronRight,
+  Download,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import Avatar from '../ui/Avatar'
 import Badge from '../ui/Badge'
 import Button from '../ui/Button'
@@ -31,6 +33,7 @@ import { useAccessLogsPorSocio } from '../../hooks/queries/useAccessLogs'
 import { pagoEstadoVariant, pagoEstadoLabel } from '../../constants/pagos'
 import { membresiaEstadoVariant, membresiaEstadoLabel } from '../../constants/membresias'
 import { ACCESS_DENIAL_REASONS } from '../../constants/accessDenialReasons'
+import { descargarComprobante } from '../../services/pagosService'
 
 const TABS = [
   { key: 'datos', label: 'Datos' },
@@ -259,6 +262,18 @@ function TabMembresias({ socioId }) {
 
 function TabPagos({ socioId }) {
   const { data: pagos = [], isPending: loading } = usePagosPorSocio(socioId)
+  const [descargando, setDescargando] = useState(null)
+
+  const handleDescargar = async (pagoId) => {
+    setDescargando(pagoId)
+    try {
+      await descargarComprobante(pagoId)
+    } catch {
+      toast.error('No se pudo descargar el comprobante.')
+    } finally {
+      setDescargando(null)
+    }
+  }
 
   if (loading) {
     return (
@@ -305,6 +320,20 @@ function TabPagos({ socioId }) {
             <div className="text-[11px] text-text-tertiary flex flex-col gap-0.5 pt-1 border-t border-subtle">
               {p.cobrado_por_nombre && <span>Cobrado por: {p.cobrado_por_nombre}</span>}
               {p.observacion && <span className="italic">{p.observacion}</span>}
+            </div>
+          )}
+          {/* Comprobante download — only for approved payments */}
+          {p.estado === 'aprobado' && (
+            <div className="pt-1 border-t border-subtle">
+              <button
+                type="button"
+                disabled={descargando === p.id}
+                onClick={() => handleDescargar(p.id)}
+                className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors disabled:opacity-50"
+              >
+                <Download className="w-3 h-3" />
+                {descargando === p.id ? 'Descargando...' : 'Comprobante'}
+              </button>
             </div>
           )}
         </div>

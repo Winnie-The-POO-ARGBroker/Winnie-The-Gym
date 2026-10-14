@@ -49,6 +49,9 @@ class PagoViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
     def get_permissions(self):
         if self.action in ('mis_pagos', 'estado'):
             return [IsSocio()]
+        if self.action == 'comprobante':
+            # Any authenticated user can attempt — the view enforces ownership for socios
+            return [IsAuthenticated()]
         if self.action == 'anular':
             return [IsAdminOnly()]
         return [IsReceptionistOrAdmin()]
@@ -112,6 +115,49 @@ class PagoViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
             'total_rechazado': float(rechazado),
             'count': count,
         })
+
+    @extend_schema(
+        tags=['payments'],
+        summary='Descargar comprobante PDF de un pago (auth)',
+        description=(
+            'Genera y descarga el comprobante de pago en formato PDF. '
+            'Solo disponible para pagos en estado aprobado. '
+            'Socios solo pueden descargar sus propios comprobantes (otros socios reciben 404). '
+            'Recepcionistas y administradores pueden descargar cualquiera.'
+        ),
+        responses={200: OpenApiTypes.BINARY, 404: OpenApiTypes.OBJECT},
+    )
+    @action(detail=True, methods=['get'], url_path='comprobante', url_name='comprobante',
+            permission_classes=[IsAuthenticated])
+    def comprobante(self, request, pk=None):
+        """#192: Download the PDF receipt for an approved payment."""
+        from django.http import HttpResponse
+        from .pdf import build_recibo_pdf
+
+        is_privileged = request.user.is_staff or getattr(request.user, 'rol', '') in ('administrador', 'recepcionista')
+
+        if is_privileged:
+            pago = get_object_or_404(Pago, pk=pk)
+        else:
+            # Socios receive 404 for other socios' payments (not 403, per contract)
+            socio = getattr(request.user, 'socio', None)
+            if socio is None:
+                from rest_framework.exceptions import NotFound
+                raise NotFound()
+            pago = get_object_or_404(Pago, pk=pk, socio=socio)
+
+        if pago.estado != Pago.Estado.APROBADO:
+            return Response(
+                {'detail': 'El comprobante solo está disponible para pagos aprobados.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        buffer = build_recibo_pdf(pago)
+        numero = pago.numero_comprobante or f'pago-{pago.pk}'
+        filename = f'recibo-{numero}.pdf'
+        response = HttpResponse(buffer.read(), content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
 
     @extend_schema(
         tags=['payments'],

@@ -1,8 +1,18 @@
 import { useState, useEffect } from 'react'
-import { Plus, Trash2, Check, Sparkles, GripVertical } from 'lucide-react'
+import { Plus, Trash2, Check, Sparkles, GripVertical, Clock } from 'lucide-react'
 import { z } from 'zod'
 import Modal from '../ui/Modal'
 import Button from '../ui/Button'
+
+const DIAS_SEMANA = [
+  { key: 'lun', label: 'Lun' },
+  { key: 'mar', label: 'Mar' },
+  { key: 'mie', label: 'Mié' },
+  { key: 'jue', label: 'Jue' },
+  { key: 'vie', label: 'Vie' },
+  { key: 'sab', label: 'Sáb' },
+  { key: 'dom', label: 'Dom' },
+]
 
 const planSchema = z.object({
   nombre: z.string().min(1, 'El nombre es requerido'),
@@ -41,6 +51,9 @@ export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = nu
     clases_asignadas: 0,
     es_popular: false,
     activo: true,
+    franja_desde: '',
+    franja_hasta: '',
+    dias_habilitados: null,
     beneficios: [
       { texto: 'Pase libre al gimnasio', incluido: true },
       { texto: 'Acceso a clases grupales', incluido: true },
@@ -69,6 +82,9 @@ export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = nu
         clases_asignadas: 0,
         es_popular: false,
         activo: true,
+        franja_desde: '',
+        franja_hasta: '',
+        dias_habilitados: null,
         beneficios: [
           { texto: 'Pase libre al gimnasio', incluido: true },
           { texto: 'Acceso a clases grupales', incluido: true },
@@ -118,6 +134,15 @@ export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = nu
     setMatrizRows((prev) => prev.filter((_, i) => i !== index))
   }
 
+  const toggleDia = (key) => {
+    setFormData((prev) => {
+      const current = prev.dias_habilitados ?? []
+      const updated = current.includes(key) ? current.filter((d) => d !== key) : [...current, key]
+      // null means "todos" — if all 7 are selected or none selected, reset to null
+      return { ...prev, dias_habilitados: updated.length === 0 ? null : updated }
+    })
+  }
+
   const handleSubmit = (e) => {
     e.preventDefault()
     setErrors({})
@@ -157,6 +182,10 @@ export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = nu
         .filter((b) => b.incluido && b.texto?.trim())
         .map((b) => b.texto.trim()),
       matriz_comparativa: rowsToMatriz(matrizRows),
+      // Schedule restrictions — send null when empty so backend treats as "no restriction"
+      franja_desde: formData.franja_desde || null,
+      franja_hasta: formData.franja_hasta || null,
+      dias_habilitados: formData.dias_habilitados ?? null,
     }
 
     // onSave is responsible for calling onClose() only on success (via AdminPlanesPage)
@@ -262,6 +291,71 @@ export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = nu
                 <option value={12}>12 clases / mes</option>
                 <option value={999}>Ilimitadas</option>
               </select>
+            </div>
+          </div>
+
+          {/* Access schedule (franja horaria) */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <Clock className="w-4 h-4 text-primary" />
+              <label className="text-xs font-bold uppercase tracking-wider text-text-secondary">
+                Restricción de horario (opcional)
+              </label>
+            </div>
+            <p className="text-xs text-text-tertiary mb-3">
+              Dejá en blanco para permitir acceso en todo el horario del gimnasio.
+            </p>
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-xs font-semibold text-text-secondary mb-1.5">
+                  Franja desde
+                </label>
+                <input
+                  type="time"
+                  data-testid="plan-form-franja-desde"
+                  value={formData.franja_desde ?? ''}
+                  onChange={(e) => setFormData({ ...formData, franja_desde: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus:border-orange-500 transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-text-secondary mb-1.5">
+                  Franja hasta
+                </label>
+                <input
+                  type="time"
+                  data-testid="plan-form-franja-hasta"
+                  value={formData.franja_hasta ?? ''}
+                  onChange={(e) => setFormData({ ...formData, franja_hasta: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus:border-orange-500 transition-colors"
+                />
+              </div>
+            </div>
+            {/* Days of week chips */}
+            <div>
+              <label className="block text-xs font-semibold text-text-secondary mb-2">
+                Días habilitados (vacío = todos los días)
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {DIAS_SEMANA.map((d) => {
+                  const active = (formData.dias_habilitados ?? []).includes(d.key)
+                  return (
+                    <button
+                      key={d.key}
+                      type="button"
+                      data-testid={`dia-chip-${d.key}`}
+                      onClick={() => toggleDia(d.key)}
+                      className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
+                        active
+                          ? 'bg-orange-500 text-white border-orange-500'
+                          : 'bg-bg-raised text-text-secondary border-subtle hover:border-orange-500/50'
+                      }`}
+                    >
+                      {d.label}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           </div>
 

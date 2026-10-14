@@ -20,6 +20,23 @@ class PlanMembresia(models.Model):
     beneficios = models.JSONField(default=list, blank=True)
     # #165 — free-form feature → value mapping for the comparison matrix
     matriz_comparativa = models.JSONField(default=dict, blank=True)
+    # #158 — Time-slot restrictions for plan access control
+    # null = unrestricted (applies to all hours / all days)
+    franja_desde = models.TimeField(
+        null=True, blank=True,
+        verbose_name='Horario de entrada desde',
+        help_text='Si está definido junto a franja_hasta, el socio solo puede entrar en esa franja.',
+    )
+    franja_hasta = models.TimeField(
+        null=True, blank=True,
+        verbose_name='Horario de entrada hasta',
+    )
+    # List of enabled days: ['lun','mar','mie','jue','vie','sab','dom']. null = all days.
+    dias_habilitados = models.JSONField(
+        null=True, blank=True,
+        verbose_name='Días habilitados',
+        help_text='Lista de días en que el plan habilita acceso. null = todos.',
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

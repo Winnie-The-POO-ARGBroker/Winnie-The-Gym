@@ -1,6 +1,7 @@
 from django.urls import path
 from .views import (
     AccessLogExportView,
+    AforoHistoricoView,
     AforoSnapshotView,
     AforoStatsView,
     AccessLogListView,
@@ -30,6 +31,8 @@ urlpatterns = [
     path('cerrar-dia/', CerrarDiaView.as_view(), name='cerrar-dia'),
     # fix #152 — REST fallback for aforo snapshot
     path('aforo/snapshot/', AforoSnapshotView.as_view(), name='aforo-snapshot'),
+    # fix #155 — historical aforo analytics
+    path('aforo/historico/', AforoHistoricoView.as_view(), name='aforo-historico'),
     # fix #157 — credencial digital state
     path('credencial/estado/', CredencialEstadoView.as_view(), name='credencial-estado'),
     # fix #151 — mi actividad (socio self-service)
