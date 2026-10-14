@@ -30,9 +30,19 @@ def _model_label(instance):
 
 def _serialize_value(value):
     """Convert a field value to a JSON-safe primitive."""
+    if value is None:
+        return None
     if hasattr(value, 'isoformat'):
         return value.isoformat()
-    return value
+    # ForeignKey / OneToOne / ManyToMany model instances → use pk.
+    if hasattr(value, 'pk'):
+        return value.pk
+    # Decimal, UUID, etc. — fallback to str to stay JSON-safe.
+    try:
+        json.dumps(value)
+        return value
+    except (TypeError, ValueError):
+        return str(value)
 
 
 def _build_diff(old_instance, new_instance):
