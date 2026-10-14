@@ -1,0 +1,49 @@
+{
+  "id": "winnie-local-env",
+  "name": "Winnie The Gym - Local",
+  "_postman_variable_scope": "environment",
+  "values": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "admin_email",
+      "value": "admin@winnie.local",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "admin_password",
+      "value": "<replace-with-local-password>",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "access",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "refresh",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "plan_id",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "socio_id",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    }
+  ]
+}
