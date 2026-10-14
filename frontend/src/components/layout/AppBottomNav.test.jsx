@@ -83,8 +83,8 @@ describe('AppBottomNav', () => {
     expect(screen.getByText('Más')).toBeInTheDocument()
   })
 
-  // Contract test 4 — "Más" menu includes Mis Pagos, Perfil, Tema, Cerrar sesión
-  it('"Más" menu includes Mis Pagos, Perfil, Tema y Cerrar sesión', () => {
+  // Contract test 4 — "Más" menu includes Mis Pagos, Mi perfil, Tema, Cerrar sesión
+  it('"Más" menu includes Mis Pagos, Mi perfil, Tema y Cerrar sesión', () => {
     setupSocio()
     renderWithProviders(<AppBottomNav />, { route: '/dashboard' })
 
@@ -92,7 +92,7 @@ describe('AppBottomNav', () => {
     fireEvent.click(screen.getByRole('button', { name: /más opciones/i }))
 
     expect(screen.getByText('Mis Pagos')).toBeInTheDocument()
-    expect(screen.getByText('Perfil')).toBeInTheDocument()
+    expect(screen.getByText('Mi perfil')).toBeInTheDocument()
     expect(screen.getByText(/Tema/i)).toBeInTheDocument()
     expect(screen.getByText('Cerrar sesión')).toBeInTheDocument()
   })
@@ -102,11 +102,12 @@ describe('AppBottomNav', () => {
     setupAdmin()
     renderWithProviders(<AppBottomNav />, { route: '/socio/credencial' })
 
-    // Admin nav items: Dashboard, Socios, Clases, Más — no "Pagar"
+    // Admin primary nav (from navConfig): Dashboard, Planes, Usuarios, Reportes + Más — no "Pagar"
     expect(screen.queryByText('Pagar')).not.toBeInTheDocument()
     expect(screen.getByText('Dashboard')).toBeInTheDocument()
-    expect(screen.getByText('Socios')).toBeInTheDocument()
-    expect(screen.getByText('Clases')).toBeInTheDocument()
+    expect(screen.getByText('Planes')).toBeInTheDocument()
+    expect(screen.getByText('Usuarios')).toBeInTheDocument()
+    expect(screen.getByText('Reportes')).toBeInTheDocument()
     expect(screen.getByText('Más')).toBeInTheDocument()
   })
 

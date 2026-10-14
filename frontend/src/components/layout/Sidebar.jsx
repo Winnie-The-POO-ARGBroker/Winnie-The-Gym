@@ -2,49 +2,11 @@ import { useState } from 'react'
 import { useLocation, useNavigate, NavLink } from 'react-router-dom'
 import { LogOut } from 'lucide-react'
 import { NAV_ICON_MAP } from '../../constants/navIcons'
+import { NAV_CONFIG } from '../../config/navConfig'
 import useAuth from '../../hooks/useAuth'
 import useThemeStore from '../../stores/themeStore'
 import WinnieLogo from '../ui/WinnieLogo'
 import Avatar from '../ui/Avatar'
-
-// Each entry is either a nav item { label, path, icon }
-// or a section divider { divider: true, label }
-const NAV_BY_ROLE = {
-  administrador: [
-    { label: 'Dashboard',         path: '/dashboard',           icon: 'chart' },
-    { divider: true, label: 'Administración' },
-    { label: 'Membresías',        path: '/membresias',          icon: 'card' },
-    { label: 'Clases',            path: '/admin/clases',        icon: 'calendar' },
-    { label: 'Socios',            path: '/admin/socios',        icon: 'people' },
-    { label: 'Usuarios',          path: '/admin/usuarios',      icon: 'people' },
-    { label: 'Reportes',          path: '/admin/reportes',      icon: 'chart-line' },
-    { divider: true, label: 'Control & Recepción' },
-    { label: 'Acceso QR',         path: '/recepcion/acceso',    icon: 'scan' },
-    { label: 'Aforo en Vivo',     path: '/recepcion/aforo',     icon: 'activity' },
-    { label: 'Cobros manuales',   path: '/recepcion/cobros',    icon: 'card' },
-    { divider: true, label: 'Portal Socio (Vista)' },
-    { label: 'Mi Credencial',     path: '/socio/credencial',    icon: 'card' },
-    { label: 'Reserva Clases',    path: '/socio/clases',        icon: 'calendar' },
-    { divider: true, label: 'Sistema' },
-    { label: 'Configuración',     path: '/configuracion',       icon: 'gear' },
-  ],
-  recepcionista: [
-    { label: 'Dashboard',         path: '/dashboard',          icon: 'chart' },
-    { label: 'Clases',            path: '/admin/clases',       icon: 'calendar' },
-    { label: 'Acceso',            path: '/recepcion/acceso',   icon: 'scan' },
-    { label: 'Aforo',             path: '/recepcion/aforo',    icon: 'activity' },
-    { label: 'Socios',            path: '/recepcion/socios',   icon: 'people' },
-    { label: 'Cobros',            path: '/recepcion/cobros',   icon: 'card' },
-    { label: 'Reportes',          path: '/recepcion/reportes', icon: 'chart-line' },
-  ],
-  socio: [
-    { label: 'Dashboard',         path: '/dashboard',          icon: 'chart' },
-    { label: 'Mi Credencial',     path: '/socio/credencial',   icon: 'card' },
-    { label: 'Clases',            path: '/socio/clases',       icon: 'calendar' },
-    { label: 'Mis Pagos',         path: '/socio/pagos',        icon: 'card' },
-    { label: 'Pagar membresía',   path: '/socio/checkout',     icon: 'card' },
-  ],
-}
 
 export default function Sidebar() {
   const location = useLocation()
@@ -52,7 +14,7 @@ export default function Sidebar() {
   const { user, clearAuth } = useAuth()
   const { theme, toggleTheme } = useThemeStore()
   const [menuOpen, setMenuOpen] = useState(false)
-  
+
   const displayName = user?.socio?.nombre
     ? `${user.socio.nombre} ${user.socio.apellido ?? ''}`.trim()
     : (user?.nombre
@@ -62,7 +24,8 @@ export default function Sidebar() {
         : user?.email ?? 'Usuario')
   const rol = user?.rol ?? 'administrador'
 
-  const currentNavItems = NAV_BY_ROLE[rol] ?? NAV_BY_ROLE.administrador
+  const roleConfig = NAV_CONFIG[rol] ?? NAV_CONFIG.administrador
+  const currentNavItems = roleConfig.sidebar
 
   if (!user) return null
 

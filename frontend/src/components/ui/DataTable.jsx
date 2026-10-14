@@ -1,12 +1,14 @@
 import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import Skeleton from './Skeleton'
 import EmptyState from './EmptyState'
+import useMediaQuery from '../../hooks/useMediaQuery'
 
 /**
  * Tabla de datos reutilizable con soporte para ordenación por columnas.
  *
  * @param {Object}   props
- * @param {Array}    props.columns    - Definiciones de columnas [{ key, label, sortable?, render? }]
+ * @param {Array}    props.columns    - Definiciones de columnas [{ key, label, sortable?, render?, mobile? }]
+ *                                     col.mobile = alias shown in card view (defaults to col.label)
  * @param {Array}    props.data       - Filas de datos
  * @param {boolean}  props.loading    - Mostrar skeleton
  * @param {string}   [props.ordering] - Campo de ordenación actual (ej: '-apellido')
@@ -15,6 +17,7 @@ import EmptyState from './EmptyState'
  * @param {function} [props.renderActions] - Render de acciones por fila (recibe la fila)
  * @param {string}   [props.emptyTitle]   - Título cuando no hay datos
  * @param {string}   [props.emptyMessage] - Mensaje cuando no hay datos
+ * @param {'cards'|undefined} [props.mobileMode] - 'cards' renders card layout below md breakpoint
  */
 export default function DataTable({
   columns,
@@ -26,7 +29,11 @@ export default function DataTable({
   renderActions,
   emptyTitle = 'Sin resultados',
   emptyMessage = 'No se encontraron registros con los filtros aplicados.',
+  mobileMode,
 }) {
+  const isMobile = useMediaQuery('(max-width: 767px)')
+  const showCards = mobileMode === 'cards' && isMobile
+
   // Determina la dirección de ordenación para una columna
   function getSortDirection(key) {
     if (!ordering) return null
@@ -44,8 +51,23 @@ export default function DataTable({
     else onSort(null)
   }
 
-  // Skeleton rows para loading
+  // ── Loading skeleton ────────────────────────────────────────────────────────
+
   if (loading) {
+    if (showCards) {
+      return (
+        <div className="flex flex-col gap-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="rounded-xl border border-subtle bg-bg-surface p-4 flex flex-col gap-2">
+              <Skeleton className="h-4 w-3/4 rounded" />
+              <Skeleton className="h-3 w-1/2 rounded" />
+              <Skeleton className="h-3 w-2/3 rounded" />
+            </div>
+          ))}
+        </div>
+      )
+    }
+
     return (
       <div className="rounded-xl border border-subtle overflow-hidden">
         <table className="w-full">
@@ -87,10 +109,76 @@ export default function DataTable({
     )
   }
 
-  // Empty state
+  // ── Empty state ─────────────────────────────────────────────────────────────
+
   if (!data || data.length === 0) {
     return <EmptyState title={emptyTitle} message={emptyMessage} />
   }
+
+  // ── Card view (mobile) ──────────────────────────────────────────────────────
+
+  if (showCards) {
+    // Sort selector for mobile
+    const sortableCols = onSort ? columns.filter((c) => c.sortable) : []
+
+    return (
+      <div className="flex flex-col gap-3">
+        {/* Mobile sort selector */}
+        {sortableCols.length > 0 && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-text-secondary">Ordenar por:</span>
+            <select
+              value={ordering ?? ''}
+              onChange={(e) => onSort?.(e.target.value || null)}
+              className="text-xs rounded-lg border border-subtle bg-bg-base text-text-primary px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary"
+              aria-label="Ordenar tabla"
+            >
+              <option value="">Sin ordenar</option>
+              {sortableCols.map((col) => (
+                <>
+                  <option key={`asc-${col.key}`} value={col.key}>
+                    {col.label} ↑
+                  </option>
+                  <option key={`desc-${col.key}`} value={`-${col.key}`}>
+                    {col.label} ↓
+                  </option>
+                </>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Cards */}
+        {data.map((row, idx) => (
+          <div
+            key={row.id ?? idx}
+            onClick={onRowClick ? () => onRowClick(row) : undefined}
+            className={`rounded-xl border border-subtle bg-bg-surface p-4 flex flex-col gap-2 ${
+              onRowClick ? 'cursor-pointer hover:bg-bg-raised' : ''
+            } transition-colors`}
+          >
+            {columns.map((col) => {
+              const label = col.mobile ?? col.label
+              const value = col.render ? col.render(row) : row[col.key]
+              return (
+                <div key={col.key} className="flex items-start gap-2">
+                  <span className="text-xs text-text-tertiary w-24 flex-shrink-0 pt-0.5">{label}</span>
+                  <span className="text-sm text-text-primary font-medium flex-1">{value}</span>
+                </div>
+              )
+            })}
+            {renderActions && (
+              <div className="pt-2 border-t border-subtle flex justify-end">
+                {renderActions(row)}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  // ── Table view (desktop / non-card mode) ────────────────────────────────────
 
   return (
     <div className="rounded-xl border border-subtle overflow-hidden">
