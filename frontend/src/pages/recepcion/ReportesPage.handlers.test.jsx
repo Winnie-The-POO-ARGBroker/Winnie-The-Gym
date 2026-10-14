@@ -23,7 +23,7 @@ vi.mock('../../hooks/queries/usePlanes', () => ({
 }))
 
 vi.mock('../../hooks/queries/useReportes', () => ({
-  useReportMetrics: vi.fn(() => ({
+  useReportesResumen: vi.fn(() => ({
     data: {
       ingresosMesFormatted: '$ 50.000',
       vsAnteriorFormatted: '+10%',
@@ -38,6 +38,8 @@ vi.mock('../../hooks/queries/useReportes', () => ({
       nuevasMesCount: 10,
     },
     isLoading: false,
+    isError: false,
+    refetch: vi.fn(),
   })),
 }))
 

@@ -19,6 +19,19 @@ vi.mock('../../hooks/queries/usePagos', () => ({
   useCrearPreferenciaMutation: vi.fn(),
 }))
 
+vi.mock('../../hooks/queries/useMembresias', () => ({
+  useSocioMembresiaMe: () => ({ data: undefined, isLoading: false }),
+}))
+
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom')
+  return {
+    ...actual,
+    useSearchParams: () => [new URLSearchParams(), vi.fn()],
+    useNavigate: () => vi.fn(),
+  }
+})
+
 vi.mock('../../components/layout/MemberLayout', () => ({
   default: ({ children, title, subtitle }) => (
     <div data-testid="member-layout">
