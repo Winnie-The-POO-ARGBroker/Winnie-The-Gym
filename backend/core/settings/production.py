@@ -10,6 +10,16 @@ DEBUG = False
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=lambda v: [s.strip() for s in v.split(',') if s.strip()])
 
+# Render inyecta automáticamente RENDER_EXTERNAL_HOSTNAME con el hostname
+# real del service en cada deploy. Si Render rota el sufijo del hostname
+# (p.ej. 'winnie-backend-b4fv.onrender.com') la env ALLOWED_HOSTS del
+# dashboard queda desactualizada y todo request responde 400 'Invalid
+# HTTP_HOST'. Agregamos el hostname inyectado al vuelo para que el deploy
+# nunca dependa de recordar actualizar la env var manualmente.
+RENDER_EXTERNAL_HOSTNAME = config('RENDER_EXTERNAL_HOSTNAME', default=None)
+if RENDER_EXTERNAL_HOSTNAME and RENDER_EXTERNAL_HOSTNAME not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+
 CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', cast=lambda v: [s.strip() for s in v.split(',') if s.strip()])
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r'^https:\/\/.*\.vercel\.app$',
@@ -21,6 +31,12 @@ CSRF_TRUSTED_ORIGINS = config(
     cast=lambda v: [s.strip() for s in v.split(',') if s.strip()],
     default='',
 )
+# Mismo auto-detect para CSRF: cualquier POST desde el admin de Django al
+# propio hostname del service tiene que coincidir con un origin confiable.
+if RENDER_EXTERNAL_HOSTNAME:
+    csrf_render_origin = f'https://{RENDER_EXTERNAL_HOSTNAME}'
+    if csrf_render_origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(csrf_render_origin)
 
 
 # ---------------------------------------------------------------------------
