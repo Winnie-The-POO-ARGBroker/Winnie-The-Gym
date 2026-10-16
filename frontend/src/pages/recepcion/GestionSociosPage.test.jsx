@@ -319,4 +319,63 @@ describe('GestionSociosPage', () => {
     // Should show cobro error
     expect(screen.getByText(/Saldo insuficiente/i)).toBeInTheDocument()
   })
+
+  // ── Issue alta socio: validación de campos obligatorios ───────────────────
+  it('alta recepción bloquea el envío vacío y muestra errores sin llamar a la API', async () => {
+    const mockCreate = vi.fn()
+    useSocioMutations.mockReturnValue({
+      ...defaultMutations,
+      create: { mutateAsync: mockCreate, isPending: false },
+    })
+
+    renderWithProviders(<GestionSociosPage />)
+    fireEvent.click(screen.getByText('Alta en Recepción'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('submit-alta')).toBeInTheDocument()
+    })
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('submit-alta'))
+    })
+
+    expect(screen.getByText('El nombre es obligatorio.')).toBeInTheDocument()
+    expect(screen.getByText('El apellido es obligatorio.')).toBeInTheDocument()
+    expect(screen.getByText('Seleccioná un plan.')).toBeInTheDocument()
+    expect(mockCreate).not.toHaveBeenCalled()
+    expect(cobrarManual).not.toHaveBeenCalled()
+  })
+
+  // ── Issue alta socio: retroalimentación tras alta exitosa ─────────────────
+  it('alta recepción exitosa vuelve al listado (feedback de éxito)', async () => {
+    renderWithProviders(<GestionSociosPage />)
+    fireEvent.click(screen.getByText('Alta en Recepción'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('plan-select')).toBeInTheDocument()
+    })
+
+    fireEvent.change(screen.getByPlaceholderText('Ej. Ana'), { target: { value: 'Ana' } })
+    fireEvent.change(screen.getByPlaceholderText('Ej. González'), { target: { value: 'Gonzalez' } })
+    fireEvent.change(screen.getByTestId('dni-input'), { target: { value: '30111222' } })
+    fireEvent.change(screen.getByTestId('telefono-input'), { target: { value: '+5493511234567' } })
+    fireEvent.change(screen.getByTestId('email-input'), { target: { value: 'ana.gonzalez@mail.com' } })
+    fireEvent.change(screen.getByTestId('plan-select'), { target: { value: '2' } })
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('submit-alta'))
+    })
+
+    await waitFor(() => {
+      expect(defaultMutations.create.mutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({ dni: '30111222', email: 'ana.gonzalez@mail.com' })
+      )
+      expect(cobrarManual).toHaveBeenCalledWith(
+        expect.objectContaining({ socio_id: 99, plan_id: 2, monto: 12000 })
+      )
+      // El formulario se cierra y se vuelve al listado
+      expect(screen.queryByText('Datos del socio')).not.toBeInTheDocument()
+      expect(screen.getByText('Listado de Socios')).toBeInTheDocument()
+    })
+  })
 })
