@@ -137,6 +137,18 @@ def health(request):
     return JsonResponse(body, status=http_status)
 
 
+def healthz(request):
+    """Liveness probe for Render's health check.
+
+    Answers 200 as long as the web process is up, without touching Postgres,
+    Redis, Mongo or Celery. Render polls this path every few seconds and each
+    Redis command counts against the free Upstash quota (500k per month), so the
+    dependency checks live in /api/health/ and are meant for manual use or a
+    low-frequency external monitor.
+    """
+    return JsonResponse({'status': 'ok'})
+
+
 def password_reset_confirm_redirect(request, uidb64, token):
     """Frontend-side confirmation page — dj-rest-auth reverses this name to build
     the email link. The actual reset flow is handled by the SPA at
@@ -147,6 +159,7 @@ def password_reset_confirm_redirect(request, uidb64, token):
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('healthz', healthz),
     path('api/health/', health),
     path('api/auth/', include(('apps.users.urls', 'users'), namespace='users')),
     # Override dj-rest-auth's PasswordResetView with our tolerant variant BEFORE

@@ -10,6 +10,8 @@ import json
 import re
 from pathlib import Path
 
+import pytest
+
 BACKEND_DIR = Path(__file__).resolve().parents[3]
 REQUIREMENTS_DIR = BACKEND_DIR / 'requirements'
 DOCKERFILE = BACKEND_DIR / 'Dockerfile.prod'
@@ -95,3 +97,15 @@ def test_procfile_does_not_start_a_celery_worker():
     }
 
     assert started == {'web', 'beat'}
+
+
+def test_render_health_check_uses_the_lightweight_probe():
+    # /api/health/ pings Redis and Celery on every call; Render polls the health
+    # check path continuously, which would burn the free Redis quota.
+    blueprint_path = BACKEND_DIR.parent / 'render.yaml'
+    if not blueprint_path.exists():
+        pytest.skip('render.yaml is outside the backend build context (Docker mount)')
+    blueprint = blueprint_path.read_text()
+    match = re.search(r'^\s*healthCheckPath:\s*(\S+)', blueprint, re.M)
+
+    assert match and match.group(1) == '/healthz'
