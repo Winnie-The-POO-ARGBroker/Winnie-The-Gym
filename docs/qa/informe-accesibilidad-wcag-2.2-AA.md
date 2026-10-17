@@ -7,11 +7,11 @@
 | **Proyecto** | Winnie The Gym — Sistema de gestión integral para gimnasios |
 | **Actividad** | Auditoría y Verificación de Accesibilidad (V&V) — Sprint 4 |
 | **Estándar de Evaluación** | WCAG 2.2 Nivel AA (Web Content Accessibility Guidelines) |
-| **Fecha de Auditoría** | 2026-10-13 → 2026-10-14 (cierre Sprint 4) |
+| **Fecha de Auditoría** | 2026-10-13 → 2026-10-16 (cierre Sprint 4). Re-auditoría posterior a los fixes del PR #355: 2026-10-16 |
 | **Responsables** | Magali Bechis (QA Lead), Franco Arce (Full-Stack Dev), Rodrigo Valdez (Referente Técnico) |
 | **Herramientas Utilizadas** | `axe-core` v4.10, `@axe-core/playwright`, Google Lighthouse v12, Screen Reader (NVDA / VoiceOver), DevTools contrast checker |
 | **Audiencia** | Equipo de desarrollo + cátedra ISPC Córdoba |
-| **Estado General** | Requiere Correcciones (hallazgos restantes identificados para Sprint 5+) |
+| **Estado General** | Mejorado: 0 violaciones críticas y Lighthouse 100/100 en las pantallas públicas. Queda 1 hallazgo de contraste (ver sección 4.1) |
 
 ---
 
@@ -24,7 +24,20 @@ La evaluación combinó:
 2. **Checklist manual estructurado**: navegación 100% por teclado, visibilidad del indicador de foco, ratios de contraste lumínico en temas claro y oscuro, comportamiento responsivo con zoom al 200% y reflow a 320 px, etiquetado ARIA para lectores de pantalla.
 3. **Validación de los fixes aplicados en Sprint 4** sobre los hallazgos pre-existentes.
 
-Se identificaron inicialmente **8 hallazgos** (ACC-H1..H8). De ellos, **3 fueron resueltos durante el Sprint 4** por los PRs #317, #318, #319, #322, #323 y #325 (mobile UX base + avanzado + inputs táctiles + viewport + safe-area). Los **5 restantes** siguen con mitigación propuesta y están tracked en issues con etiqueta `accesibilidad`.
+Se identificaron inicialmente **8 hallazgos** (ACC-H1..H8). Tres se resolvieron durante el Sprint 4 por los PRs #317, #318, #319, #322, #323 y #325 (mobile UX base y avanzado, inputs táctiles, viewport y safe-area). La auditoría automatizada con axe-core sobre 14 pantallas de los 4 roles encontró además 9 problemas concretos, que se cargaron como Issues con etiqueta `accesibilidad` (#345 a #353) y se corrigieron con el PR #355.
+
+**Resultado de la re-auditoría (axe-core, 14 pantallas, mismas rutas y mismos usuarios del seed):**
+
+| Métrica | Antes de #355 | Después de #355 |
+|---|:---:|:---:|
+| Violaciones totales | 18 | **11** |
+| Críticas | 4 | **0** |
+| Serias | 14 | **11** |
+| Pantallas públicas (login, registro, recuperar contraseña) con violaciones | sí | **0** |
+| Lighthouse Accesibilidad, `/login` | 95 | **100** |
+| Lighthouse Accesibilidad, `/registro` | 95 | **100** |
+
+Las 11 violaciones que quedan son del mismo tipo: `color-contrast` (serio), una por cada pantalla autenticada (31 nodos), en un texto del layout compartido. Se documenta en 4.1 y queda para el Sprint 5.
 
 ## 3. Casos de Prueba de Accesibilidad (ACC-01 .. ACC-05)
 
@@ -50,25 +63,42 @@ Se identificaron inicialmente **8 hallazgos** (ACC-H1..H8). De ellos, **3 fueron
 
 ### ACC-05 — Auditoría Automatizada axe-core + Lighthouse
 - **Objetivo**: Score Lighthouse ≥ 90 y 0 violaciones de impacto `critical` o `serious` según `axe-core`.
-- **Procedimiento**: Análisis automatizado sobre build de producción en rutas `/login`, `/socio/credencial`, `/recepcion/acceso`.
-- **Resultado**: **FALLA (Score Lighthouse: 84/100).** Violaciones automatizadas coinciden con `color-contrast` (H-ACC-01, H-ACC-02) y `click-events-have-key-events` (H-ACC-04).
+- **Procedimiento**: axe-core (`@axe-core/playwright`, etiquetas WCAG 2.0/2.1/2.2 A y AA) sobre 14 pantallas con sesión por rol (público, administrador, recepcionista y socio) mediante `frontend/scripts/audit-accessibility.mjs`, más Lighthouse 12 sobre `/login` y `/registro`.
+- **Resultado**: **MEJORADO, SIN CUMPLIR AÚN LA META.** Lighthouse: 95 → **100** en `/login` y `/registro` (meta ≥ 90, cumplida). axe-core: 18 → **11** violaciones, **0 críticas** (cumplida) y 11 serias de `color-contrast` (meta de 0 críticas/serias, no cumplida). Evidencia en `docs/qa/evidence/accesibilidad/` (`axe-report-antes.json`, `axe-report.json` y los reportes de Lighthouse antes/después).
 
 ## 4. Matriz de Hallazgos Reportados
 
-Los hallazgos H-ACC-01..05 provienen de la auditoría manual + automatizada. Los hallazgos ACC-H6..H8 (3 adicionales) fueron detectados durante el walkthrough post-Sprint 4 por el equipo integrado y **ya fueron resueltos** por los PRs del Sprint 4.
+Los hallazgos de la matriz fueron corregidos por el PR #355 (se anota en cada fila). Los hallazgos H-ACC-01..05 provienen de la auditoría manual + automatizada. Los hallazgos ACC-H6..H8 (3 adicionales) fueron detectados durante el walkthrough post-Sprint 4 por el equipo integrado y **ya fueron resueltos** por los PRs del Sprint 4.
 
 | ID | Hallazgo | Criterio WCAG | Severidad | Pantallas | Componente | Estado |
 |:---:|---|:---:|:---:|---|---|:---:|
 | **H-ACC-01** | Contraste `text-tertiary`: ratio **2.61:1** claro / **3.54:1** oscuro (exigido ≥ 4.5:1) | 1.4.3 | **Alta** | Dashboard, Gestión Socios, Clases, Perfil | `tokens.js` (`colors.dark.text.tertiary`) | **Resuelto** PR #325 (bump 0.40→0.50) |
-| **H-ACC-02** | Contraste blanco sobre `primary` `#ff5a36`: **3.10:1** (exigido ≥ 4.5:1) | 1.4.3 | **Alta** | Todas las acciones primarias | `Button.jsx` variante `primary` | Reportado — mitigación propuesta |
-| **H-ACC-03** | Supresión indicador de foco: `outline-none` sin `focus-visible:ring-*` (55 instancias) | 2.4.7 | **Media** | Modales, filtros, inputs, botones | `Modal.jsx`, `FilterPanel.jsx`, UI base | **Resuelto parcial** PR #325 en Button/Input/Select/SearchBar/Pagination. Pendiente en: componentes icon-only de admin |
-| **H-ACC-04** | Filas interactivas no operables por teclado: `onClick` sin `tabIndex`/`onKeyDown` | 2.1.1 | **Media** | Admin Socios, Attendance Table | Tablas en `AdminSociosPage`, `AttendanceTable` | Reportado — mobile cubierto por `DataTable` cards (PR #322). Desktop pendiente |
-| **H-ACC-05** | Botones sólo ícono sin `aria-label` | 1.1.1 / 4.1.2 | **Baja** | Credencial, Modales, TopBar | Botón cerrar modal (X), maximizar QR, torch, mute | Reportado |
+| **H-ACC-02** | Contraste blanco sobre `primary` `#ff5a36`: **3.10:1** (exigido ≥ 4.5:1) | 1.4.3 | **Alta** | Todas las acciones primarias | `Button.jsx` variante `primary` | **Resuelto** PR #355 (issue #346): botón con `orange-700`, ratio 6,12:1. La opción A sugerida (`orange-600`) daba 4,15:1 y no alcanzaba AA |
+| **H-ACC-03** | Supresión indicador de foco: `outline-none` sin `focus-visible:ring-*` (55 instancias) | 2.4.7 | **Media** | Modales, filtros, inputs, botones | `Modal.jsx`, `FilterPanel.jsx`, UI base | **Resuelto** PR #325 (base) y PR #355 (issue #347) en los componentes restantes |
+| **H-ACC-04** | Filas interactivas no operables por teclado: `onClick` sin `tabIndex`/`onKeyDown` | 2.1.1 | **Media** | Admin Socios, Attendance Table | Tablas en `AdminSociosPage`, `AttendanceTable` | **Resuelto** PR #355 (issue #348): filas operables con Enter y Espacio, y cards móviles corregidas |
+| **H-ACC-05** | Botones sólo ícono sin `aria-label` | 1.1.1 / 4.1.2 | **Baja** | Credencial, Modales, TopBar | Botón cerrar modal (X), maximizar QR, torch, mute | **Resuelto** PR #355 (issue #349) |
 | **ACC-H6** | Fuentes `< 16 px` disparan zoom automático en iOS | 1.4.4 | Media | Todos los forms | `Input.jsx`, `Select.jsx`, `SearchBar.jsx` | **Resuelto** PR #322 (`text-base md:text-sm` + `min-h-11`) |
 | **ACC-H7** | `h-screen` + sin `viewport-fit=cover` → content cortado en notch iOS | 1.4.10 | Media | AppLayout, MemberLayout | `index.html`, `AppLayout.jsx`, `MemberLayout.jsx` | **Resuelto** PR #322 (`h-dvh` + `viewport-fit=cover` + safe-area utilities) |
-| **ACC-H8** | Modales no tienen focus trap durante abierto | 2.1.2 + 2.4.3 | Media | Todas las ventanas modales | `Modal.jsx` | **Resuelto parcial** PR #325 (trap implementado). Falta: restore completo cuando el abridor fue desmontado |
+| **ACC-H8** | Modales no tienen focus trap durante abierto | 2.1.2 + 2.4.3 | Media | Todas las ventanas modales | `Modal.jsx` | **Resuelto** PR #325 (trap) y PR #355 (issue #350): el modal restaura el foco aunque el abridor se haya desmontado |
+
+### 4.1 Hallazgos de la auditoría automatizada sobre las 14 pantallas (Issues #345 a #353)
+
+| Issue | Hallazgo | Estado |
+|:---:|---|:---:|
+| #345 | Las etiquetas del formulario de registro no están asociadas a sus campos | Cerrada, PR #355 |
+| #346 | Texto blanco sobre botón primario con contraste 3,10:1 (H-ACC-02) | Cerrada, PR #355 |
+| #347 | Componentes con `outline-none` sin indicador de foco (H-ACC-03) | Cerrada, PR #355 |
+| #348 | Filas de tabla no operables con teclado (H-ACC-04) | Cerrada, PR #355 |
+| #349 | Botones solo ícono sin `aria-label` (H-ACC-05) | Cerrada, PR #355 |
+| #350 | El modal no restaura el foco si el elemento que lo abrió se desmontó (ACC-H8) | Cerrada, PR #355 |
+| #351 | Filtros de Pagos sin nombre accesible | Cerrada, PR #355 |
+| #352 | Mi Perfil: campos sin etiqueta asociada | Cerrada, PR #355 |
+| #353 | `aria-sort` en elementos que no lo admiten (Gestión de socios) | Cerrada, PR #355 |
+| *(por abrir)* | `color-contrast` (serio) en el layout compartido de las 11 pantallas autenticadas: un texto `.hidden lg:inline` dentro de un contenedor `.shadow-md`. El mismo ratio de `text-primary` sobre fondo claro (3,10:1) quedó fuera del alcance de #346, que solo cubre el fondo del botón | Pendiente, Sprint 5 |
 
 ## 5. Detalle de Hallazgos y Plan de Mitigación
+
+> Estado al 16/10/2026: las mitigaciones de esta sección se aplicaron con el PR #355 (ver 4.1). Se conserva el detalle como registro de la decisión tomada.
 
 ### H-ACC-02: Contraste insuficiente en botón primario
 - **Problema**: El color corporativo `#ff5a36` combinado con texto `#FFFFFF` arroja ratio 3.10:1 vs 4.5:1 exigido.
@@ -117,17 +147,17 @@ Los hallazgos H-ACC-01..05 provienen de la auditoría manual + automatizada. Los
 |---|:---:|
 | 1.1.1 Contenido no textual | ✅ Imágenes con alt, QR con label |
 | 1.3.1 Info y relaciones | ✅ Headings, listas, labels asociadas (PR #322) |
-| 1.4.3 Contraste texto | ⚠️ H-ACC-01 resuelto parcial, H-ACC-02 pendiente |
+| 1.4.3 Contraste texto | ⚠️ H-ACC-01 y H-ACC-02 resueltos; queda 1 `color-contrast` en el layout compartido (4.1) |
 | 1.4.4 Reflow + zoom 200% | ✅ Resuelto PR #322 (h-dvh + viewport-fit=cover + inputs 16px) |
 | 1.4.10 Reflow 320 px | ✅ DataTable cards mobile + TopBar responsive + safe-area |
-| 1.4.11 Contraste no textual | ⚠️ Mismo que 1.4.3 — bordes de focus en componentes restantes |
-| 2.1.1 Keyboard | ⚠️ Filas clickeables de tablas desktop sin fallback (H-ACC-04 restante) |
-| 2.1.2 No keyboard trap | ⚠️ Modales con trap PR #325 — restore parcial, mejora pendiente |
+| 1.4.11 Contraste no textual | ✅ Rings de foco visibles tras #347 (`primary` ahora genera `ring-primary-500`) |
+| 2.1.1 Keyboard | ✅ Resuelto PR #355 (#348) |
+| 2.1.2 No keyboard trap | ✅ Resuelto PR #325 y PR #355 (#350) |
 | 2.4.3 Focus order | ✅ |
 | 2.4.4 Link purpose | ✅ |
 | 2.4.6 Headings + labels | ✅ |
-| 2.4.7 Focus visible | ⚠️ H-ACC-03 restante en icon-only buttons |
-| 2.4.11 Focus appearance | ⚠️ Equivalente a 2.4.7 |
+| 2.4.7 Focus visible | ✅ Resuelto PR #355 (#347) |
+| 2.4.11 Focus appearance | ✅ Equivalente a 2.4.7 |
 | 2.5.1 Pointer gestures | ✅ |
 | 2.5.3 Label in name | ✅ |
 | 2.5.5 Target size | ✅ Resuelto PR #322 (`min-h-11`) |
@@ -142,41 +172,30 @@ Los hallazgos H-ACC-01..05 provienen de la auditoría manual + automatizada. Los
 | 3.3.3 Error suggestion | ✅ |
 | 3.3.7 Redundant entry | ✅ |
 | 3.3.8 Accessible authentication | ✅ (OAuth Google como alternativa) |
-| 4.1.2 Name role value | ⚠️ H-ACC-05 restante (icon-only sin `aria-label`) |
+| 4.1.2 Name role value | ✅ Resuelto PR #355 (#349) |
 | 4.1.3 Status messages | ⚠️ ConnectionBanner (PR #323) falta `aria-live="assertive"` |
 
 ## 7. Automatización — scripts y tests
 
-Se incorporan en este PR herramientas ejecutables de verificación continua:
+- **`frontend/scripts/audit-accessibility.mjs`** — axe-core con `@axe-core/playwright`. Inicia sesión por rol (público, administrador, recepcionista, socio), audita 14 rutas y escribe `docs/qa/evidence/accesibilidad/axe-report.json`. Sale con código 1 si hay violaciones `critical` o `serious`, para poder usarlo como gate de CI. Uso: `DEMO_USER_PASSWORD=<clave del seed> node frontend/scripts/audit-accessibility.mjs`.
+- **Lighthouse 12** sobre `/login` y `/registro` (reportes HTML y JSON en `docs/qa/evidence/accesibilidad/`).
+- **Tests de regresión del PR #355** (patrón rojo y luego verde por cada issue): `Button.contrast`, `Modal.focus-restore`, `DataTable.aria-sort`, `DataTable.keyboard`, `RegisterPage.a11y`, `ProfilePage.a11y`, `PagosAdminPage.a11y`, `focus-indicators` e `icon-button-names`.
+- **`frontend/src/__tests__/accessibility-wcag.test.jsx`** — tests de contraste sobre los tokens del design system.
 
-- **`frontend/scripts/audit-accessibility.mjs`** — script con `@axe-core/playwright` que corre audit sobre rutas canónicas (`/login`, `/socio/credencial`, `/admin/socios`, `/recepcion/acceso`) y emite reporte JSON + exit code.
-- **`frontend/src/__tests__/accessibility-wcag.test.jsx`** — tests matemáticos de contraste que validan los ratios WCAG 2.2 AA sobre los tokens del design system. Ejecutados en CI con cada PR.
-- Dependencia agregada: `@axe-core/playwright` en `frontend/package.json`.
+Limitación conocida: el script todavía no corre en el CI; se ejecuta a mano.
+## 8. Issues por hallazgo
 
-Objetivo: después de la mitigación de los 5 hallazgos restantes, el score Lighthouse debe superar 96/100 y axe-core reportar 0 violaciones `critical`/`serious`.
-
-## 8. Issues abiertas por hallazgo
-
-- #204 BK-MOB-11 — Accesibilidad móvil (contraste tokens, foco visible, targets, landmarks) — **@Franco-Arce**
-- #307 BK-ACC-05 — Este informe (cerrada por #324 + consolidación en este PR)
-- Follow-up Sprint 5: ver sección 9.
-
-Las issues con etiqueta `accesibilidad` cubren los hallazgos restantes de H-ACC-02, H-ACC-03, H-ACC-04, H-ACC-05 y ACC-H8.
-
+Issues #345 a #353, etiqueta `accesibilidad`, asignadas a Gise (gigilvsarg) y cerradas por el PR #355. Antecedentes: #204 (BK-MOB-11, accesibilidad móvil) y #307 (este informe).
 ## 9. Próximos pasos (Sprint 5)
 
-1. **Automatizar en CI** la ejecución de `audit-accessibility.mjs` como paso del workflow + fail del job si axe reporta violaciones `critical`/`serious`.
-2. **Cerrar H-ACC-02** con ajuste de token `primary` o adopción de texto oscuro sobre fondo primary.
-3. **Cerrar H-ACC-03 restante** con migración de `outline-none` → `focus-visible:ring-*` en componentes icon-only de admin.
-4. **Cerrar H-ACC-04** con `role="button" tabIndex="0" onKeyDown` en filas clickeables de tablas desktop.
-5. **Cerrar H-ACC-05** con `aria-label` en todos los botones icon-only (torch, mute, cerrar, maximizar).
-6. **Mejorar ACC-H8** con `focus-trap-react` + verificación de abridor desmontado antes del restore.
-7. **Agregar `aria-live="assertive"` + `role="status"`** a ConnectionBanner y toasts.
-8. **Validar con lector de pantalla real** (VoiceOver iOS + NVDA Windows) los 5 flujos ACC-01..05.
-9. **Score Lighthouse ≥ 96** en las rutas canónicas tras mitigación.
-
+1. Abrir y corregir el issue de `color-contrast` del layout compartido (11 pantallas, 1 sola corrección).
+2. **Automatizar en CI** la ejecución de `audit-accessibility.mjs`, con fallo del job ante violaciones `critical` o `serious`.
+3. Agregar `aria-live` y `role="status"` a ConnectionBanner y toasts (criterio 4.1.3).
+4. Validar con lector de pantalla real (VoiceOver iOS y NVDA Windows) los flujos ACC-01..05. Esta verificación manual no se hizo en esta corrida.
+5. Revisión visual manual del botón primario más oscuro y de `text-primary` sobre fondo claro (3,10:1).
+6. Cubrir con axe las pantallas restantes, que hoy no están en las 14 rutas auditadas.
 ## 10. Conclusión
 
-La aplicación demuestra una base estructural sólida: adaptabilidad responsiva completa (ACC-04 PASS), robustez en validación de formularios (ACC-03 PASS con observaciones) y accesibilidad por teclado parcial. Los 3 hallazgos resueltos durante Sprint 4 (ACC-H6/H7/H8 parcial) acreditan el compromiso del equipo con la accesibilidad.
+La re-auditoría confirma la mejora: de 18 a 11 violaciones, de 4 críticas a 0, y Lighthouse de 95 a 100 en las pantallas públicas. Los 9 problemas detectados se cerraron con un PR de 18 commits (test en rojo y fix en verde por cada issue).
 
-La **resolución de los 5 hallazgos restantes** (H-ACC-02, H-ACC-03, H-ACC-04, H-ACC-05 y ACC-H8 completo) permitirá elevar el score Lighthouse por encima de 96/100 y garantizar conformidad plena con **WCAG 2.2 AA**, asegurando una experiencia inclusiva para todos los usuarios y socios del gimnasio.
+**Todavía no se puede declarar conformidad plena con WCAG 2.2 AA**: queda 1 problema de contraste de color en el layout compartido de las pantallas autenticadas, y falta validar con lector de pantalla real. Ambos están planificados para el Sprint 5.
