@@ -149,8 +149,10 @@ export default function RegisterPage() {
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
             {/* Email */}
             <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-text-primary">Email</label>
+              <label htmlFor="register-email" className="text-sm font-medium text-text-primary">Email</label>
               <input
+                id="register-email"
+                data-testid="register-email"
                 {...register('email')}
                 type="email"
                 placeholder="tu@email.com"
@@ -163,8 +165,10 @@ export default function RegisterPage() {
 
             {/* Password */}
             <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-text-primary">Contraseña</label>
+              <label htmlFor="register-password" className="text-sm font-medium text-text-primary">Contraseña</label>
               <input
+                id="register-password"
+                data-testid="register-password"
                 {...register('password')}
                 type="password"
                 placeholder="••••••••"
@@ -177,8 +181,10 @@ export default function RegisterPage() {
 
             {/* Password confirm */}
             <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-text-primary">Confirmar contraseña</label>
+              <label htmlFor="register-password-confirm" className="text-sm font-medium text-text-primary">Confirmar contraseña</label>
               <input
+                id="register-password-confirm"
+                data-testid="register-password-confirm"
                 {...register('password_confirm')}
                 type="password"
                 placeholder="••••••••"
@@ -191,8 +197,10 @@ export default function RegisterPage() {
 
             {/* Nombre */}
             <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-text-primary">Nombre</label>
+              <label htmlFor="register-nombre" className="text-sm font-medium text-text-primary">Nombre</label>
               <input
+                id="register-nombre"
+                data-testid="register-nombre"
                 {...register('nombre')}
                 placeholder="Juan"
                 className="rounded-lg px-3 py-2.5 text-text-primary text-sm outline-none appearance-none placeholder:text-text-tertiary bg-bg-raised border border-subtle"
@@ -204,8 +212,10 @@ export default function RegisterPage() {
 
             {/* Apellido */}
             <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-text-primary">Apellido</label>
+              <label htmlFor="register-apellido" className="text-sm font-medium text-text-primary">Apellido</label>
               <input
+                id="register-apellido"
+                data-testid="register-apellido"
                 {...register('apellido')}
                 placeholder="García"
                 className="rounded-lg px-3 py-2.5 text-text-primary text-sm outline-none appearance-none placeholder:text-text-tertiary bg-bg-raised border border-subtle"
@@ -217,8 +227,10 @@ export default function RegisterPage() {
 
             {/* DNI */}
             <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-text-primary">DNI</label>
+              <label htmlFor="register-dni" className="text-sm font-medium text-text-primary">DNI</label>
               <input
+                id="register-dni"
+                data-testid="register-dni"
                 {...register('dni')}
                 placeholder="12345678"
                 inputMode="numeric"
@@ -234,10 +246,12 @@ export default function RegisterPage() {
 
             {/* Telefono (optional) */}
             <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-text-primary">
+              <label htmlFor="register-telefono" className="text-sm font-medium text-text-primary">
                 Teléfono <span className="text-text-tertiary font-normal">(opcional)</span>
               </label>
               <input
+                id="register-telefono"
+                data-testid="register-telefono"
                 {...register('telefono')}
                 placeholder="+54 11 1234 5678"
                 inputMode="tel"
