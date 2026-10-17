@@ -43,9 +43,21 @@ export default function Modal({
       openerRef.current = document.activeElement
     } else {
       const opener = openerRef.current
-      if (opener && typeof opener.focus === 'function') {
+      if (opener) {
         // Defer so the DOM has time to unmount the modal first
-        requestAnimationFrame(() => opener.focus())
+        requestAnimationFrame(() => {
+          if (document.contains(opener) && typeof opener.focus === 'function') {
+            opener.focus()
+            return
+          }
+          // Opener was unmounted while the modal was open: send focus to the
+          // main landmark so keyboard users do not fall back to <body>.
+          const main = document.querySelector('main')
+          if (main) {
+            if (!main.hasAttribute('tabindex')) main.setAttribute('tabindex', '-1')
+            main.focus()
+          }
+        })
       }
       openerRef.current = null
     }
