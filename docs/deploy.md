@@ -255,6 +255,10 @@ Actualizar `ALLOWED_HOSTS` en el env group con el subdominio real que Render asi
 - Mailtrap Sending con dominio `demomailtrap.co` **solo entrega al owner** de la cuenta (`fodrii2001@gmail.com`)
 - Para entregar a cualquier email hay que verificar un dominio propio (issue #63 abierta)
 
+### Health checks
+- Render usa `/healthz` (solo responde 200, sin tocar Redis, Mongo, Celery ni Postgres) porque consulta cada pocos segundos y cada comando de Redis cuenta contra la cuota gratuita de Upstash.
+- `/api/health/` hace el chequeo completo de dependencias. Usarlo desde un monitor externo de baja frecuencia (UptimeRobot cada 5 minutos) o a mano.
+
 ### Redis de Upstash agotó la cuota y el backend no levanta
 - Síntoma: el servicio queda en "Failed", los logs muestran `redis.exceptions.ResponseError: max requests limit exceeded` y `worker.1 stopped (rc=1)`, y todos los pedidos devuelven 503.
 - Causa: un worker de Celery sobre Redis consulta el broker sin parar (unos 8 comandos por segundo, unos 700 mil por día). El plan gratuito de Upstash permite 500 mil por mes.

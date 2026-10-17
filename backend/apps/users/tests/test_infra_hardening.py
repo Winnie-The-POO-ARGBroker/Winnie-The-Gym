@@ -105,6 +105,43 @@ class HealthCheckTests(TestCase):
         self.assertEqual(body['checks']['celery']['error'], 'Connection refused')
 
 
+class LivenessProbeTests(TestCase):
+    """/healthz is the cheap liveness probe Render polls every few seconds.
+
+    It must not touch Redis, Mongo, Celery or Postgres: each Redis command
+    counts against the free Upstash quota (500k per month), and the full
+    dependency check stays available at /api/health/ for manual use.
+    """
+
+    @patch('core.urls._check_celery')
+    @patch('core.urls._check_mongo')
+    @patch('core.urls._check_redis')
+    @patch('core.urls._check_postgres')
+    def test_healthz_responds_ok_without_checking_dependencies(
+        self, mock_postgres, mock_redis, mock_mongo, mock_celery,
+    ):
+        response = Client().get('/healthz')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['status'], 'ok')
+        for mock in (mock_postgres, mock_redis, mock_mongo, mock_celery):
+            mock.assert_not_called()
+
+    def test_healthz_does_not_use_the_cache(self):
+        with patch('django.core.cache.cache.set') as cache_set, \
+                patch('django.core.cache.cache.get') as cache_get:
+            Client().get('/healthz')
+
+        cache_set.assert_not_called()
+        cache_get.assert_not_called()
+
+    def test_full_health_check_is_still_available(self):
+        response = Client().get('/api/health/')
+
+        self.assertIn(response.status_code, (200, 503))
+        self.assertIn('checks', response.json())
+
+
 @override_settings(CELERY_TASK_ALWAYS_EAGER=False)
 class CeleryCheckUnitTests(TestCase):
     """Tests unitarios de la función _check_celery() en aislamiento.

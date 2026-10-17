@@ -29,9 +29,11 @@ services:
     rootDir: backend
     dockerfilePath: ./Dockerfile.prod
     dockerContext: .
-    # Health check reactivated: /api/health/ returns 200 consistently now that
-    # the MongoDB TLS handshake against Atlas is stable (hardened in Commit 1).
-    healthCheckPath: /api/health/
+    # Lightweight liveness probe: /healthz does not touch Redis, Mongo, Celery or
+    # Postgres. Render polls this path every few seconds and each Redis command
+    # counts against the free Upstash quota. The full dependency check is still
+    # at /api/health/ (use it from a low-frequency external monitor).
+    healthCheckPath: /healthz
     envVars:
       # This service runs migrations and static collection on boot. Mongo index
       # creation is now enabled — TLS against Atlas is stable.
