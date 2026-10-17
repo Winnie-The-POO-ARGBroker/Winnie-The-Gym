@@ -292,7 +292,7 @@ export default function AccesoTerminalPage() {
                 aria-pressed={accessMode === mode}
                 className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all ${
                   accessMode === mode
-                    ? 'bg-primary text-white shadow-sm'
+                    ? 'bg-orange-700 text-white shadow-sm'
                     : 'text-text-secondary hover:text-text-primary'
                 }`}
               >

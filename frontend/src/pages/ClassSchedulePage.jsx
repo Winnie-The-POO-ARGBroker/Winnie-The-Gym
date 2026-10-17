@@ -218,7 +218,7 @@ export default function ClassSchedulePage() {
                 onClick={() => setActiveTab('calendario')}
                 className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                   activeTab === 'calendario'
-                    ? 'bg-primary text-white shadow-sm font-bold'
+                    ? 'bg-orange-700 text-white shadow-sm font-bold'
                     : 'text-text-secondary hover:text-text-primary'
                 }`}
               >
@@ -229,7 +229,7 @@ export default function ClassSchedulePage() {
                 onClick={() => setActiveTab('lista')}
                 className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                   activeTab === 'lista'
-                    ? 'bg-primary text-white shadow-sm font-bold'
+                    ? 'bg-orange-700 text-white shadow-sm font-bold'
                     : 'text-text-secondary hover:text-text-primary'
                 }`}
               >

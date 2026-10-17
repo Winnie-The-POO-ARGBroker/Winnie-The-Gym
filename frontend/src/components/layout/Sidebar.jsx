@@ -79,7 +79,7 @@ export default function Sidebar() {
               title={label}
               className={`group flex items-center justify-center lg:justify-start gap-3 px-2 lg:px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                 isActive
-                  ? 'bg-primary text-white shadow-md'
+                  ? 'bg-orange-700 text-white shadow-md'
                   : 'text-text-secondary hover:bg-bg-raised hover:text-text-primary'
               }`}
             >

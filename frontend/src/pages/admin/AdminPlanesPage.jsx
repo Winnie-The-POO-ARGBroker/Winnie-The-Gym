@@ -67,7 +67,7 @@ export default function AdminPlanesPage() {
                 onClick={() => setActiveTab('tarjetas')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                   activeTab === 'tarjetas'
-                    ? 'bg-primary text-white shadow-sm'
+                    ? 'bg-orange-700 text-white shadow-sm'
                     : 'text-text-secondary hover:text-text-primary'
                 }`}
               >
@@ -78,7 +78,7 @@ export default function AdminPlanesPage() {
                 onClick={() => setActiveTab('comparativa')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                   activeTab === 'comparativa'
-                    ? 'bg-primary text-white shadow-sm'
+                    ? 'bg-orange-700 text-white shadow-sm'
                     : 'text-text-secondary hover:text-text-primary'
                 }`}
               >

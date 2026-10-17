@@ -25,7 +25,7 @@ export class DashboardPage {
   async waitForLoad() {
     await expect(this.page).toHaveURL(/dashboard/)
     // Wait until at least one navigation link is visible
-    await expect(this.navPlanes.or(this.navSocios)).toBeVisible({ timeout: 8000 })
+    await expect(this.navPlanes.or(this.navSocios).first()).toBeVisible({ timeout: 8000 })
   }
 
   async goToPlanes() {

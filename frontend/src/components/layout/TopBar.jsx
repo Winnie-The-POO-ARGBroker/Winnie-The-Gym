@@ -138,7 +138,7 @@ export default function TopBar({
                     key={i}
                     type="button"
                     onClick={action.onClick}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-primary text-white hover:opacity-90 transition-opacity"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-orange-700 text-white hover:opacity-90 transition-opacity"
                   >
                     {action.icon}
                     {action.label}

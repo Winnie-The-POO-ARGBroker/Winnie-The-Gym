@@ -104,7 +104,7 @@ function PageButton({ page, current, onClick }) {
       onClick={() => onClick(page)}
       className={`min-w-[36px] h-9 rounded-lg text-sm font-medium transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${
         isActive
-          ? 'bg-primary text-white shadow-md'
+          ? 'bg-orange-700 text-white shadow-md'
           : 'text-text-secondary hover:bg-bg-raised hover:text-text-primary'
       }`}
     >

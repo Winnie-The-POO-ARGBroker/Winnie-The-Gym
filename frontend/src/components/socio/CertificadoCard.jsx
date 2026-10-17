@@ -256,7 +256,7 @@ export default function CertificadoCard({
             <button
               type="submit"
               disabled={uploading || !file || !emitidoEn || !venceEn}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium bg-primary text-white hover:bg-primary/90 disabled:opacity-60 transition-colors gap-1.5 inline-flex items-center"
+              className="px-3 py-1.5 rounded-lg text-xs font-medium bg-orange-700 text-white hover:bg-primary/90 disabled:opacity-60 transition-colors gap-1.5 inline-flex items-center"
               data-testid="certificado-submit-btn"
             >
               <Upload className="w-3 h-3" />
