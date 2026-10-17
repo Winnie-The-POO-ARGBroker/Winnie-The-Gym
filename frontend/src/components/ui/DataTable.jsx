@@ -211,34 +211,26 @@ export default function DataTable({
                 return (
                   <th
                     key={col.key}
-                    onClick={isSortable ? () => handleSort(col.key) : undefined}
-                    onKeyDown={
-                      isSortable
-                        ? (e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault()
-                              handleSort(col.key)
-                            }
-                          }
-                        : undefined
-                    }
-                    tabIndex={isSortable ? 0 : undefined}
-                    role={isSortable ? 'button' : undefined}
+                    scope="col"
                     aria-sort={isSortable ? ariaSort : undefined}
-                    className={`text-left text-xs font-semibold uppercase tracking-wider text-text-secondary px-4 py-3 ${
-                      isSortable ? 'cursor-pointer select-none hover:text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:text-primary transition-colors' : ''
-                    }`}
+                    className="text-left text-xs font-semibold uppercase tracking-wider text-text-secondary px-4 py-3"
                   >
-                    <span className="inline-flex items-center gap-1.5">
-                      {col.label}
-                      {isSortable && (
+                    {isSortable ? (
+                      <button
+                        type="button"
+                        onClick={() => handleSort(col.key)}
+                        className="inline-flex items-center gap-1.5 -mx-1 px-1 rounded uppercase tracking-wider font-semibold cursor-pointer select-none hover:text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:text-primary transition-colors"
+                      >
+                        {col.label}
                         <span className="text-text-tertiary">
                           {sortDir === 'asc' && <ArrowUp className="w-3.5 h-3.5 text-primary" />}
                           {sortDir === 'desc' && <ArrowDown className="w-3.5 h-3.5 text-primary" />}
                           {sortDir === null && <ArrowUpDown className="w-3.5 h-3.5" />}
                         </span>
-                      )}
-                    </span>
+                      </button>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5">{col.label}</span>
+                    )}
                   </th>
                 )
               })}
