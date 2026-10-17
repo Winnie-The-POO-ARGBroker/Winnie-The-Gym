@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="Winnie The Gym — API Test Suite" tests="13" time="1.785">
+  <testsuite name="Auth / Login (admin) — 200" id="15e28af4-beae-4290-96f7-14baea87735c" timestamp="2026-10-16T23:48:08.911Z" tests="3" failures="0" errors="0" time="0.422">
+    <testcase name="Status is 200" time="0.422" classname="AuthLoginAdmin200"/>
+    <testcase name="Response has access token" time="0.422" classname="AuthLoginAdmin200"/>
+    <testcase name="Response has refresh token" time="0.422" classname="AuthLoginAdmin200"/>
+  </testsuite>
+  <testsuite name="Auth / Login (invalid credentials) — 400 / 401" id="88bbae9d-d949-441f-98c5-04112cdc38a8" timestamp="2026-10-16T23:48:08.911Z" tests="3" failures="0" errors="0" time="0.372">
+    <testcase name="Status is 400 or 401 for invalid credentials" time="0.372" classname="AuthLoginInvalidCredentials400401"/>
+    <testcase name="Response does not contain access token" time="0.372" classname="AuthLoginInvalidCredentials400401"/>
+    <testcase name="Response has error detail" time="0.372" classname="AuthLoginInvalidCredentials400401"/>
+  </testsuite>
+  <testsuite name="Planes CRUD / Crear plan — 201" id="38c035a2-197d-46f2-8e6f-164a3cc5d90f" timestamp="2026-10-16T23:48:08.911Z" tests="4" failures="0" errors="0" time="0.083">
+    <testcase name="Status is 201" time="0.083" classname="PlanesCrudCrearPlan201"/>
+    <testcase name="Response has plan id" time="0.083" classname="PlanesCrudCrearPlan201"/>
+    <testcase name="Response has nombre field" time="0.083" classname="PlanesCrudCrearPlan201"/>
+    <testcase name="Response has precio field" time="0.083" classname="PlanesCrudCrearPlan201"/>
+  </testsuite>
+  <testsuite name="Planes CRUD / Leer plan — 200" id="cf289d47-02c5-4924-a426-5f441f638026" timestamp="2026-10-16T23:48:08.911Z" tests="5" failures="0" errors="0" time="0.073">
+    <testcase name="Status is 200" time="0.073" classname="PlanesCrudLeerPlan200"/>
+    <testcase name="id matches plan_id env var" time="0.073" classname="PlanesCrudLeerPlan200"/>
+    <testcase name="nombre is a string" time="0.073" classname="PlanesCrudLeerPlan200"/>
+    <testcase name="precio exists" time="0.073" classname="PlanesCrudLeerPlan200"/>
+    <testcase name="activo is boolean" time="0.073" classname="PlanesCrudLeerPlan200"/>
+  </testsuite>
+  <testsuite name="Planes CRUD / Actualizar plan (PATCH) — 200" id="053c231e-6f0e-418d-bb86-fb32d7955472" timestamp="2026-10-16T23:48:08.911Z" tests="3" failures="0" errors="0" time="0.038">
+    <testcase name="Status is 200" time="0.038" classname="PlanesCrudActualizarPlanPatch200"/>
+    <testcase name="nombre was updated" time="0.038" classname="PlanesCrudActualizarPlanPatch200"/>
+    <testcase name="id is unchanged" time="0.038" classname="PlanesCrudActualizarPlanPatch200"/>
+  </testsuite>
+  <testsuite name="Planes CRUD / Eliminar plan — 204" id="f52f39c7-d2f5-4426-8609-222605c8379d" timestamp="2026-10-16T23:48:08.911Z" tests="1" failures="0" errors="0" time="0.042">
+    <testcase name="Status is 204" time="0.042" classname="PlanesCrudEliminarPlan204"/>
+  </testsuite>
+  <testsuite name="Socios CRUD / Crear socio — 201" id="c3c39345-bab4-48fe-af3a-35d5b3b0058b" timestamp="2026-10-16T23:48:08.911Z" tests="5" failures="0" errors="0" time="0.581">
+    <testcase name="Status is 201" time="0.581" classname="SociosCrudCrearSocio201"/>
+    <testcase name="Response has socio id" time="0.581" classname="SociosCrudCrearSocio201"/>
+    <testcase name="Response has numero_socio" time="0.581" classname="SociosCrudCrearSocio201"/>
+    <testcase name="nombre is a string" time="0.581" classname="SociosCrudCrearSocio201"/>
+    <testcase name="dni field exists" time="0.581" classname="SociosCrudCrearSocio201"/>
+  </testsuite>
+  <testsuite name="Socios CRUD / Leer socio — 200" id="f93619cf-92ba-487e-a586-814f3cdc57c7" timestamp="2026-10-16T23:48:08.911Z" tests="5" failures="0" errors="0" time="0.043">
+    <testcase name="Status is 200" time="0.043" classname="SociosCrudLeerSocio200"/>
+    <testcase name="id matches socio_id env var" time="0.043" classname="SociosCrudLeerSocio200"/>
+    <testcase name="nombre is present" time="0.043" classname="SociosCrudLeerSocio200"/>
+    <testcase name="estado field exists" time="0.043" classname="SociosCrudLeerSocio200"/>
+    <testcase name="numero_socio field exists" time="0.043" classname="SociosCrudLeerSocio200"/>
+  </testsuite>
+  <testsuite name="Socios CRUD / Actualizar socio (PATCH) — 200" id="3e965d81-1e37-40e9-90a8-50dc14ba0847" timestamp="2026-10-16T23:48:08.911Z" tests="3" failures="0" errors="0" time="0.052">
+    <testcase name="Status is 200" time="0.052" classname="SociosCrudActualizarSocioPatch200"/>
+    <testcase name="telefono was updated" time="0.052" classname="SociosCrudActualizarSocioPatch200"/>
+    <testcase name="id is unchanged" time="0.052" classname="SociosCrudActualizarSocioPatch200"/>
+  </testsuite>
+  <testsuite name="Negative Tests / Crear plan sin token — 401" id="7df0e812-4487-47ce-ab12-1dba7cdd39ce" timestamp="2026-10-16T23:48:08.911Z" tests="2" failures="0" errors="0" time="0.018">
+    <testcase name="Status is 401" time="0.018" classname="NegativeTestsCrearPlanSinToken401"/>
+    <testcase name="Response has authentication error" time="0.018" classname="NegativeTestsCrearPlanSinToken401"/>
+  </testsuite>
+  <testsuite name="Negative Tests / Crear plan con precio negativo — 400" id="e85adf6f-bf03-4c9e-b9b6-c090baa49f57" timestamp="2026-10-16T23:48:08.911Z" tests="2" failures="0" errors="0" time="0.019">
+    <testcase name="Status is 400" time="0.019" classname="NegativeTestsCrearPlanConPrecioNegativo400"/>
+    <testcase name="Response has validation error for precio" time="0.019" classname="NegativeTestsCrearPlanConPrecioNegativo400"/>
+  </testsuite>
+  <testsuite name="Negative Tests / Crear socio sin token — 401" id="355c0f7b-5ad0-4d3d-8b84-78e890228644" timestamp="2026-10-16T23:48:08.911Z" tests="2" failures="0" errors="0" time="0.013">
+    <testcase name="Status is 401" time="0.013" classname="NegativeTestsCrearSocioSinToken401"/>
+    <testcase name="Response has authentication error" time="0.013" classname="NegativeTestsCrearSocioSinToken401"/>
+  </testsuite>
+  <testsuite name="Negative Tests / Crear socio con DNI duplicado — 400" id="dd7ae8e5-9492-4ab3-b63b-101f2e8da21e" timestamp="2026-10-16T23:48:08.911Z" tests="2" failures="0" errors="0" time="0.029">
+    <testcase name="Status is 400" time="0.029" classname="NegativeTestsCrearSocioConDniDuplicado400"/>
+    <testcase name="Response has validation error for dni" time="0.029" classname="NegativeTestsCrearSocioConDniDuplicado400"/>
+  </testsuite>
+</testsuites>

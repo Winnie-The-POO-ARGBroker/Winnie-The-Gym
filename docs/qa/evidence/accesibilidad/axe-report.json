@@ -1,0 +1,234 @@
+{
+  "summary": {
+    "generatedAt": "2026-10-17T02:13:45.646Z",
+    "baseUrl": "http://localhost:5173",
+    "tags": [
+      "wcag2a",
+      "wcag2aa",
+      "wcag21a",
+      "wcag21aa",
+      "wcag22aa"
+    ],
+    "screens": 14,
+    "totals": {
+      "violations": 11,
+      "critical": 0,
+      "serious": 11,
+      "moderate": 0,
+      "minor": 0
+    }
+  },
+  "results": [
+    {
+      "role": "público",
+      "route": "/login",
+      "name": "Login",
+      "landedOn": "/login",
+      "redirected": false,
+      "violations": []
+    },
+    {
+      "role": "público",
+      "route": "/registro",
+      "name": "Registro",
+      "landedOn": "/registro",
+      "redirected": false,
+      "violations": []
+    },
+    {
+      "role": "público",
+      "route": "/forgot-password",
+      "name": "Recuperar contraseña",
+      "landedOn": "/forgot-password",
+      "redirected": false,
+      "violations": []
+    },
+    {
+      "role": "administrador",
+      "route": "/dashboard",
+      "name": "Dashboard",
+      "landedOn": "/dashboard",
+      "redirected": false,
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=playwright",
+          "nodes": 5,
+          "sample": ".shadow-md > .lg\\:inline.hidden"
+        }
+      ]
+    },
+    {
+      "role": "administrador",
+      "route": "/admin/socios",
+      "name": "Gestión de socios",
+      "landedOn": "/admin/socios",
+      "redirected": false,
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=playwright",
+          "nodes": 8,
+          "sample": ".active > .lg\\:inline.hidden"
+        }
+      ]
+    },
+    {
+      "role": "administrador",
+      "route": "/admin/clases",
+      "name": "Clases",
+      "landedOn": "/admin/clases",
+      "redirected": false,
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=playwright",
+          "nodes": 2,
+          "sample": ".active > .lg\\:inline.hidden"
+        }
+      ]
+    },
+    {
+      "role": "administrador",
+      "route": "/admin/planes",
+      "name": "Planes",
+      "landedOn": "/admin/planes",
+      "redirected": false,
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=playwright",
+          "nodes": 2,
+          "sample": ".active > .lg\\:inline.hidden"
+        }
+      ]
+    },
+    {
+      "role": "administrador",
+      "route": "/admin/pagos",
+      "name": "Pagos",
+      "landedOn": "/admin/pagos",
+      "redirected": false,
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=playwright",
+          "nodes": 3,
+          "sample": ".shadow-md > .lg\\:inline.hidden"
+        }
+      ]
+    },
+    {
+      "role": "administrador",
+      "route": "/perfil",
+      "name": "Mi perfil",
+      "landedOn": "/perfil",
+      "redirected": false,
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=playwright",
+          "nodes": 1,
+          "sample": ".py-0\\.5"
+        }
+      ]
+    },
+    {
+      "role": "recepcionista",
+      "route": "/recepcion/acceso",
+      "name": "Control de accesos",
+      "landedOn": "/recepcion/acceso",
+      "redirected": false,
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=playwright",
+          "nodes": 2,
+          "sample": ".shadow-md > .lg\\:inline.hidden"
+        }
+      ]
+    },
+    {
+      "role": "recepcionista",
+      "route": "/recepcion/aforo",
+      "name": "Aforo en vivo",
+      "landedOn": "/recepcion/aforo",
+      "redirected": false,
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=playwright",
+          "nodes": 1,
+          "sample": ".shadow-md > .lg\\:inline.hidden"
+        }
+      ]
+    },
+    {
+      "role": "socio",
+      "route": "/socio/credencial",
+      "name": "Credencial digital",
+      "landedOn": "/socio/credencial",
+      "redirected": false,
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=playwright",
+          "nodes": 2,
+          "sample": ".shadow-md > .lg\\:inline.hidden"
+        }
+      ]
+    },
+    {
+      "role": "socio",
+      "route": "/socio/clases",
+      "name": "Catálogo de clases",
+      "landedOn": "/socio/clases",
+      "redirected": false,
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=playwright",
+          "nodes": 4,
+          "sample": ".shadow-md > .lg\\:inline.hidden"
+        }
+      ]
+    },
+    {
+      "role": "socio",
+      "route": "/socio/pagos",
+      "name": "Mis pagos",
+      "landedOn": "/socio/pagos",
+      "redirected": false,
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=playwright",
+          "nodes": 1,
+          "sample": ".shadow-md > .lg\\:inline.hidden"
+        }
+      ]
+    }
+  ]
+}
