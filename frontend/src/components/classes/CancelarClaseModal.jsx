@@ -101,7 +101,7 @@ export default function CancelarClaseModal({
             {...register('motivo')}
             rows={4}
             placeholder="Describe el motivo (mínimo 10 caracteres)..."
-            className="w-full px-3 py-2 rounded-lg text-sm outline-none transition-colors bg-bg-raised border border-subtle text-text-primary placeholder:text-text-tertiary resize-none"
+            className="w-full px-3 py-2 rounded-lg text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base transition-colors bg-bg-raised border border-subtle text-text-primary placeholder:text-text-tertiary resize-none"
           />
           {errors.motivo && (
             <span className="text-xs text-error-500">{errors.motivo.message}</span>

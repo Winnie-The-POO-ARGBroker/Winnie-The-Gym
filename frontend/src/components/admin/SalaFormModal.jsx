@@ -52,7 +52,7 @@ export default function SalaFormModal({ isOpen, onClose, onSave, salaToEdit = nu
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
             data-testid="sala-form-nombre"
-            className={`w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border text-text-primary text-sm focus:outline-none transition-colors ${errors.nombre ? 'border-error-500' : 'border-subtle focus:border-orange-500'}`}
+            className={`w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border text-text-primary text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base transition-colors ${errors.nombre ? 'border-error-500' : 'border-subtle focus:border-orange-500'}`}
           />
           {errors.nombre && <p className="mt-1 text-xs text-error-500">{errors.nombre}</p>}
         </div>
@@ -69,7 +69,7 @@ export default function SalaFormModal({ isOpen, onClose, onSave, salaToEdit = nu
             value={capacidad}
             onChange={(e) => setCapacidad(e.target.value)}
             data-testid="sala-form-capacidad"
-            className={`w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border text-text-primary text-sm focus:outline-none transition-colors ${errors.capacidad ? 'border-error-500' : 'border-subtle focus:border-orange-500'}`}
+            className={`w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border text-text-primary text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base transition-colors ${errors.capacidad ? 'border-error-500' : 'border-subtle focus:border-orange-500'}`}
           />
           {errors.capacidad && <p className="mt-1 text-xs text-error-500">{errors.capacidad}</p>}
         </div>

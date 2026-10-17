@@ -79,7 +79,7 @@ export default function SaludCard({
               type="file"
               accept={CERT_ACCEPT_ATTR}
               onChange={handleFile}
-              className="w-full bg-bg-base border border-subtle rounded-xl text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-orange-500 transition-colors py-2 pl-3 pr-3 text-xs file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-500/10 file:text-orange-500 hover:file:bg-orange-500/20 cursor-pointer"
+              className="w-full bg-bg-base border border-subtle rounded-xl text-text-primary placeholder:text-text-tertiary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors py-2 pl-3 pr-3 text-xs file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-500/10 file:text-orange-500 hover:file:bg-orange-500/20 cursor-pointer"
             />
           </div>
 
@@ -89,6 +89,7 @@ export default function SaludCard({
                 📄 {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
               </span>
               <button
+                aria-label="Quitar archivo"
                 type="button"
                 onClick={handleRemoveFile}
                 className="text-text-secondary hover:text-error-500"

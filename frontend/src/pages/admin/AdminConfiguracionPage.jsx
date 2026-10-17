@@ -33,7 +33,7 @@ const schema = z
   )
 
 const inputCls =
-  'w-full px-3 py-2 rounded-lg text-sm outline-none appearance-none transition-colors bg-bg-raised border border-subtle text-text-primary placeholder:text-text-tertiary'
+  'w-full px-3 py-2 rounded-lg text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base appearance-none transition-colors bg-bg-raised border border-subtle text-text-primary placeholder:text-text-tertiary'
 
 export default function AdminConfiguracionPage() {
   const { data: config, isPending: loading } = useGymConfig()

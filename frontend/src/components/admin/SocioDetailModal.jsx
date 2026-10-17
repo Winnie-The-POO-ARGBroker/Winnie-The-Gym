@@ -440,6 +440,7 @@ function TabActividad({ socioId }) {
           </span>
           <div className="flex items-center gap-1">
             <button
+              aria-label="Página anterior"
               type="button"
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
@@ -448,6 +449,7 @@ function TabActividad({ socioId }) {
               <ChevronLeft className="w-3.5 h-3.5" />
             </button>
             <button
+              aria-label="Página siguiente"
               type="button"
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages}

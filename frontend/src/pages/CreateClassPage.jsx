@@ -225,7 +225,7 @@ export default function CreateClassPage() {
                     value={formData.nombre}
                     onChange={(e) => { setFormData({ ...formData, nombre: e.target.value }); setFieldErrors((p) => ({ ...p, nombre: undefined })) }}
                     placeholder="Ej. Funcional Intensivo, Spinning Pro..."
-                    className={`w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border text-text-primary text-sm focus:outline-none transition-colors ${fieldErrors.nombre ? 'border-error-500' : 'border-subtle focus:border-orange-500'}`}
+                    className={`w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border text-text-primary text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base transition-colors ${fieldErrors.nombre ? 'border-error-500' : 'border-subtle focus:border-orange-500'}`}
                   />
                   {fieldErrors.nombre && (
                     <p className="text-xs text-error-500 mt-1">{Array.isArray(fieldErrors.nombre) ? fieldErrors.nombre[0] : fieldErrors.nombre}</p>
@@ -239,7 +239,7 @@ export default function CreateClassPage() {
                   <select
                     value={formData.categoria}
                     onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus:border-orange-500 transition-colors"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors"
                   >
                     {disciplinasAPI.length > 0 ? (
                       disciplinasAPI.filter((d) => d.activa !== false).map((d) => (
@@ -275,7 +275,7 @@ export default function CreateClassPage() {
                   value={formData.descripcion}
                   onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
                   placeholder="Describí los objetivos, nivel de intensidad y detalles del entrenamiento..."
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus:border-orange-500 transition-colors resize-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors resize-none"
                 />
               </div>
             </div>
@@ -294,7 +294,7 @@ export default function CreateClassPage() {
                   <select
                     value={formData.dia}
                     onChange={(e) => setFormData({ ...formData, dia: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus:border-orange-500 transition-colors"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors"
                   >
                     {DIAS_SEMANA.map((d) => (
                       <option key={d} value={d}>
@@ -312,7 +312,7 @@ export default function CreateClassPage() {
                     type="time"
                     value={formData.hora}
                     onChange={(e) => setFormData({ ...formData, hora: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus:border-orange-500 transition-colors"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors"
                   />
                 </div>
 
@@ -326,7 +326,7 @@ export default function CreateClassPage() {
                     step="5"
                     value={formData.duracion_min}
                     onChange={(e) => setFormData({ ...formData, duracion_min: Number(e.target.value) })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus:border-orange-500 transition-colors"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors"
                   />
                 </div>
 
@@ -337,7 +337,7 @@ export default function CreateClassPage() {
                   <select
                     value={formData.sala}
                     onChange={(e) => setFormData({ ...formData, sala: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus:border-orange-500 transition-colors"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors"
                   >
                     {salasAPI.length > 0 ? (
                       salasAPI.filter((s) => s.activa !== false).map((s) => (
@@ -365,7 +365,7 @@ export default function CreateClassPage() {
                 <select
                   value={formData.instructor}
                   onChange={(e) => setFormData({ ...formData, instructor: e.target.value })}
-                  className="w-full max-w-sm px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus:border-orange-500 transition-colors"
+                  className="w-full max-w-sm px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors"
                 >
                   {instructoresAPI.length > 0 ? (
                     <>
@@ -436,7 +436,7 @@ export default function CreateClassPage() {
                     inputMode="numeric"
                     value={formData.cupo_maximo}
                     onChange={(e) => { setFormData({ ...formData, cupo_maximo: Number(e.target.value) }); setFieldErrors((p) => ({ ...p, cupo_maximo: undefined })) }}
-                    className={`w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border text-text-primary text-base md:text-sm min-h-11 font-semibold focus:outline-none transition-colors ${fieldErrors.cupo_maximo ? 'border-error-500' : 'border-subtle focus:border-orange-500'}`}
+                    className={`w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border text-text-primary text-base md:text-sm min-h-11 font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base transition-colors ${fieldErrors.cupo_maximo ? 'border-error-500' : 'border-subtle focus:border-orange-500'}`}
                   />
                   {fieldErrors.cupo_maximo && (
                     <p className="text-xs text-error-500 mt-1">{Array.isArray(fieldErrors.cupo_maximo) ? fieldErrors.cupo_maximo[0] : fieldErrors.cupo_maximo}</p>
@@ -453,7 +453,7 @@ export default function CreateClassPage() {
                     inputMode="numeric"
                     value={formData.lista_espera_max}
                     onChange={(e) => setFormData({ ...formData, lista_espera_max: Number(e.target.value) })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-base md:text-sm min-h-11 focus:outline-none focus:border-orange-500 transition-colors"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-base md:text-sm min-h-11 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors"
                   />
                 </div>
 
@@ -467,7 +467,7 @@ export default function CreateClassPage() {
                     inputMode="numeric"
                     value={formData.cancelacion_horas}
                     onChange={(e) => setFormData({ ...formData, cancelacion_horas: Number(e.target.value) })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-base md:text-sm min-h-11 focus:outline-none focus:border-orange-500 transition-colors"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-base md:text-sm min-h-11 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors"
                   />
                 </div>
               </div>
@@ -598,7 +598,7 @@ export default function CreateClassPage() {
                   <select
                     value={copiarFromId}
                     onChange={(e) => setCopiarFromId(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-bg-raised border border-subtle text-text-primary text-xs focus:outline-none focus:border-orange-500 transition-colors"
+                    className="w-full px-3 py-2 rounded-xl bg-bg-raised border border-subtle text-text-primary text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors"
                   >
                     <option value="">Seleccionar clase a copiar...</option>
                     {allClasses.map((c) => (

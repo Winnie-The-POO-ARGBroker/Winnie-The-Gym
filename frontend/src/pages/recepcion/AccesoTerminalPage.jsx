@@ -330,7 +330,7 @@ export default function AccesoTerminalPage() {
             tabIndex={-1}
             aria-live="polite"
             aria-atomic="true"
-            className="outline-none"
+            className="outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base"
           >
             <ValidationResult
               result={scanResult}

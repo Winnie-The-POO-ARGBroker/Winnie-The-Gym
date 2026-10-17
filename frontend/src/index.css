@@ -104,6 +104,9 @@
   .bg-bg-surface { background-color: var(--color-bg-surface); }
   .bg-bg-raised  { background-color: var(--color-bg-raised);  }
 
+  /* Theme-aware ring offset so focus rings look right in light and dark mode */
+  .ring-offset-bg-base { --tw-ring-offset-color: var(--color-bg-base); }
+
   .text-text-primary   { color: var(--color-text-primary);   }
   .text-text-secondary { color: var(--color-text-secondary); }
   .text-text-tertiary  { color: var(--color-text-tertiary);  }

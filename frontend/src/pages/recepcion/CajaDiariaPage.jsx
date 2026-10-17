@@ -148,7 +148,7 @@ export default function CajaDiariaPage() {
                 value={fecha}
                 onChange={(e) => setFecha(e.target.value)}
                 data-testid="caja-fecha-input"
-                className="px-3 py-2 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus:border-orange-500 transition-colors"
+                className="px-3 py-2 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors"
               />
             </div>
 
@@ -161,7 +161,7 @@ export default function CajaDiariaPage() {
                   value={operadorId}
                   onChange={(e) => setOperadorId(e.target.value)}
                   data-testid="caja-operador-select"
-                  className="px-3 py-2 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus:border-orange-500 transition-colors appearance-none min-w-[180px]"
+                  className="px-3 py-2 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors appearance-none min-w-[180px]"
                 >
                   <option value="">Todos los operadores</option>
                   {staffList.map((s) => (

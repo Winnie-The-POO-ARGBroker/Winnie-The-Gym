@@ -42,6 +42,23 @@ export default function DataTable({
     return null
   }
 
+  // Props that make a clickable row operable with the keyboard (Enter / Space).
+  // Keys pressed on nested controls (action buttons, links) must keep their own behavior.
+  function getRowProps(row) {
+    if (!onRowClick) return {}
+    return {
+      onClick: () => onRowClick(row),
+      onKeyDown: (e) => {
+        if (e.target !== e.currentTarget) return
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onRowClick(row)
+        }
+      },
+      tabIndex: 0,
+    }
+  }
+
   // Toggle de ordenación: null → asc → desc → null
   function handleSort(key) {
     if (!onSort) return
@@ -152,9 +169,9 @@ export default function DataTable({
         {data.map((row, idx) => (
           <div
             key={row.id ?? idx}
-            onClick={onRowClick ? () => onRowClick(row) : undefined}
+            {...getRowProps(row)}
             className={`rounded-xl border border-subtle bg-bg-surface p-4 flex flex-col gap-2 ${
-              onRowClick ? 'cursor-pointer hover:bg-bg-raised' : ''
+              onRowClick ? 'cursor-pointer hover:bg-bg-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base' : ''
             } transition-colors`}
           >
             {columns.map((col) => {
@@ -194,34 +211,26 @@ export default function DataTable({
                 return (
                   <th
                     key={col.key}
-                    onClick={isSortable ? () => handleSort(col.key) : undefined}
-                    onKeyDown={
-                      isSortable
-                        ? (e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault()
-                              handleSort(col.key)
-                            }
-                          }
-                        : undefined
-                    }
-                    tabIndex={isSortable ? 0 : undefined}
-                    role={isSortable ? 'button' : undefined}
+                    scope="col"
                     aria-sort={isSortable ? ariaSort : undefined}
-                    className={`text-left text-xs font-semibold uppercase tracking-wider text-text-secondary px-4 py-3 ${
-                      isSortable ? 'cursor-pointer select-none hover:text-text-primary focus:outline-none focus:text-primary transition-colors' : ''
-                    }`}
+                    className="text-left text-xs font-semibold uppercase tracking-wider text-text-secondary px-4 py-3"
                   >
-                    <span className="inline-flex items-center gap-1.5">
-                      {col.label}
-                      {isSortable && (
+                    {isSortable ? (
+                      <button
+                        type="button"
+                        onClick={() => handleSort(col.key)}
+                        className="inline-flex items-center gap-1.5 -mx-1 px-1 rounded uppercase tracking-wider font-semibold cursor-pointer select-none hover:text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:text-primary transition-colors"
+                      >
+                        {col.label}
                         <span className="text-text-tertiary">
                           {sortDir === 'asc' && <ArrowUp className="w-3.5 h-3.5 text-primary" />}
                           {sortDir === 'desc' && <ArrowDown className="w-3.5 h-3.5 text-primary" />}
                           {sortDir === null && <ArrowUpDown className="w-3.5 h-3.5" />}
                         </span>
-                      )}
-                    </span>
+                      </button>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5">{col.label}</span>
+                    )}
                   </th>
                 )
               })}
@@ -236,9 +245,9 @@ export default function DataTable({
             {data.map((row, idx) => (
               <tr
                 key={row.id ?? idx}
-                onClick={onRowClick ? () => onRowClick(row) : undefined}
+                {...getRowProps(row)}
                 className={`border-b border-subtle last:border-0 transition-colors ${
-                  onRowClick ? 'cursor-pointer hover:bg-bg-raised' : ''
+                  onRowClick ? 'cursor-pointer hover:bg-bg-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500' : ''
                 }`}
               >
                 {columns.map((col) => (

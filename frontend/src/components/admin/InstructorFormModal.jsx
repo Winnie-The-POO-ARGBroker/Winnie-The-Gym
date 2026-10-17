@@ -154,7 +154,7 @@ export default function InstructorFormModal({
               placeholder="Juan"
               data-testid="instructor-nombre"
               {...field('nombre')}
-              className={`w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border text-text-primary text-sm focus:outline-none transition-colors ${
+              className={`w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border text-text-primary text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base transition-colors ${
                 errors.nombre ? 'border-error-500' : 'border-subtle focus:border-orange-500'
               }`}
             />
@@ -170,7 +170,7 @@ export default function InstructorFormModal({
               placeholder="Perez"
               data-testid="instructor-apellido"
               {...field('apellido')}
-              className={`w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border text-text-primary text-sm focus:outline-none transition-colors ${
+              className={`w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border text-text-primary text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base transition-colors ${
                 errors.apellido ? 'border-error-500' : 'border-subtle focus:border-orange-500'
               }`}
             />
@@ -189,7 +189,7 @@ export default function InstructorFormModal({
               placeholder="juan@gym.com"
               data-testid="instructor-email"
               {...field('email')}
-              className={`w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border text-text-primary text-sm focus:outline-none transition-colors ${
+              className={`w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border text-text-primary text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base transition-colors ${
                 errors.email ? 'border-error-500' : 'border-subtle focus:border-orange-500'
               }`}
             />
@@ -204,7 +204,7 @@ export default function InstructorFormModal({
               placeholder="+54 9 11 ..."
               data-testid="instructor-telefono"
               {...field('telefono')}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus:border-orange-500 transition-colors"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors"
             />
           </div>
         </div>
@@ -248,19 +248,20 @@ export default function InstructorFormModal({
             data-testid="instructor-bio"
             value={form.bio}
             onChange={(e) => setForm((prev) => ({ ...prev, bio: e.target.value }))}
-            className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus:border-orange-500 transition-colors resize-none"
+            className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors resize-none"
           />
         </div>
 
         {/* Activo toggle */}
         <div className="flex items-center gap-3">
           <button
+            aria-label="Instructor activo"
             type="button"
             role="switch"
             aria-checked={form.activo}
             data-testid="instructor-activo"
             onClick={() => setForm((prev) => ({ ...prev, activo: !prev.activo }))}
-            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${
+            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base ${
               form.activo ? 'bg-success-500' : 'bg-bg-raised border border-subtle'
             }`}
           >

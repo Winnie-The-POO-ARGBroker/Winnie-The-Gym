@@ -73,6 +73,7 @@ export default function QRFullscreenModal({
       {/* scrim — no overlay token yet */}
       {/* Botón cerrar flotante */}
       <Button
+        aria-label="Cerrar vista ampliada del QR"
         variant="ghost"
         size="sm"
         onClick={onClose}

@@ -195,7 +195,7 @@ export default function CertificadoCard({
                 value={emitidoEn}
                 onChange={(e) => setEmitidoEn(e.target.value)}
                 required
-                className="w-full px-2.5 py-1.5 rounded-lg text-xs bg-bg-base border border-subtle text-text-primary focus:outline-none focus:border-primary transition-colors"
+                className="w-full px-2.5 py-1.5 rounded-lg text-xs bg-bg-base border border-subtle text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-primary transition-colors"
                 data-testid="emitido-en-input"
               />
             </div>
@@ -208,7 +208,7 @@ export default function CertificadoCard({
                 value={venceEn}
                 onChange={(e) => setVenceEn(e.target.value)}
                 required
-                className="w-full px-2.5 py-1.5 rounded-lg text-xs bg-bg-base border border-subtle text-text-primary focus:outline-none focus:border-primary transition-colors"
+                className="w-full px-2.5 py-1.5 rounded-lg text-xs bg-bg-base border border-subtle text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-primary transition-colors"
                 data-testid="vence-en-input"
               />
             </div>

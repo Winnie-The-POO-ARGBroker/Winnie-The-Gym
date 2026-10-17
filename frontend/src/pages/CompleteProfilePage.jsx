@@ -81,7 +81,7 @@ export default function CompleteProfilePage() {
                 inputMode={inputMode}
                 autoComplete={autoComplete}
                 maxLength={maxLength}
-                className="rounded-lg px-3 py-2.5 text-text-primary text-base md:text-sm min-h-11 outline-none appearance-none placeholder:text-text-tertiary bg-bg-raised border border-subtle"
+                className="rounded-lg px-3 py-2.5 text-text-primary text-base md:text-sm min-h-11 outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base appearance-none placeholder:text-text-tertiary bg-bg-raised border border-subtle"
               />
               {errors[name] && (
                 <span className="text-xs text-error-500">

@@ -1,7 +1,7 @@
 const BASE = 'inline-flex items-center justify-center font-semibold rounded-xl transition-opacity disabled:opacity-50 disabled:cursor-not-allowed min-h-11 md:min-h-0 outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1'
 
 const VARIANTS = {
-  primary:   'bg-primary text-white hover:opacity-90',
+  primary:   'bg-orange-700 text-white hover:opacity-90',
   secondary: 'bg-bg-raised text-text-primary border border-subtle hover:opacity-80',
   ghost:     'text-text-secondary hover:text-text-primary hover:bg-bg-raised',
   danger:    'bg-error-500 text-white hover:opacity-90',
