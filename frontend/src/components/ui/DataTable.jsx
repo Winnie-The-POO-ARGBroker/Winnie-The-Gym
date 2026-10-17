@@ -42,6 +42,23 @@ export default function DataTable({
     return null
   }
 
+  // Props that make a clickable row operable with the keyboard (Enter / Space).
+  // Keys pressed on nested controls (action buttons, links) must keep their own behavior.
+  function getRowProps(row) {
+    if (!onRowClick) return {}
+    return {
+      onClick: () => onRowClick(row),
+      onKeyDown: (e) => {
+        if (e.target !== e.currentTarget) return
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onRowClick(row)
+        }
+      },
+      tabIndex: 0,
+    }
+  }
+
   // Toggle de ordenación: null → asc → desc → null
   function handleSort(key) {
     if (!onSort) return
@@ -152,9 +169,9 @@ export default function DataTable({
         {data.map((row, idx) => (
           <div
             key={row.id ?? idx}
-            onClick={onRowClick ? () => onRowClick(row) : undefined}
+            {...getRowProps(row)}
             className={`rounded-xl border border-subtle bg-bg-surface p-4 flex flex-col gap-2 ${
-              onRowClick ? 'cursor-pointer hover:bg-bg-raised' : ''
+              onRowClick ? 'cursor-pointer hover:bg-bg-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base' : ''
             } transition-colors`}
           >
             {columns.map((col) => {
@@ -236,9 +253,9 @@ export default function DataTable({
             {data.map((row, idx) => (
               <tr
                 key={row.id ?? idx}
-                onClick={onRowClick ? () => onRowClick(row) : undefined}
+                {...getRowProps(row)}
                 className={`border-b border-subtle last:border-0 transition-colors ${
-                  onRowClick ? 'cursor-pointer hover:bg-bg-raised' : ''
+                  onRowClick ? 'cursor-pointer hover:bg-bg-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500' : ''
                 }`}
               >
                 {columns.map((col) => (
