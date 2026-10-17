@@ -32,18 +32,26 @@ export default function CompleteProfilePage() {
     formState: { errors },
   } = useForm({ resolver: zodResolver(schema) })
 
+  const markProfileComplete = () => {
+    setAuth({
+      access: accessToken,
+      refresh: refreshToken,
+      user: { ...user, is_profile_complete: true },
+    })
+    navigate('/dashboard')
+  }
+
   const completeProfile = useMutation({
     mutationFn: (values) => api.post('/auth/complete-profile/', values).then((r) => r.data),
-    onSuccess: () => {
-      setAuth({
-        access: accessToken,
-        refresh: refreshToken,
-        user: { ...user, is_profile_complete: true },
-      })
-      navigate('/dashboard')
-    },
+    onSuccess: markProfileComplete,
     onError: (err) => {
       const data = err.response?.data
+      // The profile was already saved (e.g. right after registering) and only the
+      // local copy of the user was stale: there is nothing left to complete.
+      if (err.response?.status === 400 && data?.detail === 'Profile already complete.') {
+        markProfileComplete()
+        return
+      }
       const message =
         (data && typeof data === 'object'
           ? Object.values(data).flat().join(' ')

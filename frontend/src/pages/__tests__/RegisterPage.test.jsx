@@ -130,10 +130,13 @@ describe('RegisterPage', () => {
         dni: '12345678',
         telefono: '',
       })
-      expect(mockSetAuth).toHaveBeenCalledWith({
+      // Registration alone leaves is_profile_complete=false; once the profile is
+      // saved the store must say so, or ProtectedRoute sends the new member to
+      // /completar-perfil to type the same data again.
+      expect(mockSetAuth).toHaveBeenLastCalledWith({
         access: 'tok-access',
         refresh: 'tok-refresh',
-        user: { id: 1, rol: 'socio' },
+        user: { id: 1, rol: 'socio', is_profile_complete: true },
       })
       expect(toast.success).toHaveBeenCalledWith('¡Cuenta creada exitosamente! Bienvenido/a.')
       expect(mockNavigate).toHaveBeenCalledWith('/dashboard')

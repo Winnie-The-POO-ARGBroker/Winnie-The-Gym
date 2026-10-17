@@ -149,6 +149,28 @@ describe('CompleteProfilePage', () => {
     })
   })
 
+  it('treats "Profile already complete" as done: marks the profile complete and goes to the dashboard', async () => {
+    api.post.mockRejectedValue({
+      response: { status: 400, data: { detail: 'Profile already complete.' } },
+    })
+    renderPage()
+
+    fireEvent.change(screen.getByPlaceholderText('Juan'), { target: { value: 'Juan' } })
+    fireEvent.change(screen.getByPlaceholderText('García'), { target: { value: 'García' } })
+    fireEvent.change(screen.getByPlaceholderText('12345678'), { target: { value: '12345678' } })
+    fireEvent.change(screen.getByPlaceholderText('+54 11 1234 5678'), { target: { value: '01112345678' } })
+
+    fireEvent.click(screen.getByText('Continuar'))
+
+    await waitFor(() => {
+      expect(mockSetAuth).toHaveBeenCalledWith(
+        expect.objectContaining({ user: expect.objectContaining({ is_profile_complete: true }) })
+      )
+      expect(mockNavigate).toHaveBeenCalledWith('/dashboard')
+    })
+    expect(toast.error).not.toHaveBeenCalled()
+  })
+
   // ── 8. API error shows toast.error ────────────────────────────────────────
   it('shows toast.error when API call fails', async () => {
     api.post.mockRejectedValue({
