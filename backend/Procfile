@@ -1,12 +1,18 @@
-# Procfile leído por honcho en el web service de Render (plan Free no soporta
-# background workers separados, así que corremos los 3 procesos en el mismo
-# contenedor). Ver render.yaml y docs/deploy.md § 4.
+# Procfile leído por honcho en el web service de Render (plan Free).
 #
-# Trade-off aceptado para MVP académico: menos aislamiento (un OOM tira los 3)
-# a cambio de $0/mes. La arquitectura sigue soportando workers separados si
-# más adelante se paga el plan Starter — solo hay que revertir este Procfile
-# y descomentar los servicios worker/beat en render.yaml.
+# Corren Daphne (web) y el beat de Celery. NO se levanta el worker: consulta el
+# broker de Redis sin parar (unos 8 comandos por segundo) y agotó la cuota
+# gratuita de Upstash (500k comandos por mes) en menos de un día; al fallar,
+# honcho bajaba también el web.
+#
+# Con CELERY_TASK_ALWAYS_EAGER=true (default en core/settings/production.py) el
+# beat ejecuta las tareas periódicas dentro de su propio proceso: no usa broker
+# ni worker, solo lee el schedule de la base. Las tareas disparadas con `.delay()`
+# desde la API también corren síncronas en el request.
+#
+# Cuando haya un worker aparte (plan Starter o un Redis sin cuota), agregar
+#   worker: celery -A core worker -l info --concurrency=1
+# poner CELERY_TASK_ALWAYS_EAGER=false y revisar test_production_image.py.
 
 web: daphne -b 0.0.0.0 -p ${PORT:-8000} core.asgi:application
-worker: celery -A core worker -l info --concurrency=1
 beat: celery -A core beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler

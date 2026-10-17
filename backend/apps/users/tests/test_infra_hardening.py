@@ -105,6 +105,7 @@ class HealthCheckTests(TestCase):
         self.assertEqual(body['checks']['celery']['error'], 'Connection refused')
 
 
+@override_settings(CELERY_TASK_ALWAYS_EAGER=False)
 class CeleryCheckUnitTests(TestCase):
     """Tests unitarios de la función _check_celery() en aislamiento.
 
@@ -126,6 +127,18 @@ class CeleryCheckUnitTests(TestCase):
         self.assertIsNone(err)
         # Verificar que se usa el timeout de 500ms
         mock_app.control.ping.assert_called_once_with(timeout=0.5)
+
+    @override_settings(CELERY_TASK_ALWAYS_EAGER=True)
+    @patch('core.celery.app')
+    def test_check_celery_eager_no_consulta_el_broker(self, mock_app):
+        """En modo eager no hay worker: las tareas corren en el proceso web.
+        _check_celery debe devolver (True, None) sin hacer ping, para no
+        gastar comandos de Redis en cada health check."""
+        from core.urls import _check_celery
+        ok, err = _check_celery()
+        self.assertTrue(ok)
+        self.assertIsNone(err)
+        mock_app.control.ping.assert_not_called()
 
     @patch('core.celery.app')
     def test_check_celery_sin_workers(self, mock_app):

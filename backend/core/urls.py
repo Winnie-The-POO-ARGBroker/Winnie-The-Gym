@@ -68,7 +68,12 @@ def _check_celery():
     Se considera no-crítico (igual que Mongo): si Celery está caído,
     las tasks se acumulan en Redis pero la API sigue funcional para
     el usuario. El health degrada a 'degraded' en vez de 'unhealthy'.
+
+    En modo eager (plan gratuito de Render) no hay worker: las tareas corren
+    en el proceso web, así que no se hace ping y no se gastan comandos de Redis.
     """
+    if getattr(settings, 'CELERY_TASK_ALWAYS_EAGER', False):
+        return True, None
     try:
         from core.celery import app as celery_app
         pong = celery_app.control.ping(timeout=0.5)
