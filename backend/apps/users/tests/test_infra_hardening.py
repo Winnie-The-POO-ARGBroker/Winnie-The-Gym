@@ -105,6 +105,7 @@ class HealthCheckTests(TestCase):
         self.assertEqual(body['checks']['celery']['error'], 'Connection refused')
 
 
+@override_settings(CELERY_TASK_ALWAYS_EAGER=False)
 class CeleryCheckUnitTests(TestCase):
     """Tests unitarios de la función _check_celery() en aislamiento.
 
