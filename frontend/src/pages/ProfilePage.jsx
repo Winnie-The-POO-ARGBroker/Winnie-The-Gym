@@ -177,10 +177,11 @@ function StaffProfileView({ profile, user, isChangePwdOpen, setIsChangePwdOpen }
               { name: 'last_name', label: 'Apellido' },
             ].map(({ name, label }) => (
               <div key={name} className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
+                <label htmlFor={`profile-${name}`} className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
                   {label}
                 </label>
                 <input
+                  id={`profile-${name}`}
                   {...register(name)}
                   className="w-full px-3 py-2 rounded-lg text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base appearance-none transition-colors bg-bg-raised border border-subtle text-text-primary placeholder:text-text-tertiary"
                   onFocus={(e) => (e.target.style.borderColor = '#ff5a36')}
@@ -436,10 +437,11 @@ function SocioProfileView({ profile, user, isChangePwdOpen, setIsChangePwdOpen, 
               { name: 'apellido', label: 'Apellido' },
             ].map(({ name, label }) => (
               <div key={name} className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
+                <label htmlFor={`profile-${name}`} className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
                   {label}
                 </label>
                 <input
+                  id={`profile-${name}`}
                   {...register(name)}
                   className="w-full px-3 py-2 rounded-lg text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base appearance-none transition-colors bg-bg-raised border border-subtle text-text-primary placeholder:text-text-tertiary"
                   onFocus={(e) => (e.target.style.borderColor = '#ff5a36')}
@@ -455,10 +457,11 @@ function SocioProfileView({ profile, user, isChangePwdOpen, setIsChangePwdOpen, 
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
+            <label htmlFor="profile-telefono" className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
               Teléfono
             </label>
             <input
+              id="profile-telefono"
               {...register('telefono')}
               inputMode="tel"
               autoComplete="tel"
@@ -476,10 +479,11 @@ function SocioProfileView({ profile, user, isChangePwdOpen, setIsChangePwdOpen, 
           {/* Extended fields */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
+              <label htmlFor="profile-fecha-nacimiento" className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
                 Fecha de nacimiento
               </label>
               <input
+                id="profile-fecha-nacimiento"
                 {...register('fecha_nacimiento')}
                 type="date"
                 data-testid="fecha-nacimiento-input"
@@ -490,10 +494,11 @@ function SocioProfileView({ profile, user, isChangePwdOpen, setIsChangePwdOpen, 
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
+              <label htmlFor="profile-genero" className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
                 Género
               </label>
               <select
+                id="profile-genero"
                 {...register('genero')}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base appearance-none transition-colors bg-bg-raised border border-subtle text-text-primary cursor-pointer"
               >
@@ -508,10 +513,11 @@ function SocioProfileView({ profile, user, isChangePwdOpen, setIsChangePwdOpen, 
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
+              <label htmlFor="profile-contacto-emergencia-nombre" className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
                 Contacto emergencia — Nombre
               </label>
               <input
+                id="profile-contacto-emergencia-nombre"
                 {...register('contacto_emergencia_nombre')}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base appearance-none transition-colors bg-bg-raised border border-subtle text-text-primary placeholder:text-text-tertiary"
                 placeholder="Nombre del contacto"
@@ -521,10 +527,11 @@ function SocioProfileView({ profile, user, isChangePwdOpen, setIsChangePwdOpen, 
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
+              <label htmlFor="profile-contacto-emergencia-telefono" className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
                 Contacto emergencia — Teléfono
               </label>
               <input
+                id="profile-contacto-emergencia-telefono"
                 {...register('contacto_emergencia_telefono')}
                 inputMode="tel"
                 data-testid="contacto-emergencia-telefono-input"
