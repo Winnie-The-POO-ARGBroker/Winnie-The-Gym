@@ -317,12 +317,13 @@ export default function PagosAdminPage() {
         {/* Filtros */}
         <Card className="p-4 flex flex-wrap gap-4">
           <div className="flex-1 min-w-[180px]">
-            <label className="block text-[10px] font-semibold text-text-secondary uppercase tracking-wider mb-1">
+            <label htmlFor="pagos-filtro-search" className="block text-[10px] font-semibold text-text-secondary uppercase tracking-wider mb-1">
               Buscar socio / DNI
             </label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text-tertiary" />
               <input
+                id="pagos-filtro-search"
                 type="text"
                 placeholder="Nombre, apellido o DNI"
                 value={filtros.search}
@@ -333,10 +334,11 @@ export default function PagosAdminPage() {
           </div>
 
           <div className="min-w-[130px]">
-            <label className="block text-[10px] font-semibold text-text-secondary uppercase tracking-wider mb-1">
+            <label htmlFor="pagos-filtro-estado" className="block text-[10px] font-semibold text-text-secondary uppercase tracking-wider mb-1">
               Estado
             </label>
             <select
+              id="pagos-filtro-estado"
               value={filtros.estado}
               onChange={(e) => setFiltro('estado', e.target.value)}
               className="w-full bg-bg-base border border-subtle rounded-lg text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-primary py-2 px-3 appearance-none"
@@ -348,10 +350,11 @@ export default function PagosAdminPage() {
           </div>
 
           <div className="min-w-[160px]">
-            <label className="block text-[10px] font-semibold text-text-secondary uppercase tracking-wider mb-1">
+            <label htmlFor="pagos-filtro-metodo" className="block text-[10px] font-semibold text-text-secondary uppercase tracking-wider mb-1">
               Método
             </label>
             <select
+              id="pagos-filtro-metodo"
               value={filtros.metodo}
               onChange={(e) => setFiltro('metodo', e.target.value)}
               className="w-full bg-bg-base border border-subtle rounded-lg text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-primary py-2 px-3 appearance-none"
@@ -363,10 +366,11 @@ export default function PagosAdminPage() {
           </div>
 
           <div className="min-w-[140px]">
-            <label className="block text-[10px] font-semibold text-text-secondary uppercase tracking-wider mb-1">
+            <label htmlFor="pagos-filtro-desde" className="block text-[10px] font-semibold text-text-secondary uppercase tracking-wider mb-1">
               Desde
             </label>
             <input
+              id="pagos-filtro-desde"
               type="date"
               value={filtros.paid_at_gte}
               onChange={(e) => setFiltro('paid_at_gte', e.target.value)}
@@ -375,10 +379,11 @@ export default function PagosAdminPage() {
           </div>
 
           <div className="min-w-[140px]">
-            <label className="block text-[10px] font-semibold text-text-secondary uppercase tracking-wider mb-1">
+            <label htmlFor="pagos-filtro-hasta" className="block text-[10px] font-semibold text-text-secondary uppercase tracking-wider mb-1">
               Hasta
             </label>
             <input
+              id="pagos-filtro-hasta"
               type="date"
               value={filtros.paid_at_lte}
               onChange={(e) => setFiltro('paid_at_lte', e.target.value)}
