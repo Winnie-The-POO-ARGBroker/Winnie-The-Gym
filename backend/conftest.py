@@ -122,3 +122,53 @@ def auth_client(db, make_user):
         client.force_authenticate(user=user)
         return client, user
     return _make
+
+
+# ---------------------------------------------------------------------------
+# Gym clock pin — keeps access tests independent of the wall-clock time
+# ---------------------------------------------------------------------------
+# The seeded GymConfig row (migration 0002) is open 07:00-23:00 ART, so any
+# test that hits an access endpoint was denied with FUERA_DE_HORARIO whenever
+# the suite ran outside those hours (e.g. CI at 23:46 ART).
+
+import contextlib  # noqa: E402
+import datetime  # noqa: E402
+import zoneinfo  # noqa: E402
+from unittest.mock import patch  # noqa: E402
+
+_GYM_TZ = zoneinfo.ZoneInfo('America/Argentina/Buenos_Aires')
+_DEFAULT_GYM_CLOCK = datetime.time(12, 0)
+_gym_clock = {'time': _DEFAULT_GYM_CLOCK}
+
+
+def _gym_now_local():
+    today = datetime.datetime.now(_GYM_TZ).date()
+    return datetime.datetime.combine(today, _gym_clock['time'], tzinfo=_GYM_TZ)
+
+
+@contextlib.contextmanager
+def gym_clock_at(hour, minute=0):
+    """Override the pinned gym-local time (ART) used by the access horario checks."""
+    previous = _gym_clock['time']
+    _gym_clock['time'] = datetime.time(hour, minute)
+    try:
+        yield
+    finally:
+        _gym_clock['time'] = previous
+
+
+@pytest.fixture(autouse=True)
+def pin_gym_clock():
+    """Pin check_horario / check_horario_plan to 12:00 ART unless overridden."""
+    from apps.access import services
+
+    def _check_horario(gym_config, now_local=None):
+        return services.check_horario(gym_config, now_local=now_local or _gym_now_local())
+
+    def _check_horario_plan(socio, plan, now_local=None):
+        return services.check_horario_plan(socio, plan, now_local=now_local or _gym_now_local())
+
+    with patch('apps.access.views.check_horario', _check_horario), \
+            patch('apps.access.views.check_horario_plan', _check_horario_plan):
+        _gym_clock['time'] = _DEFAULT_GYM_CLOCK
+        yield

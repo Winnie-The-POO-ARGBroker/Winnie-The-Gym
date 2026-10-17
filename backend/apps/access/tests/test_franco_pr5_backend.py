@@ -36,6 +36,7 @@ from apps.access.tasks import publish_qr_history
 from apps.access.utils import generate_dynamic_qr_token, verify_dynamic_qr_token
 from apps.common.models import GymConfig
 from conftest import (
+    gym_clock_at,
     make_membresia_factory,
     make_plan_factory,
     make_socio_factory,
@@ -248,10 +249,7 @@ class AforoHorarioTests(APITestCase):
         user, socio = _make_active_socio()
 
         # Simulate time at 23:30 (after closing)
-        fake_now = timezone.now().astimezone().replace(
-            hour=23, minute=30, second=0, microsecond=0
-        )
-        with patch('apps.access.services.timezone.now', return_value=fake_now):
+        with gym_clock_at(23, 30):
             response = self._do_manual_entry(socio)
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
@@ -300,8 +298,7 @@ class AforoHorarioTests(APITestCase):
         )
 
         # Simulate gym after closing hours
-        fake_now = timezone.now().astimezone().replace(hour=23, minute=30)
-        with patch('apps.access.services.timezone.now', return_value=fake_now):
+        with gym_clock_at(23, 30):
             response = self._do_manual_exit(socio)
 
         # EXIT is granted or warning (NO_FIGURA_ADENTRO in edge cases), never hard denied
