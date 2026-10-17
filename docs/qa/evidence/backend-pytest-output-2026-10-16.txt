@@ -1,0 +1,136 @@
+........................................................................ [ 11%]
+........................................................................ [ 23%]
+........................................................................ [ 35%]
+........................................................................ [ 46%]
+........................................................................ [ 58%]
+........................................................................ [ 70%]
+........................................................................ [ 81%]
+........................F............................................... [ 93%]
+.......................................                                  [100%]
+=================================== FAILURES ===================================
+_ PasswordResetEmailURLTests.test_password_reset_email_uses_frontend_url_not_example_com _
+
+self = <apps.users.tests.test_pr2_fixes.PasswordResetEmailURLTests testMethod=test_password_reset_email_uses_frontend_url_not_example_com>
+
+    def test_password_reset_email_uses_frontend_url_not_example_com(self):
+        """POST /api/auth/password/reset/ sends email with FRONTEND_URL link."""
+        user = make_user_factory(email='reset_url@test.local', password='SomePass123!', rol='socio')
+        make_socio_factory(user)
+    
+        response = self.client.post(PASSWORD_RESET_URL, {'email': user.email}, format='json')
+    
+        self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_204_NO_CONTENT])
+>       self.assertGreater(len(mail.outbox), 0, 'No email was sent after password reset request')
+E       AssertionError: 0 not greater than 0 : No email was sent after password reset request
+
+apps/users/tests/test_pr2_fixes.py:339: AssertionError
+=============================== warnings summary ===============================
+../usr/local/lib/python3.12/site-packages/rest_framework/urlpatterns.py:108
+../usr/local/lib/python3.12/site-packages/rest_framework/urlpatterns.py:108
+../usr/local/lib/python3.12/site-packages/rest_framework/urlpatterns.py:108
+../usr/local/lib/python3.12/site-packages/rest_framework/urlpatterns.py:108
+../usr/local/lib/python3.12/site-packages/rest_framework/urlpatterns.py:108
+  /usr/local/lib/python3.12/site-packages/rest_framework/urlpatterns.py:108: RemovedInDjango60Warning: Converter 'drf_format_suffix' is already registered. Support for overriding registered converters is deprecated and will be removed in Django 6.0.
+    register_converter(suffix_converter, converter_name)
+
+apps/members/tests/test_socios_views.py::SocioListCreateTests::test_create_socio_admin_201
+apps/members/tests/test_socios_views.py::SocioRetrieveUpdateTests::test_create_socio_without_usuario_auto_creates_user
+apps/members/tests/test_socios_views.py::SocioCreateRecepcionistaTests::test_socio_create_recepcionista_returns_201
+apps/users/tests/test_pr2_fixes.py::ActivationEmailTokenTests::test_activation_email_token_accepted_by_password_reset_confirm
+apps/users/tests/test_pr2_fixes.py::ResendActivationSocioTests::test_resend_activation_for_socio_recepcionista_returns_200
+apps/users/tests/test_pr2_fixes.py::ResendActivationSocioTests::test_resend_activation_for_socio_with_real_email_returns_200
+  /usr/local/lib/python3.12/site-packages/dj_rest_auth/forms.py:81: UserWarning: app_settings.AUTHENTICATION_METHOD is deprecated, use: app_settings.LOGIN_METHODS
+    allauth_account_settings.AUTHENTICATION_METHOD != allauth_account_settings.AuthenticationMethod.EMAIL
+
+apps/payments/tests/test_franco_pr9_comprobante.py::ComprobantePDFTest::test_comprobante_own_pago_allowed
+  /usr/local/lib/python3.12/site-packages/reportlab/lib/rl_safe_eval.py:12: DeprecationWarning: ast.NameConstant is deprecated and will be removed in Python 3.14; use ast.Constant instead
+    haveNameConstant = hasattr(ast,'NameConstant')
+
+apps/users/tests/test_inactivity_middleware.py::StaffInactivityMiddlewareTests::test_unauthenticated_request_is_not_blocked
+  /app:0: PytestWarning: Error when trying to teardown test databases: OperationalError('database "test_winnie_gym_db" is being accessed by other users\nDETAIL:  There are 3 other sessions using the database.\n')
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+
+---------- coverage: platform linux, python 3.12.15-final-0 ----------
+Name                                                                 Stmts   Miss  Cover   Missing
+--------------------------------------------------------------------------------------------------
+apps/access/consumers.py                                                83     22    73%   37-42, 72-76, 87, 105-106, 131-143, 152, 154
+apps/access/filters.py                                                  17      1    94%   31
+apps/access/models.py                                                   52      4    92%   126-129
+apps/access/serializers.py                                              69      1    99%   89
+apps/access/services.py                                                163     52    68%   41, 62, 72, 74, 141-208, 225-232, 236, 297
+apps/access/tasks.py                                                    34     13    62%   19-23, 49, 52-60
+apps/access/tests/test_franco_pr5_backend.py                           240      1    99%   503
+apps/access/utils.py                                                    75     11    85%   90-106, 115, 149-151
+apps/access/views.py                                                   492     42    91%   117, 120-121, 127, 134, 144-145, 216-217, 377, 393-395, 592-593, 620, 631-634, 668, 746, 858, 990-991, 1030, 1037, 1126, 1134-1135, 1147, 1209-1210, 1224-1225, 1241-1242, 1253-1257, 1278
+apps/access/ws_signals.py                                               26      4    85%   28, 35, 38-39
+apps/audit/models.py                                                    21      2    90%   40-41
+apps/audit/signals.py                                                   57      2    96%   74-75
+apps/classes/filters.py                                                 45     16    64%   42, 45-57, 60-68
+apps/classes/migrations/0005_clase_dia_data_migration.py                20     10    50%   38-41, 45-50
+apps/classes/migrations/0007_clase_hora_step2_data_migration.py         29     18    38%   21-36, 40-47
+apps/classes/migrations/0015_seed_disciplinas_salas_from_clases.py      41     22    46%   16-19, 36-49, 52, 63-69, 72, 77-78
+apps/classes/migrations/0019_seed_instructores_from_clases.py           27     14    48%   20-25, 42-57, 60, 65-66
+apps/classes/migrations/0020_seed_sesiones_proximas_8_semanas.py        28     14    50%   35-53, 58-59
+apps/classes/models.py                                                 145      8    94%   30, 55, 72, 173, 240, 245, 250, 284
+apps/classes/serializers.py                                            148     16    89%   65, 68, 71-74, 127-128, 151, 229, 234, 243-244, 255, 279-280
+apps/classes/services.py                                               200     39    80%   39, 49, 78, 141, 167, 204, 223, 240, 276, 280, 333, 347-357, 382, 420, 422, 458, 461, 472-486, 511-514
+apps/classes/signals.py                                                 45      5    89%   34-35, 85-89, 103
+apps/classes/tasks.py                                                   55     21    62%   60-63, 66, 101-129
+apps/classes/tests/test_franco_pr2_fixes.py                            140      2    99%   251-252
+apps/classes/tests/test_franco_pr9_disciplinas_salas.py                 88      1    99%   194
+apps/classes/tests/test_franco_pr10_sesionclase_instructor.py          237      3    99%   483, 495, 587
+apps/classes/views.py                                                  238     49    79%   224-226, 248, 314-331, 355-373, 459-486, 541-542, 598, 600, 602, 622-625
+apps/common/audit.py                                                   109     17    84%   43-45, 52-53, 90-91, 106, 134-135, 155-156, 195-196, 215-217
+apps/common/emails.py                                                   33      7    79%   16-21, 66-71
+apps/common/management/commands/create_mongo_indexes.py                 30      4    87%   74-75, 77-83
+apps/common/models.py                                                   48      2    96%   51, 108
+apps/common/serializers.py                                              26      3    88%   41, 48, 54
+apps/common/signals.py                                                  15      2    87%   22-23
+apps/common/storages.py                                                 29     10    66%   43-46, 66-74
+apps/common/tasks.py                                                    13      3    77%   25-27
+apps/common/tests/test_production_image.py                              47      2    96%   23, 29
+apps/members/filters.py                                                 34     13    62%   24-28, 40, 52, 64-77
+apps/members/migrations/0005_backfill_numero_socio.py                   12      4    67%   8-11
+apps/members/models.py                                                  90      3    97%   92-93, 149
+apps/members/permissions.py                                             26      3    88%   22, 48, 53
+apps/members/serializers.py                                            112      9    92%   79-81, 137-138, 152-156, 249
+apps/members/services.py                                               125     44    65%   40, 53-54, 90-91, 99-100, 114-126, 136-140, 145-157, 166, 170, 176, 184, 198-202, 229-232, 245-246, 248-249, 265, 272
+apps/members/tasks.py                                                   49     10    80%   54-56, 76-77, 81, 95-96, 98-99
+apps/members/tests/test_pr6_cert_suspended_audit.py                    211      3    99%   111, 382-383
+apps/members/views.py                                                  147     40    73%   271-282, 297-372
+apps/memberships/migrations/0004_seed_expiration_schedule.py            12      2    83%   28-29
+apps/memberships/models.py                                              54      2    96%   44, 95
+apps/memberships/serializers.py                                         91      6    93%   37, 39, 42, 48, 114, 167
+apps/memberships/services.py                                            57      1    98%   113
+apps/memberships/tasks.py                                               83      4    95%   129-130, 144, 157
+apps/memberships/tests/test_me_views.py                                 62      2    97%   90-91
+apps/memberships/views.py                                              123      7    94%   120-121, 138-139, 172, 202-203
+apps/payments/mercadopago_client.py                                     22     16    27%   16-21, 26-32, 37-43
+apps/payments/models.py                                                 52      1    98%   107
+apps/payments/pdf.py                                                    46      5    89%   71, 75, 82, 103, 106
+apps/payments/services.py                                              185     18    90%   43, 50, 116, 231, 258-259, 298, 304, 322, 324-326, 364-366, 379, 404-405
+apps/payments/signals.py                                                35     22    37%   27-63
+apps/payments/tests/test_franco_pr9_comprobante.py                      87      1    99%   53
+apps/payments/views.py                                                 180     19    89%   71-72, 87-92, 149-150, 185-186, 308-315, 324-325, 404-405
+apps/reports/exporters.py                                               53      1    98%   100
+apps/reports/services.py                                               312     88    72%   28-29, 39, 47, 60, 112, 127, 141, 158-162, 214-228, 244, 252, 255, 305, 311, 315, 322, 341, 343, 382, 397, 401-403, 438, 485-487, 509, 515-520, 523-527, 538, 566-607, 620-623, 628-631, 668
+apps/reports/views.py                                                  188     72    62%   52-55, 122, 175, 178, 195, 228, 231, 262-288, 308-332, 355-389
+apps/users/management/commands/seed_load_test_users.py                  91      7    92%   59, 77-78, 83-92, 98, 100
+apps/users/middleware.py                                                96     14    85%   24-25, 32-33, 40-42, 112, 118, 121-123, 154, 160
+apps/users/models.py                                                    37      6    84%   8, 17-20, 44
+apps/users/serializers.py                                              157     31    80%   55, 65-75, 139-149, 151-152, 163-165, 182, 248-250, 262-266, 286
+apps/users/services.py                                                  30      6    80%   22, 51-52, 65-67
+apps/users/signals.py                                                   14      7    50%   23-33
+apps/users/tests/test_pr2_fixes.py                                     188      4    98%   341-351
+apps/users/views.py                                                     69      4    94%   40, 59-61
+--------------------------------------------------------------------------------------------------
+TOTAL                                                                12732    918    93%
+
+200 files skipped due to complete coverage.
+Coverage XML written to file coverage.xml
+
+Required test coverage of 80% reached. Total coverage: 92.79%
+=========================== short test summary info ============================
+FAILED apps/users/tests/test_pr2_fixes.py::PasswordResetEmailURLTests::test_password_reset_email_uses_frontend_url_not_example_com
+1 failed, 614 passed, 13 warnings in 364.67s (0:06:04)

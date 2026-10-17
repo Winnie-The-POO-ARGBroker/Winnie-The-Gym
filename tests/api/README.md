@@ -5,7 +5,7 @@ Postman collection v2.1 covering Auth, Planes CRUD, Socios CRUD, and negative te
 ## Prerequisites
 
 - Node.js ≥ 18
-- newman installed: `npm install -g newman newman-reporter-html`
+- newman installed: `npm install -g newman newman-reporter-htmlextra` (`newman-reporter-html` only supports Newman 4 and fails to install with Newman 6)
 - Backend running at `http://localhost:8000` (via `docker compose up`)
 - An admin account seeded (`python manage.py seed_demo_users`)
 
@@ -25,8 +25,10 @@ Never commit credentials. `*.override.json` is gitignored.
 ```bash
 npx newman run tests/api/coleccion.json \
   -e tests/api/entorno.local.json \
-  -r cli,html,junit \
-  --reporter-html-export tests/api/reports/newman.html \
+  -r cli,htmlextra,junit \
+  --reporter-htmlextra-export tests/api/reports/newman.html \
+  --reporter-htmlextra-skipSensitiveData \
+  --reporter-htmlextra-skipHeaders "Authorization,Cookie,Set-Cookie" \
   --reporter-junit-export tests/api/reports/newman.xml
 ```
 
