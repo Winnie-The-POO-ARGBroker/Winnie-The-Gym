@@ -71,6 +71,11 @@ export default function RegisterPage() {
         return
       }
 
+      // The user from the registration response still says is_profile_complete=false;
+      // refresh the store now that the profile is saved, or ProtectedRoute redirects
+      // to /completar-perfil and asks for the same data again.
+      setAuth({ access, refresh, user: { ...user, is_profile_complete: true } })
+
       toast.success('¡Cuenta creada exitosamente! Bienvenido/a.')
       navigate('/dashboard')
     } catch (err) {
