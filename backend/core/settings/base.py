@@ -247,6 +247,7 @@ REST_AUTH = {
     'JWT_SERIALIZER': 'apps.users.serializers.CustomJWTSerializer',
     # JWT-only auth: disable the default token model so dj-rest-auth does not
     # require rest_framework.authtoken in INSTALLED_APPS.
+    'REGISTER_SERIALIZER': 'apps.users.serializers.WinnieRegisterSerializer',
     'TOKEN_MODEL': None,
     # fix #226: require old_password on change + revoke all sessions on change
     'OLD_PASSWORD_FIELD_ENABLED': True,
