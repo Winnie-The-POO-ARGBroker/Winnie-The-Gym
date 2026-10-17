@@ -215,7 +215,7 @@ export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = nu
                 value={formData.nombre}
                 onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                 data-testid="plan-form-nombre"
-                className={`w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border text-text-primary text-sm focus:outline-none transition-colors ${errors.nombre ? 'border-error-500 focus:border-error-500' : 'border-subtle focus:border-orange-500'}`}
+                className={`w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border text-text-primary text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base transition-colors ${errors.nombre ? 'border-error-500 focus:border-error-500' : 'border-subtle focus:border-orange-500'}`}
               />
               {errors.nombre && (
                 <p className="mt-1 text-xs text-error-500">{errors.nombre}</p>
@@ -231,7 +231,7 @@ export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = nu
                 placeholder="Ej. Pase libre, Más popular..."
                 value={formData.subtitulo}
                 onChange={(e) => setFormData({ ...formData, subtitulo: e.target.value })}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus:border-orange-500 transition-colors"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors"
               />
             </div>
           </div>
@@ -251,7 +251,7 @@ export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = nu
                 value={formData.precio}
                 onChange={(e) => setFormData({ ...formData, precio: e.target.value })}
                 data-testid="plan-form-precio"
-                className={`w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border text-text-primary text-sm font-semibold focus:outline-none transition-colors ${errors.precio ? 'border-error-500 focus:border-error-500' : 'border-subtle focus:border-orange-500'}`}
+                className={`w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border text-text-primary text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base transition-colors ${errors.precio ? 'border-error-500 focus:border-error-500' : 'border-subtle focus:border-orange-500'}`}
               />
               {errors.precio && (
                 <p className="mt-1 text-xs text-error-500">{errors.precio}</p>
@@ -265,7 +265,7 @@ export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = nu
               <select
                 value={formData.duracion_dias}
                 onChange={(e) => setFormData({ ...formData, duracion_dias: Number(e.target.value) })}
-                className={`w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border text-text-primary text-sm focus:outline-none transition-colors ${errors.duracion_dias ? 'border-error-500 focus:border-error-500' : 'border-subtle focus:border-orange-500'}`}
+                className={`w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border text-text-primary text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base transition-colors ${errors.duracion_dias ? 'border-error-500 focus:border-error-500' : 'border-subtle focus:border-orange-500'}`}
               >
                 <option value={30}>30 días (Mensual)</option>
                 <option value={90}>90 días (Trimestral)</option>
@@ -284,7 +284,7 @@ export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = nu
               <select
                 value={formData.clases_asignadas}
                 onChange={(e) => setFormData({ ...formData, clases_asignadas: Number(e.target.value) })}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus:border-orange-500 transition-colors"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors"
               >
                 <option value={0}>0 (Sin clases)</option>
                 <option value={8}>8 clases / mes</option>
@@ -315,7 +315,7 @@ export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = nu
                   data-testid="plan-form-franja-desde"
                   value={formData.franja_desde ?? ''}
                   onChange={(e) => setFormData({ ...formData, franja_desde: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus:border-orange-500 transition-colors"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors"
                 />
               </div>
               <div>
@@ -327,7 +327,7 @@ export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = nu
                   data-testid="plan-form-franja-hasta"
                   value={formData.franja_hasta ?? ''}
                   onChange={(e) => setFormData({ ...formData, franja_hasta: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus:border-orange-500 transition-colors"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors"
                 />
               </div>
             </div>
@@ -419,7 +419,7 @@ export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = nu
                     value={b.texto}
                     onChange={(e) => handleBenefitChange(idx, 'texto', e.target.value)}
                     placeholder="Ej. Acceso libre, 3 visitas/semana..."
-                    className="flex-1 px-3 py-2 rounded-xl bg-bg-raised border border-subtle text-text-primary text-xs focus:outline-none focus:border-orange-500 transition-colors"
+                    className="flex-1 px-3 py-2 rounded-xl bg-bg-raised border border-subtle text-text-primary text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors"
                   />
 
                   <button
@@ -463,14 +463,14 @@ export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = nu
                       value={row.key}
                       onChange={(e) => handleMatrizRowChange(idx, 'key', e.target.value)}
                       placeholder="Característica (ej: pase_libre)"
-                      className="flex-1 px-3 py-2 rounded-xl bg-bg-raised border border-subtle text-text-primary text-xs focus:outline-none focus:border-orange-500 transition-colors font-mono"
+                      className="flex-1 px-3 py-2 rounded-xl bg-bg-raised border border-subtle text-text-primary text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors font-mono"
                     />
                     <input
                       type="text"
                       value={row.value}
                       onChange={(e) => handleMatrizRowChange(idx, 'value', e.target.value)}
                       placeholder="Valor (ej: ✔, 3x/sem)"
-                      className="flex-1 px-3 py-2 rounded-xl bg-bg-raised border border-subtle text-text-primary text-xs focus:outline-none focus:border-orange-500 transition-colors"
+                      className="flex-1 px-3 py-2 rounded-xl bg-bg-raised border border-subtle text-text-primary text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors"
                     />
                     <button
                       type="button"

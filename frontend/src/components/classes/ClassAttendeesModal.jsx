@@ -72,7 +72,7 @@ export default function ClassAttendeesModal({
               placeholder="Buscar por nombre o DNI..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3.5 py-2 rounded-xl bg-bg-raised border border-subtle text-xs text-text-primary focus:outline-none focus:border-orange-500 transition-colors"
+              className="w-full pl-9 pr-3.5 py-2 rounded-xl bg-bg-raised border border-subtle text-xs text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors"
             />
           </div>
 

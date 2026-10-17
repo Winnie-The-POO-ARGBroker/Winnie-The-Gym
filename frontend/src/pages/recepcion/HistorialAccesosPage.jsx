@@ -191,7 +191,7 @@ export default function HistorialAccesosPage() {
               placeholder="Buscar por DNI, nombre o apellido..."
               value={filters.search}
               onChange={(e) => handleFilterChange('search', e.target.value)}
-              className="w-full pl-9 pr-3 py-2 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus:border-orange-500 transition-colors"
+              className="w-full pl-9 pr-3 py-2 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors"
             />
           </div>
 
@@ -199,7 +199,7 @@ export default function HistorialAccesosPage() {
           <select
             value={filters.status}
             onChange={(e) => handleFilterChange('status', e.target.value)}
-            className="px-3 py-2 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus:border-orange-500 transition-colors"
+            className="px-3 py-2 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors"
           >
             {STATUS_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
@@ -210,7 +210,7 @@ export default function HistorialAccesosPage() {
           <select
             value={filters.access_type}
             onChange={(e) => handleFilterChange('access_type', e.target.value)}
-            className="px-3 py-2 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus:border-orange-500 transition-colors"
+            className="px-3 py-2 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors"
           >
             {ACCESS_TYPES.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
@@ -221,7 +221,7 @@ export default function HistorialAccesosPage() {
           <select
             value={filters.denial_reason}
             onChange={(e) => handleFilterChange('denial_reason', e.target.value)}
-            className="px-3 py-2 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus:border-orange-500 transition-colors max-w-[240px]"
+            className="px-3 py-2 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors max-w-[240px]"
           >
             {DENIAL_REASON_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
@@ -233,14 +233,14 @@ export default function HistorialAccesosPage() {
             type="date"
             value={filters.fecha_desde}
             onChange={(e) => handleFilterChange('fecha_desde', e.target.value)}
-            className="px-3 py-2 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus:border-orange-500 transition-colors"
+            className="px-3 py-2 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors"
             title="Fecha desde"
           />
           <input
             type="date"
             value={filters.fecha_hasta}
             onChange={(e) => handleFilterChange('fecha_hasta', e.target.value)}
-            className="px-3 py-2 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus:border-orange-500 transition-colors"
+            className="px-3 py-2 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors"
             title="Fecha hasta"
           />
 
@@ -249,14 +249,14 @@ export default function HistorialAccesosPage() {
             type="time"
             value={filters.hora_desde}
             onChange={(e) => handleFilterChange('hora_desde', e.target.value)}
-            className="px-3 py-2 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus:border-orange-500 transition-colors"
+            className="px-3 py-2 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors"
             title="Hora desde"
           />
           <input
             type="time"
             value={filters.hora_hasta}
             onChange={(e) => handleFilterChange('hora_hasta', e.target.value)}
-            className="px-3 py-2 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus:border-orange-500 transition-colors"
+            className="px-3 py-2 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors"
             title="Hora hasta"
           />
 

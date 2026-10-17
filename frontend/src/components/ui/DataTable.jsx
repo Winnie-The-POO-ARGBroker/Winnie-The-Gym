@@ -209,7 +209,7 @@ export default function DataTable({
                     role={isSortable ? 'button' : undefined}
                     aria-sort={isSortable ? ariaSort : undefined}
                     className={`text-left text-xs font-semibold uppercase tracking-wider text-text-secondary px-4 py-3 ${
-                      isSortable ? 'cursor-pointer select-none hover:text-text-primary focus:outline-none focus:text-primary transition-colors' : ''
+                      isSortable ? 'cursor-pointer select-none hover:text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:text-primary transition-colors' : ''
                     }`}
                   >
                     <span className="inline-flex items-center gap-1.5">

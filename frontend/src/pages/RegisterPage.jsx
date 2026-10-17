@@ -156,7 +156,7 @@ export default function RegisterPage() {
                 {...register('email')}
                 type="email"
                 placeholder="tu@email.com"
-                className="rounded-lg px-3 py-2.5 text-text-primary text-sm outline-none appearance-none placeholder:text-text-tertiary bg-bg-raised border border-subtle"
+                className="rounded-lg px-3 py-2.5 text-text-primary text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base appearance-none placeholder:text-text-tertiary bg-bg-raised border border-subtle"
               />
               {errors.email && (
                 <span className="text-xs text-error-500">{errors.email.message}</span>
@@ -172,7 +172,7 @@ export default function RegisterPage() {
                 {...register('password')}
                 type="password"
                 placeholder="••••••••"
-                className="rounded-lg px-3 py-2.5 text-text-primary text-sm outline-none appearance-none placeholder:text-text-tertiary bg-bg-raised border border-subtle"
+                className="rounded-lg px-3 py-2.5 text-text-primary text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base appearance-none placeholder:text-text-tertiary bg-bg-raised border border-subtle"
               />
               {errors.password && (
                 <span className="text-xs text-error-500">{errors.password.message}</span>
@@ -188,7 +188,7 @@ export default function RegisterPage() {
                 {...register('password_confirm')}
                 type="password"
                 placeholder="••••••••"
-                className="rounded-lg px-3 py-2.5 text-text-primary text-sm outline-none appearance-none placeholder:text-text-tertiary bg-bg-raised border border-subtle"
+                className="rounded-lg px-3 py-2.5 text-text-primary text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base appearance-none placeholder:text-text-tertiary bg-bg-raised border border-subtle"
               />
               {errors.password_confirm && (
                 <span className="text-xs text-error-500">{errors.password_confirm.message}</span>
@@ -203,7 +203,7 @@ export default function RegisterPage() {
                 data-testid="register-nombre"
                 {...register('nombre')}
                 placeholder="Juan"
-                className="rounded-lg px-3 py-2.5 text-text-primary text-sm outline-none appearance-none placeholder:text-text-tertiary bg-bg-raised border border-subtle"
+                className="rounded-lg px-3 py-2.5 text-text-primary text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base appearance-none placeholder:text-text-tertiary bg-bg-raised border border-subtle"
               />
               {errors.nombre && (
                 <span className="text-xs text-error-500">{errors.nombre.message}</span>
@@ -218,7 +218,7 @@ export default function RegisterPage() {
                 data-testid="register-apellido"
                 {...register('apellido')}
                 placeholder="García"
-                className="rounded-lg px-3 py-2.5 text-text-primary text-sm outline-none appearance-none placeholder:text-text-tertiary bg-bg-raised border border-subtle"
+                className="rounded-lg px-3 py-2.5 text-text-primary text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base appearance-none placeholder:text-text-tertiary bg-bg-raised border border-subtle"
               />
               {errors.apellido && (
                 <span className="text-xs text-error-500">{errors.apellido.message}</span>
@@ -237,7 +237,7 @@ export default function RegisterPage() {
                 autoComplete="off"
                 maxLength={8}
                 enterKeyHint="next"
-                className="rounded-lg px-3 py-2.5 text-text-primary text-base md:text-sm min-h-11 outline-none appearance-none placeholder:text-text-tertiary bg-bg-raised border border-subtle"
+                className="rounded-lg px-3 py-2.5 text-text-primary text-base md:text-sm min-h-11 outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base appearance-none placeholder:text-text-tertiary bg-bg-raised border border-subtle"
               />
               {errors.dni && (
                 <span className="text-xs text-error-500">{errors.dni.message}</span>
@@ -257,7 +257,7 @@ export default function RegisterPage() {
                 inputMode="tel"
                 autoComplete="tel"
                 enterKeyHint="done"
-                className="rounded-lg px-3 py-2.5 text-text-primary text-base md:text-sm min-h-11 outline-none appearance-none placeholder:text-text-tertiary bg-bg-raised border border-subtle"
+                className="rounded-lg px-3 py-2.5 text-text-primary text-base md:text-sm min-h-11 outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base appearance-none placeholder:text-text-tertiary bg-bg-raised border border-subtle"
               />
               {errors.telefono && (
                 <span className="text-xs text-error-500">{errors.telefono.message}</span>

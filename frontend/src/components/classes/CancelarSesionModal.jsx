@@ -95,7 +95,7 @@ export default function CancelarSesionModal({ isOpen, onClose, sesion, onConfirm
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
             placeholder="Ej. Instructor no disponible, problema en la sala..."
-            className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus:border-orange-500 transition-colors resize-none"
+            className="w-full px-3.5 py-2.5 rounded-xl bg-bg-raised border border-subtle text-text-primary text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors resize-none"
           />
         </div>
 

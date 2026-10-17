@@ -182,7 +182,7 @@ function StaffProfileView({ profile, user, isChangePwdOpen, setIsChangePwdOpen }
                 </label>
                 <input
                   {...register(name)}
-                  className="w-full px-3 py-2 rounded-lg text-sm outline-none appearance-none transition-colors bg-bg-raised border border-subtle text-text-primary placeholder:text-text-tertiary"
+                  className="w-full px-3 py-2 rounded-lg text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base appearance-none transition-colors bg-bg-raised border border-subtle text-text-primary placeholder:text-text-tertiary"
                   onFocus={(e) => (e.target.style.borderColor = '#ff5a36')}
                   onBlur={(e) => (e.target.style.borderColor = 'var(--color-border-subtle)')}
                 />
@@ -441,7 +441,7 @@ function SocioProfileView({ profile, user, isChangePwdOpen, setIsChangePwdOpen, 
                 </label>
                 <input
                   {...register(name)}
-                  className="w-full px-3 py-2 rounded-lg text-sm outline-none appearance-none transition-colors bg-bg-raised border border-subtle text-text-primary placeholder:text-text-tertiary"
+                  className="w-full px-3 py-2 rounded-lg text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base appearance-none transition-colors bg-bg-raised border border-subtle text-text-primary placeholder:text-text-tertiary"
                   onFocus={(e) => (e.target.style.borderColor = '#ff5a36')}
                   onBlur={(e) => (e.target.style.borderColor = 'var(--color-border-subtle)')}
                 />
@@ -462,7 +462,7 @@ function SocioProfileView({ profile, user, isChangePwdOpen, setIsChangePwdOpen, 
               {...register('telefono')}
               inputMode="tel"
               autoComplete="tel"
-              className="w-full px-3 py-2 rounded-lg text-base md:text-sm min-h-11 outline-none appearance-none transition-colors bg-bg-raised border border-subtle text-text-primary placeholder:text-text-tertiary"
+              className="w-full px-3 py-2 rounded-lg text-base md:text-sm min-h-11 outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base appearance-none transition-colors bg-bg-raised border border-subtle text-text-primary placeholder:text-text-tertiary"
               onFocus={(e) => (e.target.style.borderColor = '#ff5a36')}
               onBlur={(e) => (e.target.style.borderColor = 'var(--color-border-subtle)')}
             />
@@ -483,7 +483,7 @@ function SocioProfileView({ profile, user, isChangePwdOpen, setIsChangePwdOpen, 
                 {...register('fecha_nacimiento')}
                 type="date"
                 data-testid="fecha-nacimiento-input"
-                className="w-full px-3 py-2 rounded-lg text-sm outline-none appearance-none transition-colors bg-bg-raised border border-subtle text-text-primary placeholder:text-text-tertiary"
+                className="w-full px-3 py-2 rounded-lg text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base appearance-none transition-colors bg-bg-raised border border-subtle text-text-primary placeholder:text-text-tertiary"
                 onFocus={(e) => (e.target.style.borderColor = '#ff5a36')}
                 onBlur={(e) => (e.target.style.borderColor = 'var(--color-border-subtle)')}
               />
@@ -495,7 +495,7 @@ function SocioProfileView({ profile, user, isChangePwdOpen, setIsChangePwdOpen, 
               </label>
               <select
                 {...register('genero')}
-                className="w-full px-3 py-2 rounded-lg text-sm outline-none appearance-none transition-colors bg-bg-raised border border-subtle text-text-primary cursor-pointer"
+                className="w-full px-3 py-2 rounded-lg text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base appearance-none transition-colors bg-bg-raised border border-subtle text-text-primary cursor-pointer"
               >
                 <option value="">Sin especificar</option>
                 <option value="F">Femenino</option>
@@ -513,7 +513,7 @@ function SocioProfileView({ profile, user, isChangePwdOpen, setIsChangePwdOpen, 
               </label>
               <input
                 {...register('contacto_emergencia_nombre')}
-                className="w-full px-3 py-2 rounded-lg text-sm outline-none appearance-none transition-colors bg-bg-raised border border-subtle text-text-primary placeholder:text-text-tertiary"
+                className="w-full px-3 py-2 rounded-lg text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base appearance-none transition-colors bg-bg-raised border border-subtle text-text-primary placeholder:text-text-tertiary"
                 placeholder="Nombre del contacto"
                 onFocus={(e) => (e.target.style.borderColor = '#ff5a36')}
                 onBlur={(e) => (e.target.style.borderColor = 'var(--color-border-subtle)')}
@@ -528,7 +528,7 @@ function SocioProfileView({ profile, user, isChangePwdOpen, setIsChangePwdOpen, 
                 {...register('contacto_emergencia_telefono')}
                 inputMode="tel"
                 data-testid="contacto-emergencia-telefono-input"
-                className="w-full px-3 py-2 rounded-lg text-sm outline-none appearance-none transition-colors bg-bg-raised border border-subtle text-text-primary placeholder:text-text-tertiary"
+                className="w-full px-3 py-2 rounded-lg text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base appearance-none transition-colors bg-bg-raised border border-subtle text-text-primary placeholder:text-text-tertiary"
                 placeholder="+54 9 351 ..."
                 onFocus={(e) => (e.target.style.borderColor = '#ff5a36')}
                 onBlur={(e) => (e.target.style.borderColor = 'var(--color-border-subtle)')}

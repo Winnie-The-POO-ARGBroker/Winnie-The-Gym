@@ -138,7 +138,7 @@ function AltaRecepcionForm({ onSuccess, onCancel }) {
   const inputClass = (field) =>
     `w-full px-3 py-2 rounded-xl text-sm bg-bg-raised border ${
       errors[field] ? 'border-error-500' : 'border-subtle'
-    } text-text-primary focus:outline-none focus:border-orange-500 transition-colors`
+    } text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors`
 
   if (partialFailure) {
     return (

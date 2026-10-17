@@ -143,7 +143,7 @@ export default function SocioFormModal({
               placeholder="Ej. Juan"
               className={`w-full px-3 py-2 rounded-xl text-sm bg-bg-raised border ${
                 errors.nombre ? 'border-error-500' : 'border-subtle'
-              } text-text-primary focus:outline-none focus:border-orange-500 transition-colors`}
+              } text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors`}
             />
             {errors.nombre && (
               <p className="text-xs text-error-500 mt-1 flex items-center gap-1">
@@ -164,7 +164,7 @@ export default function SocioFormModal({
               placeholder="Ej. Pérez"
               className={`w-full px-3 py-2 rounded-xl text-sm bg-bg-raised border ${
                 errors.apellido ? 'border-error-500' : 'border-subtle'
-              } text-text-primary focus:outline-none focus:border-orange-500 transition-colors`}
+              } text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors`}
             />
             {errors.apellido && (
               <p className="text-xs text-error-500 mt-1 flex items-center gap-1">
@@ -187,7 +187,7 @@ export default function SocioFormModal({
               placeholder="Ej. 38450123"
               className={`w-full px-3 py-2 rounded-xl text-sm bg-bg-raised border ${
                 errors.dni ? 'border-error-500' : 'border-subtle'
-              } text-text-primary focus:outline-none focus:border-orange-500 transition-colors`}
+              } text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors`}
             />
             {errors.dni && (
               <p className="text-xs text-error-500 mt-1 flex items-center gap-1">
@@ -208,7 +208,7 @@ export default function SocioFormModal({
               placeholder="Ej. +54 9 351 1234567"
               className={`w-full px-3 py-2 rounded-xl text-sm bg-bg-raised border ${
                 errors.telefono ? 'border-error-500' : 'border-subtle'
-              } text-text-primary focus:outline-none focus:border-orange-500 transition-colors`}
+              } text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors`}
             />
             {errors.telefono && (
               <p className="text-xs text-error-500 mt-1 flex items-center gap-1">
@@ -231,7 +231,7 @@ export default function SocioFormModal({
               placeholder="Ej. socio@correo.com"
               className={`w-full px-3 py-2 rounded-xl text-sm bg-bg-raised border ${
                 errors.email ? 'border-error-500' : 'border-subtle'
-              } text-text-primary focus:outline-none focus:border-orange-500 transition-colors`}
+              } text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors`}
               data-testid="email-input"
             />
             {errors.email && (
@@ -249,7 +249,7 @@ export default function SocioFormModal({
             <select
               value={formData.estado}
               onChange={(e) => handleChange('estado', e.target.value)}
-              className="w-full px-3 py-2 rounded-xl text-sm bg-bg-raised border border-subtle text-text-primary focus:outline-none focus:border-orange-500 transition-colors cursor-pointer"
+              className="w-full px-3 py-2 rounded-xl text-sm bg-bg-raised border border-subtle text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors cursor-pointer"
             >
               <option value="activo">Activo</option>
               <option value="suspendido">Suspendido</option>
@@ -268,7 +268,7 @@ export default function SocioFormModal({
             value={formData.observaciones}
             onChange={(e) => handleChange('observaciones', e.target.value)}
             placeholder="Notas internas sobre el socio, aptitud, restricciones..."
-            className="w-full px-3 py-2 rounded-xl text-sm bg-bg-raised border border-subtle text-text-primary focus:outline-none focus:border-orange-500 transition-colors resize-none"
+            className="w-full px-3 py-2 rounded-xl text-sm bg-bg-raised border border-subtle text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors resize-none"
           />
         </div>
 
@@ -283,7 +283,7 @@ export default function SocioFormModal({
               value={formData.fecha_nacimiento}
               onChange={(e) => handleChange('fecha_nacimiento', e.target.value)}
               data-testid="admin-fecha-nacimiento-input"
-              className="w-full px-3 py-2 rounded-xl text-sm bg-bg-raised border border-subtle text-text-primary focus:outline-none focus:border-orange-500 transition-colors"
+              className="w-full px-3 py-2 rounded-xl text-sm bg-bg-raised border border-subtle text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors"
             />
           </div>
 
@@ -294,7 +294,7 @@ export default function SocioFormModal({
             <select
               value={formData.genero}
               onChange={(e) => handleChange('genero', e.target.value)}
-              className="w-full px-3 py-2 rounded-xl text-sm bg-bg-raised border border-subtle text-text-primary focus:outline-none focus:border-orange-500 transition-colors cursor-pointer"
+              className="w-full px-3 py-2 rounded-xl text-sm bg-bg-raised border border-subtle text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors cursor-pointer"
             >
               <option value="">Sin especificar</option>
               <option value="F">Femenino</option>
@@ -315,7 +315,7 @@ export default function SocioFormModal({
               value={formData.contacto_emergencia_nombre}
               onChange={(e) => handleChange('contacto_emergencia_nombre', e.target.value)}
               placeholder="Nombre del contacto"
-              className="w-full px-3 py-2 rounded-xl text-sm bg-bg-raised border border-subtle text-text-primary focus:outline-none focus:border-orange-500 transition-colors"
+              className="w-full px-3 py-2 rounded-xl text-sm bg-bg-raised border border-subtle text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors"
             />
           </div>
 
@@ -329,7 +329,7 @@ export default function SocioFormModal({
               onChange={(e) => handleChange('contacto_emergencia_telefono', e.target.value)}
               placeholder="+54 9 351 ..."
               data-testid="admin-contacto-emergencia-telefono-input"
-              className="w-full px-3 py-2 rounded-xl text-sm bg-bg-raised border border-subtle text-text-primary focus:outline-none focus:border-orange-500 transition-colors"
+              className="w-full px-3 py-2 rounded-xl text-sm bg-bg-raised border border-subtle text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors"
             />
           </div>
         </div>

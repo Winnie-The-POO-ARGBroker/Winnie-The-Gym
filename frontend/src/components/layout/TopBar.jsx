@@ -108,7 +108,7 @@ export default function TopBar({
                   placeholder="Buscar socio"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="bg-transparent text-sm text-text-primary outline-none w-32 lg:w-48 appearance-none placeholder:text-text-tertiary"
+                  className="bg-transparent text-sm text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base w-32 lg:w-48 appearance-none placeholder:text-text-tertiary"
                 />
               </form>
 
@@ -201,7 +201,7 @@ export default function TopBar({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               autoFocus
-              className="bg-transparent text-base md:text-sm text-text-primary outline-none flex-1 appearance-none placeholder:text-text-tertiary"
+              className="bg-transparent text-base md:text-sm text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base flex-1 appearance-none placeholder:text-text-tertiary"
             />
             {onScan && (
               <button
