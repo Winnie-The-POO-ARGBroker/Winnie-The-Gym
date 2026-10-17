@@ -22,7 +22,7 @@ UptimeRobot ─ ping cada 5min ─────→ Render /api/health/
 
 | Servicio | URL | Free tier |
 |---|---|---|
-| **Render** | https://render.com | Web + 2 workers |
+| **Render** | https://render.com | Web (+ beat en el mismo contenedor) |
 | **Supabase** | https://supabase.com | 500 MB Postgres + 1 GB Storage |
 | **MongoDB Atlas** | https://mongodb.com/atlas | 512 MB cluster shared |
 | **Upstash** | https://upstash.com | 10.000 requests/día Redis |
@@ -104,7 +104,7 @@ UptimeRobot ─ ping cada 5min ─────→ Render /api/health/
 
 ---
 
-## 🐍 4) Render — Backend (web + 2 workers)
+## 🐍 4) Render — Backend (web + beat)
 
 ### 4.1 Preparación
 - El repo ya tiene `render.yaml` en la raíz — Render lo detecta automáticamente.
@@ -114,7 +114,7 @@ UptimeRobot ─ ping cada 5min ─────→ Render /api/health/
 1. Render → **New** → **Blueprint**
 2. Conectar la cuenta GitHub y elegir este repo
 3. Elegir el branch `develop`
-4. Confirmar — Render crea los 3 servicios (`winnie-backend`, `winnie-celery-worker`, `winnie-celery-beat`)
+4. Confirmar — Render crea el servicio `winnie-backend` (web + beat en el mismo contenedor; los workers separados quedan comentados en `render.yaml`)
 5. **NO despliega todavía** — primero cargar env vars
 
 ### 4.3 Cargar variables de entorno
@@ -255,8 +255,16 @@ Actualizar `ALLOWED_HOSTS` en el env group con el subdominio real que Render asi
 - Mailtrap Sending con dominio `demomailtrap.co` **solo entrega al owner** de la cuenta (`fodrii2001@gmail.com`)
 - Para entregar a cualquier email hay que verificar un dominio propio (issue #63 abierta)
 
+### Redis de Upstash agotó la cuota y el backend no levanta
+- Síntoma: el servicio queda en "Failed", los logs muestran `redis.exceptions.ResponseError: max requests limit exceeded` y `worker.1 stopped (rc=1)`, y todos los pedidos devuelven 503.
+- Causa: un worker de Celery sobre Redis consulta el broker sin parar (unos 8 comandos por segundo, unos 700 mil por día). El plan gratuito de Upstash permite 500 mil por mes.
+- Solución aplicada: en producción corren el web y el beat (`backend/Procfile`), sin worker, y las tareas se ejecutan de forma síncrona (`CELERY_TASK_ALWAYS_EAGER=true`). El beat corre las tareas periódicas (vencimiento de membresías, recordatorios, sesiones de clases) dentro de su propio proceso, sin pasar por Redis.
+- Costo aceptado: los mails y el log de QR a Mongo se hacen dentro del request. Cancelar una clase con muchos inscriptos envía los mails uno por uno, y si Mongo está caído cada escaneo de QR espera unos 3 segundos.
+- Si la cuota ya se agotó: crear una base nueva en Upstash y actualizar `REDIS_URL`, `CELERY_BROKER_URL` y `CELERY_RESULT_BACKEND` en Render.
+- Para volver a tener worker hace falta un Redis sin cuota de comandos o un plan pago: agregar las líneas comentadas del `Procfile` y poner `CELERY_TASK_ALWAYS_EAGER=false`.
+
 ### Celery Beat no dispara el job
-- Verificar que el servicio `winnie-celery-beat` está corriendo en Render
+- En el plan gratuito el beat corre dentro del mismo contenedor que el web (ver la sección anterior); revisar los logs de Render para ver `Scheduler: Sending due task`
 - La schedule fue creada por la data migration `memberships.0004_seed_expiration_schedule`; si no aparece, correr `python manage.py migrate` desde el shell de Render
 
 ### Render free duerme

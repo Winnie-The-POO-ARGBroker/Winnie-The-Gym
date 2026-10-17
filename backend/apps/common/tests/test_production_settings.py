@@ -25,6 +25,7 @@ print(json.dumps({
     "default_backend": s.STORAGES["default"]["BACKEND"],
     "staticfiles_backend": s.STORAGES["staticfiles"]["BACKEND"],
     "default_storage_class": type(storages["default"]).__name__,
+    "celery_eager": s.CELERY_TASK_ALWAYS_EAGER,
 }))
 '''
 
@@ -80,3 +81,15 @@ def test_staticfiles_storage_is_left_unchanged():
     settings = _production_settings(SUPABASE_STORAGE_PUBLIC_URL_BASE=PUBLIC_BASE)
 
     assert settings['staticfiles_backend'] == 'django.contrib.staticfiles.storage.StaticFilesStorage'
+
+
+def test_celery_tasks_run_eagerly_by_default_in_production():
+    # The free Render plan has no background worker, and a worker polling the
+    # Redis broker around the clock exhausts a free Upstash quota in a day.
+    assert _production_settings()['celery_eager'] is True
+
+
+def test_celery_eager_mode_can_be_turned_off_when_a_worker_exists():
+    settings = _production_settings(CELERY_TASK_ALWAYS_EAGER='false')
+
+    assert settings['celery_eager'] is False

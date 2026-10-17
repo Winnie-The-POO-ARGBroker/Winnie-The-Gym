@@ -63,8 +63,8 @@ EXPOSE 8000
 COPY --chown=app:app entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
 
-# Default command = honcho boots the three processes described in the Procfile
-# (daphne web + celery worker + celery beat). Render free tier does not support
-# separate background worker services, so we cohabit inside the web service.
-# Overridable from render.yaml per service (kept for future paid-tier split).
+# Default command = honcho boots the processes described in the Procfile (daphne
+# web + celery beat; there is no worker because it polled Redis nonstop and
+# exhausted the free Upstash quota, so tasks run eagerly). Overridable from render.yaml
+# per service (kept for a future paid-tier split with a separate worker).
 CMD ["honcho", "start"]

@@ -1,8 +1,10 @@
 # Render Blueprint — Winnie The Gym backend (single service on Free tier).
 #
-# El plan Free de Render NO soporta `type: worker` (background workers), así
-# que Daphne + Celery worker + Celery beat conviven en el mismo web service
-# gestionados por `honcho` desde `backend/Procfile`.
+# El plan Free de Render NO soporta `type: worker` (background workers). Corre
+# Daphne y el beat de Celery (gestionados por `honcho` desde `backend/Procfile`);
+# no hay worker y las tareas se ejecutan de forma síncrona
+# (CELERY_TASK_ALWAYS_EAGER=true): un worker propio agotó la cuota gratuita de
+# Redis en Upstash en menos de un día.
 #
 # Cuando el proyecto migre a plan Starter ($7/mes por servicio), descomentar
 # los dos servicios de worker de más abajo y cambiar el CMD del Dockerfile.prod
@@ -90,6 +92,8 @@ envVarGroups:
         value: json
       - key: LOG_LEVEL
         value: INFO
+      - key: CELERY_TASK_ALWAYS_EAGER
+        value: "true"
 
       # Django core
       - key: SECRET_KEY

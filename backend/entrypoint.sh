@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -e
 
-# Entrypoint shared by the 3 Render services (web, celery-worker, celery-beat).
+# Entrypoint shared by the Render services (web with beat today; worker and beat if split).
 # Env flags below let each service opt out of the DB-mutating steps:
 #
 #   RUN_MIGRATIONS=1        → apply Django migrations

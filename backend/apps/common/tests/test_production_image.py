@@ -81,3 +81,17 @@ def test_dockerfile_installs_every_process_listed_in_the_procfile():
     # Assert: daphne and celery are published under the same name as their binary
     missing = sorted(executables - installed)
     assert not missing, f'Procfile starts {missing} but Dockerfile.prod does not install them'
+
+
+def test_procfile_does_not_start_a_celery_worker():
+    # A worker polls the Redis broker nonstop (about 8 commands per second) and
+    # drained the free Upstash quota in under a day, which then crashed the
+    # whole container. Tasks run eagerly instead: the beat executes the periodic
+    # ones in its own process and the web process runs the rest.
+    started = {
+        line.split(':', 1)[0].strip()
+        for line in PROCFILE.read_text().splitlines()
+        if line.strip() and not line.lstrip().startswith('#')
+    }
+
+    assert started == {'web', 'beat'}

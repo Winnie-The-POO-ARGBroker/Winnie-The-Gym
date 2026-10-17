@@ -109,6 +109,19 @@ if _media_public_base:
 
 
 # ---------------------------------------------------------------------------
+# Celery — tasks run inside the web process by default
+# ---------------------------------------------------------------------------
+# The free Render plan has no background workers, and a Celery worker polling a
+# Redis broker around the clock (about 8 commands per second) drained the free
+# Upstash quota of 500k commands in under a day; the worker then crashed and
+# honcho took the whole container down. With eager mode there is no worker and
+# no broker traffic: `.delay()` runs the task synchronously in the request, and
+# the beat process runs the periodic tasks inside itself. Set
+# CELERY_TASK_ALWAYS_EAGER=false only when a separate worker runs.
+CELERY_TASK_ALWAYS_EAGER = config('CELERY_TASK_ALWAYS_EAGER', cast=bool, default=True)
+
+
+# ---------------------------------------------------------------------------
 # Logging — force JSON in prod (dev may override with LOG_FORMAT=plain)
 # ---------------------------------------------------------------------------
 LOGGING['handlers']['console']['formatter'] = 'json'  # noqa: F405
