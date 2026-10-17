@@ -5,8 +5,15 @@ import useAuthStore from '../stores/authStore'
 // useAuth() hook because axios interceptors run outside React's render
 // context and cannot call hooks.
 
+// The free Render instance spins down after 15 minutes without traffic and a
+// cold start takes 50 s or more; without a timeout the UI waits forever.
+const REQUEST_TIMEOUT_MS = 60000
+// Report exports (blob downloads) and file uploads can legitimately take longer.
+const LONG_REQUEST_TIMEOUT_MS = 180000
+
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api',
+  timeout: REQUEST_TIMEOUT_MS,
 })
 
 // SPA navigator injected from App.jsx via setApiNavigator(navigate).
@@ -39,6 +46,13 @@ export function generateUUID() {
 }
 
 api.interceptors.request.use((config) => {
+  const isLongRequest =
+    config.responseType === 'blob' ||
+    (typeof FormData !== 'undefined' && config.data instanceof FormData)
+  if (isLongRequest && config.timeout === REQUEST_TIMEOUT_MS) {
+    config.timeout = LONG_REQUEST_TIMEOUT_MS
+  }
+
   const token = useAuthStore.getState().accessToken
   if (token) {
     isRedirecting = false

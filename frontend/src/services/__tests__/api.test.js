@@ -46,6 +46,32 @@ describe('api service - X-Request-ID y generador UUID', () => {
     })
   })
 
+  describe('timeout', () => {
+    it('corta los pedidos que no responden (el backend gratuito tarda en despertar)', () => {
+      // Render free spins down after 15 minutes; a cold start takes 50 s or more.
+      expect(api.defaults.timeout).toBe(60000)
+    })
+
+    it.each([
+      ['una descarga (blob)', { responseType: 'blob' }],
+      ['una subida de archivo (FormData)', { data: new FormData() }],
+    ])('da más margen a %s que al resto de los pedidos', (_label, extra) => {
+      const interceptor = api.interceptors.request.handlers[0].fulfilled
+
+      const config = interceptor({ headers: {}, timeout: api.defaults.timeout, ...extra })
+
+      expect(config.timeout).toBeGreaterThan(api.defaults.timeout)
+    })
+
+    it('no pisa un timeout que el llamador definió a propósito', () => {
+      const interceptor = api.interceptors.request.handlers[0].fulfilled
+
+      const config = interceptor({ headers: {}, timeout: 5000, responseType: 'blob' })
+
+      expect(config.timeout).toBe(5000)
+    })
+  })
+
   describe('interceptor de request', () => {
     it('inyecta header X-Request-ID si no viene provisto en la solicitud', () => {
       // Obtenemos los manejadores registrados en api.interceptors.request

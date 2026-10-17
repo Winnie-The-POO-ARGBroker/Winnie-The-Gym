@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import CajaDiariaPage from '../CajaDiariaPage'
 import api from '../../../services/api'
+import { useStaffList } from '../../../hooks/queries/useStaff'
 
 // Stub AppLayout + TopBar to speed up renders and avoid Sidebar noise.
 vi.mock('../../../components/layout/AppLayout', () => ({
@@ -110,5 +111,16 @@ describe('CajaDiariaPage', () => {
     await waitFor(() => {
       expect(screen.getByTestId('caja-operador-select')).toBeInTheDocument()
     })
+  })
+  it('no se rompe cuando la API de staff devuelve el listado paginado { count, results }', async () => {
+    currentUser = { rol: 'administrador', id: 99 }
+    vi.mocked(useStaffList).mockReturnValue({
+      data: { count: 1, results: [{ id: 2, username: 'maria', first_name: 'Maria', last_name: 'Lopez' }] },
+    })
+
+    renderWithProviders()
+
+    expect(await screen.findByTestId('caja-operador-select')).toBeInTheDocument()
+    expect(screen.queryByText(/algo salió mal/i)).not.toBeInTheDocument()
   })
 })

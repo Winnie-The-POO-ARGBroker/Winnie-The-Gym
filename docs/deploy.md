@@ -140,10 +140,11 @@ curl https://winnie-backend.onrender.com/api/health/
 curl -I https://winnie-backend.onrender.com/api/docs/
 ```
 
-### 4.5 Registrar el nuevo webhook en MercadoPago
-- Panel MP → tu app → **Notificaciones**
-- URL: `https://winnie-backend.onrender.com/api/payments/webhook/`
-- Reemplaza la URL de ngrok que teníamos en dev
+### 4.5 Webhook de MercadoPago
+- Cada preferencia de pago ya incluye su propio `notification_url` (`<URL pública del backend>/api/payments/webhook/`), tomada de `BACKEND_PUBLIC_URL` o, si no existe, de `RENDER_EXTERNAL_URL` (Render la inyecta en cada deploy). Esa URL gana sobre `MP_NGROK_URL`, que solo se usa en desarrollo local, y sobre la del panel, así que el sistema no depende de cómo esté configurado MercadoPago ni del sufijo del hostname.
+- Igual conviene dejar el panel coherente: MP → tu app → **Webhooks** → **Modo de prueba** con la URL `https://<backend>.onrender.com/api/payments/webhook/` y el evento **Pagos**. Si se pasa a producción, repetir en **Modo productivo**.
+- La **Clave secreta** del panel tiene que ser idéntica a `MP_WEBHOOK_SECRET` en Render; si difieren, el backend rechaza todo con `invalid signature`.
+- Para probar: comprar con una cuenta y una tarjeta de prueba de MercadoPago y revisar en *Webhooks → Notificaciones entregadas* que llegue.
 
 ---
 
@@ -158,14 +159,13 @@ curl -I https://winnie-backend.onrender.com/api/docs/
 
 ### 5.2 Env vars (Settings → Environment Variables)
 ```
-VITE_API_URL=https://winnie-backend.onrender.com/api
-VITE_WS_BASE_URL=wss://winnie-backend.onrender.com
+VITE_API_URL=https://<backend>.onrender.com/api
 VITE_GOOGLE_CLIENT_ID=<mismo que backend GOOGLE_CLIENT_ID>
-VITE_MP_PUBLIC_KEY=<MP_PUBLIC_KEY sandbox>
-VITE_MP_ENV=sandbox
-VITE_SENTRY_DSN=<sentry frontend DSN — opcional>
+VITE_MP_SANDBOX=true            # false al pasar a credenciales productivas
+VITE_SENTRY_DSN=<DSN del proyecto Sentry de frontend; si no hay, borrar la variable>
 VITE_SENTRY_ENVIRONMENT=production
 ```
+Vercel guarda el valor tal cual: no escribir comillas (`""`) ni dejar espacios. Un DSN vacío o con comillas se ignora, pero lo correcto es borrar la variable. Si cambia el hostname de Render hay que actualizar `VITE_API_URL` y redeployar el front.
 
 ### 5.3 Deploy y verificar
 1. Redeploy tras cargar las env vars

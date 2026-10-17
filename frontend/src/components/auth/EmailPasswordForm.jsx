@@ -50,10 +50,12 @@ export default function EmailPasswordForm({ onSuccess }) {
         navigate(data.user?.is_profile_complete ? '/dashboard' : '/completar-perfil')
       }
     } catch (err) {
-      const detail =
-        err.response?.data?.non_field_errors?.[0] ||
-        err.response?.data?.detail ||
-        'Credenciales inválidas'
+      // No response at all: timeout or network failure, not wrong credentials.
+      const detail = err.response
+        ? err.response.data?.non_field_errors?.[0] ||
+          err.response.data?.detail ||
+          'Credenciales inválidas'
+        : 'No pudimos conectar con el servidor. Puede estar iniciando: esperá unos segundos y volvé a intentar.'
       toast.error(detail)
     } finally {
       setLoading(false)

@@ -10,8 +10,13 @@ import * as Sentry from '@sentry/react'
  *   `VITE_SENTRY_REPLAYS` if el equipo compra el add-on de session replay.
  */
 export function initSentry() {
-  const dsn = import.meta.env.VITE_SENTRY_DSN
-  if (!dsn) {
+  // Vercel stores the value literally, so an "empty" variable can arrive as the
+  // two characters `""`; trim quotes and spaces and ignore anything that is not a URL.
+  const dsn = String(import.meta.env.VITE_SENTRY_DSN ?? '')
+    .trim()
+    .replace(/^["']|["']$/g, '')
+    .trim()
+  if (!/^https?:\/\//.test(dsn)) {
     return
   }
 
