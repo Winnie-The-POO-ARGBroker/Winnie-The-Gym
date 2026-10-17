@@ -127,4 +127,22 @@ describe('EmailPasswordForm', () => {
       expect(toast.error).toHaveBeenCalledWith('Credenciales inválidas.')
     })
   })
+  it('muestra un aviso de conexión (no "credenciales inválidas") cuando el servidor no responde', async () => {
+    const { toast } = await import('sonner')
+    api.post.mockRejectedValueOnce({ code: 'ECONNABORTED', message: 'timeout of 60000ms exceeded' })
+
+    renderForm()
+    fireEvent.change(screen.getByPlaceholderText('tu@email.com'), {
+      target: { value: 'user@example.com' },
+    })
+    fireEvent.change(screen.getByPlaceholderText('••••••••'), {
+      target: { value: 'password123' },
+    })
+    fireEvent.submit(screen.getByRole('button', { name: /iniciar sesión/i }))
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(expect.stringMatching(/servidor/i))
+    })
+    expect(toast.error).not.toHaveBeenCalledWith('Credenciales inválidas')
+  })
 })

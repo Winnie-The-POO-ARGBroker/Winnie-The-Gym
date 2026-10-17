@@ -316,6 +316,9 @@ MP_PUBLIC_KEY = config('MP_PUBLIC_KEY', default='')
 MP_WEBHOOK_SECRET = config('MP_WEBHOOK_SECRET', default='')
 MP_APP_ID = config('MP_APP_ID', default='')
 MP_NGROK_URL = config('MP_NGROK_URL', default='')
+# Public base URL of this backend, sent to MercadoPago as the webhook target.
+# Render injects RENDER_EXTERNAL_URL on every deploy, so it follows hostname rotations.
+BACKEND_PUBLIC_URL = config('BACKEND_PUBLIC_URL', default=config('RENDER_EXTERNAL_URL', default=''))
 
 # ---------------------------------------------------------------------------
 # Redis — shared by Cache, Channel Layer and Celery. Uses a single REDIS_URL

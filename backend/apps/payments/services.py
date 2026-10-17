@@ -36,10 +36,18 @@ def _build_back_urls():
 
 
 def _build_notification_url():
-    """Public URL MP hits to notify us. Points to the ngrok tunnel in dev."""
-    ngrok = getattr(settings, 'MP_NGROK_URL', '').rstrip('/')
-    if ngrok:
-        return f'{ngrok}/api/payments/webhook/'
+    """Public URL MP hits to notify us.
+
+    The deployed backend URL wins over the ngrok tunnel, so a stale `MP_NGROK_URL`
+    left in production cannot hijack the webhook. Local development has no public
+    backend URL and falls back to the tunnel.
+    """
+    base = (
+        getattr(settings, 'BACKEND_PUBLIC_URL', '')
+        or getattr(settings, 'MP_NGROK_URL', '')
+    ).rstrip('/')
+    if base:
+        return f'{base}/api/payments/webhook/'
     return None
 
 

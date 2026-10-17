@@ -100,7 +100,9 @@ export default function CajaDiariaPage() {
   const [fecha, setFecha] = useState(todayISO)
   const [operadorId, setOperadorId] = useState('')
 
-  const { data: staffList = [] } = useStaffList({ enabled: isAdmin })
+  const { data: staffData } = useStaffList({ enabled: isAdmin })
+  // /users/staff/ answers with the paginated shape { count, results }.
+  const staffList = Array.isArray(staffData) ? staffData : staffData?.results ?? []
 
   const queryParams = { fecha }
   if (isAdmin && operadorId) queryParams.operador_id = operadorId
