@@ -1,28 +1,27 @@
 /**
- * Winnie The Gym — Service Worker (shell cache-first)
+ * Winnie The Gym — Service Worker
  *
- * Strategy: cache-first for the app shell (HTML, CSS, fonts).
- * Network-first for all API requests.
+ * Strategy:
+ * - Page navigations (HTML): network-first. The shell is only used as an offline
+ *   fallback, so a new deploy reaches returning visitors on their next visit.
+ *   Serving it cache-first froze every visitor on the bundle of the day they
+ *   first opened the app.
+ * - /assets/*: cache-first. Vite names them with a content hash, so a cached
+ *   file can never be stale.
+ * - API calls and everything else: network-first, cache as a fallback.
+ *
+ * Bump CACHE_NAME to drop everything cached by older versions of this worker.
  */
 
-const CACHE_NAME = 'winnie-shell-v1'
+const CACHE_NAME = 'winnie-shell-v2'
+const SHELL_URL = '/index.html'
 
-// Resources that form the app shell
-const SHELL_ASSETS = [
-  '/',
-  '/index.html',
-]
-
-// ── Install: cache the shell ──────────────────────────────────────────────────
+// ── Install: take over right away ─────────────────────────────────────────────
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(SHELL_ASSETS)
-    }).then(() => self.skipWaiting())
-  )
+  event.waitUntil(Promise.resolve(self.skipWaiting()))
 })
 
-// ── Activate: clean up old caches ─────────────────────────────────────────────
+// ── Activate: drop old caches (v1 kept serving a stale index.html) ────────────
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
@@ -35,7 +34,17 @@ self.addEventListener('activate', (event) => {
   )
 })
 
-// ── Fetch: cache-first for shell, network-first for API ───────────────────────
+function isCacheable(response) {
+  return Boolean(response) && response.status === 200 && response.type === 'basic'
+}
+
+function remember(key, response) {
+  if (!isCacheable(response)) return
+  const copy = response.clone()
+  caches.open(CACHE_NAME).then((cache) => cache.put(key, copy))
+}
+
+// ── Fetch ─────────────────────────────────────────────────────────────────────
 self.addEventListener('fetch', (event) => {
   const { request } = event
   const url = new URL(request.url)
@@ -45,30 +54,42 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  // Network-first for API calls
-  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/ws/')) {
+  // Page navigations: network first, cached shell only when offline.
+  if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request).catch(() => caches.match(request))
+      fetch(request)
+        .then((response) => {
+          remember(SHELL_URL, response)
+          return response
+        })
+        .catch(() => caches.match(SHELL_URL))
     )
     return
   }
 
-  // Cache-first for everything else (shell assets, JS, CSS, fonts)
-  event.respondWith(
-    caches.match(request).then((cached) => {
-      if (cached) return cached
-
-      return fetch(request).then((response) => {
-        // Only cache successful same-origin responses
-        if (!response || response.status !== 200 || response.type !== 'basic') {
+  // Hashed build output: cache first.
+  if (url.pathname.startsWith('/assets/')) {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        if (cached) return cached
+        return fetch(request).then((response) => {
+          remember(request, response)
           return response
-        }
-        const responseToCache = response.clone()
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(request, responseToCache)
         })
+      })
+    )
+    return
+  }
+
+  // API calls and the rest: network first.
+  event.respondWith(
+    fetch(request)
+      .then((response) => {
+        if (!url.pathname.startsWith('/api/') && !url.pathname.startsWith('/ws/')) {
+          remember(request, response)
+        }
         return response
       })
-    })
+      .catch(() => caches.match(request))
   )
 })
