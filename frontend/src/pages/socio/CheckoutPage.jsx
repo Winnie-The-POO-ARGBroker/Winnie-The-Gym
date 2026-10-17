@@ -31,7 +31,7 @@ function PlanCard({ plan, onPagar, loading, preselected = false }) {
     >
       {/* Badge popular / preselected */}
       {plan.es_popular && (
-        <div className="self-start px-2 py-0.5 rounded-full bg-primary text-white text-[10px] font-bold uppercase tracking-wider">
+        <div className="self-start px-2 py-0.5 rounded-full bg-orange-700 text-white text-[10px] font-bold uppercase tracking-wider">
           Más popular
         </div>
       )}

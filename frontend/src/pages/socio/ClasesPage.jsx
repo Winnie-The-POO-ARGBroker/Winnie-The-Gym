@@ -225,7 +225,7 @@ export default function ClasesPage() {
                 className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
                   activeTab === 'mis_reservas'
                     ? 'bg-white text-primary'
-                    : 'bg-primary text-white'
+                    : 'bg-orange-700 text-white'
                 }`}
               >
                 {myBookings.length}

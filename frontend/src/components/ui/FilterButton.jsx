@@ -13,7 +13,7 @@ export default function FilterButton({
   const sizeClass = SIZE_CLASSES[size] ?? SIZE_CLASSES.sm
 
   const variantClass = active
-    ? 'bg-primary text-white'
+    ? 'bg-orange-700 text-white'
     : 'bg-bg-surface text-text-secondary border border-subtle hover:bg-bg-raised'
 
   return (

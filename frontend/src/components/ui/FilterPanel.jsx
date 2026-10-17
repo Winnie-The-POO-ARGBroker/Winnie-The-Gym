@@ -32,7 +32,7 @@ export default function FilterPanel({ filters, onChange, onClear, align = 'left'
         <Filter className="w-4 h-4" />
         Filtros
         {activeCount > 0 && (
-          <span className="inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold bg-primary text-white rounded-full">
+          <span className="inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold bg-orange-700 text-white rounded-full">
             {activeCount}
           </span>
         )}
@@ -65,7 +65,7 @@ export default function FilterPanel({ filters, onChange, onClear, align = 'left'
                   onClick={() => onChange('estado', opt.value)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                     (filters.estado || '') === opt.value
-                      ? 'bg-primary text-white shadow-sm'
+                      ? 'bg-orange-700 text-white shadow-sm'
                       : 'bg-bg-raised text-text-secondary hover:text-text-primary'
                   }`}
                 >
@@ -91,7 +91,7 @@ export default function FilterPanel({ filters, onChange, onClear, align = 'left'
                   onClick={() => onChange('con_certificado', opt.value)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                     (filters.con_certificado || '') === opt.value
-                      ? 'bg-primary text-white shadow-sm'
+                      ? 'bg-orange-700 text-white shadow-sm'
                       : 'bg-bg-raised text-text-secondary hover:text-text-primary'
                   }`}
                 >
@@ -120,7 +120,7 @@ export default function FilterPanel({ filters, onChange, onClear, align = 'left'
                     onClick={() => onChange('apto_estado', opt.value)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                       (filters.apto_estado || '') === opt.value
-                        ? 'bg-primary text-white shadow-sm'
+                        ? 'bg-orange-700 text-white shadow-sm'
                         : 'bg-bg-raised text-text-secondary hover:text-text-primary'
                     }`}
                   >

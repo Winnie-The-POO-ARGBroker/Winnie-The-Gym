@@ -138,7 +138,7 @@ export default function ReportFilters({
               >
                 <div
                   className={`p-2 rounded-lg ${
-                    isSelected ? 'bg-primary text-white' : 'bg-bg-surface text-text-tertiary border border-subtle'
+                    isSelected ? 'bg-orange-700 text-white' : 'bg-bg-surface text-text-tertiary border border-subtle'
                   }`}
                 >
                   <Icon className="w-4 h-4" />
