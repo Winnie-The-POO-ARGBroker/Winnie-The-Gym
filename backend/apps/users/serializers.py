@@ -4,6 +4,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import PasswordResetForm
 
+from dj_rest_auth.registration.serializers import RegisterSerializer
 from dj_rest_auth.serializers import (
     JWTSerializer,
     PasswordChangeSerializer as BasePasswordChangeSerializer,
@@ -322,3 +323,27 @@ class StaffListSerializer(serializers.ModelSerializer):
 
     def get_has_usable_password(self, obj):
         return obj.has_usable_password()
+
+
+class WinnieRegisterSerializer(RegisterSerializer):
+    """Sign-up with email and password only.
+
+    dj-rest-auth 7.x declares `username` as required when the module loads, even
+    though ACCOUNT_SIGNUP_FIELDS leaves it out, so every request answered 400
+    {"username": ["Este campo es requerido."]}. The project identifies users by
+    email: the username is optional here and allauth derives a unique one from
+    the email when the client does not send it.
+    """
+
+    username = serializers.CharField(required=False, allow_blank=True)
+
+    def validate_email(self, email):
+        # allauth only rejects emails that already have a *verified* EmailAddress
+        # row, and e-mail verification is off here, so a duplicate would reach the
+        # database and fail with a 500 (IntegrityError on users_user_email_key).
+        email = super().validate_email(email)
+        if get_user_model().objects.filter(email__iexact=email).exists():
+            raise serializers.ValidationError(
+                'Ya existe un usuario registrado con esa dirección de correo electrónico.'
+            )
+        return email
