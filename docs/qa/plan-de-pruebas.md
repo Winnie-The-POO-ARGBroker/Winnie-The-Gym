@@ -29,7 +29,7 @@ Winnie The Gym es un sistema de gestión integral para gimnasios que cubre auten
 **Stack tecnológico** (confirmado en `docs/architecture.md`):
 
 - **Frontend:** React 18 (Vite) + TailwindCSS, desplegado en Vercel.  
-  *(Nota de alcance y decisión arquitectónica: La adopción de React/Vite en reemplazo de la propuesta inicial de Angular fue evaluada técnicamente y aprobada formalmente por el equipo y la cátedra/patrocinadora, priorizando la agilidad de desarrollo con Vite HMR, la robustez de React Query v5 para el manejo de estado asíncrono y la integración nativa y reactiva con WebSockets de Django Channels para el módulo de aforo en tiempo real).*
+  *(Nota de alcance y decisión arquitectónica: La adopción de React/Vite en reemplazo de la propuesta inicial de Angular fue una decisión técnica del equipo, pendiente de conformidad de la cátedra/patrocinadora (ver sección 4), priorizando la agilidad de desarrollo con Vite HMR, la robustez de React Query v5 para el manejo de estado asíncrono y la integración nativa y reactiva con WebSockets de Django Channels para el módulo de aforo en tiempo real).*
 - **Backend:** Django REST Framework + Django Channels (WebSockets), desplegado en Render.
 - **Base de datos transaccional:** PostgreSQL (Supabase en producción).
 - **Auditoría / historial QR:** MongoDB (Atlas en producción).
@@ -41,14 +41,14 @@ Winnie The Gym es un sistema de gestión integral para gimnasios que cubre auten
 
 ## 4. Aprobaciones
 
-| Rol | Nombre | Aprobación | Fecha |
-|---|---|---|---|
-| Elaborado por (QA Lead / Scrum Master) | Magali Bechis | Elaborado / Actualizado | 13/10/2026 |
-| Revisado por (Referente Técnico Full-Stack) | Rodrigo Valdez | Aprobado | 15/09/2026 |
-| Aprobado por (Líder de Proyecto / Project Manager) | Franco Arce | Aprobado | 15/09/2026 |
-| Patrocinadora / Docente Evaluadora | Cátedra ISPC | Pendiente de firma | — |
+| Rol | Nombre | Estado | Fecha | Firma |
+|---|---|---|---|---|
+| Elaborado por (QA Lead / Scrum Master) | Magali Bechis | Pendiente |  |  |
+| Revisado por (Referente Técnico Full-Stack) | Rodrigo Valdez | Pendiente |  |  |
+| Aprobado por (Líder de Proyecto / Project Manager) | Franco Arce | Pendiente |  |  |
+| Patrocinadora / Docente Evaluadora | Viviana Guillén (Cátedra ISPC) | Pendiente |  |  |
 
-Circuito de sign-off: El presente plan fue elaborado y actualizado por Magali Bechis (QA Lead / Scrum Master) y revisado técnicamente por Rodrigo Valdez. La conformidad de la Patrocinadora / Docente Evaluadora (alcance tecnológico React/Vite y criterios de severidad de defectos) queda **pendiente de firma**: no se declara aprobada hasta contar con su constancia.
+Circuito de sign-off: el plan es elaborado por la QA Lead, revisado técnicamente por el Referente Técnico y aprobado por el Líder de Proyecto. La conformidad de la Patrocinadora / Docente Evaluadora (alcance tecnológico React/Vite y criterios de severidad de defectos) se registra en la última fila. La tabla se completa con estado, fecha y firma a medida que cada rol da su conformidad.
 
 ## 5. Resumen Ejecutivo
 
@@ -206,7 +206,12 @@ La ejecución se reanuda cuando:
 
 **Personal:** ver sección 19.
 
-**Capacitación específica requerida para esta ronda de testing:** [PENDIENTE: definir con el equipo]
+**Entrenamiento:** el equipo de QA necesita la siguiente nivelación técnica para esta ronda de testing:
+
+- Uso de Docker y Docker Compose (`docker compose up`, `docker compose ps` y `docker compose exec`) para levantar la infraestructura local.
+- Manejo básico de consola para correr `pytest` y leer la salida de los tests fallidos.
+- Uso de la plantilla `.github/ISSUE_TEMPLATE/bug_report.md` para unificar el criterio de reporte de incidencias.
+- Uso de Postman y Newman, de Playwright y de la auditoría de accesibilidad (`audit-accessibility.mjs`), según la sección 21.
 
 ## 17. Requisitos de Entorno (Hardware y Software)
 
@@ -323,7 +328,7 @@ Referencia: **R**=Responsable/Ejecutor, **A**=Aprobador, **C**=Consultado, **I**
 | 14–15/10/2026 | Colección de Postman con Newman y suite E2E con Playwright (Page Object Model). |
 | 16/10/2026 | Reportes de Newman, auditoría de accesibilidad (axe-core y Lighthouse), evidencias, publicación de la Wiki Testing y entrega de la actividad de V&V del Sprint 4. |
 
-## 24. Supuestos, Dependencias y Riesgos
+## 24. Premisas, Dependencias y Riesgos
 
 **Riesgos identificados por el equipo** (fuente: documento de avance del proyecto):
 
@@ -338,14 +343,14 @@ Referencia: **R**=Responsable/Ejecutor, **A**=Aprobador, **C**=Consultado, **I**
 - **Bugs identificados y trazabilidad:** Los defectos detectados en rondas previas cuentan con trazabilidad completa en issues de GitHub, garantizando que vulnerabilidades críticas (autenticación en rutas protegidas, validación de estado de membresías y configuraciones de entorno) están resueltas y protegidas por tests de regresión dedicados.
 - **Automatización fuera del pipeline:** Newman, Playwright y la auditoría de accesibilidad todavía no corren en el CI; se ejecutan manualmente. En la corrida del 16/10/2026 el E2E dio 11 pasan, 0 fallan y 6 `fixme`; esos 6 casos requieren servicios externos (Mailpit, MercadoPago, QR). Mitigación: sumar los jobs al workflow y habilitar los casos `fixme` con mocks (Sprint 5).
 - **Disponibilidad de la base en producción:** el plan gratuito de Supabase se pausa por inactividad y deja el backend caído con un error de conexión. Mitigación: ping periódico a la base y monitoreo de `/api/health/`.
-- **Accesibilidad:** axe-core detectó 4 violaciones críticas y 14 serias en las 14 pantallas auditadas (principalmente contraste de color y controles sin etiqueta). Mitigación: issues #345 a #353 asignados al equipo.
+- **Accesibilidad:** axe-core detectó inicialmente 4 violaciones críticas y 14 serias en las 14 pantallas auditadas. Tras los fixes de los issues #345 a #353 (PR #355) y un ajuste posterior de contraste, quedan 0 críticas y 6 serias de `color-contrast` en insignias de estado. Mitigación: ajustar esos colores en el Sprint 5.
 
 **Dependencias:**
 
 - Disponibilidad de servicios externos sandbox (MercadoPago, Google OAuth, Mailtrap) para las pruebas de integración.
 - Entorno Docker Compose funcional con los 3 servicios de datos (Postgres, Redis, Mongo) saludables antes de correr la suite.
 
-**Supuestos:**
+**Premisas y supuestos:**
 
 - El equipo asume que la suite de regresión continua (615 tests backend y 1060 casos frontend ejecutados en CI) es representativa del estado real y estable del código en la rama de integración `develop`.
 - El entorno de ejecución local containerizado refleja con fidelidad las condiciones del entorno productivo (Render/Vercel/Supabase).
