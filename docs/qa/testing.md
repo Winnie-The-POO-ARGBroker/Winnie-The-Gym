@@ -18,7 +18,7 @@
 | **Backend (unit e integración)** | pytest + pytest-django | Modelos, serializers, endpoints DRF con base real | 615 tests recolectados, 9 apps |
 | **Frontend (unit e integración)** | Vitest + React Testing Library | Componentes, hooks, servicios y páginas | 1060 casos en 139 archivos |
 | **API (caja negra)** | Postman v2.1 + Newman | Auth, Planes y Socios: flujo completo y pruebas negativas | 13 requests, 40 aserciones |
-| **E2E** | Playwright Test (TypeScript, Page Object Model) | Autenticación, CRUD de planes, flujo de socio | 17 tests: 9 pasan, 3 fallan, 5 `fixme` |
+| **E2E** | Playwright Test (TypeScript, Page Object Model) | Autenticación, CRUD de planes, flujo de socio | 17 tests: 11 pasan, 0 fallan, 6 `fixme` |
 | **Accesibilidad** | axe-core + Lighthouse | WCAG 2.2 AA en 14 pantallas de los 4 roles | Ver sección 4 |
 | **Manual** | Casos en la planilla | Flujos de UI y casos de los bugs | Ver el Sheet |
 
@@ -76,7 +76,7 @@ Genera `docs/qa/evidence/accesibilidad/axe-report.json` y sale con código 1 si 
 | Backend | 615 recolectados, **614 passed, 1 failed**. Cobertura 92,79 % | `docs/qa/evidence/backend-pytest-output-2026-10-16.txt` |
 | Frontend | Última corrida reportada en el PR #355: 1047 pasan y 1 falla (`agenda.test.js`, falla igual en `develop`) | PR #355, `vitest-output-2026-10-13.txt` |
 | API (Newman) | 13 requests, 40 aserciones, **0 fallas** | `tests/api/reports/newman.html` y `newman.xml` |
-| E2E (Playwright) | **9 pasan, 3 fallan, 5 `fixme`**. Las fallas son selectores frágiles y etiquetas de formulario sin asociar | `e2e/evidence/` |
+| E2E (Playwright) | **11 pasan, 0 fallan, 6 `fixme`**. Los `fixme` dependen de Mailpit, MercadoPago, escaneo de QR o de una respuesta rápida del registro | `e2e/evidence/` |
 
 El test de backend que falla depende de Celery en modo eager; se registra como defecto de bajo impacto. En E2E, las fallas están documentadas y su corrección queda para el Sprint 5.
 
@@ -102,4 +102,4 @@ El workflow `.github/workflows/ci.yml` corre backend, frontend, build y Vercel p
 
 - Newman, Playwright y axe **no corren todavía en el CI**; se ejecutan a mano. Está planificado para el Sprint 5.
 - Hay tests de frontend excluidos temporalmente por cuelgues de workers en CI (`ScannerPanel`, `AforoMonitorPage`, `AccesoTerminal`, `AdminUsuariosPage`, `HistorialPagosPage`). Su alcance se cubre con casos manuales.
-- La suite E2E es de apoyo hasta estabilizar los selectores.
+- Los 6 casos E2E en `fixme` requieren servicios externos y quedan para el Sprint 5.

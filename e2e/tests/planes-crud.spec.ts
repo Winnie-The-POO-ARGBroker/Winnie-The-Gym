@@ -48,7 +48,7 @@ test.describe('Planes Admin — CRUD', () => {
     await modal.waitForClosed()
 
     // The new plan should appear on the page (card or row with its name)
-    await expect(page.getByText(TEST_PLAN_NAME)).toBeVisible({ timeout: 8000 })
+    await expect(page.getByRole('heading', { name: TEST_PLAN_NAME })).toBeVisible({ timeout: 8000 })
   })
 
   test('admin can edit an existing plan', async ({ page }) => {
@@ -58,7 +58,7 @@ test.describe('Planes Admin — CRUD', () => {
     await planesPage.goto()
 
     // Find the plan created in the previous test via text
-    const planCard = page.getByText(TEST_PLAN_NAME).locator('../..')
+    const planCard = page.locator('[data-testid^="plan-row-"]').filter({ hasText: TEST_PLAN_NAME })
     // Click the edit button inside that card
     const editBtn = planCard.getByTestId('btn-editar-plan').or(
       planCard.getByRole('button', { name: /editar/i })
@@ -73,7 +73,7 @@ test.describe('Planes Admin — CRUD', () => {
     await modal.waitForClosed()
 
     // Updated name should appear
-    await expect(page.getByText(UPDATED_PLAN_NAME)).toBeVisible({ timeout: 8000 })
+    await expect(page.getByRole('heading', { name: UPDATED_PLAN_NAME })).toBeVisible({ timeout: 8000 })
   })
 
   test('plan form modal can be cancelled without changes', async ({ page }) => {
