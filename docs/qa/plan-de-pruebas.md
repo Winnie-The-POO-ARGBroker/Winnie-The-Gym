@@ -1,6 +1,17 @@
 # Plan de Pruebas — Winnie The Gym
 
-## 1. Encabezado
+## 1. Historial de Versiones
+
+| Versión | Fecha | Autor(es) | Descripción del cambio |
+|---|---|---|---|
+| 1.0 | 14/09/2026 | Equipo QA (Magali Bechis, Gisele Lavisse, Jimena Gallegillo) con soporte técnico de Rodrigo Valdez | Elaboración inicial del Plan de Pruebas para la entrega de V&V del Sprint 3. |
+| 1.1 | 15/09/2026 | Rodrigo Valdez | Incorporación de tests automatizados frontend (Vitest + React Testing Library) sumados en el PR #77; actualización del conteo de tests backend (229 → 233) y ampliación de las secciones de estrategia, criterios, entregables, herramientas y planificación. |
+| 1.2 | 20/09/2026 | Franco Arce | Actualización post project-wide-cleanup (chore/project-wide-cleanup): refleja estado real del inventario de tests frontend post-Commits 1–4; agrega pytest-cov (backend) y @vitest/coverage-v8 (frontend); corrige conteo backend; actualiza pipeline de CI ahora existente. |
+| 1.3 | 13/10/2026 | Magali Bechis | Actualización integral según devolución de cátedra (Sprint 3 / Sprint 4): 1) Completitud de circuito de firmas y aprobaciones (Líder de Proyecto y Patrocinadora). 2) Dejada constancia formal de adopción de React 18 + Vite aprobada en lugar de Angular. 3) Actualización de estrategia y conteo de pruebas de regresión (401 tests backend passed y 811 tests frontend en Vitest). 4) Redefinición de criterios de aceptación y rechazo estructurados por severidad de defectos (0 bloqueantes y 0 altos sin mitigar). 5) Supresión del riesgo técnico «ausencia de CI/CD» por puesta en marcha de GitHub Actions. |
+| 1.4 | 16/10/2026 | Rodrigo Valdez | Sincronización con el estado real al cierre del Sprint 4: conteos de tests actualizados (backend 615, 614 en verde en la corrida del 16/10; frontend 1060 casos en 139 archivos), umbrales de cobertura tomados de `frontend/vite.config.js`, herramientas de automatización (Postman/Newman, Playwright, axe-core, Lighthouse), entregables y trazabilidad del Sprint 4, cronograma y aprobaciones pendientes de firma. |
+| 1.5 | 16/10/2026 | Rodrigo Valdez | Reordenamiento de secciones según el índice de la plantilla de la cátedra (Recursos y Planificación con sus subsecciones, Premisas y Dependencias y Riesgos separadas) y Flujos E2E movidos a un anexo. |
+
+## 2. Información del Proyecto
 
 | Campo | Detalle |
 |---|---|
@@ -12,24 +23,12 @@
 | Institución | ISPC — Tecnicatura Superior en Desarrollo de Software |
 | Repositorio | github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym |
 
-## 2. Historial de Versiones
-
-| Versión | Fecha | Autor(es) | Descripción del cambio |
-|---|---|---|---|
-| 1.0 | 14/09/2026 | Equipo QA (Magali Bechis, Gisele Lavisse, Jimena Gallegillo) con soporte técnico de Rodrigo Valdez | Elaboración inicial del Plan de Pruebas para la entrega de V&V del Sprint 3. |
-| 1.1 | 15/09/2026 | Rodrigo Valdez | Incorporación de tests automatizados frontend (Vitest + React Testing Library) sumados en el PR #77; actualización del conteo de tests backend (229 → 233) y ampliación de las secciones de estrategia, criterios, entregables, herramientas y planificación. |
-| 1.2 | 20/09/2026 | Franco Arce | Actualización post project-wide-cleanup (chore/project-wide-cleanup): refleja estado real del inventario de tests frontend post-Commits 1–4; agrega pytest-cov (backend) y @vitest/coverage-v8 (frontend); corrige conteo backend; actualiza pipeline de CI ahora existente. |
-| 1.3 | 13/10/2026 | Magali Bechis | Actualización integral según devolución de cátedra (Sprint 3 / Sprint 4): 1) Completitud de circuito de firmas y aprobaciones (Líder de Proyecto y Patrocinadora). 2) Dejada constancia formal de adopción de React 18 + Vite aprobada en lugar de Angular. 3) Actualización de estrategia y conteo de pruebas de regresión (401 tests backend passed y 811 tests frontend en Vitest). 4) Redefinición de criterios de aceptación y rechazo estructurados por severidad de defectos (0 bloqueantes y 0 altos sin mitigar). 5) Supresión del riesgo técnico «ausencia de CI/CD» por puesta en marcha de GitHub Actions. |
-| 1.4 | 16/10/2026 | Rodrigo Valdez | Sincronización con el estado real al cierre del Sprint 4: conteos de tests actualizados (backend 615, 614 en verde en la corrida del 16/10; frontend 1060 casos en 139 archivos), umbrales de cobertura tomados de `frontend/vite.config.js`, herramientas de automatización (Postman/Newman, Playwright, axe-core, Lighthouse), entregables y trazabilidad del Sprint 4, cronograma y aprobaciones pendientes de firma. |
-
-## 3. Información del Proyecto
-
 Winnie The Gym es un sistema de gestión integral para gimnasios que cubre autenticación de usuarios, administración de socios, planes de membresía, control de acceso mediante credencial digital (QR dinámico), gestión y reserva de clases, monitoreo de aforo en tiempo real y generación de reportes administrativos.
 
 **Stack tecnológico** (confirmado en `docs/architecture.md`):
 
 - **Frontend:** React 18 (Vite) + TailwindCSS, desplegado en Vercel.  
-  *(Nota de alcance y decisión arquitectónica: La adopción de React/Vite en reemplazo de la propuesta inicial de Angular fue una decisión técnica del equipo, pendiente de conformidad de la cátedra/patrocinadora (ver sección 4), priorizando la agilidad de desarrollo con Vite HMR, la robustez de React Query v5 para el manejo de estado asíncrono y la integración nativa y reactiva con WebSockets de Django Channels para el módulo de aforo en tiempo real).*
+  *(Nota de alcance y decisión arquitectónica: La adopción de React/Vite en reemplazo de la propuesta inicial de Angular fue una decisión técnica del equipo, pendiente de conformidad de la cátedra/patrocinadora (ver sección 3), priorizando la agilidad de desarrollo con Vite HMR, la robustez de React Query v5 para el manejo de estado asíncrono y la integración nativa y reactiva con WebSockets de Django Channels para el módulo de aforo en tiempo real).*
 - **Backend:** Django REST Framework + Django Channels (WebSockets), desplegado en Render.
 - **Base de datos transaccional:** PostgreSQL (Supabase en producción).
 - **Auditoría / historial QR:** MongoDB (Atlas en producción).
@@ -37,9 +36,9 @@ Winnie The Gym es un sistema de gestión integral para gimnasios que cubre auten
 - **Contenerización:** Docker / Docker Compose (5 servicios: `db`, `redis`, `mongo`, `backend`, `frontend`).
 - **Integraciones externas:** MercadoPago (Checkout Pro + webhook), Google OAuth, Mailtrap (envío de emails vía Celery), Sentry (errores/performance), UptimeRobot (keep-alive).
 
-**Alcance funcional (Product Backlog — 9 historias de usuario):** ver sección 8.
+**Alcance funcional (Product Backlog — 9 historias de usuario):** ver sección 5.2.
 
-## 4. Aprobaciones
+## 3. Aprobaciones
 
 | Rol | Nombre | Estado | Fecha | Firma |
 |---|---|---|---|---|
@@ -50,13 +49,13 @@ Winnie The Gym es un sistema de gestión integral para gimnasios que cubre auten
 
 Circuito de sign-off: el plan es elaborado por la QA Lead, revisado técnicamente por el Referente Técnico y aprobado por el Líder de Proyecto. La conformidad de la Patrocinadora / Docente Evaluadora (alcance tecnológico React/Vite y criterios de severidad de defectos) se registra en la última fila. La tabla se completa con estado, fecha y firma a medida que cada rol da su conformidad.
 
-## 5. Resumen Ejecutivo
+## 4. Resumen Ejecutivo
 
-Este Plan de Pruebas cubre la actividad de Verificación y Validación (V&V) del proyecto Winnie The Gym (Sprint 3 y Sprint 4). El backend (Django REST Framework), organizado en 9 apps (`access`, `classes`, `common`, `members`, `memberships`, `payments`, `reports`, `users`), cuenta con una suite madura de **615 tests automatizados** (pytest + pytest-django + pytest-cov), ejecutable vía `docker compose exec backend pytest -q`, que reporta un resultado de **614 passed y 1 failed** en la corrida del 16/10/2026 (ver 9.1). El frontend (React 18 / Vite) dispone de una suite con **1060 casos de prueba** desarrollados con Vitest + React Testing Library (139 archivos de test), con gates de cobertura enforceados en CI (Lines ≥65%, Statements ≥65%, Branches ≥60%, Functions ≥55%). La estrategia combina **regresión automatizada continua en cada PR** mediante GitHub Actions con **pruebas manuales guiadas** sobre los flujos de UI y accesibilidad.
+Este Plan de Pruebas cubre la actividad de Verificación y Validación (V&V) del proyecto Winnie The Gym (Sprint 3 y Sprint 4). El backend (Django REST Framework), organizado en 9 apps (`access`, `classes`, `common`, `members`, `memberships`, `payments`, `reports`, `users`), cuenta con una suite madura de **615 tests automatizados** (pytest + pytest-django + pytest-cov), ejecutable vía `docker compose exec backend pytest -q`, que reporta un resultado de **614 passed y 1 failed** en la corrida del 16/10/2026 (ver 5.3.1). El frontend (React 18 / Vite) dispone de una suite con **1060 casos de prueba** desarrollados con Vitest + React Testing Library (139 archivos de test), con gates de cobertura enforceados en CI (Lines ≥65%, Statements ≥65%, Branches ≥60%, Functions ≥55%). La estrategia combina **regresión automatizada continua en cada PR** mediante GitHub Actions con **pruebas manuales guiadas** sobre los flujos de UI y accesibilidad.
 
 Como insumo adicional, el equipo cuenta con: un reporte de requisitos no funcionales de performance/disponibilidad (`docs/reports/rnf01-rnf06.md`), un set de pruebas de carga con Locust (`backend/loadtests/`) y los reportes de bugs registrados y trazados como GitHub Issues usando la plantilla oficial del repositorio.
 
-## 6. Alcance de las Pruebas
+## 5. Alcance de las Pruebas
 
 **Incluye:**
 
@@ -66,9 +65,9 @@ Como insumo adicional, el equipo cuenta con: un reporte de requisitos no funcion
 - Pruebas de seguridad básicas ya cubiertas por el código (anti-replay de QR, HMAC del webhook de pagos, gating por rol/autenticación, hardening de hosts/CSRF para túneles ngrok).
 - Pruebas de rendimiento/no funcionales apoyadas en el reporte RNF01/RNF06 existente y en Locust.
 
-**No incluye:** ver sección 10.
+**No incluye:** ver sección 5.4.
 
-## 7. Elementos a Probar
+### 5.1 Elementos a Probar
 
 | Módulo | Descripción funcional | Tipo de cobertura actual |
 |---|---|---|
@@ -84,7 +83,7 @@ Como insumo adicional, el equipo cuenta con: un reporte de requisitos no funcion
 | Frontend (automatizado) | Componentes UI (`Button`, `EmptyState`) y páginas (`ClassSchedulePage`); se amplía en cada sprint | Automatizada (Vitest + React Testing Library) |
 | Frontend (manual) | Pantallas React: login, credencial digital, agenda/reserva de clases, terminal de acceso de recepción, gestión de socios | Manual (complementa la automatización existente) |
 
-## 8. Nuevas Funcionalidades a Probar
+### 5.2 Nuevas Funcionalidades a Probar
 
 Descritas desde la perspectiva del usuario final, según el Product Backlog (9 historias de usuario):
 
@@ -98,11 +97,12 @@ Descritas desde la perspectiva del usuario final, según el Product Backlog (9 h
 - **US08 — Aforo en tiempo real:** como personal del gimnasio, quiero monitorear la ocupación en vivo, para gestionar la capacidad del salón.
 - **US09 — Reportes:** como administrador, quiero exportar analíticas en PDF/Excel, para tomar decisiones de negocio con datos reales.
 
-## 9. Pruebas de Regresión
+### 5.3 Pruebas de Regresión
 
 El sistema cuenta con una robusta suite de regresión automatizada continua que protege integralmente tanto el backend como el frontend contra defectos regresivos:
 
-### 9.1 Regresión Backend (pytest)
+
+#### 5.3.1 Regresión Backend (pytest)
 El backend dispone de **615 tests automatizados** (`pytest` + `pytest-django` + `pytest-asyncio` + `pytest-cov`), distribuidos en las 9 apps del sistema y validados con un gate de cobertura global del 80%:
 
 | App / Módulo | Alcance de la suite de regresión | Tests recolectados |
@@ -119,7 +119,8 @@ El backend dispone de **615 tests automatizados** (`pytest` + `pytest-django` + 
 
 La suite completa se ejecuta localmente vía `docker compose exec backend pytest -q` y de manera obligatoria en el pipeline de CI en cada pull request, garantizando un estado reproducible. En la corrida completa del 16/10/2026 (cobertura 92,79 %) pasaron 614 de 615: `test_pr2_fixes.py::PasswordResetEmailURLTests::test_password_reset_email_uses_frontend_url_not_example_com` falla en el entorno Docker local porque depende de `CELERY_TASK_ALWAYS_EAGER=True` (con la variable activa pasa); queda registrado como pendiente.
 
-### 9.2 Regresión Frontend (Vitest)
+
+#### 5.3.2 Regresión Frontend (Vitest)
 El frontend dispone de una suite de **1060 casos de prueba** (`it`/`test`, conteo estático del 16/10/2026) desarrollados con Vitest y React Testing Library sobre **139 archivos de test**, cubriendo componentes atómicos, layouts, hooks de lógica, servicios de API y páginas. Los gates mínimos de cobertura verificados en CI son:
 - **Lines:** ≥ 65%
 - **Statements:** ≥ 65%
@@ -128,10 +129,11 @@ El frontend dispone de una suite de **1060 casos de prueba** (`it`/`test`, conte
 
 Valores vigentes en `frontend/vite.config.js`. Los umbrales se ajustaron a la baja durante el Sprint 4 al sumarse pantallas administrativas nuevas (ver comentarios del archivo); la meta es volver a subirlos de forma incremental.
 
-### 9.3 Integración Continua (GitHub Actions)
+
+#### 5.3.3 Integración Continua (GitHub Actions)
 La regresión mínima obligatoria ante cada cambio o adición al código base se ejecuta de manera automatizada mediante el workflow `.github/workflows/ci.yml`. Los jobs paralelos de validación (`backend-test` con servicio MongoDB adjunto y `frontend-test` con verificación de gates de cobertura) deben completarse en verde para que cualquier PR hacia `develop` pueda ser mergeado. Hoy el workflow ejecuta backend (pytest con cobertura) y frontend (lint, Vitest con cobertura y build). **Todavía no ejecuta** la colección de Postman con Newman, la suite E2E de Playwright ni la auditoría de accesibilidad (`frontend/scripts/audit-accessibility.mjs`): se corren de forma manual y sus reportes se guardan como evidencia en el repositorio. Sumarlos al pipeline es un pendiente del Sprint 5. Se complementa con la verificación manual de los flujos de UI documentados en la matriz de pruebas.
 
-## 10. Funcionalidades que NO se van a Probar
+### 5.4 Funcionalidades a NO Probar
 
 - E2E tests completos en staging/producción real: se ejecutan en entornos locales/sandbox automatizados.
 - Tests de integración real contra cuentas de producción de MercadoPago, Google OAuth, Mailtrap o Sentry (se utilizan sandboxes y mocks controlados en los tests).
@@ -139,7 +141,7 @@ La regresión mínima obligatoria ante cada cambio o adición al código base se
 - Pruebas de penetración/seguridad ofensivas formales (pentesting); se validan los controles preventivos implementados en el código (anti-replay, HMAC, gating por rol, RBAC).
 - Panel de administración nativo de Django (`/admin`) más allá de su disponibilidad básica.
 
-## 11. Estrategia/Enfoque de Pruebas
+## 6. Enfoque de Pruebas (Estrategia)
 
 | Tipo de prueba | Enfoque | Herramientas |
 |---|---|---|
@@ -151,7 +153,7 @@ La regresión mínima obligatoria ante cada cambio o adición al código base se
 | **API (caja negra)** | Contratos HTTP de Auth, Planes y Socios (flujo POST → GET → PUT/PATCH → DELETE) con pruebas negativas (401 sin token y 400 por payload inválido), con reportes HTML y JUnit | Postman v2.1 + Newman con `htmlextra` (`tests/api/coleccion.json`) |
 | **E2E (flujos críticos)** | Autenticación (login válido e inválido parametrizado con 4 combinaciones), CRUD de planes y flujo de socio self-service, con Page Object Model y selectores `data-testid` | Playwright Test en TypeScript (`e2e/`) |
 
-## 12. Criterios de Aceptación/Rechazo
+## 7. Criterios de Aceptación o Rechazo
 
 En cumplimiento con las directivas de la cátedra evaluadora, los criterios de aceptación y rechazo se estructuran formalmente en base a la **severidad de los defectos**, priorizando el impacto en el negocio por sobre métricas porcentuales planas:
 
@@ -169,25 +171,25 @@ En cumplimiento con las directivas de la cátedra evaluadora, los criterios de a
 - Incumplimiento de cualquiera de los gates de cobertura de código definidos en el pipeline.
 - Casos de prueba manuales de flujos críticos con resultados divergentes respecto a los criterios de aceptación de la historia de usuario.
 
-## 13. Criterios de Suspensión
+## 8. Criterios de Suspensión
 
 La ejecución de pruebas sobre un módulo se suspende si:
 - Aparece un bug de severidad **Crítica/Bloqueante** que impide continuar ejecutando el resto de los casos planificados sobre ese módulo (ej.: un endpoint caído, un flujo de login roto).
 - Más del **30% de los casos de prueba** de un mismo módulo resultan en Fallo en una misma ronda de ejecución — indica un problema sistémico que conviene resolver antes de seguir invirtiendo tiempo en testing puntual.
 
-## 14. Criterios de Reanudación
+## 9. Criterios de Reanudación
 
 La ejecución se reanuda cuando:
 - El bug bloqueante que motivó la suspensión fue corregido (PR mergeado a `develop`) y re-verificado manualmente o vía la suite automatizada, según corresponda.
 - La tasa de fallos del módulo vuelve a estar por debajo del 30% tras aplicar el/los fix(es) correspondientes.
 
-## 15. Entregables
+## 10. Entregables
 
 - Este documento: `docs/qa/plan-de-pruebas.md`.
 - **Planilla de casos de prueba** (fuente de verdad, Google Sheets): https://docs.google.com/spreadsheets/d/1Oa1nqPkpquF49ghepLkKtoCiYtFY96BJ/edit. Una pestaña por módulo; los casos atómicos y los nuevos del Sprint 4 se agregaron resaltados en amarillo, con las columnas HU relacionada, escenario de la HU, tipo de testing, capa de la pirámide, ¿automatizable?, justificación, herramienta e ID del test automatizado. `docs/qa/casos-de-prueba.csv` es solo un espejo (snapshot).
 - **Matriz de Trazabilidad** (HU → caso de prueba → test automatizado → resultado → bug): `docs/qa/matriz-de-trazabilidad.md`. Resumen de la revisión de casos: `docs/qa/casos-de-prueba-v2-resumen.md`.
 - **Reportes de bugs:** Issues #78 a #85 (Sprint 3, cerrados) y los reportes QA del Sprint 4 en `docs/qa/bug-reports.md`, con capturas en `docs/qa/evidence/bugs/` y publicadas en los issues #160, #162, #163, #195, #224 y #225. Todos con la plantilla `.github/ISSUE_TEMPLATE/bug_report.md`.
-- **Suite backend (AUT-BE):** `backend/apps/**/tests/`, 615 tests; corrida del 16/10/2026: 614 passed y 1 failed (ver 9.1), cobertura 92,79 %. Evidencia: `docs/qa/evidence/backend-pytest-output-2026-10-16.txt`.
+- **Suite backend (AUT-BE):** `backend/apps/**/tests/`, 615 tests; corrida del 16/10/2026: 614 passed y 1 failed (ver 5.3.1), cobertura 92,79 %. Evidencia: `docs/qa/evidence/backend-pytest-output-2026-10-16.txt`.
 - **Suite frontend:** `frontend/src/**/*.test.*`, 1060 casos en 139 archivos. Evidencia: `docs/qa/evidence/vitest-output-2026-10-13.txt`.
 - **Colección Postman v2.1 y reportes Newman (AUT-API):** `tests/api/coleccion.json`, `tests/api/entorno.local.json` y reportes en `tests/api/reports/` (HTML y JUnit). Corrida del 16/10/2026: 13 requests, 40 aserciones, 0 fallas.
 - **Suite E2E con Page Object Model (AUT-E2E):** `e2e/` (3 specs: autenticación, CRUD de planes y flujo de socio). Corrida del 16/10/2026: 11 pasan, 0 fallan y 6 están marcadas `fixme` (dependen de Mailpit, MercadoPago, escaneo de QR o de una respuesta rápida del registro). Las fallas iniciales (selectores ambiguos) se corrigieron; sus capturas quedan en `e2e/evidence/`.
@@ -196,24 +198,15 @@ La ejecución se reanuda cuando:
 - Documentación de arquitectura: `docs/architecture.md`.
 - Wiki de GitHub, página Testing: https://github.com/Winnie-The-POO-ARGBroker/Winnie-The-Gym/wiki/Testing. Milestones «Sprint 3» y «Sprint 4» y tablero «Winnie The Gym — Sprint Board».
 
-## 16. Recursos
+## 11. Recursos
 
-**Hardware:** notebooks personales de cada integrante del equipo (sin requisitos especiales de hardware; el stack corre containerizado vía Docker Desktop).
+### 11.1 Requerimientos de Entornos – Hardware
 
-**Software:** Git ≥2.x, Docker ≥24.x, Docker Compose ≥2.x (plugin), Python 3.12 (imagen `python:3.12-slim`), Node 20 (imagen `node:20-alpine`), navegador moderno (Chrome/Edge/Firefox).
+notebooks personales de cada integrante del equipo (sin requisitos especiales de hardware; el stack corre containerizado vía Docker Desktop).
 
-**Herramientas:** ver sección 18.
+### 11.2 Requerimientos de Entornos – Software
 
-**Personal:** ver sección 19.
-
-**Entrenamiento:** el equipo de QA necesita la siguiente nivelación técnica para esta ronda de testing:
-
-- Uso de Docker y Docker Compose (`docker compose up`, `docker compose ps` y `docker compose exec`) para levantar la infraestructura local.
-- Manejo básico de consola para correr `pytest` y leer la salida de los tests fallidos.
-- Uso de la plantilla `.github/ISSUE_TEMPLATE/bug_report.md` para unificar el criterio de reporte de incidencias.
-- Uso de Postman y Newman, de Playwright y de la auditoría de accesibilidad (`audit-accessibility.mjs`), según la sección 21.
-
-## 17. Requisitos de Entorno (Hardware y Software)
+Git ≥2.x, Docker ≥24.x, Docker Compose ≥2.x (plugin), Python 3.12 (imagen `python:3.12-slim`), Node 20 (imagen `node:20-alpine`), navegador moderno (Chrome/Edge/Firefox).
 
 Según `docker-compose.yml` (raíz del repo) y la wiki del equipo (`Guia-de-Setup.md`, `Variables-de-Entorno.md`):
 
@@ -250,7 +243,7 @@ Según `docker-compose.yml` (raíz del repo) y la wiki del equipo (`Guia-de-Setu
 
 > Nota: el archivo `docker-compose.yml` confirma de forma directa el uso de `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `MONGO_USER`, `MONGO_PASSWORD`, `MONGO_DB_NAME` y `VITE_API_URL`. El resto de las variables de esta lista proviene de la wiki pública del equipo (`Variables-de-Entorno.md`), que sí pudo consultarse en este ciclo (ver sección "Referencias"). Se recomienda validar esta lista contra el `backend/.env.example` real antes de distribuir el plan, ya que el entorno de trabajo usado para redactar este documento tenía bloqueado el acceso de lectura a archivos `.env*` por política de sandbox.
 
-## 18. Herramientas de Testing Requeridas
+### 11.3 Herramientas de Pruebas Requeridas
 
 - **pytest** + **pytest-django** + **pytest-asyncio** (asyncio_mode=auto, `backend/pytest.ini`) — motor de tests automatizados backend. Configurado con `addopts = --cov=apps --cov-report=term-missing:skip-covered`.
 - **pytest-cov** + **coverage.py** — cobertura de código backend. Genera `backend/.coverage` y `backend/coverage.xml` (excluidos de git).
@@ -269,7 +262,7 @@ Según `docker-compose.yml` (raíz del repo) y la wiki del equipo (`Guia-de-Setu
 - **Google Lighthouse 12** — puntaje de accesibilidad de las pantallas públicas.
 - **Google Sheets** — planilla de casos de prueba y Matriz de Trazabilidad (historial de cambios por integrante).
 
-## 19. Personal y Roles
+### 11.4 Personal
 
 Fuente: wiki del equipo, página Home, tabla "Equipo".
 
@@ -282,7 +275,16 @@ Fuente: wiki del equipo, página Home, tabla "Equipo".
 | Gisele Lavisse | @gigilvsarg | Dev Frontend, QA Tester |
 | Jimena Gallegillo | @Jimenna | Dev Frontend, QA Tester |
 
-## 20. Planificación y Organización
+### 11.5 Entrenamiento
+
+El equipo de QA necesita la siguiente nivelación técnica para esta ronda de testing:
+
+- Uso de Docker y Docker Compose (`docker compose up`, `docker compose ps` y `docker compose exec`) para levantar la infraestructura local.
+- Manejo básico de consola para correr `pytest` y leer la salida de los tests fallidos.
+- Uso de la plantilla `.github/ISSUE_TEMPLATE/bug_report.md` para unificar el criterio de reporte de incidencias.
+- Uso de Postman y Newman, de Playwright y de la auditoría de accesibilidad (`audit-accessibility.mjs`), según la sección 12.1.
+
+## 12. Planificación y Organización
 
 La actividad de V&V se ejecuta en paralelo al cierre del Sprint 3 (que finaliza el 20/09/2026), con entrega específica de esta actividad el 17/09/2026. El trabajo se organiza en cuatro frentes:
 
@@ -292,7 +294,7 @@ La actividad de V&V se ejecuta en paralelo al cierre del Sprint 3 (que finaliza 
 4. **Consolidación de hallazgos:** cualquier defecto nuevo se carga como GitHub Issue con la plantilla oficial, siguiendo el mismo formato que los issues #78-#85 ya cerrados y los reportes QA del Sprint 4 (`docs/qa/bug-reports.md`).
 5. **Automatización del Sprint 4:** ejecución de la colección de Postman con Newman (API), de la suite E2E con Playwright y de la auditoría de accesibilidad (axe-core y Lighthouse), con sus reportes como evidencia.
 
-## 21. Procedimientos de Prueba
+### 12.1 Procedimientos para las Pruebas
 
 1. Levantar el entorno con `docker compose up` (o confirmar que los contenedores ya estén corriendo con `docker compose ps`).
 2. Para regresión backend: correr `docker compose exec backend pytest -q` y confirmar que todos los tests pasan (615 recolectados al 16/10/2026). Si hay fallos, registrar el módulo afectado y abrir un Issue con la plantilla de bug report.
@@ -303,7 +305,7 @@ La actividad de V&V se ejecuta en paralelo al cierre del Sprint 3 (que finaliza 
 7. Para accesibilidad: `DEMO_USER_PASSWORD=<clave del seed> node frontend/scripts/audit-accessibility.mjs` (axe-core; genera `docs/qa/evidence/accesibilidad/axe-report.json`) y Lighthouse sobre `/login` y `/registro`.
 8. Actualizar este plan, la planilla y la Matriz de Trazabilidad con los resultados finales antes de cada fecha de entrega (17/09/2026 para el Sprint 3 y 16/10/2026 para el Sprint 4).
 
-## 22. Matriz de Responsabilidades (RACI)
+### 12.2 Matriz de Responsabilidades (RACI)
 
 | Actividad | Magali Bechis (QA/SM) | Gisele Lavisse (QA) | Jimena Gallegillo (QA) | Rodrigo Valdez (Ref. técnico) | Gianna Giavarini / Franco Arce (Dev) |
 |---|---|---|---|---|---|
@@ -316,7 +318,7 @@ La actividad de V&V se ejecuta en paralelo al cierre del Sprint 3 (que finaliza 
 
 Referencia: **R**=Responsable/Ejecutor, **A**=Aprobador, **C**=Consultado, **I**=Informado.
 
-## 23. Cronograma
+### 12.3 Cronograma
 
 | Fecha | Actividad |
 |---|---|
@@ -328,7 +330,12 @@ Referencia: **R**=Responsable/Ejecutor, **A**=Aprobador, **C**=Consultado, **I**
 | 14–15/10/2026 | Colección de Postman con Newman y suite E2E con Playwright (Page Object Model). |
 | 16/10/2026 | Reportes de Newman, auditoría de accesibilidad (axe-core y Lighthouse), evidencias, publicación de la Wiki Testing y entrega de la actividad de V&V del Sprint 4. |
 
-## 24. Premisas, Dependencias y Riesgos
+### 12.4 Premisas
+
+- El equipo asume que la suite de regresión continua (615 tests backend y 1060 casos frontend ejecutados en CI) es representativa del estado real y estable del código en la rama de integración `develop`.
+- El entorno de ejecución local containerizado refleja con fidelidad las condiciones del entorno productivo (Render/Vercel/Supabase).
+
+### 12.5 Dependencias y Riesgos
 
 **Riesgos identificados por el equipo** (fuente: documento de avance del proyecto):
 
@@ -350,12 +357,7 @@ Referencia: **R**=Responsable/Ejecutor, **A**=Aprobador, **C**=Consultado, **I**
 - Disponibilidad de servicios externos sandbox (MercadoPago, Google OAuth, Mailtrap) para las pruebas de integración.
 - Entorno Docker Compose funcional con los 3 servicios de datos (Postgres, Redis, Mongo) saludables antes de correr la suite.
 
-**Premisas y supuestos:**
-
-- El equipo asume que la suite de regresión continua (615 tests backend y 1060 casos frontend ejecutados en CI) es representativa del estado real y estable del código en la rama de integración `develop`.
-- El entorno de ejecución local containerizado refleja con fidelidad las condiciones del entorno productivo (Render/Vercel/Supabase).
-
-## 25. Referencias
+## 13. Referencias
 
 - `docs/architecture.md` — Arquitectura del sistema.
 - `docs/reports/rnf01-rnf06.md` — Reporte de captura y evaluación de RNF01 (latencia QR) y RNF06 (disponibilidad).
@@ -366,7 +368,7 @@ Referencia: **R**=Responsable/Ejecutor, **A**=Aprobador, **C**=Consultado, **I**
 - Product Backlog del proyecto (9 historias de usuario, US01-US09).
 - Suite de tests: `backend/apps/{access,classes,common,members,memberships,payments,reports,users}/tests/` y `frontend/src/**/__tests__/`.
 
-## 26. Glosario
+## 14. Glosario
 
 | Término | Significado |
 |---|---|
@@ -384,7 +386,7 @@ Referencia: **R**=Responsable/Ejecutor, **A**=Aprobador, **C**=Consultado, **I**
 | **Locust** | Herramienta de pruebas de carga usada para validar RNF01/RNF06. |
 | **Aprobado / Rechazado** | Estado de un caso de prueba tras su ejecución, según coincida o no el resultado obtenido con el esperado. |
 
-## 27. Flujos E2E de Sprint Close
+## Anexo A. Flujos E2E de Sprint Close
 
 Esta sección documenta tres flujos de extremo a extremo que un evaluador puede reproducir manualmente en un entorno local con `docker compose up` y `python manage.py seed_demo_users` ejecutado para disponer de usuarios demo (`Demo1234!`).
 
