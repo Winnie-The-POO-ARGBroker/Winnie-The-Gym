@@ -89,6 +89,7 @@ export default function SaludCard({
                 📄 {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
               </span>
               <button
+                aria-label="Quitar archivo"
                 type="button"
                 onClick={handleRemoveFile}
                 className="text-text-secondary hover:text-error-500"

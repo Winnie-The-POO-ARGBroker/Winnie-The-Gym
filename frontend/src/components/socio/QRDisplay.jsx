@@ -116,6 +116,7 @@ export default function QRDisplay({
         </div>
 
         <Button
+          aria-label="Actualizar código QR"
           variant="ghost"
           size="sm"
           onClick={onRefresh}

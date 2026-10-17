@@ -165,7 +165,7 @@ export default function Modal({
               <button
                 onClick={onClose}
                 className="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-bg-raised transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 outline-none"
-                aria-label="Close modal"
+                aria-label="Cerrar modal"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -224,7 +224,7 @@ export default function Modal({
             <button
               onClick={onClose}
               className="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-bg-raised transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 outline-none"
-              aria-label="Close modal"
+              aria-label="Cerrar modal"
             >
               <X className="w-5 h-5" />
             </button>

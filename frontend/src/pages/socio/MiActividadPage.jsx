@@ -146,6 +146,7 @@ export default function MiActividadPage() {
             </span>
             <div className="flex items-center gap-2">
               <button
+                aria-label="Página anterior"
                 type="button"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
@@ -154,6 +155,7 @@ export default function MiActividadPage() {
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <button
+                aria-label="Página siguiente"
                 type="button"
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}

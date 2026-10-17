@@ -255,6 +255,7 @@ export default function InstructorFormModal({
         {/* Activo toggle */}
         <div className="flex items-center gap-3">
           <button
+            aria-label="Instructor activo"
             type="button"
             role="switch"
             aria-checked={form.activo}

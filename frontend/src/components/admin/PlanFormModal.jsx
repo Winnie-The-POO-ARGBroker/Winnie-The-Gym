@@ -423,6 +423,7 @@ export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = nu
                   />
 
                   <button
+                    aria-label="Quitar beneficio"
                     type="button"
                     onClick={() => removeBenefit(idx)}
                     className="p-2 rounded-lg text-text-tertiary hover:text-error-500 hover:bg-bg-raised transition-colors"
@@ -473,6 +474,7 @@ export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = nu
                       className="flex-1 px-3 py-2 rounded-xl bg-bg-raised border border-subtle text-text-primary text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-bg-base focus:border-orange-500 transition-colors"
                     />
                     <button
+                      aria-label="Quitar fila de la matriz"
                       type="button"
                       onClick={() => removeMatrizRow(idx)}
                       className="p-2 rounded-lg text-text-tertiary hover:text-error-500 hover:bg-bg-raised transition-colors"
