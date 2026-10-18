@@ -135,14 +135,25 @@ class SocioMeSerializer(serializers.ModelSerializer):
     membresia_activa = serializers.SerializerMethodField()
     ultima_membresia = serializers.SerializerMethodField()
     asistencias_mes = serializers.SerializerMethodField()
+    # Medical certificate state (storage key certificado_medico_path stays private)
+    tiene_certificado = serializers.SerializerMethodField()
+    apto_estado = serializers.SerializerMethodField()
 
     class Meta:
         model = Socio
         fields = (
             'id', 'numero_socio', 'dni', 'nombre', 'apellido', 'estado',
             'membresia_activa', 'ultima_membresia',
-            'certificado_medico_url', 'asistencias_mes',
+            'certificado_medico_url', 'tiene_certificado', 'apto_estado',
+            'certificado_emitido_en', 'certificado_vence_en', 'asistencias_mes',
         )
+        read_only_fields = fields
+
+    def get_tiene_certificado(self, obj):
+        return bool(obj.certificado_medico_path or obj.certificado_medico_url)
+
+    def get_apto_estado(self, obj):
+        return obj.apto_estado
 
     def get_membresia_activa(self, obj):
         m = obj.membresias.filter(estado='activa').order_by('-fecha_fin').first()

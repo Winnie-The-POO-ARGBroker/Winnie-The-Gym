@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useQueryClient } from '@tanstack/react-query'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { AlertCircle, FileCheck, FileX, Lock, RefreshCw, Upload } from 'lucide-react'
+import { AlertCircle, Lock, RefreshCw } from 'lucide-react'
 import AppLayout from '../components/layout/AppLayout'
 import TopBar from '../components/layout/TopBar'
 import Avatar from '../components/ui/Avatar'
@@ -13,9 +13,9 @@ import Button from '../components/ui/Button'
 import Skeleton from '../components/ui/Skeleton'
 import ChangePasswordModal from '../components/auth/ChangePasswordModal'
 import useAuth from '../hooks/useAuth'
-import { useProfile, useUpdateProfile } from '../hooks/queries/useProfile'
-import api from '../services/api'
-import { ALLOWED_CERT_MIME_TYPES, MAX_CERT_SIZE_BYTES } from '../constants/files'
+import { useProfile, useUpdateProfile, PROFILE_KEY } from '../hooks/queries/useProfile'
+import { MEMBRESIAS_QUERY_KEYS } from '../hooks/queries/useMembresias'
+import CertificadoCard from '../components/socio/CertificadoCard'
 
 // ─── Schemas ──────────────────────────────────────────────────────────────────
 
@@ -216,8 +216,6 @@ function SocioProfileView({ profile, user, isChangePwdOpen, setIsChangePwdOpen, 
   const updateProfile = useUpdateProfile()
   const queryClient = useQueryClient()
   const { setAuth, accessToken, refreshToken } = useAuth()
-  const [uploadingCert, setUploadingCert] = useState(false)
-  const certInputRef = useRef(null)
 
   const {
     register,
@@ -271,48 +269,12 @@ function SocioProfileView({ profile, user, isChangePwdOpen, setIsChangePwdOpen, 
     }
   }
 
-  const handleCertUpload = async (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    // Client-side validation — no request if validation fails
-    if (!ALLOWED_CERT_MIME_TYPES.includes(file.type)) {
-      toast.error('Formato no permitido. Solo PDF o imagen.')
-      if (certInputRef.current) certInputRef.current.value = ''
-      return
-    }
-    if (file.size > MAX_CERT_SIZE_BYTES) {
-      toast.error('Archivo demasiado grande. Máximo 5 MB.')
-      if (certInputRef.current) certInputRef.current.value = ''
-      return
-    }
-    if (!profile?.id) {
-      toast.error('No se pudo identificar tu cuenta. Recargá la página.')
-      if (certInputRef.current) certInputRef.current.value = ''
-      return
-    }
-
-    setUploadingCert(true)
-    const formData = new FormData()
-    formData.append('archivo', file)
-    try {
-      await api.post(`/members/socios/${profile.id}/certificado-medico/`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
-      toast.success('Certificado subido correctamente.')
-      queryClient.invalidateQueries(['profile'])
-      queryClient.invalidateQueries(['membresias', 'me'])
-    } catch (err) {
-      const errData = err?.response?.data
-      const message =
-        errData && typeof errData === 'object'
-          ? Object.values(errData).flat().join(' ')
-          : (errData?.detail ?? 'No se pudo subir el certificado.')
-      toast.error(message)
-    } finally {
-      setUploadingCert(false)
-      if (certInputRef.current) certInputRef.current.value = ''
-    }
+  const handleCertUploadSuccess = () => {
+    toast.success('Certificado subido correctamente.')
+    queryClient.invalidateQueries({ queryKey: PROFILE_KEY })
+    queryClient.invalidateQueries({ queryKey: MEMBRESIAS_QUERY_KEYS.me })
+    // Socio dashboard reads /memberships/me/ under its own key
+    queryClient.invalidateQueries({ queryKey: ['socioMembership'] })
   }
 
   const displayName = profile
@@ -338,51 +300,13 @@ function SocioProfileView({ profile, user, isChangePwdOpen, setIsChangePwdOpen, 
       </div>
 
       {/* Certificado médico */}
-      <div className="rounded-2xl p-6 flex flex-col gap-4 bg-bg-surface border border-subtle">
-        <h3 className="text-base font-semibold text-text-primary">Certificado médico</h3>
-
-        {profile?.certificado_medico_url ? (
-          <div className="flex items-center justify-between p-3 rounded-xl bg-success-500/10 border border-success-500/20 text-success-500">
-            <div className="flex items-center gap-2 text-sm font-medium">
-              <FileCheck className="w-4 h-4" />
-              <span>Certificado cargado</span>
-            </div>
-            <a
-              href={profile.certificado_medico_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs font-semibold underline"
-            >
-              Ver archivo
-            </a>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2 p-3 rounded-xl bg-error-500/10 border border-error-500/20 text-error-500 text-sm font-medium">
-            <FileX className="w-4 h-4" />
-            <span>No hay certificado cargado</span>
-          </div>
-        )}
-
-        <input
-          ref={certInputRef}
-          type="file"
-          accept=".pdf,.jpg,.jpeg,.png"
-          className="hidden"
-          onChange={handleCertUpload}
-          data-testid="cert-file-input"
-        />
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          loading={uploadingCert}
-          onClick={() => certInputRef.current?.click()}
-          className="gap-2 w-fit"
-        >
-          <Upload className="w-4 h-4" />
-          {profile?.certificado_medico_url ? 'Reemplazar certificado' : 'Subir certificado'}
-        </Button>
-      </div>
+      <CertificadoCard
+        socioId={profile?.id}
+        aptoEstado={profile?.apto_estado ?? 'sin_apto'}
+        certificadoEmitidoEn={profile?.certificado_emitido_en ?? null}
+        certificadoVenceEn={profile?.certificado_vence_en ?? null}
+        onUploadSuccess={handleCertUploadSuccess}
+      />
 
       {/* Security */}
       <div className="rounded-2xl p-6 flex flex-col gap-4 bg-bg-surface border border-subtle">

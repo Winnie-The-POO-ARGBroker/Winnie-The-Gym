@@ -26,7 +26,9 @@ const mockMembershipActive = {
     estado: 'activa',
     fecha_fin: '2026-12-31',
   },
-  certificado_medico_url: 'https://cdn/cert.pdf',
+  certificado_medico_url: '',
+  tiene_certificado: true,
+  apto_estado: 'vigente',
   asistencias_mes: 8,
 }
 
@@ -168,11 +170,28 @@ describe('SocioDashboardView', () => {
   })
 
   // ── 10. Medical cert status displayed ────────────────────────────────────
-  it('shows "Vigente" for apto médico when certificado_medico_url is present', async () => {
+  it('shows "Vigente" for apto médico when apto_estado is vigente (legacy url empty)', async () => {
     renderWithProviders(<SocioDashboardView navigate={mockNavigate} />)
 
     await waitFor(() => {
       expect(screen.getByText('Vigente')).toBeInTheDocument()
+    })
+  })
+
+  it.each([
+    ['sin_apto', false, 'Faltante'],
+    ['vencido', true, 'Vencido'],
+    ['por_vencer', true, 'Por vencer'],
+  ])('shows the right apto label for %s', async (apto_estado, tiene_certificado, label) => {
+    setupMocks({
+      membership: {
+        data: { ...mockMembershipActive, apto_estado, tiene_certificado, certificado_vence_en: '2026-11-01' },
+      },
+    })
+    renderWithProviders(<SocioDashboardView navigate={mockNavigate} />)
+
+    await waitFor(() => {
+      expect(screen.getAllByText(label).length).toBeGreaterThan(0)
     })
   })
 })

@@ -40,7 +40,7 @@ export function AptoEstadoBadge({ aptoEstado }) {
 }
 
 /**
- * CertificadoCard — upload form (multipart PATCH) + signed URL viewer.
+ * CertificadoCard — upload form (multipart POST) + signed URL viewer.
  *
  * Props:
  *  - socioId:            number|string — the socio's ID (required for API calls)
@@ -88,13 +88,13 @@ export default function CertificadoCard({
 
     const formData = new FormData()
     formData.append('archivo', file)
-    formData.append('certificado_emitido_en', emitidoEn)
-    formData.append('certificado_vence_en', venceEn)
+    formData.append('emitido_en', emitidoEn)
+    formData.append('vence_en', venceEn)
 
     setUploading(true)
     setUploadError(null)
     try {
-      await api.patch(`/members/socios/${socioId}/certificado/`, formData, {
+      await api.post(`/members/socios/${socioId}/certificado-medico/`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
       setShowUploadForm(false)

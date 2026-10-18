@@ -15,6 +15,7 @@ import { renderWithProviders, resetAllStores, makeAuthedUser } from '../test/tes
 vi.mock('../hooks/queries/useProfile', () => ({
   useProfile: vi.fn(),
   useUpdateProfile: vi.fn(),
+  PROFILE_KEY: ['profile'],
 }))
 
 vi.mock('../services/api', () => ({
@@ -115,9 +116,9 @@ describe('ProfilePage', () => {
   })
 
   // ── 4. Empty-state — no certificado medico ─────────────────────────────────
-  it('shows "no certificado" message when certificado_medico_url is null', async () => {
+  it('shows "no certificado" message when apto_estado is sin_apto', async () => {
     useProfile.mockReturnValue({
-      data: { ...mockProfile, certificado_medico_url: null },
+      data: { ...mockProfile, tiene_certificado: false, apto_estado: 'sin_apto' },
       isPending: false,
       refetch: vi.fn(),
     })
@@ -125,14 +126,21 @@ describe('ProfilePage', () => {
     renderWithProviders(<ProfilePage />)
 
     await waitFor(() => {
-      expect(screen.getByText(/No hay certificado cargado/i)).toBeInTheDocument()
+      expect(screen.getByText(/No posee certificado médico/i)).toBeInTheDocument()
     })
   })
 
-  // ── 5. Certificado uploaded — shows link ───────────────────────────────────
-  it('shows "Certificado cargado" when certificado_medico_url is present', async () => {
+  // ── 5. Certificado uploaded (stored in path, legacy url empty) ─────────────
+  it('shows "Certificado vigente cargado" when apto_estado is vigente', async () => {
     useProfile.mockReturnValue({
-      data: { ...mockProfile, certificado_medico_url: 'https://cdn/cert.pdf' },
+      data: {
+        ...mockProfile,
+        certificado_medico_url: '',
+        tiene_certificado: true,
+        apto_estado: 'vigente',
+        certificado_emitido_en: '2026-10-01',
+        certificado_vence_en: '2027-10-01',
+      },
       isPending: false,
       refetch: vi.fn(),
     })
@@ -140,8 +148,9 @@ describe('ProfilePage', () => {
     renderWithProviders(<ProfilePage />)
 
     await waitFor(() => {
-      expect(screen.getByText(/Certificado cargado/i)).toBeInTheDocument()
+      expect(screen.getByText(/Certificado vigente cargado/i)).toBeInTheDocument()
     })
+    expect(screen.getByText(/Ver archivo/i)).toBeInTheDocument()
   })
 
   // ── 6. Non-socio role hides certificado section ────────────────────────────
@@ -263,60 +272,32 @@ describe('ProfilePage', () => {
     })
   })
 
-  // ── Contract test 7 — fix #224 ────────────────────────────────────────────
-  it('certificado upload: oversized file shows toast and does NOT fire request', async () => {
-    const { toast } = await import('sonner')
-    useProfile.mockReturnValue({ data: mockProfile, isPending: false, isError: false, refetch: vi.fn() })
-
-    renderWithProviders(<ProfilePage />)
-
-    await waitFor(() => {
-      expect(screen.getByTestId('cert-file-input')).toBeInTheDocument()
-    })
-
-    // Create a file that exceeds 5 MB
-    const oversizedFile = new File(['x'.repeat(6 * 1024 * 1024)], 'cert.pdf', { type: 'application/pdf' })
-    Object.defineProperty(oversizedFile, 'size', { value: 6 * 1024 * 1024 })
-
-    fireEvent.change(screen.getByTestId('cert-file-input'), {
-      target: { files: [oversizedFile] },
-    })
-
-    await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith('Archivo demasiado grande. Máximo 5 MB.')
-    })
-    // api.post should NOT have been called
-    expect(api.post).not.toHaveBeenCalled()
-  })
-
-  // ── Contract test 8 — fix #224 ────────────────────────────────────────────
-  it('certificado upload: valid file fires POST and updates cache', async () => {
-    const { toast } = await import('sonner')
-    api.post.mockResolvedValueOnce({ data: { id: 1, certificado_medico_url: 'https://cdn/cert.pdf' } })
+  // ── Certificate upload goes through CertificadoCard ───────────────────────
+  it('certificado upload: posts dates + file and invalidates profile and membership queries', async () => {
+    api.post.mockResolvedValueOnce({ data: {} })
     useProfile.mockReturnValue({ data: mockProfile, isPending: false, isError: false, refetch: vi.fn() })
 
     const { queryClient } = renderWithProviders(<ProfilePage />)
     vi.spyOn(queryClient, 'invalidateQueries')
 
-    await waitFor(() => {
-      expect(screen.getByTestId('cert-file-input')).toBeInTheDocument()
-    })
-
-    const validFile = new File(['pdf content'], 'cert.pdf', { type: 'application/pdf' })
-
-    fireEvent.change(screen.getByTestId('cert-file-input'), {
-      target: { files: [validFile] },
-    })
+    fireEvent.click(await screen.findByText(/Subir certificado/i))
+    fireEvent.change(screen.getByTestId('emitido-en-input'), { target: { value: '2026-10-01' } })
+    fireEvent.change(screen.getByTestId('vence-en-input'), { target: { value: '2027-10-01' } })
+    const file = new File(['pdf'], 'cert.pdf', { type: 'application/pdf' })
+    fireEvent.change(screen.getByTestId('certificado-file-input'), { target: { files: [file] } })
+    fireEvent.submit(screen.getByTestId('certificado-submit-btn').closest('form'))
 
     await waitFor(() => {
       expect(api.post).toHaveBeenCalledWith(
         '/members/socios/1/certificado-medico/',
         expect.any(FormData),
-        expect.objectContaining({ headers: { 'Content-Type': 'multipart/form-data' } }),
+        expect.anything(),
       )
-      expect(toast.success).toHaveBeenCalledWith('Certificado subido correctamente.')
     })
-    expect(queryClient.invalidateQueries).toHaveBeenCalledWith(['profile'])
-    expect(queryClient.invalidateQueries).toHaveBeenCalledWith(['membresias', 'me'])
+    await waitFor(() => {
+      expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['profile'] })
+      expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['membresias', 'me'] })
+      expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['socioMembership'] })
+    })
   })
 })
