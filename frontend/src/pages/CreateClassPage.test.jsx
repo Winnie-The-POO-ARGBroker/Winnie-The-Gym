@@ -18,6 +18,14 @@ vi.mock('../hooks/queries/useClases', () => ({
   useClasesList: vi.fn(),
 }))
 
+vi.mock('../hooks/queries/usePlanesAdmin', () => ({
+  usePlanesQuery: () => ({
+    data: [{ nombre: 'Básico', activo: true }, { nombre: 'Premium', activo: true }, { nombre: 'Gold', activo: true }],
+    isPending: false,
+    isError: false,
+  }),
+}))
+
 vi.mock('../hooks/queries/useCatalogo', () => ({
   useDisciplinas: vi.fn(() => ({ data: [], isPending: false })),
   useSalas: vi.fn(() => ({ data: [], isPending: false })),
