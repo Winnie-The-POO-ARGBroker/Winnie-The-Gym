@@ -163,6 +163,8 @@ envVarGroups:
         value: anymail.backends.mailtrap.EmailBackend
       - key: MAILTRAP_API_TOKEN
         sync: false
+      - key: MAILTRAP_SANDBOX_ID
+        sync: false
       - key: DEFAULT_FROM_EMAIL
         value: Winnie The Gym <hello@demomailtrap.co>
       - key: EMAIL_REPLY_TO

@@ -37,16 +37,23 @@ export function useStaffList(options = {}) {
 
 /**
  * Mutation hook: create a new staff user.
- * On success → invalidates list cache + shows success toast.
+ * On success → invalidates list cache + shows a success toast only if the email went out (warning otherwise).
  */
 export function useStaffCreate() {
   const qc = useQueryClient()
 
   return useMutation({
     mutationFn: (data) => createStaff(data),
-    onSuccess: () => {
+    onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: STAFF_QUERY_KEYS.all })
-      toast.success('Staff creado correctamente. Se envió un email de activación.')
+      // The backend reports whether the activation email was really handed to the mail backend
+      if (data?.email_enviado === true) {
+        toast.success('Staff creado correctamente. Se envió un email de activación.')
+      } else {
+        toast.warning(
+          'Staff creado, pero no se pudo enviar el email de activación. Usá «Reenviar activación» cuando el correo esté configurado.'
+        )
+      }
     },
     onError: (err) => {
       toast.error(extractErrorMessage(err, 'Error al crear staff'))
@@ -56,13 +63,19 @@ export function useStaffCreate() {
 
 /**
  * Mutation hook: resend activation email.
- * On success → shows success toast.
+ * On success → success toast only if the email went out (warning otherwise).
  */
 export function useResendActivation() {
   return useMutation({
     mutationFn: (id) => resendActivation(id),
-    onSuccess: () => {
-      toast.success('Email de activación reenviado.')
+    onSuccess: (data) => {
+      if (data?.email_enviado === true) {
+        toast.success('Email de activación reenviado.')
+      } else {
+        toast.warning(
+          'No se pudo reenviar el email de activación. Revisá la configuración del correo e intentá de nuevo.'
+        )
+      }
     },
     onError: (err) => {
       toast.error(extractErrorMessage(err, 'Error al reenviar activación'))

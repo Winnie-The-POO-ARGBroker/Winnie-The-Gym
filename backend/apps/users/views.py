@@ -11,6 +11,7 @@ from rest_framework import generics, permissions, status, views
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from apps.common.pagination import PageSizePagination
 from apps.members.models import Socio
 from .permissions import IsAdminOnly
 from .serializers import (
@@ -114,6 +115,7 @@ class StaffView(generics.ListCreateAPIView):
     POST — create a new staff user (admin-only). Sets unusable password and
            dispatches an activation email.
     """
+    pagination_class = PageSizePagination
     permission_classes = [IsAdminOnly]
 
     def get_serializer_class(self):
@@ -126,9 +128,13 @@ class StaffView(generics.ListCreateAPIView):
             rol__in=['administrador', 'recepcionista']
         ).prefetch_related('socialaccount_set').order_by('email')
 
-    def perform_create(self, serializer):
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
         user = serializer.save()
-        send_activation_email(user)
+        email_enviado = bool(send_activation_email(user))
+        data = {**serializer.data, 'email_enviado': email_enviado}
+        return Response(data, status=status.HTTP_201_CREATED)
 
 
 class StaffResendActivationView(views.APIView):
@@ -140,7 +146,10 @@ class StaffResendActivationView(views.APIView):
 
     def post(self, request, pk=None):
         user = get_object_or_404(User, pk=pk, rol__in=['administrador', 'recepcionista'])
-        send_activation_email(user)
-        return Response({'detail': 'Activation email re-sent.'}, status=status.HTTP_200_OK)
+        email_enviado = bool(send_activation_email(user))
+        return Response(
+            {'detail': 'Activation email re-sent.', 'email_enviado': email_enviado},
+            status=status.HTTP_200_OK,
+        )
 
 

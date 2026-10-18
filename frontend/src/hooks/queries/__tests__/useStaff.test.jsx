@@ -13,6 +13,7 @@ vi.mock('sonner', () => ({
   toast: {
     success: vi.fn(),
     error: vi.fn(),
+    warning: vi.fn(),
   },
 }))
 
@@ -67,7 +68,7 @@ describe('useStaffCreate', () => {
 
   it('calls createStaff and shows success toast on success', async () => {
     const newStaff = { email: 'new@winnie.local', rol: 'recepcionista' }
-    createStaff.mockResolvedValueOnce({ id: 3, ...newStaff })
+    createStaff.mockResolvedValueOnce({ id: 3, ...newStaff, email_enviado: true })
     getStaffList.mockResolvedValue([])
 
     const { result } = renderHook(() => useStaffCreate(), { wrapper })
@@ -79,6 +80,24 @@ describe('useStaffCreate', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(toast.success).toHaveBeenCalledWith(
       'Staff creado correctamente. Se envió un email de activación.'
+    )
+  })
+
+  it('shows a warning (not the success text) when the activation email was not sent', async () => {
+    const newStaff = { email: 'new@winnie.local', rol: 'recepcionista' }
+    createStaff.mockResolvedValueOnce({ id: 3, ...newStaff, email_enviado: false })
+    getStaffList.mockResolvedValue([])
+
+    const { result } = renderHook(() => useStaffCreate(), { wrapper })
+
+    await act(async () => {
+      result.current.mutate(newStaff)
+    })
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(toast.success).not.toHaveBeenCalled()
+    expect(toast.warning).toHaveBeenCalledWith(
+      'Staff creado, pero no se pudo enviar el email de activación. Usá «Reenviar activación» cuando el correo esté configurado.'
     )
   })
 
@@ -132,7 +151,7 @@ describe('useResendActivation', () => {
   })
 
   it('calls resendActivation and shows success toast', async () => {
-    resendActivation.mockResolvedValueOnce({ detail: 'Email sent.' })
+    resendActivation.mockResolvedValueOnce({ detail: 'Email sent.', email_enviado: true })
 
     const { result } = renderHook(() => useResendActivation(), { wrapper })
 
@@ -143,6 +162,22 @@ describe('useResendActivation', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(toast.success).toHaveBeenCalledWith('Email de activación reenviado.')
     expect(resendActivation).toHaveBeenCalledWith(1)
+  })
+
+  it('shows a warning instead of success when the resend did not go out', async () => {
+    resendActivation.mockResolvedValueOnce({ detail: 'Email sent.', email_enviado: false })
+
+    const { result } = renderHook(() => useResendActivation(), { wrapper })
+
+    await act(async () => {
+      result.current.mutate(1)
+    })
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(toast.success).not.toHaveBeenCalled()
+    expect(toast.warning).toHaveBeenCalledWith(
+      'No se pudo reenviar el email de activación. Revisá la configuración del correo e intentá de nuevo.'
+    )
   })
 
   it('shows error toast on failure', async () => {

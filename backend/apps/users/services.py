@@ -37,7 +37,7 @@ def _make_activation_url_generator(frontend_url: str):
     return _generator
 
 
-def send_activation_email(user) -> None:
+def send_activation_email(user) -> bool:
     """Send an activation (set-password) email to a newly created user.
 
     Uses AllAuthPasswordResetForm (dj-rest-auth default when allauth is installed)
@@ -46,10 +46,19 @@ def send_activation_email(user) -> None:
 
     Email delivery failures are caught and logged rather than bubbled up, to
     keep the user-creation flow non-fatal when the email backend is unreachable.
+
+    Returns True only when the email was handed to the backend without raising;
+    False when it was skipped or failed, so callers can tell the UI the truth.
     """
     if not user.email or not user.pk:
         logger.warning('send_activation_email: user has no email or pk, skipping')
-        return
+        return False
+
+    # allauth's reset form only mails active users and reports a valid form with zero
+    # recipients otherwise, which would read as "sent".
+    if not user.is_active:
+        logger.warning('send_activation_email: user %s is inactive, skipping', user.email)
+        return False
 
     try:
         from dj_rest_auth.forms import AllAuthPasswordResetForm
@@ -61,7 +70,8 @@ def send_activation_email(user) -> None:
                 request=None,
                 url_generator=_make_activation_url_generator(frontend_url),
             )
-        else:
-            logger.warning('send_activation_email: form invalid for %s', user.email)
+            return True
+        logger.warning('send_activation_email: form invalid for %s', user.email)
     except Exception as exc:
         logger.warning('send_activation_email failed for %s: %s', user.email, exc)
+    return False
