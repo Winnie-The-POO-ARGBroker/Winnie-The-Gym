@@ -23,6 +23,16 @@ export const ACCESS_DENIAL_REASONS = {
   AFORO_COMPLETO: 'El gimnasio ha alcanzado su aforo máximo',
   FUERA_DE_HORARIO: 'Fuera del horario de atención',
 
+  // Codes the backend sends that the catalog was missing (backend/apps/access/models.py)
+  INVALID_SIGNATURE: 'Código QR con firma inválida',
+  INVALID_TOKEN: 'Código QR malformado',
+  NO_MEMBERSHIP: 'El socio no tiene membresía registrada',
+  AFORO_FULL: 'Aforo completo',
+  NOT_INSIDE: 'El socio no registra una entrada hoy',
+  PLAN_FUERA_DE_HORARIO: 'Su plan no permite el acceso en este horario',
+  PLAN_DIA_NO_HABILITADO: 'Su plan no permite el acceso este día',
+  GYM_CERRADO: 'El gimnasio está cerrado en esta fecha',
+
   // Infrastructure
   NETWORK_ERROR: 'No hay conexión con el servidor',
   ERROR_SERVIDOR: 'Error interno del servidor',
