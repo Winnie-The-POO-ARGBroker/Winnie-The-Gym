@@ -159,9 +159,11 @@ export default function CreateClassPage() {
       cancelacion_horas: Number(formData.cancelacion_horas),
     }
 
-    // Remove read-only fields from payload
+    // Remove read-only fields from payload. The API rejects `estado` on create and edit
+    // (it changes only by cancelling or reactivating), and editing sends the loaded class.
     delete payload.cupos_reservados
     delete payload.id
+    delete payload.estado
 
     const onSuccess = () => navigate('/admin/clases')
 

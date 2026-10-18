@@ -58,4 +58,22 @@ describe('CreateClassPage en modo edición', () => {
     await waitFor(() => expect(mockUpdateMutate).toHaveBeenCalled())
     expect(toast.error).not.toHaveBeenCalled()
   })
+
+  it('no manda el estado al guardar: el backend lo rechaza (se cambia cancelando o reactivando)', async () => {
+    useClaseDetail.mockReturnValue({
+      data: {
+        id: 5, nombre: 'Clase vieja', dia: 'lunes', hora: '09:00', instructor: 'Carlos R.',
+        dias_recurrencia: ['L'], cupo_maximo: 20, estado: 'activa',
+      },
+      isLoading: false,
+    })
+    renderWithProviders(<CreateClassPage />)
+    await waitFor(() => expect(screen.getByDisplayValue('Clase vieja')).toBeInTheDocument())
+
+    fireEvent.click(screen.getAllByText(/Guardar|Publicar/i)[0])
+
+    await waitFor(() => expect(mockUpdateMutate).toHaveBeenCalled())
+    expect(mockUpdateMutate.mock.calls[0][0].data).not.toHaveProperty('estado')
+  })
 })
+
