@@ -140,3 +140,27 @@ def test_caja_totales_por_medio_correctos():
 
     assert data['total_cobros'] == 900.0
     assert data['diferencia'] is None  # deferred
+
+
+# ---------------------------------------------------------------------------
+# Annulled cobros: gross cobros stay, annulment subtracts once (neto = 0)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.django_db
+def test_caja_cobro_anulado_el_mismo_dia_no_se_descuenta_dos_veces():
+    """A cobro annulled the same day stays in the gross total; neto nets to zero."""
+    from apps.payments.services import anular_pago
+
+    admin = _make_admin()
+    socio = _make_active_socio()
+    pago = _make_cobro(admin, socio, Pago.MedioManual.EFECTIVO, '1.00')
+    anular_pago(pago, admin, 'Prueba')
+
+    from django.utils import timezone
+    response = _auth_client(admin).get(CAJA_URL, {'fecha': timezone.localdate().isoformat()})
+
+    data = response.json()
+    assert data['cobros_por_medio']['efectivo'] == {'count': 1, 'total': 1.0}
+    assert data['total_cobros'] == 1.0
+    assert data['total_anulaciones'] == 1.0
+    assert data['total_cobros'] - data['total_anulaciones'] == 0

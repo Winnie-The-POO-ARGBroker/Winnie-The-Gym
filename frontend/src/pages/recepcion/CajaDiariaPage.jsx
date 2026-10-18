@@ -35,6 +35,13 @@ function formatARS(value) {
   return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value ?? 0)
 }
 
+function operadorNombre(s) {
+  const nombre = `${s.first_name ?? ''} ${s.last_name ?? ''}`.trim()
+  const detalle = s.username || s.email
+  if (!nombre) return detalle || `#${s.id}`
+  return detalle ? `${nombre} (${detalle})` : nombre
+}
+
 function buildCsvRows(data) {
   const rows = [['Medio', 'Cantidad', 'Total']]
   MEDIOS.forEach(({ key, label }) => {
@@ -120,7 +127,7 @@ export default function CajaDiariaPage() {
   const handleExportCSV = () => {
     const csv = buildCsvRows(cajaData)
     const operadorLabel = operadorId
-      ? staffList.find((s) => String(s.id) === String(operadorId))?.username ?? operadorId
+      ? staffList.find((s) => String(s.id) === String(operadorId))?.username || operadorId
       : 'todos'
     downloadCSV(csv, `caja_${fecha}_${operadorLabel}.csv`)
   }
@@ -165,7 +172,7 @@ export default function CajaDiariaPage() {
                   <option value="">Todos los operadores</option>
                   {staffList.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.first_name} {s.last_name} ({s.username})
+                      {operadorNombre(s)}
                     </option>
                   ))}
                 </select>

@@ -123,4 +123,17 @@ describe('CajaDiariaPage', () => {
     expect(await screen.findByTestId('caja-operador-select')).toBeInTheDocument()
     expect(screen.queryByText(/algo salió mal/i)).not.toBeInTheDocument()
   })
+
+  it('no muestra paréntesis vacíos cuando el operador no tiene username (login con Google)', async () => {
+    currentUser = { rol: 'administrador', id: 99 }
+    vi.mocked(useStaffList).mockReturnValue({
+      data: { count: 1, results: [{ id: 2, username: '', email: 'ana@gym.com', first_name: 'Ana', last_name: 'Paz' }] },
+    })
+
+    renderWithProviders()
+
+    const select = await screen.findByTestId('caja-operador-select')
+    expect(select).toHaveTextContent('Ana Paz')
+    expect(select).not.toHaveTextContent('()')
+  })
 })
