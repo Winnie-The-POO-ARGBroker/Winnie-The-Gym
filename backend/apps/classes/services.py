@@ -197,6 +197,23 @@ def reactivar_clase(clase):
 # Socio enrollment
 # ---------------------------------------------------------------------------
 
+def _plan_habilitado(plan, planes_habilitados):
+    """Whether `plan` is in a class's `planes_habilitados`.
+
+    The UI, the API and the demo catalog store plan NAMES; older data may hold plan
+    ids. Names are compared ignoring case and surrounding spaces. Comparing only the
+    id rejected every member of every class that listed any plan.
+    """
+    nombre = (plan.nombre or '').strip().casefold()
+    for habilitado in planes_habilitados:
+        if isinstance(habilitado, int) and not isinstance(habilitado, bool):
+            if habilitado == plan.pk:
+                return True
+        elif str(habilitado).strip().casefold() == nombre:
+            return True
+    return False
+
+
 def inscribir_socio(clase, socio, *, forzar=False):
     """Enroll a socio in a clase, placing them on the wait-list when cupo is full.
 
@@ -274,11 +291,10 @@ def inscribir_socio(clase, socio, *, forzar=False):
     # 4. Plan filter — empty list means all plans allowed
     planes_habilitados = clase.planes_habilitados or []
     if planes_habilitados:
-        plan_id = membresia.plan_id
-        if plan_id not in planes_habilitados:
-            plan_nombre = membresia.plan.nombre
+        plan = membresia.plan
+        if not _plan_habilitado(plan, planes_habilitados):
             raise ValidationError({
-                'detail': f'Tu plan ({plan_nombre}) no incluye esta clase.',
+                'detail': f'Tu plan ({plan.nombre}) no incluye esta clase.',
             })
 
     # 5. Duplicate check + concurrency-safe cupo enforcement
