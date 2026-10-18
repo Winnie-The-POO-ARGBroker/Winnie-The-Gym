@@ -10,14 +10,22 @@ import { useCrearPreferenciaMutation } from '../../hooks/queries/usePagos'
 import { useSocioMembresiaMe } from '../../hooks/queries/useMembresias'
 import useAuth from '../../hooks/useAuth'
 import EstadoBanner from '../../components/socio/EstadoBanner'
+import { normalizarBeneficios } from '../../utils/beneficios'
 
 // Íconos de beneficios por plan (genérico si el backend no los tiene)
 const BENEFIT_ICONS = [Zap, CheckCircle, ShieldCheck]
 
 function PlanCard({ plan, onPagar, loading, preselected = false }) {
-  const beneficios = plan.descripcion
-    ? plan.descripcion.split('\n').filter(Boolean)
-    : []
+  // The plan's benefits come from `beneficios` (list of strings); older plans only
+  // have a multi-line `descripcion`.
+  const fromBeneficios = normalizarBeneficios(plan.beneficios)
+    .filter((b) => b.incluido)
+    .map((b) => b.texto)
+  const beneficios = fromBeneficios.length > 0
+    ? fromBeneficios
+    : plan.descripcion
+      ? plan.descripcion.split('\n').filter(Boolean)
+      : []
 
   const highlighted = plan.es_popular || preselected
 

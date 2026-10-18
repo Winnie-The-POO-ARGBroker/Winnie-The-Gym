@@ -3,6 +3,7 @@ import { Plus, Trash2, Check, Sparkles, GripVertical, Clock } from 'lucide-react
 import { z } from 'zod'
 import Modal from '../ui/Modal'
 import Button from '../ui/Button'
+import { normalizarBeneficios } from '../../utils/beneficios'
 
 const DIAS_SEMANA = [
   { key: 'lun', label: 'Lun' },
@@ -69,6 +70,8 @@ export default function PlanFormModal({ isOpen, onClose, onSave, planToEdit = nu
         ...planToEdit,
         nombre: isDuplicate ? `${planToEdit.nombre} (Copia)` : planToEdit.nombre,
         id: isDuplicate ? undefined : planToEdit.id,
+        // The API returns plain strings; the form edits { texto, incluido } rows.
+        beneficios: normalizarBeneficios(planToEdit.beneficios),
         matriz_comparativa: planToEdit.matriz_comparativa ?? {},
       }
       setFormData(data)

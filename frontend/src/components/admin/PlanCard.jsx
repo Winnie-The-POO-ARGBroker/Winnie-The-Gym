@@ -1,9 +1,10 @@
 import { Edit2, Archive, Trash2, Check, X, Sparkles } from 'lucide-react'
+import { normalizarBeneficios } from '../../utils/beneficios'
 
 export default function PlanCard({ plan, onEdit, onArchive, onDelete, onDuplicate: _onDuplicate, readOnly = false }) {
   const isPopular = plan.es_popular
-  // A benefit without text rendered as an empty ✗ circle; drop those.
-  const beneficios = (plan.beneficios ?? []).filter((b) => b?.texto?.trim())
+  // The API returns plain strings; blank entries used to render as empty ✗ circles.
+  const beneficios = normalizarBeneficios(plan.beneficios)
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('es-AR', {

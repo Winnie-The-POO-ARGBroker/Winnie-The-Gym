@@ -160,6 +160,20 @@ describe('CheckoutPage', () => {
     expect(screen.getByText('Clases grupales')).toBeInTheDocument()
   })
 
+  it('renders the benefits of plan.beneficios (a list of strings) when there is no descripcion', () => {
+    setupMocks({
+      planes: [{
+        id: 5, nombre: 'Premium', precio: '26000', duracion_dias: 30, activo: true, es_popular: true,
+        descripcion: null, beneficios: ['16 clases grupales por mes', 'Credencial digital con QR'],
+      }],
+    })
+
+    render(<CheckoutPage />)
+
+    expect(screen.getByText('16 clases grupales por mes')).toBeInTheDocument()
+    expect(screen.getByText('Credencial digital con QR')).toBeInTheDocument()
+  })
+
   // ── 8. Plan with null descripcion renders without crash ───────────────────
   it('renders plan with null descripcion without crashing (no benefits shown)', () => {
     setupMocks({

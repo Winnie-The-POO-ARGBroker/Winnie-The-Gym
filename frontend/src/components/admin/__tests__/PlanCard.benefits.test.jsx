@@ -35,4 +35,14 @@ describe('PlanCard > benefits', () => {
 
     expect(screen.getByText('Clases de yoga')).toBeInTheDocument()
   })
+
+  it('shows the plain-string benefits the API returns', () => {
+    const plan = { ...basePlan, beneficios: ['Acceso a todas las clases', 'Credencial digital con QR'] }
+
+    render(<PlanCard plan={plan} onEdit={() => {}} />)
+
+    expect(screen.getAllByRole('listitem')).toHaveLength(2)
+    expect(screen.getByText('Credencial digital con QR')).toBeInTheDocument()
+    expect(screen.queryByText(/sin beneficios/i)).not.toBeInTheDocument()
+  })
 })
