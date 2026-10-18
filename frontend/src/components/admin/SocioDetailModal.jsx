@@ -34,6 +34,8 @@ import { pagoEstadoVariant, pagoEstadoLabel } from '../../constants/pagos'
 import { membresiaEstadoVariant, membresiaEstadoLabel } from '../../constants/membresias'
 import { ACCESS_DENIAL_REASONS } from '../../constants/accessDenialReasons'
 import { descargarComprobante } from '../../services/pagosService'
+import { parseFecha } from '../../utils/formatDate'
+
 
 const TABS = [
   { key: 'datos', label: 'Datos' },
@@ -46,7 +48,7 @@ const ACTIVIDAD_PAGE_SIZE = 10
 
 function formatDate(str) {
   if (!str) return '—'
-  return new Date(str).toLocaleDateString('es-AR', {
+  return parseFecha(str).toLocaleDateString('es-AR', {
     day: '2-digit',
     month: 'long',
     year: 'numeric',

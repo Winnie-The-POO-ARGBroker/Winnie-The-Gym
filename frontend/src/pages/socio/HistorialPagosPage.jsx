@@ -8,10 +8,12 @@ import EmptyState from '../../components/ui/EmptyState'
 import { useMisPagos } from '../../hooks/queries/useMisPagos'
 import { pagoEstadoVariant, pagoEstadoLabel } from '../../constants/pagos'
 import { descargarComprobante } from '../../services/pagosService'
+import { parseFecha } from '../../utils/formatDate'
+
 
 function formatDate(dateStr) {
   if (!dateStr) return '—'
-  return new Date(dateStr).toLocaleDateString('es-AR', {
+  return parseFecha(dateStr).toLocaleDateString('es-AR', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',

@@ -8,6 +8,35 @@ export function formatISO(date) {
   return new Date(date).toISOString().slice(0, 10)
 }
 
+const APP_TIME_ZONE = 'America/Argentina/Buenos_Aires'
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/
+
+/**
+ * Today's calendar day in Argentina as YYYY-MM-DD.
+ * `toISOString()` would answer with the next UTC day after 21:00 ART.
+ *
+ * @param {Date} [now]
+ * @returns {string}
+ */
+export function hoyISO(now = new Date()) {
+  return now.toLocaleDateString('en-CA', { timeZone: APP_TIME_ZONE })
+}
+
+/**
+ * Parse an API date. A date-only value ("2026-10-17") is a calendar day, not an
+ * instant: `new Date('2026-10-17')` is UTC midnight and renders as the 16th west
+ * of Greenwich. Anchor it at local noon so it keeps its day in any timezone.
+ *
+ * @param {string|Date} value
+ * @returns {Date}
+ */
+export function parseFecha(value) {
+  if (typeof value === 'string' && DATE_ONLY.test(value)) {
+    return new Date(`${value}T12:00:00`)
+  }
+  return new Date(value)
+}
+
 /**
  * Format an ISO date string as a localized date.
  *
@@ -17,7 +46,7 @@ export function formatISO(date) {
  */
 export function formatFecha(isoString, locale = 'es-AR') {
   if (!isoString) return '—'
-  return new Date(isoString).toLocaleDateString(locale, {
+  return parseFecha(isoString).toLocaleDateString(locale, {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',

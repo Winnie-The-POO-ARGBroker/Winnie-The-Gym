@@ -6,6 +6,8 @@ import Skeleton from '../../components/ui/Skeleton'
 import EmptyState from '../../components/ui/EmptyState'
 import { useMiActividad } from '../../hooks/queries/useAccessLogs'
 import { ACCESS_DENIAL_REASONS } from '../../constants/accessDenialReasons'
+import { parseFecha } from '../../utils/formatDate'
+
 
 const PAGE_SIZE = 15
 
@@ -22,7 +24,7 @@ function formatDateTime(str) {
 
 function formatDate(str) {
   if (!str) return '—'
-  return new Date(str).toLocaleDateString('es-AR', {
+  return parseFecha(str).toLocaleDateString('es-AR', {
     day: '2-digit',
     month: 'long',
     year: 'numeric',
