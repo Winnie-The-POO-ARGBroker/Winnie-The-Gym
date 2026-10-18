@@ -38,6 +38,13 @@ function isCacheable(response) {
   return Boolean(response) && response.status === 200 && response.type === 'basic'
 }
 
+// respondWith() needs a Response: when the network fails and nothing is cached,
+// answer with a network error instead of undefined ("Failed to convert value to
+// 'Response'").
+async function fromCacheOrError(key) {
+  return (await caches.match(key)) || Response.error()
+}
+
 function remember(key, response) {
   if (!isCacheable(response)) return
   const copy = response.clone()
@@ -62,7 +69,7 @@ self.addEventListener('fetch', (event) => {
           remember(SHELL_URL, response)
           return response
         })
-        .catch(() => caches.match(SHELL_URL))
+        .catch(() => fromCacheOrError(SHELL_URL))
     )
     return
   }
@@ -72,10 +79,12 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       caches.match(request).then((cached) => {
         if (cached) return cached
-        return fetch(request).then((response) => {
-          remember(request, response)
-          return response
-        })
+        return fetch(request)
+          .then((response) => {
+            remember(request, response)
+            return response
+          })
+          .catch(() => Response.error())
       })
     )
     return
@@ -90,6 +99,6 @@ self.addEventListener('fetch', (event) => {
         }
         return response
       })
-      .catch(() => caches.match(request))
+      .catch(() => fromCacheOrError(request))
   )
 })
