@@ -12,7 +12,9 @@ import magic
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.db import transaction
-from rest_framework.exceptions import ValidationError
+from botocore.exceptions import BotoCoreError, ClientError
+from rest_framework import status
+from rest_framework.exceptions import APIException, ValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -203,6 +205,17 @@ def _get_cert_storage():
     return default_storage
 
 
+class AlmacenamientoNoDisponible(APIException):
+    """The file storage (Supabase) rejected or could not complete the request."""
+
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    default_detail = (
+        'No se pudo guardar el archivo: el almacenamiento no está disponible. '
+        'Intentá de nuevo en unos minutos.'
+    )
+    default_code = 'storage_unavailable'
+
+
 def guardar_certificado_medico(socio, archivo, emitido_en=None, vence_en=None, request=None):
     """Persist a medical certificate for a socio (#227 + #228).
 
@@ -235,7 +248,14 @@ def guardar_certificado_medico(socio, archivo, emitido_en=None, vence_en=None, r
             )
 
     # Save the new file
-    stored_key = storage.save(object_key, archivo)
+    try:
+        stored_key = storage.save(object_key, archivo)
+    except (ClientError, BotoCoreError) as exc:
+        logger.error(
+            'guardar_certificado_medico: storage rejected the upload for socio %s (bucket missing or bad credentials?): %s',
+            socio.pk, exc,
+        )
+        raise AlmacenamientoNoDisponible() from exc
 
     update_fields = ['certificado_medico_path', 'certificado_medico_url', 'updated_at']
     socio.certificado_medico_path = stored_key

@@ -99,10 +99,10 @@ def generate_sesiones_rolling_window():
     Returns a summary dict with ``clases_procesadas`` and ``sesiones_creadas``.
     """
     from apps.classes.models import Clase  # noqa: PLC0415
-    from apps.classes.services import generar_sesiones  # noqa: PLC0415
+    from apps.classes.services import SESIONES_VENTANA_DIAS, generar_sesiones  # noqa: PLC0415
 
     today = timezone.localdate()
-    hasta = today + datetime.timedelta(days=60)
+    hasta = today + datetime.timedelta(days=SESIONES_VENTANA_DIAS)
 
     clases_activas = Clase.objects.filter(estado=Clase.Estado.ACTIVA).only(
         'id', 'dia', 'dias_recurrencia', 'hora', 'cupo_maximo',

@@ -255,6 +255,12 @@ Actualizar `ALLOWED_HOSTS` en el env group con el subdominio real que Render asi
 - Mailtrap Sending con dominio `demomailtrap.co` **solo entrega al owner** de la cuenta (`fodrii2001@gmail.com`)
 - Para entregar a cualquier email hay que verificar un dominio propio (issue #63 abierta)
 
+### Catálogo inicial (clases, planes, salas, instructores)
+- Una base nueva no trae clases ni planes reales, y la shell de Render es de pago. `python manage.py seed_demo_catalog` carga disciplinas, salas, instructores, 3 planes (Básico, Premium, Gold) y 14 clases semanales con sesiones hasta el 31/12 (`--hasta YYYY-MM-DD` para cambiarlo).
+- Es idempotente, no crea usuarios y no toca ni borra lo que ya existe (por ejemplo los planes de prueba).
+- En Render: cargar `SEED_DEMO_CATALOG=1` en el grupo `winnie-shared` y redeployar; el `entrypoint.sh` lo ejecuta al arrancar. Una vez cargado se puede borrar la variable, y el job diario del beat mantiene las sesiones 60 días hacia adelante.
+- Al crear o editar una clase desde el panel, sus sesiones se generan en el momento (antes recién aparecían cuando corría el job).
+
 ### Health checks
 - Render usa `/healthz` (solo responde 200, sin tocar Redis, Mongo, Celery ni Postgres) porque consulta cada pocos segundos y cada comando de Redis cuenta contra la cuota gratuita de Upstash.
 - `/api/health/` hace el chequeo completo de dependencias. Usarlo desde un monitor externo de baja frecuencia (UptimeRobot cada 5 minutos) o a mano.

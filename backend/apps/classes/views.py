@@ -30,6 +30,7 @@ from .services import (
     cancelar_sesion,
     editar_serie,
     generar_sesiones,
+    generar_sesiones_ventana,
     inscribir_socio,
     promover_de_espera,
     reactivar_clase,
@@ -96,6 +97,18 @@ class ClaseViewSet(viewsets.ModelViewSet):
         if self.action == 'retrieve':
             return ClaseDetailSerializer
         return ClaseSerializer
+
+    def perform_create(self, serializer):
+        clase = serializer.save()
+        # Show the new class in the calendar right away instead of waiting for the
+        # daily job.
+        generar_sesiones_ventana(clase)
+
+    def perform_update(self, serializer):
+        clase = serializer.save()
+        # Idempotent: adds sessions for days that were just enabled.
+        if clase.estado == Clase.Estado.ACTIVA:
+            generar_sesiones_ventana(clase)
 
     def partial_update(self, request, *args, **kwargs):
         """PATCH — reject estado field with a clear 400 message."""
