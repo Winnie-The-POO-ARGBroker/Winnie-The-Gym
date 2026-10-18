@@ -11,6 +11,7 @@ import { useSocioMembresiaMe } from '../../hooks/queries/useMembresias'
 import useAuth from '../../hooks/useAuth'
 import EstadoBanner from '../../components/socio/EstadoBanner'
 import { normalizarBeneficios } from '../../utils/beneficios'
+import { parseFecha } from '../../utils/formatDate'
 
 // Íconos de beneficios por plan (genérico si el backend no los tiene)
 const BENEFIT_ICONS = [Zap, CheckCircle, ShieldCheck]
@@ -141,7 +142,7 @@ export default function CheckoutPage() {
             {membresiaActiva.fecha_fin && (
               <p className="text-xs text-text-secondary">
                 Vence el{' '}
-                {new Date(membresiaActiva.fecha_fin).toLocaleDateString('es-AR', {
+                {parseFecha(membresiaActiva.fecha_fin).toLocaleDateString('es-AR', {
                   day: '2-digit',
                   month: 'long',
                   year: 'numeric',
