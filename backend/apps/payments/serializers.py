@@ -67,6 +67,11 @@ class CrearPreferenciaSerializer(serializers.Serializer):
     plan_id = serializers.IntegerField()
 
 
+class ConfirmarPagoSerializer(serializers.Serializer):
+    """MercadoPago payment id the socio was returned with (numeric; also guards the SDK URL)."""
+    payment_id = serializers.RegexField(r'^\d{1,32}$')
+
+
 class CrearPreferenciaResponseSerializer(serializers.Serializer):
     pago_id = serializers.IntegerField()
     preference_id = serializers.CharField()

@@ -25,6 +25,18 @@ export function resolverInitPoint(preferencia) {
 }
 
 /**
+ * Pide al backend confirmar un pago contra MercadoPago al volver del checkout.
+ * No depende del webhook: el backend consulta a MP, activa la membresía si fue
+ * aprobado y devuelve el estado actual (idempotente).
+ * @param {string|number} paymentId  `payment_id` que MP agrega a la URL de retorno
+ * @returns {{ id, estado, mp_payment_id, paid_at }}
+ */
+export async function confirmarPago(paymentId) {
+  const res = await api.post('/payments/pagos/confirmar/', { payment_id: String(paymentId) })
+  return res.data
+}
+
+/**
  * Registra un cobro manual realizado por el recepcionista.
  * Activa la membresía del socio en el acto.
  * @param {{ socio_id, plan_id, monto, observacion? }} payload

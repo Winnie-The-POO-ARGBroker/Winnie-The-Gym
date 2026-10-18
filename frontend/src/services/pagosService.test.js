@@ -13,7 +13,7 @@ vi.mock('./api', () => ({
   },
 }))
 
-import { resolverInitPoint, crearPreferencia, cobrarManual, listarPagos } from './pagosService'
+import { resolverInitPoint, crearPreferencia, cobrarManual, listarPagos, confirmarPago } from './pagosService'
 import api from './api'
 
 describe('pagosService', () => {
@@ -73,5 +73,14 @@ describe('pagosService', () => {
     api.get.mockResolvedValue({ data: { count: 0, results: [] } })
     await listarPagos()
     expect(api.get).toHaveBeenCalledWith('/payments/pagos/', { params: {} })
+  })
+
+  // ── confirmarPago ──────────────────────────────────────────────────────
+
+  it('confirmarPago posts the payment id as a string and returns the pago estado', async () => {
+    api.post.mockResolvedValue({ data: { id: 7, estado: 'aprobado' } })
+    const result = await confirmarPago(123456)
+    expect(api.post).toHaveBeenCalledWith('/payments/pagos/confirmar/', { payment_id: '123456' })
+    expect(result).toEqual({ id: 7, estado: 'aprobado' })
   })
 })

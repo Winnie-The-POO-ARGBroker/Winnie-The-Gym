@@ -31,3 +31,13 @@ class BuildNotificationUrlTests(SimpleTestCase):
     @override_settings(BACKEND_PUBLIC_URL='', MP_NGROK_URL='')
     def test_returns_none_when_no_public_url_is_known(self):
         self.assertIsNone(_build_notification_url())
+
+
+class BuildBackUrlsTests(SimpleTestCase):
+    @override_settings(FRONTEND_URL='https://app.example.test/')
+    def test_back_urls_land_on_the_payment_return_page(self):
+        from apps.payments.services import _build_back_urls
+        back_urls, is_public = _build_back_urls()
+        for key in ('success', 'failure', 'pending'):
+            self.assertEqual(back_urls[key], 'https://app.example.test/socio/pago-retorno')
+        self.assertTrue(is_public)

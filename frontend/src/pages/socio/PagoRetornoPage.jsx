@@ -14,6 +14,7 @@ import MemberLayout from '../../components/layout/MemberLayout'
 import Card from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
 import api from '../../services/api'
+import { confirmarPago } from '../../services/pagosService'
 
 /**
  * Maps the 5 backend Pago estados to display config.
@@ -88,31 +89,17 @@ const ESTADO_CONFIG = {
 const POLL_INTERVAL_MS = 3000
 const MAX_POLLS = 8 // 24 seconds total before giving up
 
-/**
- * Maps MercadoPago's status query param to our initial state before polling resolves.
- */
-function mpStatusToEstado(mpStatus) {
-  if (mpStatus === 'approved') return 'aprobado'
-  if (mpStatus === 'rejected') return 'rechazado'
-  if (mpStatus === 'in_process' || mpStatus === 'pending') return 'pendiente'
-  return 'confirmando'
-}
+const TERMINAL_ESTADOS = ['aprobado', 'rechazado', 'cancelado', 'reembolsado']
 
 export default function PagoRetornoPage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
 
-  // MercadoPago appends these query params to the back_url
-  const mpPaymentId = searchParams.get('payment_id')
-  const mpStatus = searchParams.get('status')
-  const collectionStatus = searchParams.get('collection_status')
+  // MercadoPago appends payment_id to the back_url. Its `status` query param is never
+  // trusted: the result shown always comes from our backend.
+  const mpPaymentId = searchParams.get('payment_id') || searchParams.get('collection_id')
 
-  const effectiveStatus = mpStatus || collectionStatus
-
-  // Start with the MP-reported status while we resolve the internal pago
-  const [estado, setEstado] = useState(() =>
-    effectiveStatus ? mpStatusToEstado(effectiveStatus) : 'confirmando'
-  )
+  const [estado, setEstado] = useState('confirmando')
   const [pagoId, setPagoId] = useState(null)
   const pollCount = useRef(0)
   const pollingRef = useRef(null)
@@ -151,7 +138,7 @@ export default function PagoRetornoPage() {
       if (serverEstado) {
         setEstado(serverEstado)
         // Stop polling if we reach a terminal state
-        if (['aprobado', 'rechazado', 'cancelado', 'reembolsado'].includes(serverEstado)) {
+        if (TERMINAL_ESTADOS.includes(serverEstado)) {
           if (pollingRef.current) clearInterval(pollingRef.current)
         }
       }
@@ -165,14 +152,35 @@ export default function PagoRetornoPage() {
   }, [])
 
   useEffect(() => {
-    let internalId = null
+    let cancelled = false
 
     const run = async () => {
-      internalId = await resolveInternalPago()
+      let internalId = null
+
+      // Ask the backend to confirm the payment with MercadoPago instead of waiting for
+      // the webhook. If that fails we fall back to polling the pago's estado.
+      if (mpPaymentId) {
+        try {
+          const confirmed = await confirmarPago(mpPaymentId)
+          if (cancelled) return
+          internalId = confirmed?.id ?? null
+          if (internalId) setPagoId(internalId)
+          if (confirmed?.estado) {
+            setEstado(confirmed.estado)
+            if (TERMINAL_ESTADOS.includes(confirmed.estado)) return
+          }
+        } catch {
+          // non-blocking — polling below is the fallback
+        }
+      }
+
+      if (!internalId) internalId = await resolveInternalPago()
+      if (cancelled) return
 
       // First immediate poll
       if (internalId) {
         await pollEstado(internalId)
+        if (cancelled) return
       }
 
       // Periodic polling
@@ -180,9 +188,7 @@ export default function PagoRetornoPage() {
         pollCount.current += 1
         if (pollCount.current >= MAX_POLLS) {
           clearInterval(pollingRef.current)
-          setEstado((prev) =>
-            ['aprobado', 'rechazado', 'cancelado', 'reembolsado'].includes(prev) ? prev : 'error'
-          )
+          setEstado((prev) => (TERMINAL_ESTADOS.includes(prev) ? prev : 'error'))
           return
         }
         await pollEstado(internalId)
@@ -192,9 +198,10 @@ export default function PagoRetornoPage() {
     run()
 
     return () => {
+      cancelled = true
       if (pollingRef.current) clearInterval(pollingRef.current)
     }
-  }, [resolveInternalPago, pollEstado])
+  }, [mpPaymentId, resolveInternalPago, pollEstado])
 
   const config = ESTADO_CONFIG[estado] ?? ESTADO_CONFIG.confirmando
   const { icon: Icon, iconClass, cardClass, titulo, mensaje, showRetry, showHome } = config

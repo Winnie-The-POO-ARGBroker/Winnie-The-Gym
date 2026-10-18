@@ -22,11 +22,20 @@ from .models import Pago
 from .serializers import (
     AnularPagoSerializer,
     CobroManualSerializer,
+    ConfirmarPagoSerializer,
     CrearPreferenciaResponseSerializer,
     CrearPreferenciaSerializer,
     PagoSerializer,
 )
-from .services import anular_pago, cobro_manual, crear_preferencia, procesar_webhook
+from .services import (
+    MercadoPagoUnavailable,
+    PagoNotFound,
+    anular_pago,
+    cobro_manual,
+    confirmar_pago,
+    crear_preferencia,
+    procesar_webhook,
+)
 
 User = get_user_model()
 
@@ -51,7 +60,7 @@ class PagoViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
     max_page_size = 200
 
     def get_permissions(self):
-        if self.action in ('mis_pagos', 'estado'):
+        if self.action in ('mis_pagos', 'estado', 'confirmar'):
             return [IsSocio()]
         if self.action == 'comprobante':
             # Any authenticated user can attempt — the view enforces ownership for socios
@@ -89,6 +98,40 @@ class PagoViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
         if hasattr(request.user, 'socio') and not request.user.is_staff:
             if pago.socio_id != request.user.socio.pk:
                 return Response({'detail': 'No tenés permiso para ver este pago.'}, status=status.HTTP_403_FORBIDDEN)
+        return Response({
+            'id': pago.pk,
+            'estado': pago.estado,
+            'mp_payment_id': pago.mp_payment_id,
+            'paid_at': pago.paid_at,
+        })
+
+    @extend_schema(
+        tags=['payments'],
+        summary='Confirmar pago al volver de MercadoPago (socio)',
+        description=(
+            'El socio informa el `payment_id` con el que MercadoPago lo devolvió al sitio. '
+            'El backend consulta el pago a MercadoPago (fuente de verdad), aplica el mismo '
+            'flujo que el webhook (activa la membresía si fue aprobado) y devuelve el estado '
+            'actual. Solo funciona sobre pagos del propio socio; es idempotente.'
+        ),
+        request=ConfirmarPagoSerializer,
+        responses={
+            200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT,
+            502: OpenApiTypes.OBJECT,
+        },
+    )
+    @action(detail=False, methods=['post'], url_path='confirmar', url_name='confirmar')
+    def confirmar(self, request):
+        serializer = ConfirmarPagoSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            pago = confirmar_pago(request.user.socio, serializer.validated_data['payment_id'])
+        except PagoNotFound:
+            return Response({'detail': 'No encontramos un pago tuyo para ese identificador.'},
+                            status=status.HTTP_404_NOT_FOUND)
+        except MercadoPagoUnavailable:
+            return Response({'detail': 'No pudimos consultar el pago en MercadoPago. Reintentá en unos segundos.'},
+                            status=status.HTTP_502_BAD_GATEWAY)
         return Response({
             'id': pago.pk,
             'estado': pago.estado,
