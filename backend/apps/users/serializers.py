@@ -320,7 +320,7 @@ class StaffListSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = (
-            'id', 'email', 'rol', 'first_name', 'last_name',
+            'id', 'email', 'rol', 'first_name', 'last_name', 'is_active',
             'has_usable_password', 'has_social_login', 'date_joined',
         )
         read_only_fields = fields

@@ -288,6 +288,8 @@ class ProfileViewTests(APITestCase):
         data = response.data.get('results', response.data) if isinstance(response.data, dict) else response.data
         by_email = {d['email']: d for d in data}
         self.assertTrue(by_email[google.email]['has_social_login'])
+        # The badge needs is_active to tell an active user from a disabled one.
+        self.assertTrue(by_email[google.email]['is_active'])
         self.assertFalse(by_email[admin.email]['has_social_login'])
 
 
