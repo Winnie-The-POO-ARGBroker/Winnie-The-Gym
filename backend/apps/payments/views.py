@@ -339,8 +339,10 @@ class CajaView(APIView):
             created_at__date=fecha,
         )
 
-        # --- Cobros por medio (non-anulados) ---
-        cobros_qs = base_qs.filter(anulado=False, estado=Pago.Estado.APROBADO)
+        # --- Cobros por medio (gross: includes the ones annulled later) ---
+        # Anulaciones are subtracted once, in neto. Leaving annulled cobros out
+        # here as well would deduct them twice.
+        cobros_qs = base_qs.filter(Q(estado=Pago.Estado.APROBADO) | Q(anulado=True))
 
         medios = [choice[0] for choice in Pago.MedioManual.choices]
         cobros_por_medio = {}
