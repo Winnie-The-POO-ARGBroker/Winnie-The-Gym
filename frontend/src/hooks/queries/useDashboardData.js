@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import api from '../../services/api'
 import { ALL_RECORDS_PAGE_SIZE } from '../../constants/pagination'
+import { ACCESS_DENIAL_REASONS } from '../../constants/accessDenialReasons'
 
 export const mapAccessLog = (log) => {
   const d = new Date(log.timestamp)
@@ -10,7 +11,12 @@ export const mapAccessLog = (log) => {
     name: log.user_nombre ? `${log.user_nombre} ${log.user_apellido || ''}`.trim() : 'Desconocido',
     membership: log.user_plan_nombre || 'Sin plan',
     time: timeStr,
-    type: log.access_type
+    // The API sends 'ENTRY' / 'EXIT'; the list compares against 'entry'.
+    type: String(log.access_type ?? '').toLowerCase(),
+    denied: log.status === 'DENIED',
+    denialReason: log.denial_reason
+      ? (ACCESS_DENIAL_REASONS[log.denial_reason] ?? log.denial_reason)
+      : null,
   }
 }
 

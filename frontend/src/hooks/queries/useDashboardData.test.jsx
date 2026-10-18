@@ -59,6 +59,39 @@ describe('mapAccessLog', () => {
   })
 })
 
+describe('mapAccessLog con el formato real del backend', () => {
+  const base = { id: 7, timestamp: '2026-10-18T17:54:10Z', user_nombre: 'Rodrigo', user_apellido: 'Perez', user_plan_nombre: 'Plan test 2' }
+
+  it('convierte ENTRY y EXIT (mayúsculas, como los manda la API) a entry y exit', () => {
+    expect(mapAccessLog({ ...base, access_type: 'ENTRY', status: 'GRANTED' }).type).toBe('entry')
+    expect(mapAccessLog({ ...base, access_type: 'EXIT', status: 'GRANTED' }).type).toBe('exit')
+  })
+
+  it('un acceso permitido no figura como rechazado', () => {
+    const result = mapAccessLog({ ...base, access_type: 'ENTRY', status: 'GRANTED' })
+    expect(result.denied).toBe(false)
+    expect(result.denialReason).toBeNull()
+  })
+
+  it('marca como rechazado un acceso DENIED y trae el motivo legible', () => {
+    const result = mapAccessLog({ ...base, access_type: 'ENTRY', status: 'DENIED', denial_reason: 'MEMBERSHIP_INACTIVE' })
+    expect(result.denied).toBe(true)
+    expect(result.type).toBe('entry')
+    expect(result.denialReason).toBe('Membresía inactiva o vencida')
+  })
+
+  it('si el motivo no está en el catálogo, muestra el código en vez de nada', () => {
+    const result = mapAccessLog({ ...base, access_type: 'EXIT', status: 'DENIED', denial_reason: 'MOTIVO_NUEVO' })
+    expect(result.denialReason).toBe('MOTIVO_NUEVO')
+  })
+
+  it('un rechazo sin motivo informado igual queda marcado', () => {
+    const result = mapAccessLog({ ...base, access_type: 'ENTRY', status: 'DENIED', denial_reason: null })
+    expect(result.denied).toBe(true)
+    expect(result.denialReason).toBeNull()
+  })
+})
+
 describe('useAccessLogs', () => {
   beforeEach(() => vi.clearAllMocks())
 
