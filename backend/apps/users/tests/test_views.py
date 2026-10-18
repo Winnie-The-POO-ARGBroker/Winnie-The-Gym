@@ -272,6 +272,24 @@ class ProfileViewTests(APITestCase):
         self.assertIsNotNone(admin_entry)
         self.assertTrue(admin_entry['has_usable_password'])
 
+    def test_staff_list_flags_users_who_sign_in_with_google(self):
+        """A Google user has no password but is not pending activation."""
+        from allauth.socialaccount.models import SocialAccount
+
+        admin = make_user_factory(rol='administrador', password='pass1234!')
+        google = make_user_factory(rol='administrador', email='google.admin@test.com')
+        google.set_unusable_password()
+        google.save()
+        SocialAccount.objects.create(user=google, provider='google', uid='g-123')
+        _auth_client(self.client, admin)
+
+        response = self.client.get('/api/users/staff/')
+
+        data = response.data.get('results', response.data) if isinstance(response.data, dict) else response.data
+        by_email = {d['email']: d for d in data}
+        self.assertTrue(by_email[google.email]['has_social_login'])
+        self.assertFalse(by_email[admin.email]['has_social_login'])
+
 
 class CustomJWTSerializerTests(APITestCase):
     """Verify that CustomJWTSerializer.get_user returns the expected fields."""

@@ -315,14 +315,23 @@ class StaffListSerializer(serializers.ModelSerializer):
     """Read-only serializer for listing staff members."""
 
     has_usable_password = serializers.SerializerMethodField()
+    has_social_login = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ('id', 'email', 'rol', 'first_name', 'last_name', 'has_usable_password', 'date_joined')
+        fields = (
+            'id', 'email', 'rol', 'first_name', 'last_name',
+            'has_usable_password', 'has_social_login', 'date_joined',
+        )
         read_only_fields = fields
 
     def get_has_usable_password(self, obj):
         return obj.has_usable_password()
+
+    def get_has_social_login(self, obj):
+        # A Google user has no password and never needs an activation email.
+        # `.all()` reads the prefetch set up by the view (no query per row).
+        return len(obj.socialaccount_set.all()) > 0
 
 
 class WinnieRegisterSerializer(RegisterSerializer):
