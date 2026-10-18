@@ -136,7 +136,7 @@ erDiagram
 ### 2 · Socio 1..N Membresías
 - `memberships_membresia.socio_id` → `members_socio.id` (`on_delete=CASCADE`)
 - Un socio acumula histórico de membresías. La activa es la de mayor `fecha_inicio` con `estado='activa'`.
-- El servicio `renovar_membresia()` transiciona las membresías activas anteriores a `vencida` de forma transaccional.
+- El servicio `renovar_membresia()` transiciona las membresías activas anteriores de forma transaccional: a `renovada` si seguían vigentes (sus días se acumulan en la nueva) o a `vencida` si ya habían terminado.
 
 ### 3 · Plan 1..N Membresías
 - `memberships_membresia.plan_id` → `memberships_planmembresia.id` (`on_delete=PROTECT`)

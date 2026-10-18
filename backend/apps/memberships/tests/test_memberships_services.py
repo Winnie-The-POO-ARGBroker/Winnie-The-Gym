@@ -13,7 +13,7 @@ def test_renovar_crea_nueva_membresia(make_socio, make_plan, make_membresia):
     new_mem = renovar_membresia(socio, plan)
 
     existing.refresh_from_db()
-    assert existing.estado == Membresia.Estado.VENCIDA
+    assert existing.estado == Membresia.Estado.RENOVADA
     assert new_mem.estado == Membresia.Estado.ACTIVA
     assert new_mem.socio == socio
     assert new_mem.plan == plan
@@ -60,7 +60,7 @@ def test_renovar_atomico_vence_activa_y_crea_nueva(make_socio, make_plan, make_m
 
     Note: the unique constraint on (socio, estado='activa') prevents two simultaneous
     active memberships. This test verifies that renovar correctly transitions the
-    existing active membership to VENCIDA before creating the new one.
+    still-running active membership to RENOVADA before creating the new one.
     """
     socio = make_socio()
     plan = make_plan()
@@ -69,6 +69,6 @@ def test_renovar_atomico_vence_activa_y_crea_nueva(make_socio, make_plan, make_m
     nueva = renovar_membresia(socio, plan)
 
     mem1.refresh_from_db()
-    assert mem1.estado == Membresia.Estado.VENCIDA
+    assert mem1.estado == Membresia.Estado.RENOVADA
     assert nueva.estado == Membresia.Estado.ACTIVA
     assert Membresia.objects.filter(socio=socio, estado=Membresia.Estado.ACTIVA).count() == 1

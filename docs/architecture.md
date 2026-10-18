@@ -121,7 +121,7 @@ Frontend guarda JWT → todas las requests llevan Authorization: Bearer <token>
 
 3. MP dispara webhook → POST https://<backend>/api/payments/webhook/ (con header x-signature)
    Backend valida HMAC-SHA256 → GET payment desde MP → actualiza Pago
-   → Si approved: renovar_membresia (activa vieja → vencida, crea nueva activa)
+   → Si approved: renovar_membresia (activa vieja → renovada si seguía vigente, vencida si ya había terminado; crea nueva activa)
    → Enqueue email payment_confirmation → Celery → Mailtrap → Socio recibe email
 ```
 

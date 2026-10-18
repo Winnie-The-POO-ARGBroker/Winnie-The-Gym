@@ -57,6 +57,9 @@ class Membresia(models.Model):
         SUSPENDIDA = 'suspendida', 'Suspendida'
         CANCELADA = 'cancelada', 'Cancelada'
         PENDIENTE_PAGO = 'pendiente_pago', 'Pendiente de Pago'  # reserved — never writable via API
+        # Replaced by a renewal while still running (its days were carried over).
+        # Informational and terminal — only renovar_membresia sets it.
+        RENOVADA = 'renovada', 'Renovada'
 
     # ADR-7: string form for cross-app FKs
     socio = models.ForeignKey(

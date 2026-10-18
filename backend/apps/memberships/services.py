@@ -16,6 +16,8 @@ VALID_TRANSITIONS = {
     Membresia.Estado.VENCIDA: {Membresia.Estado.CANCELADA},
     Membresia.Estado.PENDIENTE_PAGO: {Membresia.Estado.CANCELADA},
     Membresia.Estado.CANCELADA: set(),  # terminal — no further transitions
+    # Terminal and informational: only renovar_membresia sets it, never the transition API.
+    Membresia.Estado.RENOVADA: set(),
 }
 
 
@@ -133,8 +135,10 @@ def renovar_membresia(socio, plan, *, fecha_inicio=None, politica='stack'):
     - ``politica='replace'``: current active memberships are expired immediately
       and the new plan starts from ``fecha_inicio`` (or today).
 
-    Atomically transitions all active memberships to VENCIDA and creates a new
-    ACTIVA membership.
+    Atomically retires the socio's active memberships and creates a new ACTIVA
+    one. Those still running at ``fecha_inicio`` were superseded by this renewal
+    (their days are carried over) and become RENOVADA; those that had already
+    ended (lazy expiry not yet applied) become VENCIDA.
 
     Args:
         socio: Socio instance to renew.
@@ -158,9 +162,9 @@ def renovar_membresia(socio, plan, *, fecha_inicio=None, politica='stack'):
     fecha_fin = fecha_inicio + timedelta(days=plan.duracion_dias + extra_days)
 
     with transaction.atomic():
-        socio.membresias.filter(
-            estado=Membresia.Estado.ACTIVA,
-        ).update(estado=Membresia.Estado.VENCIDA)
+        activas = socio.membresias.filter(estado=Membresia.Estado.ACTIVA)
+        activas.filter(fecha_fin__gte=fecha_inicio).update(estado=Membresia.Estado.RENOVADA)
+        activas.filter(fecha_fin__lt=fecha_inicio).update(estado=Membresia.Estado.VENCIDA)
 
         return socio.membresias.create(
             plan=plan,

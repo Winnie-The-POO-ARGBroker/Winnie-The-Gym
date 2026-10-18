@@ -67,9 +67,9 @@ class RenovarMembresiaStackDaysTests(APITestCase):
         self.assertEqual(new_membresia.fecha_fin, expected_fin)
         self.assertEqual(new_membresia.estado, Membresia.Estado.ACTIVA)
 
-        # Old membership must be expired
+        # Old membership was superseded while still running
         active.refresh_from_db()
-        self.assertEqual(active.estado, Membresia.Estado.VENCIDA)
+        self.assertEqual(active.estado, Membresia.Estado.RENOVADA)
 
     def test_renovar_membresia_replace_policy_ignores_remaining_days(self):
         """'replace' policy should NOT stack — used for admin overrides."""
