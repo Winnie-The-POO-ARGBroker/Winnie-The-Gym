@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { crearPreferencia, resolverInitPoint, cobrarManual } from '../../services/pagosService'
 import api from '../../services/api'
+import { formatFecha } from '../../utils/formatDate'
 
 // ─── Queries ───────────────────────────────────────────────────────────────────
 
@@ -105,9 +106,15 @@ export function useAnularPagoMutation(options = {}) {
   return useMutation({
     mutationFn: ({ id, motivo }) =>
       api.post(`/payments/pagos/${id}/anular/`, { motivo }),
-    onSuccess: () => {
-      toast.success('Pago anulado correctamente')
+    onSuccess: (res) => {
+      const restaurada = res?.data?.membresia_restaurada
+      toast.success(
+        restaurada
+          ? `Pago anulado. Se restauró la membresía anterior (vigente hasta ${formatFecha(restaurada.fecha_fin)}).`
+          : 'Pago anulado correctamente'
+      )
       queryClient.invalidateQueries({ queryKey: ['pagos'] })
+      if (restaurada) queryClient.invalidateQueries({ queryKey: ['membresias'] })
     },
     onError: (err) => {
       toast.error(extractErrorMessage(err, 'Error al anular el pago'))

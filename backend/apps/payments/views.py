@@ -211,6 +211,8 @@ class PagoViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
         summary='Anular un pago aprobado (admin)',
         description=(
             'Cancela el pago y revierte la membresía activada si la hubiera. '
+            'Si ese pago era una renovación, restaura la membresía anterior que seguía vigente '
+            '(`membresia_restaurada: {id, fecha_fin}`, o null). '
             'Solo admins pueden anular pagos. El motivo es obligatorio.'
         ),
         request=AnularPagoSerializer,
@@ -228,7 +230,12 @@ class PagoViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
         except ValueError as exc:
             return Response({'detail': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response(PagoSerializer(pago).data, status=status.HTTP_200_OK)
+        data = PagoSerializer(pago).data
+        restaurada = getattr(pago, 'membresia_restaurada', None)
+        data['membresia_restaurada'] = (
+            {'id': restaurada.pk, 'fecha_fin': restaurada.fecha_fin.isoformat()} if restaurada else None
+        )
+        return Response(data, status=status.HTTP_200_OK)
 
 
 @extend_schema_view(
