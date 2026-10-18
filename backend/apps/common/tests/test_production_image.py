@@ -109,3 +109,12 @@ def test_render_health_check_uses_the_lightweight_probe():
     match = re.search(r'^\s*healthCheckPath:\s*(\S+)', blueprint, re.M)
 
     assert match and match.group(1) == '/healthz'
+
+
+def test_entrypoint_can_load_the_demo_catalog_once_at_boot():
+    # Render's shell is a paid feature, so the catalog is loaded from the boot
+    # sequence behind an opt-in flag.
+    entrypoint = (BACKEND_DIR / 'entrypoint.sh').read_text()
+
+    assert 'SEED_DEMO_CATALOG' in entrypoint
+    assert 'seed_demo_catalog' in entrypoint

@@ -24,6 +24,30 @@ DIA_TO_WEEKDAY = {
     Clase.Dia.DOMINGO: 6,
 }
 
+# The frontend stores `dias_recurrencia` as one-letter codes (L M X J V S D), while
+# `Clase.dia` uses the full day names. Both spellings are accepted everywhere a
+# schedule is expanded; ignoring the letters left every recurring class created
+# from the panel without sessions.
+LETRA_TO_WEEKDAY = {'L': 0, 'M': 1, 'X': 2, 'J': 3, 'V': 4, 'S': 5, 'D': 6}
+
+# Sessions are generated for the next 60 days when a class is saved and by the
+# daily beat job, so the calendar always has them ahead of time.
+SESIONES_VENTANA_DIAS = 60
+
+
+def weekdays_of(clase):
+    """Weekday numbers (Monday=0) on which `clase` runs."""
+    dias = clase.dias_recurrencia or []
+    weekdays = set()
+    for dia in dias:
+        if dia in LETRA_TO_WEEKDAY:
+            weekdays.add(LETRA_TO_WEEKDAY[dia])
+        elif dia in DIA_TO_WEEKDAY:
+            weekdays.add(DIA_TO_WEEKDAY[dia])
+    if weekdays:
+        return weekdays
+    return {DIA_TO_WEEKDAY[clase.dia]}
+
 
 def _next_clase_datetime(clase):
     """Return the next scheduled datetime for a recurring class in local tz.
@@ -34,11 +58,7 @@ def _next_clase_datetime(clase):
     """
     now = timezone.localtime()
 
-    dias = clase.dias_recurrencia or []
-    if dias:
-        target_weekdays = sorted({DIA_TO_WEEKDAY[d] for d in dias if d in DIA_TO_WEEKDAY})
-    else:
-        target_weekdays = [DIA_TO_WEEKDAY[clase.dia]]
+    target_weekdays = sorted(weekdays_of(clase))
 
     best_candidate = None
     for target_weekday in target_weekdays:
@@ -375,11 +395,7 @@ def generar_sesiones(clase, desde, hasta):
     Returns:
         int — number of new SesionClase rows created.
     """
-    dias = clase.dias_recurrencia or []
-    if dias:
-        target_weekdays = {DIA_TO_WEEKDAY[d] for d in dias if d in DIA_TO_WEEKDAY}
-    else:
-        target_weekdays = {DIA_TO_WEEKDAY[clase.dia]}
+    target_weekdays = weekdays_of(clase)
 
     # Collect all candidate dates in the window that match the target weekdays
     candidate_dates = []
@@ -405,6 +421,12 @@ def generar_sesiones(clase, desde, hasta):
                 created_count += 1
 
     return created_count
+
+
+def generar_sesiones_ventana(clase, hasta=None):
+    """Generate sessions from today up to `hasta` (default: the standard window)."""
+    hoy = timezone.localdate()
+    return generar_sesiones(clase, hoy, hasta or hoy + timedelta(days=SESIONES_VENTANA_DIAS))
 
 
 def cancelar_sesion(sesion, motivo, actor=None):
