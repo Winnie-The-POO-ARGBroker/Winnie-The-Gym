@@ -148,12 +148,38 @@ describe('CreateClassPage — handlers', () => {
     // Fill nombre so validation passes
     const nombreInput = screen.getByPlaceholderText(/Funcional Intensivo/i)
     fireEvent.change(nombreInput, { target: { value: 'Clase Test' } })
+    fireEvent.change(screen.getByDisplayValue('Sin instructor asignado'), { target: { value: 'Carlos R.' } })
+    fireEvent.click(screen.getByRole('button', { name: 'L' }))
     // Click Publicar clase
     const publishBtns = screen.getAllByText('Publicar clase')
     fireEvent.click(publishBtns[0])
     await waitFor(() => {
       expect(mockCreateMutate).toHaveBeenCalled()
     })
+  })
+
+  // ── 6b. The API rejects a class without instructor or teaching days ─────
+  it('no publica sin instructor y avisa qué falta', async () => {
+    renderWithProviders(<CreateClassPage />)
+    fireEvent.change(await screen.findByPlaceholderText(/Funcional Intensivo/i), { target: { value: 'Clase Test' } })
+    fireEvent.click(screen.getAllByText('Publicar clase')[0])
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Elegí un instructor para la clase')
+    })
+    expect(mockCreateMutate).not.toHaveBeenCalled()
+  })
+
+  it('no publica sin días de dictado y avisa qué falta', async () => {
+    renderWithProviders(<CreateClassPage />)
+    fireEvent.change(await screen.findByPlaceholderText(/Funcional Intensivo/i), { target: { value: 'Clase Test' } })
+    fireEvent.change(screen.getByDisplayValue('Sin instructor asignado'), { target: { value: 'Carlos R.' } })
+    fireEvent.click(screen.getAllByText('Publicar clase')[0])
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Elegí al menos un día de dictado')
+    })
+    expect(mockCreateMutate).not.toHaveBeenCalled()
   })
 
   // ── 7. handleSubmit — validates empty nombre ───────────────────────────

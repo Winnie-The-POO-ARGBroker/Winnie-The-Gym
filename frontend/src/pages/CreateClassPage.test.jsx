@@ -120,6 +120,8 @@ describe('CreateClassPage', () => {
     // Fill nombre so validation passes
     const nombreInput = screen.getByPlaceholderText(/Funcional Intensivo/i)
     fireEvent.change(nombreInput, { target: { value: 'Clase Test' } })
+    fireEvent.change(screen.getByDisplayValue('Sin instructor asignado'), { target: { value: 'Carlos R.' } })
+    fireEvent.click(screen.getByRole('button', { name: 'L' }))
 
     // Click one of the publish buttons
     fireEvent.click(screen.getAllByText('Publicar clase')[0])
