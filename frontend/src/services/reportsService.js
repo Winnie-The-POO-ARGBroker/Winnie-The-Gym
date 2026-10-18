@@ -142,7 +142,7 @@ export async function exportAsistencia({ formato = 'csv', fecha_desde, fecha_has
  */
 export async function getReportPlans() {
   try {
-    const response = await api.get('/memberships/planes/')
+    const response = await api.get('/memberships/planes/', { params: { page_size: 100 } })
     return response.data?.results || response.data || []
   } catch (error) {
     throw classifyError(error)

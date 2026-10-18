@@ -258,6 +258,7 @@ describe('GestionSociosPage', () => {
     fireEvent.change(screen.getByTestId('dni-input'), { target: { value: '33333333' } })
     fireEvent.change(screen.getByTestId('telefono-input'), { target: { value: '+5493511234567' } })
     fireEvent.change(screen.getByTestId('plan-select'), { target: { value: '1' } })
+    fireEvent.change(screen.getByTestId('medio-select'), { target: { value: 'transferencia' } })
 
     await act(async () => {
       fireEvent.click(screen.getByTestId('submit-alta'))
@@ -268,7 +269,7 @@ describe('GestionSociosPage', () => {
         expect.objectContaining({ nombre: 'Eduardo', apellido: 'Nuevo', dni: '33333333' })
       )
       expect(cobrarManual).toHaveBeenCalledWith(
-        expect.objectContaining({ socio_id: 99, plan_id: 1 })
+        expect.objectContaining({ socio_id: 99, plan_id: 1, medio: 'transferencia' })
       )
     })
   })
@@ -305,6 +306,7 @@ describe('GestionSociosPage', () => {
     fireEvent.change(screen.getByTestId('dni-input'), { target: { value: '33333333' } })
     fireEvent.change(screen.getByTestId('telefono-input'), { target: { value: '+5493511234567' } })
     fireEvent.change(screen.getByTestId('plan-select'), { target: { value: '1' } })
+    fireEvent.change(screen.getByTestId('medio-select'), { target: { value: 'transferencia' } })
 
     await act(async () => {
       fireEvent.click(screen.getByTestId('submit-alta'))
@@ -361,6 +363,7 @@ describe('GestionSociosPage', () => {
     fireEvent.change(screen.getByTestId('telefono-input'), { target: { value: '+5493511234567' } })
     fireEvent.change(screen.getByTestId('email-input'), { target: { value: 'ana.gonzalez@mail.com' } })
     fireEvent.change(screen.getByTestId('plan-select'), { target: { value: '2' } })
+    fireEvent.change(screen.getByTestId('medio-select'), { target: { value: 'efectivo' } })
 
     await act(async () => {
       fireEvent.click(screen.getByTestId('submit-alta'))
@@ -371,11 +374,89 @@ describe('GestionSociosPage', () => {
         expect.objectContaining({ dni: '30111222', email: 'ana.gonzalez@mail.com' })
       )
       expect(cobrarManual).toHaveBeenCalledWith(
-        expect.objectContaining({ socio_id: 99, plan_id: 2, monto: 12000 })
+        expect.objectContaining({ socio_id: 99, plan_id: 2, monto: 12000, medio: 'efectivo' })
       )
       // El formulario se cierra y se vuelve al listado
       expect(screen.queryByText('Datos del socio')).not.toBeInTheDocument()
       expect(screen.getByText('Listado de Socios')).toBeInTheDocument()
     })
+  })
+
+  // ── Medio de pago: required and sent on both charge calls ────────────────
+  async function fillAltaWithoutMedio() {
+    fireEvent.click(screen.getByText('Alta en Recepción'))
+    await waitFor(() => {
+      expect(screen.getByTestId('plan-select')).toBeInTheDocument()
+    })
+    fireEvent.change(screen.getByPlaceholderText('Ej. Ana'), { target: { value: 'Eduardo' } })
+    fireEvent.change(screen.getByPlaceholderText('Ej. González'), { target: { value: 'Nuevo' } })
+    fireEvent.change(screen.getByTestId('dni-input'), { target: { value: '33333333' } })
+    fireEvent.change(screen.getByTestId('telefono-input'), { target: { value: '+5493511234567' } })
+    fireEvent.change(screen.getByTestId('plan-select'), { target: { value: '1' } })
+  }
+
+  it('alta recepción exige medio de pago y no crea el socio si falta', async () => {
+    const mockCreate = vi.fn()
+    useSocioMutations.mockReturnValue({
+      ...defaultMutations,
+      create: { mutateAsync: mockCreate, isPending: false },
+    })
+
+    renderWithProviders(<GestionSociosPage />)
+    await fillAltaWithoutMedio()
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('submit-alta'))
+    })
+
+    expect(screen.getByText('Seleccioná el medio de pago.')).toBeInTheDocument()
+    expect(mockCreate).not.toHaveBeenCalled()
+    expect(cobrarManual).not.toHaveBeenCalled()
+  })
+
+  it('alta recepción ofrece los mismos medios que el cobro manual', async () => {
+    renderWithProviders(<GestionSociosPage />)
+    fireEvent.click(screen.getByText('Alta en Recepción'))
+
+    const select = await screen.findByTestId('medio-select')
+    const labels = Array.from(select.querySelectorAll('option')).map((o) => o.textContent)
+    expect(labels).toEqual(expect.arrayContaining([
+      'Efectivo', 'Transferencia bancaria', 'Débito', 'Crédito', 'Otro',
+    ]))
+  })
+
+  it('"Reintentar cobro" vuelve a enviar el medio elegido', async () => {
+    useSocioMutations.mockReturnValue({
+      ...defaultMutations,
+      create: {
+        mutateAsync: vi.fn().mockResolvedValue({
+          id: 99, nombre: 'Eduardo', apellido: 'Nuevo', numero_socio: 'S-00099', email: '',
+        }),
+        isPending: false,
+      },
+    })
+    cobrarManual
+      .mockRejectedValueOnce({ response: { data: { detail: 'Caída de red' } } })
+      .mockResolvedValueOnce({ id: 11 })
+
+    renderWithProviders(<GestionSociosPage />)
+    await fillAltaWithoutMedio()
+    fireEvent.change(screen.getByTestId('medio-select'), { target: { value: 'debito' } })
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('submit-alta'))
+    })
+    await screen.findByTestId('partial-failure-card')
+
+    await act(async () => {
+      fireEvent.click(screen.getByText('Reintentar cobro'))
+    })
+
+    await waitFor(() => {
+      expect(cobrarManual).toHaveBeenCalledTimes(2)
+    })
+    expect(cobrarManual).toHaveBeenLastCalledWith(
+      expect.objectContaining({ socio_id: 99, plan_id: 1, medio: 'debito' })
+    )
   })
 })

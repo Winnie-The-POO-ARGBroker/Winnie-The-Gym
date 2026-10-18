@@ -10,6 +10,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from apps.access.permissions import IsAdminOnly, IsReceptionistOrAdmin, IsSocio
+from apps.common.pagination import PageSizePagination
 from apps.members.permissions import IsSocioActivo
 
 from .filters import ClaseFilter, InscripcionClaseFilter
@@ -406,6 +407,7 @@ class DisciplinaViewSet(viewsets.ModelViewSet):
 
     DELETE with active Clases → offers soft-deactivation (activa=False) instead.
     """
+    pagination_class = PageSizePagination
     queryset = Disciplina.objects.all().order_by('nombre')
     serializer_class = DisciplinaSerializer
 
@@ -459,6 +461,7 @@ class SalaViewSet(viewsets.ModelViewSet):
 
     DELETE with active Clases → offers soft-deactivation (activa=False) instead.
     """
+    pagination_class = PageSizePagination
     queryset = Sala.objects.all().order_by('nombre')
     serializer_class = SalaSerializer
 
@@ -659,6 +662,7 @@ class InstructorViewSet(viewsets.ModelViewSet):
     DELETE with assigned Clases → offers soft-deactivation (activo=False) instead
     of raising a ProtectedError.
     """
+    pagination_class = PageSizePagination
     queryset = Instructor.objects.all().order_by('apellido', 'nombre')
     serializer_class = InstructorSerializer
 

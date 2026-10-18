@@ -303,6 +303,13 @@ EMAIL_TIMEOUT = 5
 ANYMAIL = {
     'MAILTRAP_API_TOKEN': config('MAILTRAP_API_TOKEN', default=''),
 }
+# Optional: send through a Mailtrap sandbox inbox instead of really delivering.
+# Mails are captured (visible in the Mailtrap UI) and never reach the recipient.
+# Empty = real sending. Anymail's Mailtrap backend switches to the sandbox API
+# when this setting is present.
+_mailtrap_sandbox_id = config('MAILTRAP_SANDBOX_ID', default='').strip()
+if _mailtrap_sandbox_id:
+    ANYMAIL['MAILTRAP_SANDBOX_ID'] = int(_mailtrap_sandbox_id)
 
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:5173')
 

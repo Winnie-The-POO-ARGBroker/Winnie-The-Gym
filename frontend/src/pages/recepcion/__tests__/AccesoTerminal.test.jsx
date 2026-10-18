@@ -211,10 +211,13 @@ describe('AccesoTerminal', () => {
   });
 
   // #149 — warning status shows "Registrar igual" override button for staff
-  it('warning status shows "Registrar igual" override button', async () => {
+  // The backend answers HTTP 200 with status DENIED + scan_status 'warning' for a repeated ENTRY
+  it('repeated ENTRY (DENIED + scan_status warning) shows "Ya figura adentro" and override, not "Entrada registrada"', async () => {
     manualAccess.mockResolvedValueOnce({
-      status: 'WARNING',
-      message: 'El socio ya figura como adentro',
+      is_valid: false,
+      scan_status: 'warning',
+      status: 'DENIED',
+      message: 'El socio ya figura dentro del gimnasio',
       denial_reason: 'YA_FIGURA_ADENTRO',
       access_type: 'ENTRY',
       allow_override: true,
@@ -235,8 +238,8 @@ describe('AccesoTerminal', () => {
     fireEvent.change(input, { target: { value: '12345678' } });
     fireEvent.click(screen.getByRole('button', { name: /Validar DNI/i }));
 
-    // Warning card should appear with heading "Atención"
-    expect(await screen.findByText('Atención')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 2, name: 'Ya figura adentro' })).toBeInTheDocument();
+    expect(screen.queryByText('Entrada registrada')).not.toBeInTheDocument();
     // Override button must be visible for staff
     expect(await screen.findByRole('button', { name: /Registrar igual/i })).toBeInTheDocument();
     // Cancel button also present

@@ -13,8 +13,8 @@ import api from '../../services/api'
 
 const ACCESS_TYPES = [
   { value: '', label: 'Todos los tipos' },
-  { value: 'ENTRADA', label: 'Entrada' },
-  { value: 'SALIDA', label: 'Salida' },
+  { value: 'ENTRY', label: 'Entrada' },
+  { value: 'EXIT', label: 'Salida' },
 ]
 
 const STATUS_OPTIONS = [
@@ -39,6 +39,12 @@ function formatDateTime(str) {
     hour: '2-digit',
     minute: '2-digit',
   })
+}
+
+const ACCESS_TYPE_LABELS = { ENTRY: 'Entrada', EXIT: 'Salida' }
+
+function accessTypeLabel(type) {
+  return ACCESS_TYPE_LABELS[type] ?? type ?? '—'
 }
 
 function statusBadgeVariant(status) {
@@ -111,7 +117,8 @@ export default function HistorialAccesosPage() {
     setIsExporting(format)
     const toastId = toast.loading(`Exportando accesos en ${format.toUpperCase()}...`)
     try {
-      const params = { ...queryParams, format }
+      // The backend reads the export format from `fmt`; DRF reserves `format` for content negotiation
+      const params = { ...queryParams, fmt: format }
       delete params.page
       delete params.page_size
       const res = await api.get('/access/logs/export/', {
@@ -121,7 +128,6 @@ export default function HistorialAccesosPage() {
       const mimeMap = {
         csv: 'text/csv',
         xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        pdf: 'application/pdf',
       }
       const blob = new Blob([res.data], { type: mimeMap[format] ?? 'application/octet-stream' })
       const url = URL.createObjectURL(blob)
@@ -165,16 +171,6 @@ export default function HistorialAccesosPage() {
             >
               <Download className="w-3.5 h-3.5" />
               Excel
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => handleExport('pdf')}
-              disabled={!!isExporting}
-              className="gap-1.5"
-            >
-              <Download className="w-3.5 h-3.5" />
-              PDF
             </Button>
           </div>
         }
@@ -309,14 +305,16 @@ export default function HistorialAccesosPage() {
                       </td>
                       <td className="py-3 px-4">
                         <div className="text-sm font-semibold text-text-primary">
-                          {log.socio_nombre ?? log.user_nombre ?? '—'}
+                          {log.socio_nombre ?? (
+                            [log.user_nombre, log.user_apellido].filter(Boolean).join(' ') || '—'
+                          )}
                         </div>
                         <div className="text-[11px] text-text-tertiary font-mono">
                           DNI {log.socio_dni ?? log.user_dni ?? '—'}
                         </div>
                       </td>
                       <td className="py-3 px-4 text-xs text-text-primary">
-                        {log.access_type ?? '—'}
+                        {accessTypeLabel(log.access_type)}
                       </td>
                       <td className="py-3 px-4">
                         <Badge variant={statusBadgeVariant(log.status)}>

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import api from '../../services/api'
+import { ALL_RECORDS_PAGE_SIZE } from '../../constants/pagination'
 
 // ─── Query keys ────────────────────────────────────────────────────────────────
 export const INSTRUCTORES_QUERY_KEY = ['instructores']
@@ -11,7 +12,9 @@ export function useInstructores(params = {}, options = {}) {
   return useQuery({
     queryKey: [...INSTRUCTORES_QUERY_KEY, params],
     queryFn: async () => {
-      const res = await api.get('/classes/instructores/', { params })
+      const res = await api.get('/classes/instructores/', {
+        params: { page_size: ALL_RECORDS_PAGE_SIZE, ...params },
+      })
       return res.data?.results ?? res.data ?? []
     },
     staleTime: 5 * 60_000,

@@ -14,14 +14,11 @@ import { usePlanesQuery } from '../../hooks/queries/usePlanesAdmin'
 import { useCobrarManualMutation } from '../../hooks/queries/usePagos'
 import { useMembresiaActivaDeSocio } from '../../hooks/queries/useMembresias'
 import { descargarComprobante } from '../../services/pagosService'
+import { MEDIO_MANUAL_OPTIONS } from '../../constants/pagos'
 
 const MEDIO_OPTIONS = [
   { value: '', label: '— Seleccioná un medio —' },
-  { value: 'efectivo', label: 'Efectivo' },
-  { value: 'transferencia', label: 'Transferencia bancaria' },
-  { value: 'debito', label: 'Débito' },
-  { value: 'credito', label: 'Crédito' },
-  { value: 'otro', label: 'Otro' },
+  ...MEDIO_MANUAL_OPTIONS,
 ]
 
 // ─── Comprobante ───────────────────────────────────────────────────────────────

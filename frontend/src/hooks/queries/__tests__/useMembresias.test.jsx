@@ -55,7 +55,7 @@ describe('useMembresiasPorSocio', () => {
     const { result } = renderHook(() => useMembresiasPorSocio(5), { wrapper })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data).toHaveLength(1)
-    expect(api.get).toHaveBeenCalledWith('/memberships/membresias/', { params: { socio: 5 } })
+    expect(api.get).toHaveBeenCalledWith('/memberships/membresias/', { params: { socio: 5, page_size: 1000 } })
   })
 
   it('does not fetch when socioId is falsy', () => {

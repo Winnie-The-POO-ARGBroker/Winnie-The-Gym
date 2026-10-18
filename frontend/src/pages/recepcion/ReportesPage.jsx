@@ -72,6 +72,8 @@ function derivarMetrics(resumen) {
   }
 }
 
+const DOWNLOAD_TOAST_POSITION = 'bottom-right'
+
 const DEFAULT_METRICS = {
   ingresosMesFormatted: '$ 0',
   vsAnteriorFormatted: '+0%',
@@ -133,21 +135,27 @@ export default function ReportesPage() {
     toast.info('Filtros restablecidos')
   }
 
+  // Bottom-right so the toast never covers the export buttons in the page header
   const handleExport = async (formato, explicitCategory = null) => {
     const activeCategory = explicitCategory || filters.categoria || 'morosidad'
     const categoriaObj = CATEGORIAS.find((c) => c.id === activeCategory)
     const categoriaLabel = categoriaObj ? categoriaObj.label : activeCategory
-    const toastId = toast.loading(`Generando reporte de ${categoriaLabel} en ${formato.toUpperCase()}...`)
+    const toastId = toast.loading(`Generando reporte de ${categoriaLabel} en ${formato.toUpperCase()}...`, {
+      position: DOWNLOAD_TOAST_POSITION,
+    })
 
     setDownloadingFormat(formato)
     try {
       const result = await exportReport(activeCategory, filters, formato)
-      toast.success(`Reporte descargado: ${result.filename}`, { id: toastId })
+      toast.success(`Reporte descargado: ${result.filename}`, {
+        id: toastId,
+        position: DOWNLOAD_TOAST_POSITION,
+      })
     } catch (error) {
       console.error('Error al exportar reporte:', error)
       // Show the backend error message verbatim when available (backend sends 400 with Spanish text)
       const msg = error.message || 'Error al exportar el reporte'
-      toast.error(msg, { id: toastId })
+      toast.error(msg, { id: toastId, position: DOWNLOAD_TOAST_POSITION })
     } finally {
       setDownloadingFormat(null)
     }

@@ -58,6 +58,39 @@ describe('ValidationResult', () => {
     expect(screen.getAllByText('Entrada').length).toBeGreaterThan(0);
   });
 
+  // repeated ENTRY: amber warning, never the green "Entrada registrada"
+  it('renders "Ya figura adentro" warning with override for YA_FIGURA_ADENTRO', () => {
+    const onOverride = vi.fn();
+    render(
+      <ValidationResult
+        result={{
+          status: 'warning',
+          message: 'El socio ya figura dentro del gimnasio',
+          denialReason: 'YA_FIGURA_ADENTRO',
+          accessType: 'ENTRY',
+          allowOverride: true,
+          log: { access_type: 'ENTRY', user_nombre: 'Maria', user_apellido: 'Socia' },
+        }}
+        onConfirmEntry={vi.fn()}
+        onOverride={onOverride}
+      />,
+    );
+    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('Ya figura adentro');
+    expect(screen.queryByText('Entrada registrada')).not.toBeInTheDocument();
+    screen.getByRole('button', { name: /Registrar igual/i }).click();
+    expect(onOverride).toHaveBeenCalled();
+  });
+
+  it('keeps the generic "Atención" heading for other warnings', () => {
+    render(
+      <ValidationResult
+        result={{ status: 'warning', denialReason: 'NO_FIGURA_ADENTRO', accessType: 'EXIT', log: {} }}
+        onConfirmEntry={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('Atención');
+  });
+
   // idle state renders scanner prompt
   it('renders idle state when no result', () => {
     render(<ValidationResult result={null} onConfirmEntry={vi.fn()} />);

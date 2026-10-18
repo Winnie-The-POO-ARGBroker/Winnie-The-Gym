@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import api from '../../services/api'
+import { ALL_RECORDS_PAGE_SIZE } from '../../constants/pagination'
 
 // ─── Query keys ────────────────────────────────────────────────────────────────
 export const MEMBRESIAS_QUERY_KEYS = {
@@ -36,7 +37,9 @@ export function useMembresiasPorSocio(socioId, options = {}) {
   return useQuery({
     queryKey: MEMBRESIAS_QUERY_KEYS.porSocio(socioId),
     queryFn: async () => {
-      const res = await api.get('/memberships/membresias/', { params: { socio: socioId } })
+      const res = await api.get('/memberships/membresias/', {
+        params: { socio: socioId, page_size: ALL_RECORDS_PAGE_SIZE },
+      })
       return res.data?.results ?? res.data ?? []
     },
     enabled: !!socioId,

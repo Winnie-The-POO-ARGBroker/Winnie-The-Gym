@@ -151,8 +151,11 @@ def _process_scan(user_obj, is_valid, error_code, access_type, jti, scanned_by_u
     Returns (access_log, is_valid, error_code, message, allow_override, scan_status).
 
     scan_status is one of 'granted', 'denied', 'warning':
-      - 'warning': anti-passback condition — log is persisted as GRANTED with
-        the warning code in denial_reason. Caller returns HTTP 200.
+      - 'warning': anti-passback condition. Caller returns HTTP 200.
+          * EXIT while not inside: persisted as GRANTED (exits are always allowed)
+            with the warning code in denial_reason.
+          * ENTRY while already inside (no override): persisted as DENIED so it
+            never counts towards the aforo or presence; staff may retry with override.
       - 'granted': access granted normally.
       - 'denied': access denied, log persisted as DENIED.
 
@@ -238,7 +241,12 @@ def _process_scan(user_obj, is_valid, error_code, access_type, jti, scanned_by_u
                 # is_valid stays True: log as GRANTED
 
     # Determine log fields
-    if warning_reason:
+    if warning_reason == 'YA_FIGURA_ADENTRO':
+        # A second ENTRY must not be counted: aforo = GRANTED entries - GRANTED exits.
+        scan_status = 'warning'
+        access_status = AccessLog.AccessStatus.DENIED
+        denial_reason = warning_reason
+    elif warning_reason:
         scan_status = 'warning'
         access_status = AccessLog.AccessStatus.GRANTED
         denial_reason = warning_reason
@@ -263,7 +271,7 @@ def _process_scan(user_obj, is_valid, error_code, access_type, jti, scanned_by_u
         source=source,
     )
 
-    # Broadcast aforo update for all GRANTED logs (including warnings that are GRANTED)
+    # Broadcast aforo update for all GRANTED logs (including EXIT warnings that are GRANTED)
     if access_status == AccessLog.AccessStatus.GRANTED:
         _broadcast_aforo_update()
         new_aforo = get_aforo_actual().get('aforo_actual', 0)
@@ -995,6 +1003,12 @@ class MiActividadView(generics.ListAPIView):
 # #150 — Access log export (CSV / XLSX)
 # ---------------------------------------------------------------------------
 
+EXPORT_ACCESS_TYPE_LABELS = {
+    AccessLog.AccessType.ENTRY: 'Entrada',
+    AccessLog.AccessType.EXIT: 'Salida',
+}
+
+
 @extend_schema(
     tags=['access'],
     summary='Exportar historial de accesos (recep/admin)',
@@ -1058,7 +1072,7 @@ class AccessLogExportView(generics.GenericAPIView):
                 socio.nombre if socio else '',
                 socio.apellido if socio else '',
                 membresia.plan.nombre if membresia else '',
-                log.access_type,
+                EXPORT_ACCESS_TYPE_LABELS.get(log.access_type, log.access_type),
                 log.status,
                 log.denial_reason or '',
                 log.source,
