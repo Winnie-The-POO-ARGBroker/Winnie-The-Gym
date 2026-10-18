@@ -12,6 +12,7 @@ from django.utils import timezone
 
 from apps.access.models import AccessLog
 from apps.memberships.models import Membresia
+from apps.memberships.selectors import ultimas_membresias
 from apps.payments.models import Pago
 
 
@@ -104,10 +105,12 @@ def build_resumen(mes=None, plan_id=None):
 
     # ---- Morosos ----
     today = timezone.localdate()
-    morosos_qs = Membresia.objects.filter(
+    # Only each socio's LATEST membership counts: older vencida rows of a socio
+    # who renewed or bought again are history, not delinquency.
+    morosos_qs = ultimas_membresias(Membresia.objects.filter(
         estado__in=[Membresia.Estado.VENCIDA, Membresia.Estado.PENDIENTE_PAGO],
         fecha_fin__lte=today,
-    )
+    ))
     if plan_id:
         morosos_qs = morosos_qs.filter(plan_id=plan_id)
     morosos_count = morosos_qs.count()
@@ -211,9 +214,11 @@ def build_morosidad(estado=None, plan_id=None):
 
     if estado:
         # Legacy path: explicit estado filter bypasses the selector
-        qs = Membresia.objects.select_related('socio', 'socio__usuario', 'plan').filter(
-            estado__in=[Membresia.Estado.VENCIDA, Membresia.Estado.PENDIENTE_PAGO],
-            fecha_fin__lte=today,
+        qs = ultimas_membresias(
+            Membresia.objects.select_related('socio', 'socio__usuario', 'plan').filter(
+                estado__in=[Membresia.Estado.VENCIDA, Membresia.Estado.PENDIENTE_PAGO],
+                fecha_fin__lte=today,
+            )
         )
         qs = qs.filter(estado=estado)
         if plan_id:

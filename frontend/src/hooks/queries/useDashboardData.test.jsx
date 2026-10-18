@@ -113,6 +113,15 @@ describe('useDashboardAlerts', () => {
     await waitFor(() => expect(result.current.data).toBeDefined())
     expect(api.get).toHaveBeenCalledWith('/memberships/membresias/', expect.any(Object))
   })
+
+  it('asks only for the latest vencida membership of each socio', async () => {
+    api.get.mockResolvedValue({ data: { results: [] } })
+    const { result } = renderHookWithProviders(() => useDashboardAlerts())
+    await waitFor(() => expect(result.current.data).toBeDefined())
+    expect(api.get).toHaveBeenCalledWith('/memberships/membresias/', {
+      params: expect.objectContaining({ estado: 'vencida', ultima: true, limit: 5 }),
+    })
+  })
 })
 
 describe('useDashboardClasses', () => {

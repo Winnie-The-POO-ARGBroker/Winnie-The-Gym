@@ -183,6 +183,7 @@ const ESTADO_OPTIONS = [
   { value: 'vencida', label: 'Vencida' },
   { value: 'cancelada', label: 'Cancelada' },
   { value: 'pendiente_pago', label: 'Pendiente pago' },
+  { value: 'renovada', label: 'Renovada' },
 ]
 
 const VENC_OPTIONS = [

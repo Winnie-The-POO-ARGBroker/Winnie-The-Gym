@@ -56,6 +56,14 @@ describe('useReportMetrics', () => {
     setupApiMocks()
   })
 
+  it('requests only the latest membership per socio so renewed ones do not count as morosos', async () => {
+    const { result } = renderHookWithProviders(() => useReportMetrics())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    expect(api.get).toHaveBeenCalledWith('/memberships/membresias/', {
+      params: expect.objectContaining({ ultima: true }),
+    })
+  })
+
   // ── 1. Returns isLoading=true initially ───────────────────────────────────
   it('returns isLoading=true before data arrives', () => {
     api.get.mockReturnValue(new Promise(() => {})) // never resolves

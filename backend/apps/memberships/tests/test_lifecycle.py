@@ -289,4 +289,4 @@ def test_renovar_via_api_creates_new_membership():
     assert resp.data['estado'] == 'activa'
 
     m.refresh_from_db()
-    assert m.estado == Membresia.Estado.VENCIDA
+    assert m.estado == Membresia.Estado.RENOVADA

@@ -11,6 +11,7 @@ export const MEMBRESIA_ESTADO_MAP = {
   pendiente_pago:  { label: 'Pendiente pago',  variant: 'warning' },
   suspendida:      { label: 'Suspendida',      variant: 'neutral' },
   cancelada:       { label: 'Cancelada',       variant: 'danger'  },
+  renovada:        { label: 'Renovada',        variant: 'neutral' },
 }
 
 /**

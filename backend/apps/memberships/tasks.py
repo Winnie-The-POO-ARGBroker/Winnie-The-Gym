@@ -7,6 +7,7 @@ from django.utils import timezone
 from apps.common.tasks import enqueue_email
 
 from .models import Membresia
+from .selectors import ultimas_membresias
 
 
 logger = logging.getLogger(__name__)
@@ -132,9 +133,10 @@ def send_morosos_reminders():
     sent = 0
     skipped = 0
 
+    # Only the socio's latest membership: an older vencida row of a socio who
+    # bought again is history, not a reason to nag them.
     vencidas = (
-        Membresia.objects
-        .filter(estado=Membresia.Estado.VENCIDA, fecha_fin__lt=today)
+        ultimas_membresias(Membresia.objects.filter(estado=Membresia.Estado.VENCIDA, fecha_fin__lt=today))
         .select_related('socio', 'plan', 'socio__usuario')
     )
 
