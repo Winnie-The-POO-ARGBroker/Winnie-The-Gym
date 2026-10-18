@@ -33,7 +33,7 @@ describe('useMisPagos', () => {
     const { result } = renderHook(() => useMisPagos(), { wrapper })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data).toHaveLength(2)
-    expect(api.get).toHaveBeenCalledWith('/payments/pagos/mis-pagos/')
+    expect(api.get).toHaveBeenCalledWith('/payments/pagos/mis-pagos/', { params: { page_size: 1000 } })
   })
 
   it('handles non-paginated response', async () => {

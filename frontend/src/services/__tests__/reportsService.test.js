@@ -164,7 +164,7 @@ describe('reportsService', () => {
       api.get.mockResolvedValueOnce({ data: { results: mockPlanes } })
 
       const planes = await getReportPlans()
-      expect(api.get).toHaveBeenCalledWith('/memberships/planes/')
+      expect(api.get).toHaveBeenCalledWith('/memberships/planes/', { params: { page_size: 100 } })
       expect(planes).toEqual(mockPlanes)
     })
 

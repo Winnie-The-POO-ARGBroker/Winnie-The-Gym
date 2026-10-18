@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../../services/api'
+import { ALL_RECORDS_PAGE_SIZE } from '../../constants/pagination'
 
 // ─── Query keys ───────────────────────────────────────────────────────────────
 
@@ -11,7 +12,9 @@ export function useCierres(params = {}) {
   return useQuery({
     queryKey: [...CIERRES_QUERY_KEY, params],
     queryFn: async () => {
-      const res = await api.get('/common/cierres/', { params })
+      const res = await api.get('/common/cierres/', {
+        params: { page_size: ALL_RECORDS_PAGE_SIZE, ...params },
+      })
       return res.data?.results ?? res.data ?? []
     },
     staleTime: 2 * 60_000,

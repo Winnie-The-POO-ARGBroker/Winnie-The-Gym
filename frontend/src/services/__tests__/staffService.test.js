@@ -21,7 +21,7 @@ describe('staffService', () => {
 
       const result = await getStaffList()
 
-      expect(api.get).toHaveBeenCalledWith('/users/staff/')
+      expect(api.get).toHaveBeenCalledWith('/users/staff/', { params: { page_size: 1000 } })
       expect(result).toEqual(mockData)
     })
 

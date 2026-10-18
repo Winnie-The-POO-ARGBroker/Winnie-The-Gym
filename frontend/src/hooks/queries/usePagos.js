@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { crearPreferencia, resolverInitPoint, cobrarManual } from '../../services/pagosService'
 import api from '../../services/api'
+import { ALL_RECORDS_PAGE_SIZE } from '../../constants/pagination'
 
 // ─── Queries ───────────────────────────────────────────────────────────────────
 
@@ -47,7 +48,9 @@ export function usePagosPorSocio(socioId, options = {}) {
     queryKey: PAGOS_POR_SOCIO_KEY(socioId),
     queryFn: async () => {
       // Backend filter field is `socio` (not `socio_id` — fix for #187/#225)
-      const res = await api.get('/payments/pagos/', { params: { socio: socioId } })
+      const res = await api.get('/payments/pagos/', {
+        params: { socio: socioId, page_size: ALL_RECORDS_PAGE_SIZE },
+      })
       return res.data?.results ?? res.data ?? []
     },
     enabled: !!socioId,

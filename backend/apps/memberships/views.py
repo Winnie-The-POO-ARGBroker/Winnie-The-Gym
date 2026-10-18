@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.access.permissions import IsAdminOnly, IsReceptionistOrAdmin, IsSocio
+from apps.common.pagination import PageSizePagination
 
 from .filters import MembresiaFilter, PlanMembresiaFilter
 from .models import Membresia, PlanMembresia
@@ -87,6 +88,7 @@ class PlanMembresiaViewSet(viewsets.ModelViewSet):
     destroy=extend_schema(tags=['memberships'], summary='Eliminar membresía (admin)'),
 )
 class MembresiaViewSet(viewsets.ModelViewSet):
+    pagination_class = PageSizePagination
     queryset = Membresia.objects.select_related('socio', 'plan', 'cambiado_por').order_by('id')
     filterset_class = MembresiaFilter
     ordering_fields = ['fecha_inicio', 'fecha_fin', 'estado', 'created_at']

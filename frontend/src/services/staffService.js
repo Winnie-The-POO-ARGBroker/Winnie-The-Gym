@@ -1,4 +1,5 @@
 import api from './api'
+import { ALL_RECORDS_PAGE_SIZE } from '../constants/pagination'
 
 const STAFF_URL = '/users/staff/'
 
@@ -8,7 +9,7 @@ const STAFF_URL = '/users/staff/'
  * @returns {Promise<Array>}
  */
 export function getStaffList() {
-  return api.get(STAFF_URL).then((r) => r.data)
+  return api.get(STAFF_URL, { params: { page_size: ALL_RECORDS_PAGE_SIZE } }).then((r) => r.data)
 }
 
 /**

@@ -38,7 +38,7 @@ describe('usePagosPorSocio', () => {
     const { result } = renderHookWithProviders(() => usePagosPorSocio(10))
     await waitFor(() => expect(result.current.data).toEqual(PAGOS))
     // Fix #187/#225: filter uses `socio` (not `socio_id`) to match backend field name
-    expect(api.get).toHaveBeenCalledWith('/payments/pagos/', expect.objectContaining({ params: { socio: 10 } }))
+    expect(api.get).toHaveBeenCalledWith('/payments/pagos/', expect.objectContaining({ params: { socio: 10, page_size: 1000 } }))
   })
 
   // ── 2. Does not fetch when socioId is null ────────────────────────────────
