@@ -108,10 +108,70 @@ class AntiPassbackTests(APITestCase):
         self.assertEqual(response.data['denial_reason'], 'YA_FIGURA_ADENTRO')
         self.assertTrue(response.data['allow_override'])
 
-        # The log is GRANTED with the warning code so it is auditable
+        # The repeated ENTRY is persisted as DENIED so it never counts in aforo/presence
         log = AccessLog.objects.filter(denial_reason='YA_FIGURA_ADENTRO').first()
         self.assertIsNotNone(log)
-        self.assertEqual(log.status, AccessLog.AccessStatus.GRANTED)
+        self.assertEqual(log.status, AccessLog.AccessStatus.DENIED)
+        self.assertEqual(response.data['status'], AccessLog.AccessStatus.DENIED)
+        self.assertFalse(response.data['is_valid'])
+
+    @patch('apps.access.views.log_qr_event_task')
+    def test_entry_duplicada_no_infla_aforo_ni_presencia(self, mock_task):
+        """A repeated ENTRY without override leaves aforo and presence untouched."""
+        from apps.access.services import compute_aforo_actual, get_presencia
+
+        user, socio = _make_active_socio()
+        _make_entry_log(user)
+        self.assertEqual(compute_aforo_actual()['aforo_actual'], 1)
+
+        for _ in range(2):
+            token_data = generate_dynamic_qr_token(user)
+            self.client.post(self.url_scan, {
+                'qr_token': token_data['qr_token'],
+                'access_type': 'ENTRY',
+            })
+
+        aforo = compute_aforo_actual()
+        self.assertEqual(aforo['aforo_actual'], 1)
+        self.assertEqual(aforo['ingresos_hoy'], 1)
+        self.assertEqual(get_presencia(user), 'inside')
+
+    @patch('apps.access.views.log_qr_event_task')
+    def test_entry_duplicada_por_dni_se_registra_denegada(self, mock_task):
+        """Same contract through the manual DNI endpoint."""
+        user, socio = _make_active_socio()
+        _make_entry_log(user)
+
+        response = self.client.post(self.url_manual, {
+            'dni': socio.dni,
+            'access_type': 'ENTRY',
+        })
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['scan_status'], 'warning')
+        self.assertEqual(response.data['status'], AccessLog.AccessStatus.DENIED)
+        self.assertEqual(response.data['denial_reason'], 'YA_FIGURA_ADENTRO')
+        self.assertTrue(response.data['allow_override'])
+        log = AccessLog.objects.filter(denial_reason='YA_FIGURA_ADENTRO').first()
+        self.assertEqual(log.status, AccessLog.AccessStatus.DENIED)
+
+    @patch('apps.access.views.log_qr_event_task')
+    def test_entry_override_por_dni_deja_una_sola_sesion_abierta(self, mock_task):
+        """Override closes the previous session; aforo stays at 1 person."""
+        from apps.access.services import compute_aforo_actual
+
+        user, socio = _make_active_socio()
+        _make_entry_log(user)
+
+        response = self.client.post(self.url_manual, {
+            'dni': socio.dni,
+            'access_type': 'ENTRY',
+            'override': True,
+        })
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['scan_status'], 'granted')
+        self.assertEqual(compute_aforo_actual()['aforo_actual'], 1)
 
     # Test 2
     @patch('apps.access.views.log_qr_event_task')
