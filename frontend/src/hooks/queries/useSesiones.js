@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import api from '../../services/api'
 import { extractErrorMessage } from '../../utils/extractErrorMessage'
+import { ALL_RECORDS_PAGE_SIZE } from '../../constants/pagination'
 
 // ─── Query keys ────────────────────────────────────────────────────────────────
 export const SESIONES_QUERY_KEYS = {
@@ -21,7 +22,8 @@ export function useSesionesByRange({ fechaDesde, fechaHasta } = {}, options = {}
     queryKey: SESIONES_QUERY_KEYS.byRange(fechaDesde, fechaHasta),
     queryFn: async () => {
       const res = await api.get('/classes/sesiones/', {
-        params: { fecha_desde: fechaDesde, fecha_hasta: fechaHasta },
+        // The API paginates by 10; a week of the seeded catalog has about 30 sessions.
+        params: { fecha_desde: fechaDesde, fecha_hasta: fechaHasta, page_size: ALL_RECORDS_PAGE_SIZE },
       })
       return res.data?.results ?? res.data ?? []
     },

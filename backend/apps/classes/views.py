@@ -597,6 +597,9 @@ class SesionClaseViewSet(viewsets.ReadOnlyModelViewSet):
     """
     serializer_class = SesionClaseSerializer
     permission_classes = [permissions.IsAuthenticated]
+    # Same paginator as the class list: honours ?page_size= (up to 1000) so the
+    # calendar can load a whole week; the default page stays at 10.
+    pagination_class = ClasePagination
 
     def get_queryset(self):
         qs = SesionClase.objects.select_related(
