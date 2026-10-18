@@ -26,6 +26,7 @@ print(json.dumps({
     "staticfiles_backend": s.STORAGES["staticfiles"]["BACKEND"],
     "default_storage_class": type(storages["default"]).__name__,
     "celery_eager": s.CELERY_TASK_ALWAYS_EAGER,
+    "anymail": s.ANYMAIL,
 }))
 '''
 
@@ -93,3 +94,17 @@ def test_celery_eager_mode_can_be_turned_off_when_a_worker_exists():
     settings = _production_settings(CELERY_TASK_ALWAYS_EAGER='false')
 
     assert settings['celery_eager'] is False
+
+
+def test_mailtrap_sandbox_is_off_by_default():
+    # Without MAILTRAP_SANDBOX_ID mails are really sent
+    anymail = _production_settings(MAILTRAP_SANDBOX_ID='')['anymail']
+
+    assert 'MAILTRAP_SANDBOX_ID' not in anymail
+
+
+def test_mailtrap_sandbox_id_is_read_as_an_int_when_set():
+    # Anymail's Mailtrap backend switches to the sandbox API when this setting is present
+    anymail = _production_settings(MAILTRAP_SANDBOX_ID='4321')['anymail']
+
+    assert anymail['MAILTRAP_SANDBOX_ID'] == 4321

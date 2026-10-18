@@ -8,6 +8,18 @@ export const METODO_PAGO_LABEL = {
 }
 
 /**
+ * Medios de pago aceptados por el cobro manual (backend: Pago.MedioManual).
+ * Shared by the Cobro manual page and the alta en recepción form.
+ */
+export const MEDIO_MANUAL_OPTIONS = [
+  { value: 'efectivo', label: 'Efectivo' },
+  { value: 'transferencia', label: 'Transferencia bancaria' },
+  { value: 'debito', label: 'Débito' },
+  { value: 'credito', label: 'Crédito' },
+  { value: 'otro', label: 'Otro' },
+]
+
+/**
  * Unified map of payment estado → { label, variant, icon } for Badge rendering.
  * Covers all 5 backend states. Unknown estado falls back to neutral (not success).
  *

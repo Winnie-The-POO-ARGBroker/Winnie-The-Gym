@@ -254,6 +254,14 @@ Actualizar `ALLOWED_HOSTS` en el env group con el subdominio real que Render asi
 ### Emails no llegan a inbox real
 - Mailtrap Sending con dominio `demomailtrap.co` **solo entrega al owner** de la cuenta (`fodrii2001@gmail.com`)
 - Para entregar a cualquier email hay que verificar un dominio propio (issue #63 abierta)
+- Mientras tanto la API responde 403 para el resto de los destinatarios; el backend lo registra en los logs, y las pantallas avisan "no se pudo enviar el email" cuando `email_enviado` es `false`.
+
+#### Capturar los mails en un inbox sandbox de Mailtrap (demo, sin dominio verificado)
+- En Mailtrap: **Email Testing → Inboxes → Add Inbox** y crear un inbox (por ejemplo "Winnie demo"). El ID numérico es el que aparece en la URL del inbox (`.../inboxes/<ID>/messages`).
+- En Render (grupo de variables del backend) cargar `MAILTRAP_SANDBOX_ID=<ID>` y redeployar. Anymail pasa a usar la API sandbox de Mailtrap con el mismo `MAILTRAP_API_TOKEN`; el token debe tener acceso a ese inbox.
+- Con esto todos los mails (activación, bienvenida, recordatorios) quedan **capturados en el inbox y no se entregan** a nadie: sirven para mostrar el flujo en una demo, no para que los socios reciban el correo.
+- Para dejar de capturar, borrar `MAILTRAP_SANDBOX_ID` (vacío = envío real).
+- Para que los mails lleguen a destinatarios reales hace falta verificar un dominio propio en Mailtrap Sending y cambiar `DEFAULT_FROM_EMAIL` (issue #63).
 
 ### Catálogo inicial (clases, planes, salas, instructores)
 - Una base nueva no trae clases ni planes reales, y la shell de Render es de pago. `python manage.py seed_demo_catalog` carga disciplinas, salas, instructores, 3 planes (Básico, Premium, Gold) y 14 clases semanales con sesiones hasta el 31/12 (`--hasta YYYY-MM-DD` para cambiarlo).

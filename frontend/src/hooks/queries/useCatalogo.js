@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../../services/api'
+import { ALL_RECORDS_PAGE_SIZE } from '../../constants/pagination'
 
 // ─── Query keys ───────────────────────────────────────────────────────────────
 
@@ -12,7 +13,9 @@ export function useDisciplinas(params = {}) {
   return useQuery({
     queryKey: [...DISCIPLINAS_QUERY_KEY, params],
     queryFn: async () => {
-      const res = await api.get('/classes/disciplinas/', { params })
+      const res = await api.get('/classes/disciplinas/', {
+        params: { page_size: ALL_RECORDS_PAGE_SIZE, ...params },
+      })
       return res.data?.results ?? res.data ?? []
     },
     staleTime: 5 * 60_000,
@@ -57,7 +60,9 @@ export function useSalas(params = {}) {
   return useQuery({
     queryKey: [...SALAS_QUERY_KEY, params],
     queryFn: async () => {
-      const res = await api.get('/classes/salas/', { params })
+      const res = await api.get('/classes/salas/', {
+        params: { page_size: ALL_RECORDS_PAGE_SIZE, ...params },
+      })
       return res.data?.results ?? res.data ?? []
     },
     staleTime: 5 * 60_000,

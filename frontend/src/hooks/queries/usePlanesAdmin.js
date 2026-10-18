@@ -15,7 +15,8 @@ export function usePlanesQuery() {
   return useQuery({
     queryKey: PLANES_ADMIN_KEY,
     queryFn: async () => {
-      const res = await api.get('/memberships/planes/')
+      // The backend caps plan pages at 100
+      const res = await api.get('/memberships/planes/', { params: { page_size: 100 } })
       return res.data.results ?? res.data
     },
     staleTime: 60_000,

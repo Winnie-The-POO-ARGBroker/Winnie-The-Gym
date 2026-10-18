@@ -34,6 +34,7 @@ class AccessLogSerializer(serializers.ModelSerializer):
     user_email = serializers.EmailField(source='user.email', read_only=True, allow_null=True)
     user_nombre = serializers.SerializerMethodField()
     user_apellido = serializers.SerializerMethodField()
+    user_dni = serializers.SerializerMethodField()
     user_plan_nombre = serializers.SerializerMethodField()
     scanned_by_email = serializers.EmailField(source='scanned_by.email', read_only=True, allow_null=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
@@ -48,6 +49,7 @@ class AccessLogSerializer(serializers.ModelSerializer):
             'user_email',
             'user_nombre',
             'user_apellido',
+            'user_dni',
             'user_plan_nombre',
             'access_type',
             'status',
@@ -73,6 +75,13 @@ class AccessLogSerializer(serializers.ModelSerializer):
             return None
         socio = getattr(obj.user, 'socio', None)
         return socio.apellido if socio else None
+
+    def get_user_dni(self, obj):
+        # Staff-facing only: AccessLogSocioSerializer intentionally leaves this out.
+        if not obj.user:
+            return None
+        socio = getattr(obj.user, 'socio', None)
+        return socio.dni if socio else None
 
     def get_user_plan_nombre(self, obj):
         if not obj.user:

@@ -35,6 +35,7 @@ vi.mock('../../../services/api', () => ({
 }))
 
 import { useAccessLogs } from '../../../hooks/queries/useAccessLogs'
+import api from '../../../services/api'
 
 const SAMPLE_LOGS = [
   {
@@ -149,7 +150,8 @@ describe('HistorialAccesosPage', () => {
     renderPage()
     expect(screen.getAllByText('CSV').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Excel').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('PDF').length).toBeGreaterThan(0)
+    // The access export only supports csv and xlsx: a PDF button would always answer 400.
+    expect(screen.queryByText('PDF')).not.toBeInTheDocument()
   })
 
   it('shows correct status badges', () => {
@@ -164,5 +166,69 @@ describe('HistorialAccesosPage', () => {
     renderPage()
     expect(screen.getByText('DNI 30123456')).toBeInTheDocument()
     expect(screen.getByText('DNI 25000001')).toBeInTheDocument()
+  })
+
+  // Shape the backend really sends (AccessLogSerializer): user_nombre / user_apellido / user_dni
+  const API_LOGS = [
+    {
+      id: 10,
+      timestamp: '2026-01-15T10:30:00Z',
+      user_nombre: 'Laura',
+      user_apellido: 'Gómez',
+      user_dni: '30111222',
+      access_type: 'ENTRY',
+      status: 'GRANTED',
+      denial_reason: null,
+      user_plan_nombre: 'Plan Premium',
+    },
+    {
+      id: 11,
+      timestamp: '2026-01-15T11:30:00Z',
+      user_nombre: 'Laura',
+      user_apellido: 'Gómez',
+      user_dni: null,
+      access_type: 'EXIT',
+      status: 'GRANTED',
+      denial_reason: null,
+      user_plan_nombre: null,
+    },
+  ]
+
+  it('shows the DNI from user_dni and a dash when it is missing', () => {
+    useAccessLogs.mockReturnValue({ data: { results: API_LOGS, count: 2 }, isLoading: false })
+    renderPage()
+    expect(screen.getByText('DNI 30111222')).toBeInTheDocument()
+    expect(screen.getByText('DNI —')).toBeInTheDocument()
+    expect(screen.getAllByText('Laura Gómez')).toHaveLength(2)
+  })
+
+  it('renders the access type as Entrada / Salida instead of ENTRY / EXIT', () => {
+    useAccessLogs.mockReturnValue({ data: { results: API_LOGS, count: 2 }, isLoading: false })
+    renderPage()
+    const cells = screen.getAllByRole('cell').map((c) => c.textContent)
+    expect(cells).toContain('Entrada')
+    expect(cells).toContain('Salida')
+    expect(screen.queryByText('ENTRY')).not.toBeInTheDocument()
+    expect(screen.queryByText('EXIT')).not.toBeInTheDocument()
+  })
+
+  it('filters by the backend access_type values (ENTRY / EXIT)', () => {
+    renderPage()
+    const select = screen.getByDisplayValue('Todos los tipos')
+    const values = Array.from(select.querySelectorAll('option')).map((o) => o.value)
+    expect(values).toEqual(['', 'ENTRY', 'EXIT'])
+  })
+
+  it('sends the export format as `fmt` (the backend ignores `format`)', async () => {
+    api.get.mockResolvedValueOnce({ data: new Blob(['x']) })
+    URL.createObjectURL = vi.fn(() => 'blob:x')
+    URL.revokeObjectURL = vi.fn()
+    renderPage()
+    fireEvent.click(screen.getAllByText('CSV')[0])
+    await waitFor(() => expect(api.get).toHaveBeenCalled())
+    const [url, config] = api.get.mock.calls[0]
+    expect(url).toBe('/access/logs/export/')
+    expect(config.params.fmt).toBe('csv')
+    expect(config.params.format).toBeUndefined()
   })
 })

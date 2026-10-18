@@ -223,7 +223,13 @@ class SocioViewSet(viewsets.ModelViewSet):
         summary='Reenviar email de activación al socio (admin/recep) — fix #233',
         request=None,
         responses={
-            200: {'type': 'object', 'properties': {'detail': {'type': 'string'}}},
+            200: {
+                'type': 'object',
+                'properties': {
+                    'detail': {'type': 'string'},
+                    'email_enviado': {'type': 'boolean'},
+                },
+            },
             400: {'type': 'object', 'properties': {'detail': {'type': 'string'}}},
         },
     )
@@ -248,8 +254,11 @@ class SocioViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        send_activation_email(socio.usuario)
-        return Response({'detail': 'Email de activación reenviado.'}, status=status.HTTP_200_OK)
+        email_enviado = bool(send_activation_email(socio.usuario))
+        return Response(
+            {'detail': 'Email de activación reenviado.', 'email_enviado': email_enviado},
+            status=status.HTTP_200_OK,
+        )
 
     # ------------------------------------------------------------------
     # #234 — Notas internas + Actividad

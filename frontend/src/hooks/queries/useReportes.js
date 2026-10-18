@@ -50,9 +50,9 @@ export function useReportMetrics() {
 
       const [memRes, pagosRes, logsRes] = await Promise.all([
         // ultima: una fila por socio, así membresías ya renovadas no inflan la morosidad
-        api.get('/memberships/membresias/', { params: { ultima: true, limit: REPORT_FETCH_LIMIT } }).catch(() => ({ data: [] })),
-        api.get('/payments/pagos/', { params: { estado: 'aprobado', limit: REPORT_FETCH_LIMIT } }).catch(() => ({ data: [] })),
-        api.get('/access/logs/', { params: { limit: REPORT_FETCH_LIMIT } }).catch(() => ({ data: [] })),
+        api.get('/memberships/membresias/', { params: { ultima: true, page_size: REPORT_FETCH_LIMIT } }).catch(() => ({ data: [] })),
+        api.get('/payments/pagos/', { params: { estado: 'aprobado', page_size: REPORT_FETCH_LIMIT } }).catch(() => ({ data: [] })),
+        api.get('/access/logs/', { params: { page_size: REPORT_FETCH_LIMIT } }).catch(() => ({ data: [] })),
       ])
 
       // ── Membresías ───────────────────────────────────────────────────────────

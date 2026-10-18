@@ -3,6 +3,7 @@ from rest_framework.generics import RetrieveUpdateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from apps.access.permissions import IsAdminOnly, IsReceptionistOrAdmin
+from apps.common.pagination import PageSizePagination
 
 from .models import CierreGimnasio, GymConfig
 from .serializers import CierreGimnasioSerializer, GymConfigSerializer
@@ -35,6 +36,7 @@ class CierreGimnasioViewSet(viewsets.ModelViewSet):
       - list / retrieve: any authenticated staff (recep or admin) and socios (read-only).
       - create / update / partial_update / destroy: admin only.
     """
+    pagination_class = PageSizePagination
 
     queryset = CierreGimnasio.objects.select_related('sala', 'created_by').all()
     serializer_class = CierreGimnasioSerializer

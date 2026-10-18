@@ -39,7 +39,9 @@ export default function ValidationResult({ result, onConfirmEntry, onOverride, i
     ? (isExit ? 'Salida registrada' : 'Entrada registrada')
     : isError
       ? 'Acceso denegado'
-      : 'Atención';
+      : denialReason === 'YA_FIGURA_ADENTRO'
+        ? 'Ya figura adentro'
+        : 'Atención';
 
   const accessTypeLabelText = isExit ? 'Salida' : 'Entrada';
 

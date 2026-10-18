@@ -13,6 +13,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.access.permissions import IsAdminOnly, IsReceptionistOrAdmin, IsSocio
+from apps.common.pagination import PageSizePagination
 from apps.members.models import Socio
 from apps.members.permissions import IsSocioActivo
 from apps.memberships.models import PlanMembresia
@@ -55,9 +56,9 @@ class PagoViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
     search_fields = ['socio__dni', 'socio__nombre', 'socio__apellido', 'id', 'mp_payment_id']
     ordering_fields = ['created_at', 'monto', 'estado']
     ordering = ['-created_at']
-    # Fix #187: allow ?limit=N to override page_size (default 20, max 200)
-    page_size_query_param = 'limit'
-    max_page_size = 200
+    # Fix #187: honour ?page_size= (these attributes used to sit on the viewset, where DRF
+    # ignores them, so the list was always cut at 10 rows).
+    pagination_class = PageSizePagination
 
     def get_permissions(self):
         if self.action in ('mis_pagos', 'estado', 'confirmar'):

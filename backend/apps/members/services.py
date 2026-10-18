@@ -31,15 +31,17 @@ MAX_CERT_SIZE_BYTES = 5 * 1024 * 1024
 SIGNED_URL_TTL = 300  # 5 minutes
 
 
-def dispatch_activation_email_for_socio(usuario) -> None:
+def dispatch_activation_email_for_socio(usuario) -> bool:
     """Trigger a set-password activation email for a socio's user account.
 
     Only dispatches if the user has a real email address (not a synthetic
     ``socio_<dni>@winniegym.com`` placeholder). Delegates to the users-app
     service to keep cross-app coupling minimal.
+
+    Returns True only when the email was actually handed to the mail backend.
     """
     if not usuario or not usuario.email:
-        return
+        return False
 
     is_synthetic = usuario.email.endswith('@winniegym.com') and usuario.email.startswith('socio_')
     if is_synthetic:
@@ -47,13 +49,14 @@ def dispatch_activation_email_for_socio(usuario) -> None:
             'dispatch_activation_email_for_socio: synthetic email %s, skipping',
             usuario.email,
         )
-        return
+        return False
 
     try:
         from apps.users.services import send_activation_email
-        send_activation_email(usuario)
+        return bool(send_activation_email(usuario))
     except Exception as exc:
         logger.warning('dispatch_activation_email_for_socio failed for %s: %s', usuario.email, exc)
+        return False
 
 
 # ---------------------------------------------------------------------------

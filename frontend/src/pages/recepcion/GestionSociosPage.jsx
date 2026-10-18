@@ -21,6 +21,7 @@ import { getSocioColumns } from '../../components/admin/SocioColumns'
 import { useSociosList, useSocioMutations } from '../../hooks/queries/useSociosData'
 import { usePlanesQuery } from '../../hooks/queries/usePlanesAdmin'
 import { cobrarManual } from '../../services/pagosService'
+import { MEDIO_MANUAL_OPTIONS } from '../../constants/pagos'
 import { validateDni, validateTelefono, validateEmail } from '../../utils/validation'
 
 // ─── Alta en Recepción form component ────────────────────────────────────────
@@ -43,6 +44,7 @@ function AltaRecepcionForm({ onSuccess, onCancel }) {
     observaciones: '',
     plan_id: '',
     monto: '',
+    medio: '',
   })
   const [errors, setErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
@@ -78,6 +80,7 @@ function AltaRecepcionForm({ onSuccess, onCancel }) {
     }
     if (!form.plan_id) errs.plan_id = 'Seleccioná un plan.'
     if (!form.monto || isNaN(Number(form.monto))) errs.monto = 'El monto debe ser un número válido.'
+    if (!form.medio) errs.medio = 'Seleccioná el medio de pago.'
     return errs
   }
 
@@ -117,6 +120,7 @@ function AltaRecepcionForm({ onSuccess, onCancel }) {
         socio_id: socio.id,
         plan_id: Number(form.plan_id),
         monto: Number(form.monto),
+        medio: form.medio,
       })
       // Full success
       onSuccess?.()
@@ -183,6 +187,7 @@ function AltaRecepcionForm({ onSuccess, onCancel }) {
                   socio_id: partialFailure.socio.id,
                   plan_id: Number(form.plan_id),
                   monto: Number(form.monto),
+                  medio: form.medio,
                 })
                 onSuccess?.()
                 navigate('/recepcion/socios')
@@ -345,6 +350,28 @@ function AltaRecepcionForm({ onSuccess, onCancel }) {
             data-testid="monto-input"
           />
           {errors.monto && <p className="text-xs text-error-500 mt-1">{errors.monto}</p>}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-xs font-medium text-text-secondary mb-1">
+            Medio de pago <span className="text-error-500">*</span>
+          </label>
+          <select
+            value={form.medio}
+            onChange={(e) => handleChange('medio', e.target.value)}
+            className={inputClass('medio')}
+            data-testid="medio-select"
+          >
+            <option value="">Seleccioná un medio</option>
+            {MEDIO_MANUAL_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+          {errors.medio && <p className="text-xs text-error-500 mt-1">{errors.medio}</p>}
         </div>
       </div>
 

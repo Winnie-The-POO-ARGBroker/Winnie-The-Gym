@@ -134,8 +134,10 @@ export default function AccesoTerminalPage() {
       clearTimeout(timeoutId);
       setIsServerReachable(true);
 
-      if (data.status === 'WARNING') {
-        // Anti-passback or replay warning — keep payload so staff can override (#149)
+      // The backend flags anti-passback with scan_status='warning' (HTTP 200). A repeated
+      // ENTRY comes with status DENIED, an EXIT while outside with status GRANTED.
+      if (data.scan_status === 'warning' || data.status === 'WARNING') {
+        // Anti-passback warning — keep payload so staff can override (#149)
         showResult({
           status: 'warning',
           message: data.message,
