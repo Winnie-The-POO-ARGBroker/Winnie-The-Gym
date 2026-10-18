@@ -16,6 +16,8 @@ const DIAS_SEMANA = [
   { key: 'Sábado', label: 'Sábado', fecha: '26 Sep' },
 ]
 
+const DIAS_CON_FECHA = DIAS_SEMANA.map((d, i) => ({ ...d, isoDate: `2026-10-${19 + i}` }))
+
 const CLASSES = [
   {
     id: 1,
@@ -269,5 +271,34 @@ describe('ClassCalendarView', () => {
     )
 
     expect(screen.getByText(/No hay clases este día/)).toBeInTheDocument()
+  })
+
+  // ── Items built from sesiones (they carry a real date, not a weekday) ──────
+  describe('sesiones con fecha real', () => {
+    const SESIONES = [
+      { id: 7, sesion_id: 100, nombre: 'Spinning', hora: '09:00', fecha: '2026-10-20', sala: 'A', categoria: 'spinning', cupos_reservados: 0, cupo_maximo: 20, estado: 'programada' },
+    ]
+
+    it('ubica la sesión en la columna del día que corresponde a su fecha', () => {
+      render(
+        <ClassCalendarView diasSemana={DIAS_CON_FECHA} classes={SESIONES} onSelectClass={onSelectClass} onOpenAttendees={onOpenAttendees} view="grid" />,
+      )
+      expect(screen.getAllByText('Spinning')).toHaveLength(1)
+    })
+
+    it('no repite la sesión en los otros días de la semana', () => {
+      const { container } = render(
+        <ClassCalendarView diasSemana={DIAS_CON_FECHA} classes={SESIONES} onSelectClass={onSelectClass} onOpenAttendees={onOpenAttendees} view="grid" />,
+      )
+      expect(container.querySelectorAll('[style*="border-left"]')).toHaveLength(1)
+    })
+
+    it('la agenda del día muestra las sesiones de ese día', () => {
+      render(
+        <ClassCalendarView diasSemana={DIAS_CON_FECHA} classes={SESIONES} onSelectClass={onSelectClass} onOpenAttendees={onOpenAttendees} view="agenda" />,
+      )
+      fireEvent.click(screen.getByLabelText('Next day'))
+      expect(screen.getByText('Spinning')).toBeInTheDocument()
+    })
   })
 })

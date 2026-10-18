@@ -15,6 +15,7 @@ import ClassCalendarView from '../components/classes/ClassCalendarView'
 import ClassListDetailView from '../components/classes/ClassListDetailView'
 import ClassAttendeesModal from '../components/classes/ClassAttendeesModal'
 import CancelarClaseModal from '../components/classes/CancelarClaseModal'
+import { combinarSesionesConClases } from '../utils/sesionesCalendario'
 import CancelarSesionModal from '../components/classes/CancelarSesionModal'
 import EmptyState from '../components/ui/EmptyState'
 import Button from '../components/ui/Button'
@@ -103,6 +104,12 @@ export default function ClassSchedulePage() {
   const sesionesFiltered = showCanceladas
     ? sesiones
     : sesiones.filter((s) => s.estado !== 'cancelada')
+
+  // The API sends bare sessions; the grid needs name, room and category from the class.
+  const itemsCalendario = useMemo(
+    () => combinarSesionesConClases(sesionesFiltered, allClasses),
+    [sesionesFiltered, allClasses],
+  )
 
   const {
     attendees,
@@ -265,7 +272,7 @@ export default function ClassSchedulePage() {
             />
           ) : (
             <ClassCalendarView
-              classes={sesionesFiltered}
+              classes={itemsCalendario}
               diasSemana={diasSemana}
               onSelectClass={(cls) => {
                 setSelectedClass(cls)

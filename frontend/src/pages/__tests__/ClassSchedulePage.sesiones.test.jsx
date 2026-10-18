@@ -94,6 +94,7 @@ vi.mock('sonner', () => ({
 }))
 
 import { useSesionesByRange } from '../../hooks/queries/useSesiones'
+import { useClasesList } from '../../hooks/queries/useClases'
 
 const MOCK_SESIONES = [
   { id: 101, clase: 1, clase_nombre: 'Spinning Pro', fecha: '2026-10-14', estado: 'activa' },
@@ -133,6 +134,14 @@ describe('ClassSchedulePage > consumes sesiones endpoint with date range', () =>
 
   it('renders CalendarView with sesiones data (not class templates)', () => {
     useSesionesByRange.mockReturnValue({ data: MOCK_SESIONES, isLoading: false })
+    // Sessions come without name or room: the page joins them with their class.
+    useClasesList.mockReturnValue({
+      data: [
+        { id: 1, nombre: 'Spinning Pro', sala: 'A', categoria: 'spinning', hora: '09:00', cupo_maximo: 20 },
+        { id: 2, nombre: 'Yoga Flow', sala: 'B', categoria: 'yoga', hora: '10:00', cupo_maximo: 20 },
+      ],
+      isLoading: false,
+    })
 
     renderPage()
 
