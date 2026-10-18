@@ -131,4 +131,30 @@ describe('PlanFormModal', () => {
     const chips = screen.getAllByTestId(/^dia-chip-/)
     expect(chips).toHaveLength(7)
   })
+
+  it('loads the string benefits of an existing plan into the form and keeps them on save', () => {
+    const onSave = vi.fn()
+    const planToEdit = {
+      id: 3,
+      nombre: 'Premium',
+      subtitulo: 'Membresía mensual',
+      precio: '26000',
+      duracion_dias: 30,
+      clases_asignadas: 16,
+      beneficios: ['Acceso a sala de musculación', '16 clases grupales por mes'],
+    }
+
+    renderModal({ planToEdit, onSave })
+
+    // The API stores plain strings; the form must show them instead of empty rows.
+    expect(screen.getByDisplayValue('Acceso a sala de musculación')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('16 clases grupales por mes')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByText('Guardar Cambios'))
+
+    // Saving must not wipe the benefits.
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ beneficios: ['Acceso a sala de musculación', '16 clases grupales por mes'] })
+    )
+  })
 })
