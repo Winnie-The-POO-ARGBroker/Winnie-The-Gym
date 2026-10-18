@@ -12,7 +12,7 @@ export const REPORTES_RESUMEN_QUERY_KEY = (params = {}) => ['reportes', 'resumen
  * Returns the raw API shape:
  *   ingresos: { mes_actual, mes_anterior, variacion_pct, serie_6_meses }
  *   morosos:  { cantidad, monto_total, tasa_pct }
- *   membresias: { activas, por_vencer_7d, nuevas_mes }
+ *   membresias: { activas, por_vencer_7d, nuevas_mes, renovaciones_mes }
  *   asistencia: { promedio_dia: { lun, mar, mie, jue, vie, sab, dom } }
  */
 export function useReportesResumen({ mes, plan_id } = {}) {
@@ -36,6 +36,9 @@ export function useReportesResumen({ mes, plan_id } = {}) {
  * then derives the metric values from the combined payload.
  *
  * Returns: { metrics, isLoading, isError }
+ *
+ * New/renewed membership counts are NOT derived here: they come from the backend
+ * resumen (useReportesResumen -> membresias.nuevas_mes / renovaciones_mes).
  */
 export function useReportMetrics() {
   return useQuery({
@@ -57,7 +60,6 @@ export function useReportMetrics() {
 
       let activas = 0
       let porVencer = 0
-      let nuevasMes = 0
       let morosos = 0
       let adeudadoTotal = 0
 
@@ -73,10 +75,6 @@ export function useReportMetrics() {
             const fin = new Date(m.fecha_fin)
             const diff = fin.getTime() - now.getTime()
             if (diff >= 0 && diff <= sieteDiasMs) porVencer++
-          }
-          if (m.fecha_inicio) {
-            const ini = new Date(m.fecha_inicio)
-            if (ini.getFullYear() === currentYear && ini.getMonth() === currentMonth) nuevasMes++
           }
         } else if (estado === 'vencida' || estado === 'pendiente_pago') {
           morosos++
@@ -141,7 +139,6 @@ export function useReportMetrics() {
         morosidadPct,
         activasCount: activas.toLocaleString('es-AR'),
         porVencerCount: porVencer,
-        nuevasMesCount: nuevasMes,
       }
     },
     staleTime: 2 * 60_000, // 2 minutes — dashboard metrics don't need to be real-time

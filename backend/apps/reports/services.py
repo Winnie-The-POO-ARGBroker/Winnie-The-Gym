@@ -7,7 +7,7 @@ listing the user was looking at.
 from datetime import date, datetime, time
 from decimal import Decimal, ROUND_HALF_UP
 
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, F, OuterRef, Q, Subquery, Sum
 from django.utils import timezone
 
 from apps.access.models import AccessLog
@@ -70,7 +70,7 @@ def build_resumen(mes=None, plan_id=None):
     {
       "ingresos": {"mes_actual": X, "mes_anterior": Y, "variacion_pct": Z, "serie_6_meses": [...]},
       "morosos":  {"cantidad": N, "monto_total": M, "tasa_pct": P},
-      "membresias": {"activas": A, "por_vencer_7d": V, "nuevas_mes": NM},
+      "membresias": {"activas": A, "por_vencer_7d": V, "nuevas_mes": NM, "renovaciones_mes": RM},
       "asistencia": {"promedio_dia": {"lun": ..., "mar": ..., ...}},
     }
     """
@@ -135,14 +135,20 @@ def build_resumen(mes=None, plan_id=None):
         fecha_fin__gte=today,
     ).count()
 
+    # "Nuevas" are new customers (the socio's first membership starts this month);
+    # "renovaciones" are later memberships of socios who already had one. Cancelled
+    # rows are reversed sales and count as neither; renovada rows are plain history
+    # and only count under the month their own fecha_inicio falls in.
     start_mes, end_mes = _month_range(year, month)
-    nuevas_qs = Membresia.objects.filter(
-        created_at__gte=start_mes,
-        created_at__lt=end_mes,
-    )
+    primera_pk = Membresia.objects.filter(socio=OuterRef('socio')).order_by('fecha_inicio', 'pk').values('pk')[:1]
+    iniciadas_qs = Membresia.objects.filter(
+        fecha_inicio__gte=start_mes.date(),
+        fecha_inicio__lt=end_mes.date(),
+    ).exclude(estado=Membresia.Estado.CANCELADA).annotate(primera_pk=Subquery(primera_pk))
     if plan_id:
-        nuevas_qs = nuevas_qs.filter(plan_id=plan_id)
-    nuevas_mes = nuevas_qs.count()
+        iniciadas_qs = iniciadas_qs.filter(plan_id=plan_id)
+    nuevas_mes = iniciadas_qs.filter(pk=F('primera_pk')).count()
+    renovaciones_mes = iniciadas_qs.exclude(pk=F('primera_pk')).count()
 
     # ---- Asistencia por día de semana ----
     day_names = ['lun', 'mar', 'mie', 'jue', 'vie', 'sab', 'dom']
@@ -185,6 +191,7 @@ def build_resumen(mes=None, plan_id=None):
             'activas': activas,
             'por_vencer_7d': vencer_7d,
             'nuevas_mes': nuevas_mes,
+            'renovaciones_mes': renovaciones_mes,
         },
         'asistencia': {
             'promedio_dia': promedio_dia,

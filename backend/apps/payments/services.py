@@ -229,7 +229,8 @@ def anular_pago(pago, actor, motivo):
         ValueError: When cancellation is not allowed (already anulado, not aprobado, or no motivo).
 
     Returns:
-        Updated Pago instance.
+        Updated Pago instance. ``pago.membresia_restaurada`` (non-persisted) holds the
+        previous membership given back by undoing a renewal, or None.
     """
     if not motivo or not motivo.strip():
         raise ValueError('El motivo de anulación es obligatorio.')
@@ -241,6 +242,8 @@ def anular_pago(pago, actor, motivo):
         raise ValueError(
             f"Solo se pueden anular pagos aprobados. Estado actual: '{pago.estado}'."
         )
+
+    pago.membresia_restaurada = None
 
     with transaction.atomic():
         now = timezone.now()
@@ -256,15 +259,33 @@ def anular_pago(pago, actor, motivo):
         # Cancel the activated membership if this payment created one
         if pago.membresia_id:
             from apps.memberships.models import Membresia
-            from apps.memberships.services import cancelar_membresia
+            from apps.memberships.services import (
+                cancelar_membresia_por_anulacion,
+                restaurar_membresia_renovada,
+            )
             try:
-                membresia = pago.membresia
+                # Fresh row: pago.membresia may be stale if the socio renewed again since.
+                membresia = Membresia.objects.get(pk=pago.membresia_id)
                 if membresia.estado not in (Membresia.Estado.CANCELADA,):
-                    cancelar_membresia(
+                    cancelar_membresia_por_anulacion(
                         membresia,
                         actor,
                         motivo=f'Anulación de pago #{pago.pk}: {motivo}',
                     )
+                    # The renewal is undone: give back the prepaid membership it replaced.
+                    # Own savepoint so a failure here never rolls back the annulment itself.
+                    try:
+                        with transaction.atomic():
+                            pago.membresia_restaurada = restaurar_membresia_renovada(
+                                membresia,
+                                actor,
+                                motivo=f'Restaurada por anulación del pago #{pago.pk}',
+                            )
+                    except Exception as exc:
+                        logger.warning(
+                            'anular_pago: could not restore previous membresia for pago %s: %s',
+                            pago.pk, exc,
+                        )
             except Exception as exc:
                 logger.warning(
                     'anular_pago: could not cancel membresia %s for pago %s: %s',

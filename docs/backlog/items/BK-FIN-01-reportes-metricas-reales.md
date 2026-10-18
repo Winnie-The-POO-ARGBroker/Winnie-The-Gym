@@ -68,7 +68,7 @@ Response `200` (propuesta, montos como string decimal con 2 decimales, igual que
     "serie": [{ "mes": "2026-05", "total": "980000.00" }, { "mes": "2026-06", "total": "1010000.00" }]
   },
   "morosidad": { "socios_morosos": 14, "monto_adeudado": "168000.00", "tasa_pct": 7.2 },
-  "membresias": { "activas": 180, "por_vencer_7d": 12, "nuevas_mes": 21 },
+  "membresias": { "activas": 180, "por_vencer_7d": 12, "nuevas_mes": 21, "renovaciones_mes": 9 },
   "asistencia_semanal": [{ "dia": "lun", "ingresos": 140 }]
 }
 ```
@@ -76,6 +76,7 @@ Reglas:
 - `ingresos.*`: suma de `Pago.monto` con `estado='aprobado'` y `paid_at` en el mes local (misma regla que `build_facturacion`). `variacion_pct` es `null` si el mes anterior es 0 (no inventar `+100%` como hace hoy `useReportes.js:85-87`).
 - `morosidad.*`: usa el selector compartido de BK-FIN-03 (`socios_morosos_queryset`); `tasa_pct = morosos / socios con alguna membresía * 100`.
 - `membresias.activas`: `Membresia.estado='activa'` con `fecha_fin >= hoy`.
+- `membresias.nuevas_mes`: socios cuya primera membresía (por `fecha_inicio`, luego `pk`) empieza en el mes y no está `cancelada`. `membresias.renovaciones_mes`: membresías no canceladas con `fecha_inicio` en el mes que no son la primera de su socio. Ambas respetan `plan_id`.
 - Errores: `400` `{"meses": ["..."]}` si `meses`/`plan_id` no son enteros válidos; `403` `{"detail": "..."}` para socio.
 
 Se agrega serializer de salida en `backend/apps/reports/serializers.py` (hoy dice "This app has no DRF serializers", `serializers.py:1-4`; hay que reescribir ese comentario) para que drf-spectacular documente el contrato (`@extend_schema(tags=['reports'])` como en `views.py:22`).

@@ -125,6 +125,73 @@ def cancelar_membresia(membresia, actor, motivo):
     return membresia
 
 
+def cancelar_membresia_por_anulacion(membresia, actor, motivo):
+    """Cancel a membership because the payment that created it was annulled.
+
+    Unlike ``cancelar_membresia`` this also accepts RENOVADA rows: a renewal that was
+    already superseded by a later one still has its sale reversed, and it must end up
+    CANCELADA (a reversed sale) instead of staying RENOVADA with an annulled payment,
+    where reports would count it and a later restore could bring it back. Not reachable
+    from the public lifecycle endpoints.
+
+    Raises:
+        ValueError: If the membership is already CANCELADA or motivo is missing.
+    """
+    if not motivo or not motivo.strip():
+        raise ValueError('El motivo es obligatorio para cancelar una membresía.')
+    if membresia.estado == Membresia.Estado.CANCELADA:
+        raise ValueError('La membresía ya está cancelada.')
+
+    with transaction.atomic():
+        _set_lifecycle_fields(membresia, Membresia.Estado.CANCELADA, actor, motivo)
+
+    return membresia
+
+
+def restaurar_membresia_renovada(membresia_cancelada, actor, motivo):
+    """Undo a renewal: give the previous RENOVADA membership back its ACTIVA state.
+
+    Called when the payment that created ``membresia_cancelada`` is annulled. This is a
+    dedicated path on purpose: RENOVADA -> ACTIVA is deliberately absent from
+    VALID_TRANSITIONS and unreachable from the lifecycle endpoints.
+
+    The previous membership is restored only when ALL of these hold; otherwise nothing
+    changes and None is returned (never raises for a business-rule miss):
+    - ``membresia_cancelada`` is the socio's current one (no later non-cancelled row).
+    - The candidate is the socio's most recent RENOVADA row before it.
+    - The candidate has not ended (fecha_fin >= today).
+    - The socio has no other ACTIVA membership.
+
+    Returns:
+        The restored Membresia, or None when nothing was restored.
+    """
+    socio = membresia_cancelada.socio
+
+    with transaction.atomic():
+        # Lock the socio's rows so two concurrent annulments cannot both pass the checks
+        # below and leave two ACTIVA memberships.
+        rows = Membresia.objects.filter(socio=socio)
+        list(rows.select_for_update().values_list('pk', flat=True))
+
+        if rows.filter(pk__gt=membresia_cancelada.pk).exclude(
+            estado=Membresia.Estado.CANCELADA,
+        ).exists():
+            return None
+
+        candidata = rows.filter(
+            estado=Membresia.Estado.RENOVADA, pk__lt=membresia_cancelada.pk,
+        ).order_by('-pk').first()
+        if candidata is None or candidata.fecha_fin < timezone.localdate():
+            return None
+
+        if rows.filter(estado=Membresia.Estado.ACTIVA).exists():
+            return None
+
+        _set_lifecycle_fields(candidata, Membresia.Estado.ACTIVA, actor, motivo)
+
+    return candidata
+
+
 def renovar_membresia(socio, plan, *, fecha_inicio=None, politica='stack'):
     """Create a new active Membresia for a socio.
 
