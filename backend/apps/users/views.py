@@ -124,7 +124,7 @@ class StaffView(generics.ListCreateAPIView):
     def get_queryset(self):
         return User.objects.filter(
             rol__in=['administrador', 'recepcionista']
-        ).order_by('email')
+        ).prefetch_related('socialaccount_set').order_by('email')
 
     def perform_create(self, serializer):
         user = serializer.save()

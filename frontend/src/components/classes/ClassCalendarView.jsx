@@ -22,6 +22,31 @@ const HORAS_GRILLA = [
   '22:00',
 ]
 
+const DIAS_LETRA = {
+  Lunes: 'L',
+  Martes: 'M',
+  Miércoles: 'X',
+  Jueves: 'J',
+  Viernes: 'V',
+  Sábado: 'S',
+  Domingo: 'D',
+}
+
+const sinTildes = (texto) => texto?.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+
+/**
+ * Whether a calendar item belongs to a day column. A session carries the real
+ * date; a bare class falls back to its weekday / recurrence.
+ */
+function ocurreEnDia(cls, dia) {
+  if (cls.fecha && dia.isoDate) return cls.fecha === dia.isoDate
+
+  if (cls.dias_recurrencia && cls.dias_recurrencia.length > 0) {
+    return cls.dias_recurrencia.includes(DIAS_LETRA[dia.key])
+  }
+  return sinTildes(cls.dia) === sinTildes(dia.key)
+}
+
 /**
  * AgendaView — mobile-first daily class list.
  * Shows classes for one selected day with prev/next navigation.
@@ -31,28 +56,8 @@ function AgendaView({ classes, diasSemana, onSelectClass, onOpenAttendees }) {
 
   const selectedDia = diasSemana[selectedIndex]
 
-  const diasMap = {
-    Lunes: 'L',
-    Martes: 'M',
-    Miércoles: 'X',
-    Jueves: 'J',
-    Viernes: 'V',
-    Sábado: 'S',
-    Domingo: 'D',
-  }
-
   const dayClasses = classes
-    .filter((cls) => {
-      if (!selectedDia) return false
-      const recKey = diasMap[selectedDia.key]
-      const hasRecurrencia = cls.dias_recurrencia && cls.dias_recurrencia.length > 0
-      if (hasRecurrencia) {
-        return cls.dias_recurrencia.includes(recKey)
-      }
-      const primaryDay = cls.dia?.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
-      const targetDay = selectedDia.key.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
-      return primaryDay === targetDay
-    })
+    .filter((cls) => selectedDia && ocurreEnDia(cls, selectedDia))
     .sort((a, b) => (a.hora || '00:00').localeCompare(b.hora || '00:00'))
 
   return (
@@ -102,7 +107,7 @@ function AgendaView({ classes, diasSemana, onSelectClass, onOpenAttendees }) {
 
           return (
             <div
-              key={cls.id}
+              key={cls.sesion_id ?? cls.id}
               onClick={() => onSelectClass(cls)}
               style={{ borderLeftWidth: '4px', borderLeftColor: cfg.border }}
               className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-bg-raised/30 transition-colors"
@@ -164,32 +169,10 @@ export default function ClassCalendarView({
   view,
 }) {
   // Helper to find classes for a specific day and hour slot
-  const getClassesForSlot = (diaKey, horaStr) => {
+  const getClassesForSlot = (diaSemana, horaStr) => {
     const slotHour = parseInt(horaStr.split(':')[0], 10)
     return classes.filter((cls) => {
-      const diasMap = {
-        Lunes: 'L',
-        Martes: 'M',
-        Miércoles: 'X',
-        Jueves: 'J',
-        Viernes: 'V',
-        Sábado: 'S',
-        Domingo: 'D',
-      }
-      const recKey = diasMap[diaKey]
-
-      const hasRecurrencia = cls.dias_recurrencia && cls.dias_recurrencia.length > 0
-
-      let dayMatch = false
-      if (hasRecurrencia) {
-        dayMatch = cls.dias_recurrencia.includes(recKey)
-      } else {
-        const primaryDay = cls.dia?.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
-        const targetDay = diaKey.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
-        dayMatch = primaryDay === targetDay
-      }
-
-      if (!dayMatch) return false
+      if (!ocurreEnDia(cls, diaSemana)) return false
 
       const clsHour = parseInt((cls.hora || '08:00').split(':')[0], 10)
       return clsHour === slotHour
@@ -285,7 +268,7 @@ function WeekGrid({ diasSemana, onSelectClass, onOpenAttendees, getClassesForSlo
 
             {/* Day columns */}
             {diasSemana.map((dia) => {
-              const slotClasses = getClassesForSlot(dia.key, hora)
+              const slotClasses = getClassesForSlot(dia, hora)
 
               return (
                 <div
@@ -300,7 +283,7 @@ function WeekGrid({ diasSemana, onSelectClass, onOpenAttendees, getClassesForSlo
 
                     return (
                       <div
-                        key={cls.id}
+                        key={cls.sesion_id ?? cls.id}
                         onClick={() => onSelectClass(cls)}
                         style={{
                           borderLeftWidth: '4px',

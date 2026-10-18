@@ -112,6 +112,18 @@ export default function CreateClassPage() {
       toast.error('El nombre de la clase es obligatorio')
       return
     }
+    // The API rejects a new class without instructor or teaching days. Editing is a
+    // partial update, so a legacy class without them can still be saved.
+    if (!editId) {
+      if (!formData.instructor) {
+        toast.error('Elegí un instructor para la clase')
+        return
+      }
+      if (!formData.dias_recurrencia || formData.dias_recurrencia.length === 0) {
+        toast.error('Elegí al menos un día de dictado')
+        return
+      }
+    }
 
     setFieldErrors({})
 

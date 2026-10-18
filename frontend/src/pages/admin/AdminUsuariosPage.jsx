@@ -13,7 +13,15 @@ const ROL_LABELS = {
   recepcionista: 'Recepcionista',
 }
 
-function StatusBadge({ isActive, hasUsablePassword }) {
+function StatusBadge({ isActive, hasUsablePassword, hasSocialLogin }) {
+  if (isActive && !hasUsablePassword && hasSocialLogin) {
+    return (
+      <Badge variant="success">
+        <CheckCircle2 className="w-3 h-3" />
+        Activo · Google
+      </Badge>
+    )
+  }
   if (isActive && hasUsablePassword) {
     return (
       <Badge variant="success">
@@ -37,7 +45,7 @@ const COLUMNS = [
   { key: 'rol',      label: 'Rol',     mobile: 'Rol',     sortable: false,
     render: (row) => <span className="capitalize text-text-secondary">{ROL_LABELS[row.rol] ?? row.rol}</span> },
   { key: 'estado',   label: 'Estado',  mobile: 'Estado',  sortable: false,
-    render: (row) => <StatusBadge isActive={row.is_active} hasUsablePassword={row.has_usable_password} /> },
+    render: (row) => <StatusBadge isActive={row.is_active} hasUsablePassword={row.has_usable_password} hasSocialLogin={row.has_social_login} /> },
 ]
 
 export default function AdminUsuariosPage() {
@@ -71,7 +79,7 @@ export default function AdminUsuariosPage() {
           emptyTitle="Sin usuarios staff"
           emptyMessage="No hay usuarios staff registrados."
           renderActions={(member) =>
-            !member.has_usable_password ? (
+            !member.has_usable_password && !member.has_social_login ? (
               <Button
                 variant="ghost"
                 size="sm"

@@ -21,7 +21,6 @@ export const NAV_CONFIG = {
       { label: 'Config',        path: '/configuracion',       icon: 'gear' },
       { label: 'Aforo',         path: '/recepcion/aforo',     icon: 'activity' },
       { label: 'Cobros',        path: '/recepcion/cobros',    icon: 'card' },
-      { label: 'Mi credencial', path: '/socio/credencial',    icon: 'card' },
       { label: 'Reserva clases',path: '/socio/clases',        icon: 'calendar' },
     ],
     sidebar: [
@@ -41,7 +40,6 @@ export const NAV_CONFIG = {
       { label: 'Cobros manuales',   path: '/recepcion/cobros',    icon: 'card' },
       { label: 'Caja diaria',       path: '/recepcion/caja',      icon: 'chart-line' },
       { divider: true, label: 'Portal Socio (Vista)' },
-      { label: 'Mi Credencial',     path: '/socio/credencial',    icon: 'card' },
       { label: 'Reserva Clases',    path: '/socio/clases',        icon: 'calendar' },
       { divider: true, label: 'Sistema' },
       { label: 'Configuración',     path: '/configuracion',       icon: 'gear' },

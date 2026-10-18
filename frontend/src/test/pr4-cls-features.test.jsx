@@ -271,6 +271,8 @@ describe('CreateClassPage > validates cupo < inscriptos shows error per field', 
     // Fill nombre so frontend validation passes
     const nombreInput = screen.getByPlaceholderText(/Funcional Intensivo/i)
     fireEvent.change(nombreInput, { target: { value: 'Mi Clase' } })
+    fireEvent.change(screen.getByDisplayValue('Sin instructor asignado'), { target: { value: 'Carlos R.' } })
+    fireEvent.click(screen.getByRole('button', { name: 'L' }))
 
     // Click publish button
     const publishBtns = screen.getAllByText('Publicar clase')
