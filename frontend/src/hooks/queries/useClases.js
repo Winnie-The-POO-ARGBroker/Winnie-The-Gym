@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import api from '../../services/api'
 import { ALL_RECORDS_PAGE_SIZE } from '../../constants/pagination'
+import { extractErrorMessage } from '../../utils/extractErrorMessage'
 
 // ─── Query keys ────────────────────────────────────────────────────────────────
 export const CLASES_QUERY_KEYS = {
@@ -49,10 +50,6 @@ export function useClaseDetail(id, options = {}) {
 }
 
 // ─── Mutations ─────────────────────────────────────────────────────────────────
-
-function extractErrorMessage(err, fallback) {
-  return err?.response?.data?.detail ?? err?.response?.data?.message ?? fallback
-}
 
 /**
  * All class mutations in one hook (create, update, delete).

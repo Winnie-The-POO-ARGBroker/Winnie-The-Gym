@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import api from '../../services/api'
+import { extractErrorMessage } from '../../utils/extractErrorMessage'
 
 // ─── Query keys ────────────────────────────────────────────────────────────────
 export const SESIONES_QUERY_KEYS = {
@@ -32,10 +33,6 @@ export function useSesionesByRange({ fechaDesde, fechaHasta } = {}, options = {}
 }
 
 // ─── Mutations ─────────────────────────────────────────────────────────────────
-
-function extractErrorMessage(err, fallback) {
-  return err?.response?.data?.detail ?? err?.response?.data?.message ?? fallback
-}
 
 /**
  * All sesion mutations in one hook.

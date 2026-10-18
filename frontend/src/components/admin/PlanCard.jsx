@@ -2,6 +2,8 @@ import { Edit2, Archive, Trash2, Check, X, Sparkles } from 'lucide-react'
 
 export default function PlanCard({ plan, onEdit, onArchive, onDelete, onDuplicate: _onDuplicate, readOnly = false }) {
   const isPopular = plan.es_popular
+  // A benefit without text rendered as an empty ✗ circle; drop those.
+  const beneficios = (plan.beneficios ?? []).filter((b) => b?.texto?.trim())
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('es-AR', {
@@ -53,9 +55,12 @@ export default function PlanCard({ plan, onEdit, onArchive, onDelete, onDuplicat
         </div>
 
         {/* Benefits Checklist */}
+        {beneficios.length === 0 && (
+          <p className="mb-6 text-xs text-text-tertiary">Sin beneficios cargados</p>
+        )}
         <ul className="space-y-3.5 mb-6 text-sm">
-          {plan.beneficios?.map((b) => (
-            <li key={`${plan.id}-${b.texto}`} className="flex items-center gap-3">
+          {beneficios.map((b, index) => (
+            <li key={`${plan.id}-${index}-${b.texto}`} className="flex items-center gap-3">
               <span
                 className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs ${
                   b.incluido

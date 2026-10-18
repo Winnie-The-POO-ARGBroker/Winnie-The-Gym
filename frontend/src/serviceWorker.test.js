@@ -65,7 +65,15 @@ function loadWorker({ fetchImpl, stored = {} } = {}) {
   }
   const fetchMock = vi.fn(fetchImpl ?? (async () => response('network')))
 
-  vm.runInNewContext(SOURCE, { self, caches, fetch: fetchMock, URL, Promise, console })
+  vm.runInNewContext(SOURCE, {
+    self,
+    caches,
+    fetch: fetchMock,
+    URL,
+    Promise,
+    console,
+    Response: { error: () => ({ type: 'error', status: 0 }) },
+  })
 
   const dispatch = async (req) => {
     let answer
@@ -176,3 +184,20 @@ describe('service worker > activation', () => {
     expect([...worker.stores.keys()]).not.toContain('winnie-shell-v1')
   })
 })
+
+describe('service worker > when there is nothing to fall back on', () => {
+  // respondWith() must always receive a Response: undefined makes the browser log
+  // "Failed to convert value to 'Response'" and breaks the page load.
+  it.each([
+    ['a navigation with no cached shell', request('/admin/clases', { mode: 'navigate' })],
+    ['an asset that is not cached', request('/assets/other.js')],
+    ['an API call that is not cached', request('/api/classes/clases/')],
+  ])('answers %s with a network-error Response when the network is down', async (_label, req) => {
+    const worker = loadWorker({ fetchImpl: async () => { throw new TypeError('Failed to fetch') } })
+
+    const result = await worker.dispatch(req).catch((error) => error)
+
+    expect(result).toEqual(expect.objectContaining({ type: 'error' }))
+  })
+})
+
