@@ -13,12 +13,14 @@ import { pagoEstadoVariant, pagoEstadoLabel } from '../../constants/pagos'
 import { exportReport } from '../../services/reportsService'
 import { descargarComprobante } from '../../services/pagosService'
 import { toast } from 'sonner'
+import { parseFecha } from '../../utils/formatDate'
+
 
 // ─── Formatters ────────────────────────────────────────────────────────────────
 
 function formatDate(str) {
   if (!str) return '—'
-  return new Date(str).toLocaleDateString('es-AR', {
+  return parseFecha(str).toLocaleDateString('es-AR', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',

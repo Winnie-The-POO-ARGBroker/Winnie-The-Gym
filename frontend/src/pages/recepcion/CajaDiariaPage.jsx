@@ -17,6 +17,7 @@ import Skeleton from '../../components/ui/Skeleton'
 import api from '../../services/api'
 import useAuthStore from '../../stores/authStore'
 import { useStaffList } from '../../hooks/queries/useStaff'
+import { hoyISO } from '../../utils/formatDate'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -32,10 +33,6 @@ const MEDIOS = [
 
 function formatARS(value) {
   return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value ?? 0)
-}
-
-function todayISO() {
-  return new Date().toISOString().split('T')[0]
 }
 
 function buildCsvRows(data) {
@@ -97,7 +94,7 @@ export default function CajaDiariaPage() {
   const user = useAuthStore((s) => s.user)
   const isAdmin = user?.rol === 'administrador'
 
-  const [fecha, setFecha] = useState(todayISO)
+  const [fecha, setFecha] = useState(hoyISO)
   const [operadorId, setOperadorId] = useState('')
 
   const { data: staffData } = useStaffList({ enabled: isAdmin })

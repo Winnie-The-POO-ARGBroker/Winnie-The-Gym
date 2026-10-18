@@ -10,6 +10,7 @@ import Skeleton from '../../components/ui/Skeleton'
 import FilterButton from '../../components/ui/FilterButton'
 import { exportReport } from '../../services/reportsService'
 import api from '../../services/api'
+import { hoyISO } from '../../utils/formatDate'
 
 // ─── Aforo histórico tab ──────────────────────────────────────────────────────
 
@@ -30,8 +31,8 @@ function formatHora(bucket) {
 }
 
 function AforoHistoricoTab() {
-  const today = new Date().toISOString().split('T')[0]
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  const today = hoyISO()
+  const thirtyDaysAgo = hoyISO(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000))
 
   const [desde, setDesde] = useState(thirtyDaysAgo)
   const [hasta, setHasta] = useState(today)
