@@ -69,6 +69,7 @@ function derivarMetrics(resumen) {
     activasCount: String(membresias.activas ?? 0),
     porVencerCount: membresias.por_vencer_7d ?? 0,
     nuevasMesCount: membresias.nuevas_mes ?? 0,
+    renovacionesMesCount: membresias.renovaciones_mes ?? 0,
   }
 }
 
@@ -84,6 +85,7 @@ const DEFAULT_METRICS = {
   activasCount: '0',
   porVencerCount: 0,
   nuevasMesCount: 0,
+  renovacionesMesCount: 0,
 }
 
 export default function ReportesPage() {
@@ -250,6 +252,7 @@ export default function ReportesPage() {
                 activas={metrics.activasCount}
                 porVencer={metrics.porVencerCount}
                 nuevasMes={metrics.nuevasMesCount}
+                renovacionesMes={metrics.renovacionesMesCount}
               />
             )}
           </div>
