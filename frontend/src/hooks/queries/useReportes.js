@@ -46,7 +46,8 @@ export function useReportMetrics() {
       const currentMonth = now.getMonth() // 0-indexed
 
       const [memRes, pagosRes, logsRes] = await Promise.all([
-        api.get('/memberships/membresias/', { params: { limit: REPORT_FETCH_LIMIT } }).catch(() => ({ data: [] })),
+        // ultima: una fila por socio, así membresías ya renovadas no inflan la morosidad
+        api.get('/memberships/membresias/', { params: { ultima: true, limit: REPORT_FETCH_LIMIT } }).catch(() => ({ data: [] })),
         api.get('/payments/pagos/', { params: { estado: 'aprobado', limit: REPORT_FETCH_LIMIT } }).catch(() => ({ data: [] })),
         api.get('/access/logs/', { params: { limit: REPORT_FETCH_LIMIT } }).catch(() => ({ data: [] })),
       ])

@@ -225,6 +225,26 @@ describe('SocioDetailModal', () => {
     })
   })
 
+  it('shows the Renovada badge and no Renovar button for a renovada membership', async () => {
+    useMembresiasPorSocio.mockReturnValue({
+      data: [{ id: 2, plan_nombre: 'Premium', estado: 'renovada', fecha_inicio: '2024-01-01', fecha_fin: '2024-02-01' }],
+      isPending: false,
+    })
+    renderWithProviders(
+      <SocioDetailModal isOpen={true} onClose={vi.fn()} socio={mockSocio} />,
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('Membresías')).toBeInTheDocument()
+    })
+    fireEvent.click(screen.getByText('Membresías'))
+
+    await waitFor(() => {
+      expect(screen.getByText('Renovada')).toBeInTheDocument()
+    })
+    expect(screen.queryByText('Renovar')).not.toBeInTheDocument()
+  })
+
   // ── 12. Switching to Pagos tab shows payment data ─────────────────────────
   it('shows payment data in pagos tab', async () => {
     renderWithProviders(

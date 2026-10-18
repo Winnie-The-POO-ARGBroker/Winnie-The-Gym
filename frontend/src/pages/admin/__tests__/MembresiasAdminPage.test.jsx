@@ -82,6 +82,33 @@ describe('MembresiasAdminPage', () => {
     expect(screen.getByText('Membresías')).toBeInTheDocument()
   })
 
+  it('offers "Renovada" in the estado filter', () => {
+    renderPage()
+    expect(screen.getByRole('option', { name: 'Renovada' })).toBeInTheDocument()
+  })
+
+  it('shows Renovada badge without a Renovar action for a renovada row', () => {
+    useMembresiasAdmin.mockReturnValue({
+      data: { results: [{ ...mockMembresiaActiva, estado: 'renovada' }], count: 1 },
+      isLoading: false,
+      isError: false,
+    })
+    renderPage()
+    expect(screen.getAllByText('Renovada').length).toBeGreaterThan(0)
+    expect(screen.queryByText('Renovar')).not.toBeInTheDocument()
+    expect(screen.queryByText('Suspender')).not.toBeInTheDocument()
+  })
+
+  it('still shows Renovar for a vencida row', () => {
+    useMembresiasAdmin.mockReturnValue({
+      data: { results: [{ ...mockMembresiaActiva, estado: 'vencida' }], count: 1 },
+      isLoading: false,
+      isError: false,
+    })
+    renderPage()
+    expect(screen.getByText('Renovar')).toBeInTheDocument()
+  })
+
   it('displays a membresia row with socio name', () => {
     renderPage()
     expect(screen.getByText('Ana García')).toBeInTheDocument()

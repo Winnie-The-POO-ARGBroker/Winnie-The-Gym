@@ -53,8 +53,9 @@ export function useDashboardAlerts() {
   return useQuery({
     queryKey: ['dashboardAlerts'],
     queryFn: async () => {
-      // Listamos todas las membresías vencidas (TODO: unificar con pendientes de pago cuando backend soporte)
-      const res = await api.get('/memberships/membresias/', { params: { estado: 'vencida', limit: 5 } })
+      // Solo socios cuya ÚLTIMA membresía venció (los que ya renovaron o recompraron no son alerta).
+      // TODO: unificar con pendientes de pago cuando backend soporte
+      const res = await api.get('/memberships/membresias/', { params: { estado: 'vencida', ultima: true, limit: 5 } })
       return res.data.results || []
     },
     retry: 1,
