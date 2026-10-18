@@ -10,6 +10,7 @@ import { DIAS_SEMANA, RECURRENCIA_DIAS } from '../constants/clases'
 import { useClaseDetail, useClasesMutations, useClasesList } from '../hooks/queries/useClases'
 import { useDisciplinas, useSalas } from '../hooks/queries/useCatalogo'
 import { useInstructores } from '../hooks/queries/useInstructores'
+import { usePlanesQuery } from '../hooks/queries/usePlanesAdmin'
 
 const EMPTY_FORM = {
   nombre: '',
@@ -42,9 +43,21 @@ export default function CreateClassPage() {
   const { data: disciplinasAPI = [] } = useDisciplinas()
   const { data: salasAPI = [] } = useSalas()
   const { data: instructoresAPI = [] } = useInstructores({ activo: true })
+  const { data: planesAPI, isPending: cargandoPlanes, isError: errorPlanes } = usePlanesQuery()
 
   const [formData, setFormData] = useState(EMPTY_FORM)
   const [fieldErrors, setFieldErrors] = useState({})
+
+  // Only real plans are offered: a made-up name would be saved as an enabled plan that
+  // no member has, and nobody could book the class. Plans already enabled on this class
+  // that no longer exist stay visible so they can be removed.
+  const nombresPlanes = Array.isArray(planesAPI)
+    ? planesAPI.filter((p) => p.activo !== false).map((p) => p.nombre)
+    : []
+  const opcionesPlanes = [
+    ...nombresPlanes,
+    ...(formData.planes_habilitados || []).filter((nombre) => !nombresPlanes.includes(nombre)),
+  ]
 
   // Populate form when editing or cloning an existing class
   useEffect(() => {
@@ -95,10 +108,10 @@ export default function CreateClassPage() {
   }
 
   const handlePlanToggle = (planName) => {
-    const exists = formData.planes_habilitados.includes(planName)
+    const exists = (formData.planes_habilitados || []).includes(planName)
     const updated = exists
-      ? formData.planes_habilitados.filter((p) => p !== planName)
-      : [...formData.planes_habilitados, planName]
+      ? (formData.planes_habilitados || []).filter((p) => p !== planName)
+      : [...(formData.planes_habilitados || []), planName]
 
     setFormData((prev) => ({
       ...prev,
@@ -489,9 +502,22 @@ export default function CreateClassPage() {
                 <label className="block text-xs font-semibold text-text-secondary mb-2">
                   Planes habilitados para reservar esta clase
                 </label>
+                {cargandoPlanes && (
+                  <p className="text-xs text-text-tertiary mb-2">Cargando planes…</p>
+                )}
+                {errorPlanes && !cargandoPlanes && (
+                  <p className="text-xs text-error-500 mb-2">
+                    No se pudieron cargar los planes. Recargá la página para volver a intentar.
+                  </p>
+                )}
+                {!cargandoPlanes && !errorPlanes && opcionesPlanes.length === 0 && (
+                  <p className="text-xs text-text-tertiary mb-2">
+                    No hay planes creados. Creá uno en la sección Planes.
+                  </p>
+                )}
                 <div className="flex flex-wrap items-center gap-3">
-                  {['Básico', 'Premium', 'Gold'].map((plan) => {
-                    const isChecked = formData.planes_habilitados.includes(plan)
+                  {opcionesPlanes.map((plan) => {
+                    const isChecked = (formData.planes_habilitados || []).includes(plan)
 
                     return (
                       <button
