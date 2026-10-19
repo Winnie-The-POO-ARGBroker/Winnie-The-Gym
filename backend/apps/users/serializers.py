@@ -84,6 +84,9 @@ class ProfileSerializer(serializers.ModelSerializer):
     proximas_clases = serializers.SerializerMethodField(read_only=True)
     # #231 — relative expiry label for active membership
     vencimiento_formato_relativo = serializers.SerializerMethodField(read_only=True)
+    # Medical certificate state (storage key certificado_medico_path stays private)
+    tiene_certificado = serializers.SerializerMethodField(read_only=True)
+    apto_estado = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Socio
@@ -100,6 +103,10 @@ class ProfileSerializer(serializers.ModelSerializer):
             'estado',
             'fecha_baja',
             'certificado_medico_url',
+            'tiene_certificado',
+            'apto_estado',
+            'certificado_emitido_en',
+            'certificado_vence_en',
             'observaciones',
             # #232 — extended fields
             'fecha_nacimiento',
@@ -120,9 +127,19 @@ class ProfileSerializer(serializers.ModelSerializer):
             'estado',
             'fecha_baja',
             'certificado_medico_url',
+            'tiene_certificado',
+            'apto_estado',
+            'certificado_emitido_en',
+            'certificado_vence_en',
             'proximas_clases',
             'vencimiento_formato_relativo',
         )
+
+    def get_tiene_certificado(self, obj):
+        return bool(obj.certificado_medico_path or obj.certificado_medico_url)
+
+    def get_apto_estado(self, obj):
+        return obj.apto_estado
 
     def get_proximas_clases(self, obj):
         """Return the next 3 confirmed (non-waitlisted) class reservations."""

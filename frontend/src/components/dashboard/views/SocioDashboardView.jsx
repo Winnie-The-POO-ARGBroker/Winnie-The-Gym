@@ -28,6 +28,13 @@ function formatRelative(dateStr) {
   return getTimeAgo(dateStr)
 }
 
+const APTO_LABELS = {
+  sin_apto: 'Faltante',
+  vigente: 'Vigente',
+  por_vencer: 'Por vencer',
+  vencido: 'Vencido',
+}
+
 function isTodayBirthday(fechaNacimiento) {
   if (!fechaNacimiento) return false
   const today = new Date()
@@ -77,8 +84,7 @@ export default function SocioDashboardView({ navigate }) {
   const mem = membershipData?.membresia_activa
   const planName = mem?.plan?.nombre || 'Sin membresía activa'
   const expiration = mem?.fecha_fin || '--'
-  const hasMedicalCert = !!membershipData?.certificado_medico_url
-  const aptoEstado = membershipData?.apto_estado ?? (hasMedicalCert ? 'vigente' : 'sin_apto')
+  const aptoEstado = membershipData?.apto_estado ?? 'sin_apto'
   const aptoVenceEn = membershipData?.certificado_vence_en
   const nombre = membershipData?.nombre || ''
   const fechaNacimiento = membershipData?.fecha_nacimiento
@@ -134,7 +140,7 @@ export default function SocioDashboardView({ navigate }) {
             <div>
               <p className="text-xs text-text-secondary">Apto Médico</p>
               <p className="text-sm font-semibold text-text-primary">
-                {hasMedicalCert ? 'Vigente' : 'Faltante'}
+                {APTO_LABELS[aptoEstado] ?? 'Faltante'}
               </p>
             </div>
             <div className="text-right">

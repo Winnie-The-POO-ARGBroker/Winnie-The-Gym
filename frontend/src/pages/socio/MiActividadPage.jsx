@@ -31,6 +31,8 @@ function formatDate(str) {
   })
 }
 
+const ACCESS_TYPE_LABELS = { ENTRY: 'Entrada', EXIT: 'Salida' }
+
 function statusBadgeVariant(status) {
   if (status === 'GRANTED') return 'success'
   if (status === 'DENIED') return 'danger'
@@ -49,8 +51,8 @@ export default function MiActividadPage() {
   const { data, isLoading } = useMiActividad({ page, page_size: PAGE_SIZE })
 
   const resumen = data?.resumen ?? {}
-  const logs = data?.logs?.results ?? data?.logs ?? []
-  const totalCount = data?.logs?.count ?? logs.length
+  const logs = data?.results ?? []
+  const totalCount = data?.count ?? logs.length
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE))
 
   return (
@@ -123,7 +125,7 @@ export default function MiActividadPage() {
                       {formatDateTime(log.timestamp ?? log.created_at)}
                     </span>
                     <span className="text-[11px] text-text-secondary">
-                      {log.access_type ?? '—'}
+                      {ACCESS_TYPE_LABELS[log.access_type] ?? log.access_type ?? '—'}
                       {log.denial_reason && (
                         <span className="ml-1 text-error-500">
                           · {ACCESS_DENIAL_REASONS[log.denial_reason] ?? log.denial_reason}

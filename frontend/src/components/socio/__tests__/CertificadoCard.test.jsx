@@ -4,13 +4,15 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import api from '../../../services/api'
 import CertificadoCard from '../CertificadoCard'
 
 // Mock the api module to isolate network calls
 vi.mock('../../../services/api', () => ({
   default: {
     get: vi.fn(),
+    post: vi.fn(),
     patch: vi.fn(),
   },
 }))
@@ -102,5 +104,25 @@ describe('CertificadoCard', () => {
     expect(
       screen.getByText(/enlace de visualización expira en 5 minutos/i),
     ).toBeInTheDocument()
+  })
+  it('uploads to the certificado-medico endpoint with the backend field names', async () => {
+    api.post.mockResolvedValueOnce({ data: {} })
+    const onUploadSuccess = vi.fn()
+    render(<CertificadoCard socioId={7} aptoEstado="sin_apto" onUploadSuccess={onUploadSuccess} />)
+
+    fireEvent.click(screen.getByText(/Subir certificado/i))
+    fireEvent.change(screen.getByTestId('emitido-en-input'), { target: { value: '2026-10-01' } })
+    fireEvent.change(screen.getByTestId('vence-en-input'), { target: { value: '2027-10-01' } })
+    const file = new File(['pdf'], 'apto.pdf', { type: 'application/pdf' })
+    fireEvent.change(screen.getByTestId('certificado-file-input'), { target: { files: [file] } })
+    fireEvent.submit(screen.getByTestId('certificado-submit-btn').closest('form'))
+
+    await waitFor(() => expect(onUploadSuccess).toHaveBeenCalled())
+    const [url, body] = api.post.mock.calls[0]
+    expect(url).toBe('/members/socios/7/certificado-medico/')
+    expect(body.get('emitido_en')).toBe('2026-10-01')
+    expect(body.get('vence_en')).toBe('2027-10-01')
+    expect(body.get('archivo')).toBe(file)
+    expect(api.patch).not.toHaveBeenCalled()
   })
 })
