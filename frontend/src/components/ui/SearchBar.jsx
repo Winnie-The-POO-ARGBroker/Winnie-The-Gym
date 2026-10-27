@@ -20,14 +20,18 @@ export default function SearchBar({
   const [value, setValue] = useState('')
   const debounced = useDebounce(value, delay)
   const isFirstRender = useRef(true)
+  // Keep the latest callback in a ref so an inline `onSearch` (new identity on every
+  // parent render) does not re-fire the effect and reset the parent's pagination.
+  const onSearchRef = useRef(onSearch)
+  onSearchRef.current = onSearch
 
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false
       return
     }
-    onSearch?.(debounced)
-  }, [debounced, onSearch])
+    onSearchRef.current?.(debounced)
+  }, [debounced])
 
   function handleClear() {
     setValue('')

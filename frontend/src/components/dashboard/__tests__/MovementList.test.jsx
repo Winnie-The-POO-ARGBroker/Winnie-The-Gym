@@ -59,5 +59,30 @@ describe('MovementList', () => {
 
     expect(screen.getByText(/Acceso denegado/i)).toBeInTheDocument()
   })
-})
 
+  it('muestra el día junto a la hora', () => {
+    render(<MovementList movements={[{ ...base, id: 7, type: 'entry', denied: false, dayLabel: 'Ayer' }]} />)
+
+    expect(screen.getByText('Ayer · 02:54 p.m.')).toBeInTheDocument()
+  })
+
+  it('muestra la fecha dd/mm para movimientos antiguos', () => {
+    render(<MovementList movements={[{ ...base, id: 8, type: 'entry', denied: false, dayLabel: '20/10' }]} />)
+
+    expect(screen.getByText('20/10 · 02:54 p.m.')).toBeInTheDocument()
+  })
+
+  it('sin día informado muestra solo la hora', () => {
+    render(<MovementList movements={[{ ...base, id: 9, type: 'entry', denied: false }]} />)
+
+    expect(screen.getByText('02:54 p.m.')).toBeInTheDocument()
+  })
+
+  it('el motivo del rechazo no se trunca para que pueda leerse completo', () => {
+    render(<MovementList movements={[
+      { ...base, id: 10, type: 'entry', denied: true, denialReason: 'Membresía inactiva o vencida' },
+    ]} />)
+
+    expect(screen.getByText(/Entrada denegada/i).className).not.toMatch(/truncate/)
+  })
+})

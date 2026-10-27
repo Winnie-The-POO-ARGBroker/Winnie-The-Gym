@@ -5,7 +5,7 @@
  * Mocked: services/api, constants/pagination.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { waitFor } from '@testing-library/react'
 import { renderHookWithProviders } from '../../test/test-utils'
 
@@ -92,8 +92,60 @@ describe('mapAccessLog con el formato real del backend', () => {
   })
 })
 
+describe('mapAccessLog dayLabel', () => {
+  const NOW = new Date(2026, 9, 27, 0, 30, 0) // 27/10/2026 00:30 local
+  const log = (date) => ({ id: 1, timestamp: date?.toISOString?.() ?? date, access_type: 'ENTRY', status: 'GRANTED' })
+
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(NOW)
+  })
+  afterEach(() => vi.useRealTimers())
+
+  it('labels a movement from today as "Hoy"', () => {
+    expect(mapAccessLog(log(new Date(2026, 9, 27, 0, 5))).dayLabel).toBe('Hoy')
+  })
+
+  it('labels the previous calendar day as "Ayer" even when it is less than 24h ago', () => {
+    expect(mapAccessLog(log(new Date(2026, 9, 26, 23, 50))).dayLabel).toBe('Ayer')
+  })
+
+  it('labels older movements as dd/mm', () => {
+    expect(mapAccessLog(log(new Date(2026, 9, 20, 22, 8))).dayLabel).toBe('20/10')
+    expect(mapAccessLog(log(new Date(2026, 8, 5, 9, 0))).dayLabel).toBe('05/09')
+  })
+
+  it('keeps the time field', () => {
+    expect(mapAccessLog(log(new Date(2026, 9, 27, 0, 5))).time).toEqual(expect.any(String))
+  })
+
+  it('does not throw and returns an empty dayLabel for invalid or missing timestamps', () => {
+    expect(mapAccessLog(log('not-a-date')).dayLabel).toBe('')
+    expect(mapAccessLog({ id: 2 }).dayLabel).toBe('')
+    expect(mapAccessLog({ id: 3, timestamp: null }).dayLabel).toBe('')
+  })
+})
+
 describe('useAccessLogs', () => {
   beforeEach(() => vi.clearAllMocks())
+
+  it('asks the API for exactly `limit` rows via page_size (the backend ignores `limit`)', async () => {
+    api.get.mockResolvedValue({ data: { results: [] } })
+    const { result } = renderHookWithProviders(() => useAccessLogs(10))
+    await waitFor(() => expect(result.current.data).toBeDefined())
+    expect(api.get).toHaveBeenCalledWith('/access/logs/', {
+      params: expect.objectContaining({ page_size: 10 }),
+    })
+  })
+
+  it('an explicit page_size wins over the one derived from limit', async () => {
+    api.get.mockResolvedValue({ data: { results: [] } })
+    const { result } = renderHookWithProviders(() => useAccessLogs(5, 20))
+    await waitFor(() => expect(result.current.data).toBeDefined())
+    expect(api.get).toHaveBeenCalledWith('/access/logs/', {
+      params: expect.objectContaining({ page_size: 20 }),
+    })
+  })
 
   it('fetches access logs from API', async () => {
     const LOGS = [{ id: 1, timestamp: '2026-09-21T10:00:00Z', user_nombre: 'A', user_apellido: 'B', user_plan_nombre: 'Plan', access_type: 'entry' }]

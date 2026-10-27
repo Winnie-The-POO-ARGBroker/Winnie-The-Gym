@@ -3,6 +3,19 @@ import api from '../../services/api'
 import { ALL_RECORDS_PAGE_SIZE } from '../../constants/pagination'
 import { ACCESS_DENIAL_REASONS } from '../../constants/accessDenialReasons'
 
+const startOfLocalDay = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate())
+
+/** "Hoy", "Ayer" or "dd/mm", comparing local calendar days (not 24h deltas). '' if the date is invalid. */
+const getDayLabel = (date, now = new Date()) => {
+  if (Number.isNaN(date.getTime())) return ''
+  const diffDays = Math.round((startOfLocalDay(now) - startOfLocalDay(date)) / 86400000)
+  if (diffDays === 0) return 'Hoy'
+  if (diffDays === 1) return 'Ayer'
+  const dd = String(date.getDate()).padStart(2, '0')
+  const mm = String(date.getMonth() + 1).padStart(2, '0')
+  return `${dd}/${mm}`
+}
+
 export const mapAccessLog = (log) => {
   const d = new Date(log.timestamp)
   const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -11,6 +24,7 @@ export const mapAccessLog = (log) => {
     name: log.user_nombre ? `${log.user_nombre} ${log.user_apellido || ''}`.trim() : 'Desconocido',
     membership: log.user_plan_nombre || 'Sin plan',
     time: timeStr,
+    dayLabel: log.timestamp == null ? '' : getDayLabel(d),
     // The API sends 'ENTRY' / 'EXIT'; the list compares against 'entry'.
     type: String(log.access_type ?? '').toLowerCase(),
     denied: log.status === 'DENIED',
@@ -21,12 +35,13 @@ export const mapAccessLog = (log) => {
 }
 
 // --- Access Logs ---
-export function useAccessLogs(limit = 5, page_size) {
+// The backend paginates with `page_size` (default 50) and ignores `limit`, so the
+// requested row count is sent as `page_size` unless one is given explicitly.
+export function useAccessLogs(limit = 5, page_size = limit) {
   return useQuery({
     queryKey: ['accessLogs', limit, page_size],
     queryFn: async () => {
-      const params = { limit }
-      if (page_size !== undefined) params.page_size = page_size
+      const params = { limit, page_size }
       const res = await api.get('/access/logs/', { params })
       return res.data.results || []
     },

@@ -104,13 +104,15 @@ export default function MovementList({ movements = [], loading = false }) {
                 <p className="text-sm font-medium text-text-primary truncate">{m.name}</p>
                 <p className="text-xs truncate text-text-secondary">{m.membership}</p>
                 {m.denied && (
-                  <p className="text-xs truncate text-warning-500">
+                  <p className="text-xs text-warning-500">
                     {deniedLabel(m.type)}
                     {m.denialReason ? ` — ${m.denialReason}` : ''}
                   </p>
                 )}
               </div>
-              <span className="text-xs font-medium flex-shrink-0 text-text-secondary">{m.time}</span>
+              <span className="text-xs font-medium flex-shrink-0 text-text-secondary">
+                {m.dayLabel ? `${m.dayLabel} · ${m.time}` : m.time}
+              </span>
             </div>
           ))}
     </div>
