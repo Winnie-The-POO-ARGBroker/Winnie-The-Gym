@@ -9,8 +9,11 @@ import { useGymConfig } from '../../../hooks/queries/useGymConfig'
 /** Milliseconds to wait for WS before enabling REST fallback. */
 const WS_CONNECT_TIMEOUT_MS = 3000
 
+/** Number of rows shown in "Movimientos recientes". */
+const RECENT_MOVEMENTS_LIMIT = 10
+
 export default function RecepcionistaDashboardView({ navigate }) {
-  const { data: logsData = [], isLoading: isLoadingLogs, isError: isErrorLogs } = useAccessLogs(5)
+  const { data: logsData = [], isLoading: isLoadingLogs, isError: isErrorLogs } = useAccessLogs(RECENT_MOVEMENTS_LIMIT, RECENT_MOVEMENTS_LIMIT)
 
   const { lastMessage, isConnecting } = useWebSocket('/ws/aforo/')
   const { data: gymConfig } = useGymConfig()
@@ -36,7 +39,7 @@ export default function RecepcionistaDashboardView({ navigate }) {
   const ingresosHoy = lastMessage?.ingresos_hoy ?? restFallback?.ingresos_hoy ?? 0
   const egresosHoy = lastMessage?.egresos_hoy ?? restFallback?.egresos_hoy ?? 0
 
-  const mappedMovements = logsData.map(mapAccessLog)
+  const mappedMovements = logsData.slice(0, RECENT_MOVEMENTS_LIMIT).map(mapAccessLog)
 
   return (
     <div className="flex flex-col gap-6">
@@ -78,7 +81,7 @@ export default function RecepcionistaDashboardView({ navigate }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] items-start gap-6">
         <AforoCard
           current={aforoActual}
           max={gymConfig?.aforo_maximo ?? 200}
