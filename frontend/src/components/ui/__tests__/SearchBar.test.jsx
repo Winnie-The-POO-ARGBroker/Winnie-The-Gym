@@ -45,4 +45,33 @@ describe('SearchBar component', () => {
     expect(onSearch).toHaveBeenCalledWith('Fitness')
     vi.useRealTimers()
   })
+
+  it('no vuelve a llamar onSearch cuando el padre re-renderiza con un callback nuevo', () => {
+    const first = vi.fn()
+    const { rerender } = render(<SearchBar onSearch={first} />)
+
+    const second = vi.fn()
+    rerender(<SearchBar onSearch={second} />)
+    rerender(<SearchBar onSearch={vi.fn()} />)
+
+    expect(first).not.toHaveBeenCalled()
+    expect(second).not.toHaveBeenCalled()
+  })
+
+  it('usa el último onSearch al disparar la búsqueda debounceada', () => {
+    vi.useFakeTimers()
+    const first = vi.fn()
+    const second = vi.fn()
+    const { rerender } = render(<SearchBar delay={300} onSearch={first} />)
+
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Ana' } })
+    rerender(<SearchBar delay={300} onSearch={second} />)
+    act(() => {
+      vi.advanceTimersByTime(350)
+    })
+
+    expect(first).not.toHaveBeenCalled()
+    expect(second).toHaveBeenCalledWith('Ana')
+    vi.useRealTimers()
+  })
 })
